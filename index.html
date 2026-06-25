@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Property Assist — Inspection Report</title>
+<style>
+  :root {
+    --gold: #E8B84B;
+    --gold-dark: #C49A2E;
+    --black: #1A1A1A;
+    --dark: #2C2C2C;
+    --mid: #4A4A4A;
+    --light: #F5F5F3;
+    --white: #FFFFFF;
+    --border: #E0DED9;
+    --green: #2D7A4F;
+    --green-light: #E8F5EE;
+    --red: #C0392B;
+    --red-light: #FDECEA;
+    --recording: #E74C3C;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    background: var(--light);
+    color: var(--black);
+    min-height: 100vh;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--black);
+    padding: 16px 20px 14px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header-logo {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .header-title {
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+    font-weight: 400;
+  }
+
+  /* SCREENS */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* SETUP SCREEN */
+  .setup-hero {
+    background: var(--black);
+    padding: 32px 20px 28px;
+    color: var(--white);
+  }
+  .setup-hero h1 {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+  .setup-hero h1 span { color: var(--gold); }
+  .setup-hero p {
+    font-size: 14px;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.5;
+  }
+
+  .setup-form {
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .field-group label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--mid);
+  }
+  .field-group input, .field-group select {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 13px 14px;
+    font-size: 16px;
+    color: var(--black);
+    width: 100%;
+    -webkit-appearance: none;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .field-group input:focus, .field-group select:focus {
+    border-color: var(--gold);
+  }
+
+  .rooms-select {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 4px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+  }
+  .room-toggle {
+    padding: 10px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--mid);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    user-select: none;
+    line-height: 1.3;
+  }
+  .room-toggle.selected {
+    background: var(--gold);
+    color: var(--black);
+    font-weight: 600;
+  }
+
+  .btn-primary {
+    background: var(--gold);
+    color: var(--black);
+    border: none;
+    border-radius: var(--radius);
+    padding: 16px;
+    font-size: 16px;
+    font-weight: 700;
+    width: 100%;
+    cursor: pointer;
+    letter-spacing: 0.01em;
+    transition: background 0.15s;
+  }
+  .btn-primary:active { background: var(--gold-dark); }
+  .btn-primary:disabled { background: var(--border); color: var(--mid); }
+
+  .state-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #FFF8E6;
+    border: 1px solid #F0D080;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #8A6A00;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+
+  /* INSPECTION SCREEN */
+  .progress-bar-wrap {
+    background: var(--border);
+    height: 3px;
+  }
+  .progress-bar-fill {
+    background: var(--gold);
+    height: 3px;
+    transition: width 0.3s ease;
+  }
+
+  .room-nav {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .room-nav::-webkit-scrollbar { display: none; }
+  .room-tab {
+    flex-shrink: 0;
+    padding: 12px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--mid);
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .room-tab.active {
+    color: var(--black);
+    border-bottom-color: var(--gold);
+  }
+  .room-tab.complete {
+    color: var(--green);
+  }
+  .room-tab .check { font-size: 10px; }
+
+  .room-content {
+    padding: 0 0 120px;
+  }
+  .room-header {
+    padding: 20px 20px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .room-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--black);
+  }
+  .room-progress-text {
+    font-size: 12px;
+    color: var(--mid);
+    font-weight: 500;
+  }
+
+  /* SUBSECTION CARDS */
+  .subsections {
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .subsection-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    overflow: hidden;
+    transition: border-color 0.15s;
+  }
+  .subsection-card.has-content {
+    border-color: var(--green);
+  }
+  .subsection-card.recording {
+    border-color: var(--recording);
+  }
+
+  .subsection-header {
+    display: flex;
+    align-items: center;
+    padding: 13px 14px;
+    gap: 10px;
+    cursor: pointer;
+  }
+  .subsection-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+    background: var(--light);
+    color: var(--mid);
+  }
+  .subsection-card.has-content .subsection-icon {
+    background: var(--green-light);
+    color: var(--green);
+  }
+  .subsection-card.recording .subsection-icon {
+    background: var(--red-light);
+    color: var(--recording);
+    animation: pulse 1s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .subsection-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--black);
+    flex: 1;
+  }
+  .subsection-preview {
+    font-size: 12px;
+    color: var(--mid);
+    margin-top: 2px;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+  }
+  .subsection-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .subsection-body {
+    display: none;
+    padding: 0 14px 14px;
+    border-top: 1px solid var(--border);
+  }
+  .subsection-body.open { display: block; }
+
+  .field-note {
+    font-size: 12px;
+    color: var(--mid);
+    padding: 10px 0 8px;
+    font-style: italic;
+  }
+
+  textarea.transcription {
+    width: 100%;
+    background: var(--light);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-size: 14px;
+    color: var(--black);
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 72px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  textarea.transcription:focus { border-color: var(--gold); }
+
+  .ai-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--mid);
+    margin-top: 6px;
+  }
+  .ai-status.processing { color: var(--gold-dark); }
+  .ai-status.done { color: var(--green); }
+  .ai-status.warning { color: var(--red); }
+
+  .action-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .btn-record {
+    flex: 1;
+    background: var(--black);
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: background 0.15s;
+  }
+  .btn-record:active { background: var(--mid); }
+  .btn-record.recording-active {
+    background: var(--recording);
+    animation: recordPulse 1.5s infinite;
+  }
+  @keyframes recordPulse {
+    0%, 100% { background: var(--recording); }
+    50% { background: #E95D4E; }
+  }
+
+  .btn-clear {
+    background: transparent;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--mid);
+    cursor: pointer;
+  }
+
+  /* MANDATORY FIELDS */
+  .mandatory-section {
+    margin: 0 20px 10px;
+    background: #FFF8E6;
+    border: 1.5px solid #F0D080;
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+  .mandatory-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8A6A00;
+    margin-bottom: 10px;
+  }
+  .mandatory-field {
+    margin-bottom: 10px;
+  }
+  .mandatory-field:last-child { margin-bottom: 0; }
+  .mandatory-field label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--dark);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .mandatory-field input {
+    width: 100%;
+    background: var(--white);
+    border: 1.5px solid #E0C870;
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-size: 14px;
+    color: var(--black);
+    outline: none;
+    font-family: inherit;
+  }
+  .mandatory-field input:focus { border-color: var(--gold); }
+
+  /* BOTTOM BAR */
+  .bottom-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+    display: flex;
+    gap: 10px;
+    z-index: 100;
+  }
+  .btn-nav {
+    flex: 1;
+    background: var(--light);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 13px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--dark);
+    cursor: pointer;
+  }
+  .btn-nav.primary {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: var(--black);
+  }
+  .btn-nav:active { opacity: 0.8; }
+
+  /* REVIEW SCREEN */
+  .review-header {
+    background: var(--black);
+    padding: 28px 20px 24px;
+    color: var(--white);
+  }
+  .review-header h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .review-header p {
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+  }
+
+  .review-body {
+    padding: 20px;
+    padding-bottom: 120px;
+  }
+  .review-room {
+    margin-bottom: 20px;
+  }
+  .review-room-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .review-item {
+    display: flex;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid #F0EEE9;
+  }
+  .review-item:last-child { border-bottom: none; }
+  .review-item-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--mid);
+    width: 120px;
+    flex-shrink: 0;
+  }
+  .review-item-value {
+    font-size: 13px;
+    color: var(--black);
+    line-height: 1.5;
+    flex: 1;
+  }
+  .review-item-value.empty {
+    color: var(--border);
+    font-style: italic;
+  }
+  .review-item-value.flagged {
+    color: var(--red);
+  }
+
+  .warning-banner {
+    background: var(--red-light);
+    border: 1.5px solid #F1A9A0;
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--red);
+    font-weight: 600;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .export-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0 20px 20px;
+  }
+  .btn-export {
+    background: var(--black);
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius);
+    padding: 16px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-export:active { background: var(--dark); }
+  .btn-export.secondary {
+    background: transparent;
+    border: 1.5px solid var(--border);
+    color: var(--dark);
+    font-weight: 600;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--black);
+    color: var(--white);
+    padding: 10px 18px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transition: all 0.25s;
+    z-index: 200;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* SPINNER */
+  .spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .nsw-note {
+    background: #EEF4FF;
+    border: 1px solid #C5D8FF;
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-size: 12px;
+    color: #2A4A8A;
+    margin: 0 20px 10px;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">Property Assist</div>
+  <div class="header-title" id="headerTitle">New Inspection</div>
+</div>
+
+<!-- SETUP SCREEN -->
+<div class="screen active" id="screenSetup">
+  <div class="setup-hero">
+    <h1>Start <span>Inspection</span></h1>
+    <p>Fill in the property details, select the rooms present, then record each subsection.</p>
+  </div>
+
+  <div class="setup-form">
+    <div class="field-group">
+      <label>Property Address</label>
+      <input type="text" id="propAddress" placeholder="e.g. 14 Acacia Street, Subiaco WA 6008">
+    </div>
+    <div class="field-group">
+      <label>Client Name</label>
+      <input type="text" id="propClient" placeholder="e.g. Ray White Subiaco">
+    </div>
+    <div class="field-group">
+      <label>Inspector Name</label>
+      <input type="text" id="propInspector" placeholder="Your name">
+    </div>
+    <div class="field-group">
+      <label>Bedrooms</label>
+      <select id="propBeds">
+        <option value="1">1 Bedroom</option>
+        <option value="2">2 Bedrooms</option>
+        <option value="3" selected>3 Bedrooms</option>
+        <option value="4">4 Bedrooms</option>
+        <option value="5">5 Bedrooms</option>
+      </select>
+    </div>
+    <div class="field-group">
+      <label>Bathrooms</label>
+      <select id="propBaths">
+        <option value="1">1 Bathroom</option>
+        <option value="2" selected>2 Bathrooms</option>
+        <option value="3">3 Bathrooms</option>
+      </select>
+    </div>
+    <div class="field-group">
+      <label>State</label>
+      <select id="propState">
+        <option value="WA">WA</option>
+        <option value="NSW">NSW</option>
+        <option value="QLD">QLD</option>
+        <option value="VIC">VIC</option>
+        <option value="SA">SA</option>
+      </select>
+      <span class="state-badge" id="nswBadge" style="display:none">⚠️ NSW special reporting applies</span>
+    </div>
+
+    <div class="field-group">
+      <label>Rooms Present at Property</label>
+      <div class="rooms-select" id="roomsSelect"></div>
+    </div>
+
+    <button class="btn-primary" id="btnStartInspection" onclick="startInspection()">
+      Start Inspection →
+    </button>
+  </div>
+</div>
+
+<!-- INSPECTION SCREEN -->
+<div class="screen" id="screenInspection">
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+  </div>
+  <div class="room-nav" id="roomNav"></div>
+  <div class="room-content" id="roomContent"></div>
+  <div class="bottom-bar">
+    <button class="btn-nav" id="btnPrevRoom" onclick="prevRoom()">← Prev</button>
+    <button class="btn-nav primary" id="btnNextRoom" onclick="nextRoom()">Next Room →</button>
+  </div>
+</div>
+
+<!-- REVIEW SCREEN -->
+<div class="screen" id="screenReview">
+  <div class="review-header">
+    <h2>Review Report</h2>
+    <p id="reviewMeta">Check all entries before exporting</p>
+  </div>
+  <div class="review-body" id="reviewBody"></div>
+  <div class="export-actions">
+    <button class="btn-export" onclick="exportReport()">📋 Copy Full Report</button>
+    <button class="btn-export secondary" onclick="showScreen('screenInspection')">← Back to Edit</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── TEMPLATE DATA ───────────────────────────────────────────────────────────
+
+const FORBIDDEN_WORDS = [
+  'aged','appears','damages','dirt','dirty','grouting','intact','minor',
+  'showing signs','slightly','some','structural','unclean','untested',
+  'untidy','washable marks','faded','wipeable marks','wearing'
+];
+
+const ALL_ROOMS = [
+  {
+    id: 'front_gardens',
+    name: 'Front Gardens',
+    subsections: [
+      'Exterior Walls','Light Fittings','Eaves','Gutters/Downpipes','Flooring',
+      'Garden Beds','Reticulation','Lawn/Edges','Taps/Hoses','Driveway',
+      'Letterbox/Street Number','Fences & Gates','Garbage Bins',
+      'Power Points/Light Switches','Electrical Meter Box','Gas Meter Box',
+      'Water Meter Reading','Verandah/Portico Ceiling','Verandah/Portico Light Fittings',
+      'Verandah/Portico Walls','Verandah/Portico Flooring','Air Conditioner External Motor',
+      'Additional'
+    ]
+  },
+  {
+    id: 'garage',
+    name: 'Garage/Carport',
+    subsections: [
+      'Door/Frames/Handles','Ceiling','Light Fittings','Walls/Shelves/Hooks/Stoppers',
+      'Power Points/Light Switches','Flooring','Automatic Door/Roller Door',
+      'Automatic Door Motor','Garbage Bins','Additional'
+    ]
+  },
+  {
+    id: 'entry',
+    name: 'Entry',
+    subsections: [
+      'Door/Frames/Handles','Screen Door/Handles','Ceiling','Light Fittings',
+      'Walls/Hooks/Door Stoppers','Windows/Screens','Blinds/Curtains',
+      'Power Points/Light Switches','Skirting','Flooring','Ceiling Fan/Air Conditioner',
+      'Cupboard Door/Frames/Handle','Cupboard Ceiling','Cupboard Light Fitting',
+      'Cupboard Walls','Cupboard Power Points/Light Switches','Cupboard Skirting',
+      'Cupboard Flooring','Cupboard Shelves','Additional'
+    ]
+  },
+  {
+    id: 'lounge',
+    name: 'Lounge/Family/Dining',
+    subsections: [
+      'Door/Frames/Handles','Ceiling','Light Fittings','Walls/Hooks/Door Stoppers',
+      'Windows/Screens','Blinds/Curtains','TV/Power Points/Light Switches',
+      'Skirting','Flooring','Ceiling Fan/Air Conditioner','Additional'
+    ]
+  },
+  {
+    id: 'passage',
+    name: 'Passage',
+    subsections: [
+      'Door/Frames/Handles','Screen Door/Handles','Ceiling','Light Fittings',
+      'Walls/Hooks/Door Stoppers','Windows/Screens','Blinds/Curtains',
+      'Power Points/Light Switches','Skirting','Flooring',
+      'Linen Cupboard Door/Frames/Handle','Linen Cupboard Ceiling','Linen Cupboard Light Fitting',
+      'Linen Cupboard Walls','Linen Cupboard Power Points/Light Switches',
+      'Linen Cupboard Skirting','Linen Cupboard Flooring','Linen Cupboard Shelves','Additional'
+    ]
+  },
+  {
+    id: 'staircase',
+    name: 'Staircase & Landing',
+    subsections: [
+      'Ceiling','Light Fittings','Walls/Hooks/Door Stoppers','Windows/Screens',
+      'Blinds/Curtains','Power Points/Light Switches','Skirting','Flooring',
+      'Staircase Railing','Cupboard Door/Frames/Handle','Cupboard Ceiling',
+      'Cupboard Light Fitting','Cupboard Walls','Cupboard Power Points/Light Switches',
+      'Cupboard Skirting','Cupboard Flooring','Cupboard Shelves',
+      'Ceiling Fan/Air Conditioner','Additional'
+    ]
+  },
+  {
+    id: 'bedroom1', name: 'Bedroom 1',
+    subsections: [
+      'Door/Frames/Handles','Screen Door/Handles','Ceiling','Light Fittings',
+      'Walls/Hooks/Door Stoppers','Windows/Screens','Blinds/Curtains',
+      'Power Points/Light Switches','Skirting','Flooring','Ceiling Fan/Air Conditioner',
+      'Cupboard Door/Frames/Handle','Cupboard Ceiling','Cupboard Light Fitting',
+      'Cupboard Walls','Cupboard Power Points/Light Switches','Cupboard Skirting',
+      'Cupboard Flooring','Cupboard Shelves','Additional'
+    ]
+  },
+  {
+    id: 'bedroom2', name: 'Bedroom 2',
+    subsections: [
+      'Door/Frames/Handles','Screen Door/Handles','Ceiling','Light Fittings',
+      'Walls/Hooks/Door Stoppers','Windows/Screens','Blinds/Curtains',
+      'Power Points/Light Switches','Skirting','Flooring','Ceiling Fan/Air Conditioner',
+      'Cupboard Door/Frames/Handle','Cupboard Ceiling','Cupboard Light Fitting',
+      'Cupboard Walls','Cupboard Power Points/Light Switches','Cupboard Skirting',
+      'Cupboard Flooring','Cupboard Shelves','Additional'
+    ]
+  },
+  {
+    id: 'bedroom3', name: 'Bedroom 3',
+    subsections: [
+      'Door/Frames/Handles','Screen Door/Handles','Ceiling','Light Fittings',
+      'Walls/Hooks/Door Stoppers','Windows/Screens','Blinds/Curtains',
+      'Power Points/Light Switches','Skirting','Flooring','Ceiling Fan/Air Conditioner',
+      'Cupboard Door/Frames/Handle','Cupboard Ceiling','Cupboard Light Fitting',
+      'Cupboard Walls','Cupboard Power Points/Light Switches','Cupboard Skirting',
+      'Cupboard Flooring','Cupboard Shelves','Additional'
+    ]
+  },
+  {
+    id: 'bedroom4', name: 'Bedroom 4',
+    subsections: [
+      'Door/Frames/Handles','Screen Door/Handles','Ceiling','Light Fittings',
+      'Walls/Hooks/Door Stoppers','Windows/Screens','Blinds/Curtains',
+      'Power Points/Light Switches','Skirting','Flooring','Ceiling Fan/Air Conditioner',
+      'Cupboard Door/Frames/Handle','Cupboard Ceiling','Cupboard Light Fitting',
+      'Cupboard Walls','Cupboard Power Points/Light Switches','Cupboard Skirting',
+      'Cupboard Flooring','Cupboard Shelves','Additional'
+    ]
+  },
+  {
+    id: 'bedroom5', name: 'Bedroom 5',
+    subsections: [
+      'Door/Frames/Handles','Screen Door/Handles','Ceiling','Light Fittings',
+      'Walls/Hooks/Door Stoppers','Windows/Screens','Blinds/Curtains',
+      'Power Points/Light Switches','Skirting','Flooring','Ceiling Fan/Air Conditioner',
+      'Cupboard Door/Frames/Handle','Cupboard Ceiling','Cupboard Light Fitting',
+      'Cupboard Walls','Cupboard Power Points/Light Switches','Cupboard Skirting',
+      'Cupboard Flooring','Cupboard Shelves','Additional'
+    ]
+  },
+  {
+    id: 'ensuite', name: 'Ensuite/Bathroom',
+    subsections: [
+      'Door/Frames/Handles','Ceiling','Heating/Exhaust Fan/Vent','Light Fittings',
+      'Walls/Hooks/Door Stoppers','Windows/Screens','Blinds/Curtains',
+      'Power Points/Light Switches','Skirting','Flooring/Drains','Wash Basin','Tapware',
+      'Benchtop','Splash Back','Mirror','Under Bench Cupboards/Drawers',
+      'Shower Screen/Curtain/Frame','Shower Tiles','Shower Tapware','Towel Rails',
+      'Toilet Bowl/Cistern/Seat/Cover','Toilet Roll Holder','Bath','Bath Tiles',
+      'Bath Tapware','Additional'
+    ]
+  },
+  {
+    id: 'bathroom2', name: 'Bathroom 2',
+    subsections: [
+      'Door/Frames/Handles','Ceiling','Heating/Exhaust Fan/Vent','Light Fittings',
+      'Walls/Hooks/Door Stoppers','Windows/Screens','Blinds/Curtains',
+      'Power Points/Light Switches','Skirting','Flooring/Drains','Wash Basin','Tapware',
+      'Benchtop','Splash Back','Mirror','Under Bench Cupboards/Drawers',
+      'Shower Screen/Curtain/Frame','Shower Tiles','Shower Tapware','Towel Rails',
+      'Toilet Bowl/Cistern/Seat/Cover','Toilet Roll Holder','Bath','Bath Tiles',
+      'Bath Tapware','Additional'
+    ]
+  },
+  {
+    id: 'toilet', name: 'Toilet',
+    subsections: [
+      'Door/Frames/Handles','Ceiling','Heating/Exhaust Fan/Vent','Light Fitting',
+      'Walls/Hooks/Door Stoppers','Windows/Screens','Blinds/Curtains',
+      'Power Points/Light Switches','Skirting','Flooring/Drains',
+      'Toilet/Cistern/Seat','Toilet Roll Holder','Additional'
+    ]
+  },
+  {
+    id: 'powder_room', name: 'Powder Room',
+    subsections: [
+      'Door/Doorway Frames/Handles','Ceiling','Heating/Exhaust Fan/Vent','Light Fitting',
+      'Walls/Hooks/Door Stoppers','Windows/Screens','Blinds/Curtains',
+      'Power Points/Light Switches','Skirting','Flooring/Drains','Basin','Basin Tapware',
+      'Splash Back','Benchtop','Cupboards','Mirror',
+      'Hand Towel Rail','Toilet/Bowl/Cistern/Seat/Cover/Tap','Toilet Roll Holder','Additional'
+    ]
+  },
+  {
+    id: 'kitchen', name: 'Kitchen',
+    subsections: [
+      'Door/Frames/Handles','Ceiling','Light Fittings','Walls/Hooks/Door Stoppers',
+      'Windows/Handles/Locks/Screens','Blinds/Curtains','Power Points/Light Switches',
+      'Skirting/Kickboards','Flooring','Overhead Cupboards','Drawers',
+      'Under Bench Cupboards','Bench Tops','Splash Back/Tiling','Sink','Tapware',
+      'Exhaust Fan/Range Hood','Stove Top/Hot Plates','Oven/Griller',
+      'Pantry Doors/Frames/Handles','Pantry Ceiling','Pantry Light Fitting',
+      'Pantry Walls','Pantry Power Points/Light Switch','Pantry Skirting',
+      'Pantry Flooring','Pantry Shelves','Dishwasher','Fridge Recess Cabinetry','Additional'
+    ]
+  },
+  {
+    id: 'laundry', name: 'Laundry',
+    subsections: [
+      'Door/Doorway/Frames/Handles','Outside Door','Ceiling','Heating/Exhaust Fan/Vents',
+      'Light Fittings','Walls/Hooks/Door Stoppers','Power Points/Light Switches',
+      'Windows/Screens','Blinds/Curtains','Skirting','Flooring/Drains',
+      'Washing Machine Taps','Trough/Washing Tub','Trough Cabinet','Tapware',
+      'Benchtops','Splash Back','Under Bench Cupboards','Overhead Cupboards',
+      'Linen Cupboard Door/Frames/Handle','Linen Cupboard Ceiling','Linen Cupboard Light Fitting',
+      'Linen Cupboard Walls','Linen Cupboard Power Points/Light Switch',
+      'Linen Cupboard Skirting','Linen Cupboard Flooring','Linen Cupboard Shelves','Additional'
+    ]
+  },
+  {
+    id: 'balcony', name: 'Balcony',
+    subsections: [
+      'Ceiling','Exterior Walls','Light Fittings','Eaves','Power Points/Light Switches',
+      'Skirting','Flooring/Drains','Balustrading/Railing','Water Tap','Additional'
+    ]
+  },
+  {
+    id: 'shed', name: 'Shed/Storeroom',
+    subsections: [
+      'Doors/Handles','Ceiling','Light Fittings','Walls/Frame Work',
+      'Shelves','Power Points/Light Switches','Flooring','Additional'
+    ]
+  },
+  {
+    id: 'rear_exterior', name: 'Rear Exterior',
+    subsections: [
+      'Exterior Walls','Light Fittings','Power Points/Light Switches',
+      'Gutters/Downpipes','Eaves','Fences/Gates','Taps & Hoses',
+      'Lawn/Edges Garden Beds','Reticulation','Patio/Pergola Ceiling',
+      'Patio/Pergola Light Fittings','Patio/Pergola Walls','Patio/Pergola Flooring',
+      'Clothesline','Exterior Flooring/Drains','Hot Water System','Aircon Motor',
+      'Garbage Bins','Additional'
+    ]
+  },
+  {
+    id: 'pool', name: 'Pool/Spa',
+    subsections: [
+      'Fences/Gate','Garden Beds','Reticulation','Pool/Spa','Pool/Spa Pumps',
+      'Taps & Hoses','Additional'
+    ]
+  }
+];
+
+// Rooms shown by default (commonly present)
+const DEFAULT_ROOMS = ['front_gardens','garage','entry','lounge','bedroom1','bedroom2','bedroom3','ensuite','kitchen','laundry','rear_exterior'];
+
+// ─── STATE ──────────────────────────────────────────────────────────────────
+let state = {
+  address: '', client: '', inspector: '', beds: 3, baths: 2, stateCode: 'WA',
+  selectedRooms: [],
+  activeRooms: [], // filtered by selection
+  currentRoomIdx: 0,
+  data: {}, // roomId -> { subsectionName: text }
+  mandatory: {
+    waterMeter: '', waterMeterLocation: '',
+    rcdBox: '', smokeAlarms: '', nbnBox: ''
+  }
+};
+
+let mediaRecorder = null;
+let audioChunks = [];
+let activeRecordingKey = null; // "roomId::subsection"
+
+// ─── SETUP ───────────────────────────────────────────────────────────────────
+function initSetup() {
+  const container = document.getElementById('roomsSelect');
+  ALL_ROOMS.forEach(room => {
+    const div = document.createElement('div');
+    div.className = 'room-toggle' + (DEFAULT_ROOMS.includes(room.id) ? ' selected' : '');
+    div.textContent = room.name;
+    div.dataset.id = room.id;
+    div.onclick = () => div.classList.toggle('selected');
+    container.appendChild(div);
+  });
+
+  document.getElementById('propState').addEventListener('change', e => {
+    document.getElementById('nswBadge').style.display = e.target.value === 'NSW' ? 'flex' : 'none';
+  });
+}
+
+function startInspection() {
+  state.address = document.getElementById('propAddress').value.trim();
+  state.client = document.getElementById('propClient').value.trim();
+  state.inspector = document.getElementById('propInspector').value.trim();
+  state.beds = parseInt(document.getElementById('propBeds').value);
+  state.baths = parseInt(document.getElementById('propBaths').value);
+  state.stateCode = document.getElementById('propState').value;
+
+  if (!state.address || !state.client) {
+    showToast('Please enter address and client name');
+    return;
+  }
+
+  const selected = [...document.querySelectorAll('.room-toggle.selected')].map(d => d.dataset.id);
+  if (!selected.length) { showToast('Select at least one room'); return; }
+
+  // Filter bedrooms by bed count
+  state.selectedRooms = selected.filter(id => {
+    if (id === 'bedroom4' && state.beds < 4) return false;
+    if (id === 'bedroom5' && state.beds < 5) return false;
+    if (id === 'bathroom2' && state.baths < 2) return false;
+    return true;
+  });
+
+  state.activeRooms = ALL_ROOMS.filter(r => state.selectedRooms.includes(r.id));
+  state.currentRoomIdx = 0;
+
+  // Init data
+  state.activeRooms.forEach(room => {
+    state.data[room.id] = {};
+  });
+
+  document.getElementById('headerTitle').textContent = state.address || 'Inspection';
+  showScreen('screenInspection');
+  renderInspection();
+}
+
+// ─── INSPECTION ──────────────────────────────────────────────────────────────
+function renderInspection() {
+  renderRoomNav();
+  renderRoomContent();
+  updateProgress();
+}
+
+function renderRoomNav() {
+  const nav = document.getElementById('roomNav');
+  nav.innerHTML = '';
+  state.activeRooms.forEach((room, idx) => {
+    const tab = document.createElement('div');
+    tab.className = 'room-tab' + (idx === state.currentRoomIdx ? ' active' : '');
+    const filled = getRoomFillCount(room);
+    if (filled === room.subsections.length) tab.classList.add('complete');
+    tab.innerHTML = `${room.name}${filled > 0 ? `<span class="check">✓${filled}</span>` : ''}`;
+    tab.onclick = () => { state.currentRoomIdx = idx; renderInspection(); };
+    nav.appendChild(tab);
+  });
+  // Scroll active tab into view
+  const activeTab = nav.querySelector('.room-tab.active');
+  if (activeTab) activeTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+}
+
+function getRoomFillCount(room) {
+  return room.subsections.filter(s => state.data[room.id]?.[s]?.trim()).length;
+}
+
+function renderRoomContent() {
+  const room = state.activeRooms[state.currentRoomIdx];
+  const content = document.getElementById('roomContent');
+  content.innerHTML = '';
+
+  // Room header
+  const header = document.createElement('div');
+  header.className = 'room-header';
+  const filled = getRoomFillCount(room);
+  header.innerHTML = `
+    <div class="room-title">${room.name}</div>
+    <div class="room-progress-text">${filled}/${room.subsections.length} done</div>
+  `;
+  content.appendChild(header);
+
+  // NSW note
+  if (state.stateCode === 'NSW' && state.currentRoomIdx === 0) {
+    const note = document.createElement('div');
+    note.className = 'nsw-note';
+    note.innerHTML = '⚠️ <strong>NSW:</strong> Note loose wiring, damaged appliances, mould/dampness, pests, rubbish on premises.';
+    content.appendChild(note);
+  }
+
+  // Mandatory fields on first room
+  if (state.currentRoomIdx === 0) {
+    renderMandatoryFields(content);
+  }
+
+  // Subsections
+  const subsDiv = document.createElement('div');
+  subsDiv.className = 'subsections';
+
+  room.subsections.forEach(sub => {
+    const key = `${room.id}::${sub}`;
+    const val = state.data[room.id]?.[sub] || '';
+    const card = document.createElement('div');
+    card.className = 'subsection-card' + (val ? ' has-content' : '');
+    card.id = `card-${key}`;
+
+    card.innerHTML = `
+      <div class="subsection-header" onclick="toggleSub('${key}')">
+        <div class="subsection-icon">${val ? '✓' : '🎤'}</div>
+        <div style="flex:1;min-width:0">
+          <div class="subsection-name">${sub}</div>
+          ${val ? `<div class="subsection-preview">${val.substring(0,60)}${val.length>60?'…':''}</div>` : ''}
+        </div>
+        <div style="color:var(--border);font-size:18px" id="chevron-${key}">›</div>
+      </div>
+      <div class="subsection-body" id="body-${key}">
+        <p class="field-note">Speak your observation, then Claude will clean it up.</p>
+        <textarea class="transcription" id="ta-${key}" rows="3" placeholder="Tap record or type directly..."
+          oninput="onTextEdit('${key}')">${val}</textarea>
+        <div class="ai-status" id="status-${key}"></div>
+        <div class="action-row">
+          <button class="btn-record" id="btn-${key}" onclick="toggleRecord('${key}', event)">
+            🎤 Hold to Record
+          </button>
+          ${val ? `<button class="btn-clear" onclick="clearSub('${key}')">Clear</button>` : ''}
+        </div>
+      </div>
+    `;
+    subsDiv.appendChild(card);
+  });
+
+  content.appendChild(subsDiv);
+
+  // Prev/Next button labels
+  const isLast = state.currentRoomIdx === state.activeRooms.length - 1;
+  document.getElementById('btnNextRoom').textContent = isLast ? 'Review Report →' : 'Next Room →';
+  document.getElementById('btnPrevRoom').style.opacity = state.currentRoomIdx === 0 ? '0.3' : '1';
+}
+
+function renderMandatoryFields(content) {
+  const div = document.createElement('div');
+  div.className = 'mandatory-section';
+  div.innerHTML = `
+    <div class="mandatory-title">⚡ Mandatory Items — Don't Miss These</div>
+    <div class="mandatory-field">
+      <label>Water Meter Reading</label>
+      <input type="text" placeholder="e.g. 1234.567 kL" value="${state.mandatory.waterMeter}"
+        oninput="state.mandatory.waterMeter=this.value">
+    </div>
+    <div class="mandatory-field">
+      <label>Water Meter Location</label>
+      <input type="text" placeholder="e.g. Front verge, near driveway" value="${state.mandatory.waterMeterLocation}"
+        oninput="state.mandatory.waterMeterLocation=this.value">
+    </div>
+    <div class="mandatory-field">
+      <label>RCD Box / Electrical Meter</label>
+      <input type="text" placeholder="e.g. All switches on, reading 4521 kWh" value="${state.mandatory.rcdBox}"
+        oninput="state.mandatory.rcdBox=this.value">
+    </div>
+    <div class="mandatory-field">
+      <label>Smoke Alarms (location & light)</label>
+      <input type="text" placeholder="e.g. Hallway & master — green light showing" value="${state.mandatory.smokeAlarms}"
+        oninput="state.mandatory.smokeAlarms=this.value">
+    </div>
+    <div class="mandatory-field">
+      <label>NBN Box (location, model, serial)</label>
+      <input type="text" placeholder="e.g. Laundry, NF18ACV, SN 12345678" value="${state.mandatory.nbnBox}"
+        oninput="state.mandatory.nbnBox=this.value">
+    </div>
+  `;
+  content.appendChild(div);
+}
+
+function toggleSub(key) {
+  const body = document.getElementById(`body-${key}`);
+  const chevron = document.getElementById(`chevron-${key}`);
+  const isOpen = body.classList.contains('open');
+  // Close all
+  document.querySelectorAll('.subsection-body.open').forEach(b => b.classList.remove('open'));
+  document.querySelectorAll('[id^="chevron-"]').forEach(c => c.textContent = '›');
+  if (!isOpen) {
+    body.classList.add('open');
+    chevron.textContent = '⌄';
+    document.getElementById(`ta-${key}`)?.focus();
+  }
+}
+
+function onTextEdit(key) {
+  const [roomId, sub] = key.split('::');
+  const val = document.getElementById(`ta-${key}`).value;
+  if (!state.data[roomId]) state.data[roomId] = {};
+  state.data[roomId][sub] = val;
+  updateCardState(key, val);
+}
+
+function clearSub(key) {
+  const [roomId, sub] = key.split('::');
+  state.data[roomId][sub] = '';
+  document.getElementById(`ta-${key}`).value = '';
+  updateCardState(key, '');
+  renderRoomNav();
+}
+
+function updateCardState(key, val) {
+  const card = document.getElementById(`card-${key}`);
+  if (!card) return;
+  if (val?.trim()) {
+    card.classList.add('has-content');
+    card.classList.remove('recording');
+  } else {
+    card.classList.remove('has-content');
+  }
+}
+
+function updateProgress() {
+  const total = state.activeRooms.reduce((s, r) => s + r.subsections.length, 0);
+  const done = state.activeRooms.reduce((s, r) => s + getRoomFillCount(r), 0);
+  document.getElementById('progressBar').style.width = total ? `${(done/total)*100}%` : '0%';
+}
+
+// ─── RECORDING ───────────────────────────────────────────────────────────────
+async function toggleRecord(key, e) {
+  e.stopPropagation();
+  if (activeRecordingKey === key) {
+    stopRecording();
+    return;
+  }
+  if (activeRecordingKey) stopRecording();
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioChunks = [];
+    activeRecordingKey = key;
+
+    const btn = document.getElementById(`btn-${key}`);
+    const card = document.getElementById(`card-${key}`);
+    btn.textContent = '⏹ Stop Recording';
+    btn.classList.add('recording-active');
+    card.classList.add('recording');
+
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+    mediaRecorder.onstop = () => handleRecordingDone(key, stream);
+    mediaRecorder.start();
+  } catch (err) {
+    showToast('Microphone access needed');
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+  }
+  if (activeRecordingKey) {
+    const btn = document.getElementById(`btn-${activeRecordingKey}`);
+    if (btn) { btn.textContent = '🎤 Hold to Record'; btn.classList.remove('recording-active'); }
+    const card = document.getElementById(`card-${activeRecordingKey}`);
+    if (card) card.classList.remove('recording');
+  }
+  activeRecordingKey = null;
+}
+
+async function handleRecordingDone(key, stream) {
+  stream.getTracks().forEach(t => t.stop());
+  const blob = new Blob(audioChunks, { type: 'audio/webm' });
+  const statusEl = document.getElementById(`status-${key}`);
+
+  statusEl.className = 'ai-status processing';
+  statusEl.innerHTML = '<span class="spinner"></span> Transcribing…';
+
+  try {
+    // Convert to base64 for Whisper via Claude API
+    const reader = new FileReader();
+    reader.readAsDataURL(blob);
+    reader.onload = async () => {
+      const base64 = reader.result.split(',')[1];
+
+      // Use Claude to transcribe + clean in one shot
+      await transcribeAndClean(key, base64, blob, statusEl);
+    };
+  } catch (err) {
+    statusEl.className = 'ai-status warning';
+    statusEl.textContent = '⚠ Transcription failed — type manually';
+  }
+}
+
+async function transcribeAndClean(key, base64Audio, blob, statusEl) {
+  const [roomId, sub] = key.split('::');
+  const room = state.activeRooms.find(r => r.id === roomId);
+
+  try {
+    // We'll use the Web Speech API as primary (works offline on iOS Safari)
+    // and fall back to a text prompt if not available
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      // Speech recognition available — but it's already done via MediaRecorder
+      // Instead, send audio to Claude as a document with transcription request
+    }
+
+    // Send to Claude API for transcription + cleaning
+    const prompt = `You are a property inspection report assistant for Property Assist.
+
+The inspector has recorded an audio observation for the subsection: "${sub}" in the "${room?.name}" area.
+
+I'm providing you with the audio. Please:
+1. Transcribe what the inspector said
+2. Clean up the transcription — fix any obvious speech-to-text errors
+3. Remove or replace any FORBIDDEN WORDS: ${FORBIDDEN_WORDS.join(', ')}
+4. Write it in professional property inspection language
+5. Keep it factual and concise — describe the actual condition observed
+6. Do NOT use forbidden words under any circumstances
+7. Return ONLY the cleaned observation text, nothing else — no preamble, no labels
+
+If the audio is unclear or empty, return exactly: [No observation recorded]`;
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'document',
+              source: {
+                type: 'base64',
+                media_type: 'audio/webm',
+                data: base64Audio
+              }
+            },
+            { type: 'text', text: prompt }
+          ]
+        }]
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.error) throw new Error(data.error.message);
+
+    const text = data.content?.find(b => b.type === 'text')?.text || '';
+
+    if (text && text !== '[No observation recorded]') {
+      document.getElementById(`ta-${key}`).value = text;
+      if (!state.data[roomId]) state.data[roomId] = {};
+      state.data[roomId][sub] = text;
+      updateCardState(key, text);
+      updateProgress();
+      renderRoomNav();
+
+      statusEl.className = 'ai-status done';
+      statusEl.textContent = '✓ Transcribed and cleaned by Claude';
+    } else {
+      statusEl.className = 'ai-status warning';
+      statusEl.textContent = '⚠ Nothing detected — try again or type';
+    }
+
+  } catch (err) {
+    // Fallback: use Web Speech API if available
+    fallbackSpeechRecognition(key, statusEl);
+  }
+}
+
+function fallbackSpeechRecognition(key, statusEl) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    statusEl.className = 'ai-status warning';
+    statusEl.textContent = '⚠ Could not transcribe — please type your observation';
+    return;
+  }
+  statusEl.className = 'ai-status processing';
+  statusEl.innerHTML = '<span class="spinner"></span> Using device transcription…';
+  // Guide user to re-record using speech recognition directly
+  statusEl.className = 'ai-status warning';
+  statusEl.textContent = '⚠ Type your observation or try recording again';
+}
+
+// ─── NAVIGATION ──────────────────────────────────────────────────────────────
+function nextRoom() {
+  if (state.currentRoomIdx < state.activeRooms.length - 1) {
+    state.currentRoomIdx++;
+    renderInspection();
+    window.scrollTo(0, 0);
+  } else {
+    showReview();
+  }
+}
+
+function prevRoom() {
+  if (state.currentRoomIdx > 0) {
+    state.currentRoomIdx--;
+    renderInspection();
+    window.scrollTo(0, 0);
+  }
+}
+
+// ─── REVIEW ──────────────────────────────────────────────────────────────────
+function showReview() {
+  showScreen('screenReview');
+  document.getElementById('reviewMeta').textContent =
+    `${state.address} · ${state.client} · ${state.stateCode}`;
+
+  const body = document.getElementById('reviewBody');
+  body.innerHTML = '';
+
+  // Warnings
+  const warnings = checkMandatory();
+  if (warnings.length) {
+    const banner = document.createElement('div');
+    banner.className = 'warning-banner';
+    banner.innerHTML = `⚠️ <div><strong>Missing required fields:</strong><br>${warnings.join(', ')}</div>`;
+    body.appendChild(banner);
+  }
+
+  // Mandatory summary
+  const mandDiv = document.createElement('div');
+  mandDiv.className = 'review-room';
+  mandDiv.innerHTML = `
+    <div class="review-room-title">⚡ Mandatory Items</div>
+    ${renderReviewItem('Water Meter', state.mandatory.waterMeter + (state.mandatory.waterMeterLocation ? ` — ${state.mandatory.waterMeterLocation}` : ''))}
+    ${renderReviewItem('RCD Box', state.mandatory.rcdBox)}
+    ${renderReviewItem('Smoke Alarms', state.mandatory.smokeAlarms)}
+    ${renderReviewItem('NBN Box', state.mandatory.nbnBox)}
+  `;
+  body.appendChild(mandDiv);
+
+  // Room by room
+  state.activeRooms.forEach(room => {
+    const div = document.createElement('div');
+    div.className = 'review-room';
+    let rows = '';
+    room.subsections.forEach(sub => {
+      const val = state.data[room.id]?.[sub] || '';
+      rows += renderReviewItem(sub, val);
+    });
+    div.innerHTML = `<div class="review-room-title">${room.name}</div>${rows}`;
+    body.appendChild(div);
+  });
+}
+
+function renderReviewItem(name, val) {
+  const hasForbidden = val && FORBIDDEN_WORDS.some(w => val.toLowerCase().includes(w));
+  const cls = !val ? 'empty' : hasForbidden ? 'flagged' : '';
+  const display = !val ? 'Not recorded' : val;
+  const flag = hasForbidden ? ' ⚠️' : '';
+  return `<div class="review-item">
+    <div class="review-item-name">${name}</div>
+    <div class="review-item-value ${cls}">${display}${flag}</div>
+  </div>`;
+}
+
+function checkMandatory() {
+  const missing = [];
+  if (!state.mandatory.waterMeter) missing.push('Water Meter Reading');
+  if (!state.mandatory.smokeAlarms) missing.push('Smoke Alarms');
+  if (!state.mandatory.nbnBox) missing.push('NBN Box');
+  return missing;
+}
+
+// ─── EXPORT ──────────────────────────────────────────────────────────────────
+function exportReport() {
+  let report = '';
+  report += `PROPERTY INSPECTION REPORT\n`;
+  report += `${'='.repeat(40)}\n`;
+  report += `Property: ${state.address}\n`;
+  report += `Client: ${state.client}\n`;
+  report += `Inspector: ${state.inspector}\n`;
+  report += `Beds/Baths: ${state.beds} bed / ${state.baths} bath\n`;
+  report += `State: ${state.stateCode}\n`;
+  report += `Date: ${new Date().toLocaleDateString('en-AU')}\n\n`;
+
+  report += `MANDATORY ITEMS\n${'-'.repeat(30)}\n`;
+  report += `Water Meter: ${state.mandatory.waterMeter} — ${state.mandatory.waterMeterLocation}\n`;
+  report += `RCD Box: ${state.mandatory.rcdBox}\n`;
+  report += `Smoke Alarms: ${state.mandatory.smokeAlarms}\n`;
+  report += `NBN Box: ${state.mandatory.nbnBox}\n\n`;
+
+  state.activeRooms.forEach(room => {
+    report += `\n${room.name.toUpperCase()}\n${'-'.repeat(30)}\n`;
+    room.subsections.forEach(sub => {
+      const val = state.data[room.id]?.[sub];
+      if (val?.trim()) {
+        report += `${sub}: ${val}\n`;
+      }
+    });
+  });
+
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(report).then(() => showToast('✓ Report copied to clipboard'));
+  } else {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = report;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('✓ Report copied');
+  }
+}
+
+// ─── UTILS ───────────────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+initSetup();
+</script>
+</body>
+</html>

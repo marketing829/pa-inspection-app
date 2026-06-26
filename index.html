@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Property Assist — Inspection Report</title>
+<!-- Install-to-home-screen (PWA) -->
+<meta name="theme-color" content="#898B8F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PA Inspect">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <style>
   :root {
     --gold: #FFDE00;         /* brand yellow — buttons & accents */
@@ -366,6 +375,70 @@
     padding: 10px 0 8px;
   }
 
+  /* ROOM DICTATION (talk-per-room) */
+  .room-block {
+    padding: 16px 20px;
+  }
+  .checklist-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-bottom: 8px;
+  }
+  .checklist {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 6px;
+    margin-bottom: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .checklist-item {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--dark);
+    background: var(--light);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 5px 10px;
+    cursor: pointer;
+    user-select: none;
+    line-height: 1.2;
+  }
+  .checklist-item.done {
+    color: var(--green);
+    background: var(--green-light);
+    border-color: #A9D9BF;
+    text-decoration: line-through;
+  }
+  .room-field-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--black);
+    margin-bottom: 6px;
+  }
+  textarea.room-dictate {
+    width: 100%;
+    background: var(--light);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 16px;
+    color: var(--black);
+    line-height: 1.55;
+    resize: vertical;
+    min-height: 200px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  textarea.room-dictate:focus { border-color: var(--gold); }
+  textarea.room-dictate.flagged { border-color: var(--red); }
+
   textarea.transcription {
     width: 100%;
     background: var(--light);
@@ -690,7 +763,7 @@
 <div class="screen active" id="screenSetup">
   <div class="setup-hero">
     <h1>Start <span>Inspection</span></h1>
-    <p>Fill in the property details, select the rooms present, then dictate each subsection.</p>
+    <p>Fill in the property details, select the rooms present, then talk through each room in one go.</p>
   </div>
 
   <div class="resume-banner" id="resumeBanner" style="display:none">
@@ -762,7 +835,7 @@
     <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
   </div>
   <div class="dictation-hint">
-    🎤 <span>Tap a field, then the microphone key on your keyboard to dictate. Saves automatically.</span>
+    🎤 <span>Tap the box, then the microphone key on your keyboard, and talk through the whole room in order. Saves automatically.</span>
   </div>
   <div class="room-nav" id="roomNav"></div>
   <div class="room-content" id="roomContent"></div>
@@ -1029,15 +1102,16 @@ const ALL_ROOMS = [
 // Rooms shown by default (commonly present)
 const DEFAULT_ROOMS = ['front_gardens','garage','entry','lounge','bedroom1','bedroom2','bedroom3','ensuite','kitchen','laundry','rear_exterior'];
 
-const STORAGE_KEY = 'pa_inspection_current_v1';
+const STORAGE_KEY = 'pa_inspection_current_v2';
 
 // ─── STATE ──────────────────────────────────────────────────────────────────
 let state = {
   address: '', client: '', inspector: '', beds: 3, baths: 2, stateCode: 'WA',
   selectedRooms: [],
-  activeRooms: [], // filtered by selection
+  activeRooms: [],
   currentRoomIdx: 0,
-  data: {}, // roomId -> { subsectionName: text }
+  roomNotes: {},   // roomId -> dictated text block for the whole room
+  checked: {},     // roomId -> { subsectionName: true }  (optional progress ticks)
   mandatory: {
     waterMeter: '', waterMeterLocation: '',
     rcdBox: '', smokeAlarms: '', nbnBox: ''
@@ -1046,22 +1120,22 @@ let state = {
 };
 
 let recognition = null;
-let listeningKey = null;
+let listeningRoom = null;
 let reviewItems = []; // flat list of {name, val} for field-by-field copy
 
 // ─── PERSISTENCE ──────────────────────────────────────────────────────────────
 function saveState() {
   try {
     if (!state.startedAt) return;
-    // store only serialisable parts
     const toSave = {
       address: state.address, client: state.client, inspector: state.inspector,
       beds: state.beds, baths: state.baths, stateCode: state.stateCode,
       selectedRooms: state.selectedRooms, currentRoomIdx: state.currentRoomIdx,
-      data: state.data, mandatory: state.mandatory, startedAt: state.startedAt
+      roomNotes: state.roomNotes, checked: state.checked,
+      mandatory: state.mandatory, startedAt: state.startedAt
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
-  } catch (e) { /* storage unavailable — ignore */ }
+  } catch (e) {}
 }
 
 function loadSaved() {
@@ -1076,23 +1150,21 @@ function clearSaved() {
   try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
 }
 
+function countRoomsWithNotes(s) {
+  let n = 0;
+  Object.values(s.roomNotes || {}).forEach(v => { if (v && v.trim()) n++; });
+  return n;
+}
+
 function checkForResume() {
   const saved = loadSaved();
   if (saved && saved.address) {
-    const filled = countFilled(saved);
+    const n = countRoomsWithNotes(saved);
     document.getElementById('resumeMeta').textContent =
-      `${saved.address || 'Unknown property'} · ${filled} entr${filled === 1 ? 'y' : 'ies'} saved` +
+      `${saved.address || 'Unknown property'} · ${n} room${n === 1 ? '' : 's'} done` +
       (saved.startedAt ? ` · started ${new Date(saved.startedAt).toLocaleString('en-AU')}` : '');
     document.getElementById('resumeBanner').style.display = 'block';
   }
-}
-
-function countFilled(s) {
-  let n = 0;
-  Object.values(s.data || {}).forEach(room => {
-    Object.values(room).forEach(v => { if (v && v.trim()) n++; });
-  });
-  return n;
 }
 
 function resumeSaved() {
@@ -1102,7 +1174,8 @@ function resumeSaved() {
   state.beds = saved.beds; state.baths = saved.baths; state.stateCode = saved.stateCode;
   state.selectedRooms = saved.selectedRooms || [];
   state.currentRoomIdx = saved.currentRoomIdx || 0;
-  state.data = saved.data || {};
+  state.roomNotes = saved.roomNotes || {};
+  state.checked = saved.checked || {};
   state.mandatory = saved.mandatory || state.mandatory;
   state.startedAt = saved.startedAt || Date.now();
   state.activeRooms = ALL_ROOMS.filter(r => state.selectedRooms.includes(r.id));
@@ -1152,7 +1225,6 @@ function startInspection() {
   const selected = [...document.querySelectorAll('.room-toggle.selected')].map(d => d.dataset.id);
   if (!selected.length) { showToast('Select at least one room'); return; }
 
-  // Filter bedrooms by bed count
   state.selectedRooms = selected.filter(id => {
     if (id === 'bedroom4' && state.beds < 4) return false;
     if (id === 'bedroom5' && state.beds < 5) return false;
@@ -1163,10 +1235,9 @@ function startInspection() {
   state.activeRooms = ALL_ROOMS.filter(r => state.selectedRooms.includes(r.id));
   state.currentRoomIdx = 0;
   state.startedAt = Date.now();
-
-  // Init data
   state.activeRooms.forEach(room => {
-    if (!state.data[room.id]) state.data[room.id] = {};
+    if (!(room.id in state.roomNotes)) state.roomNotes[room.id] = '';
+    if (!state.checked[room.id]) state.checked[room.id] = {};
   });
 
   document.getElementById('headerTitle').textContent = state.address || 'Inspection';
@@ -1182,25 +1253,25 @@ function renderInspection() {
   updateProgress();
 }
 
+function roomHasNotes(room) {
+  const v = state.roomNotes[room.id];
+  return !!(v && v.trim());
+}
+
 function renderRoomNav() {
   const nav = document.getElementById('roomNav');
   nav.innerHTML = '';
   state.activeRooms.forEach((room, idx) => {
     const tab = document.createElement('div');
     tab.className = 'room-tab' + (idx === state.currentRoomIdx ? ' active' : '');
-    const filled = getRoomFillCount(room);
-    if (filled === room.subsections.length) tab.classList.add('complete');
-    tab.innerHTML = `${room.name}${filled > 0 ? `<span class="check">✓${filled}</span>` : ''}`;
+    const done = roomHasNotes(room);
+    if (done) tab.classList.add('complete');
+    tab.innerHTML = `${room.name}${done ? '<span class="check">✓</span>' : ''}`;
     tab.onclick = () => { stopListening(); state.currentRoomIdx = idx; renderInspection(); };
     nav.appendChild(tab);
   });
-  // Scroll active tab into view
   const activeTab = nav.querySelector('.room-tab.active');
   if (activeTab) activeTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-}
-
-function getRoomFillCount(room) {
-  return room.subsections.filter(s => state.data[room.id]?.[s]?.trim()).length;
 }
 
 function findForbidden(text) {
@@ -1214,17 +1285,16 @@ function renderRoomContent() {
   const content = document.getElementById('roomContent');
   content.innerHTML = '';
 
-  // Room header
+  const val = state.roomNotes[room.id] || '';
+
   const header = document.createElement('div');
   header.className = 'room-header';
-  const filled = getRoomFillCount(room);
   header.innerHTML = `
-    <div class="room-title">${room.name}</div>
-    <div class="room-progress-text">${filled}/${room.subsections.length} done</div>
+    <div class="room-title">${escapeHtml(room.name)}</div>
+    <div class="room-progress-text">${roomHasNotes(room) ? 'done' : 'not started'}</div>
   `;
   content.appendChild(header);
 
-  // NSW note
   if (state.stateCode === 'NSW' && state.currentRoomIdx === 0) {
     const note = document.createElement('div');
     note.className = 'nsw-note';
@@ -1232,55 +1302,40 @@ function renderRoomContent() {
     content.appendChild(note);
   }
 
-  // Mandatory fields on first room
   if (state.currentRoomIdx === 0) {
     renderMandatoryFields(content);
   }
 
-  // Subsections
-  const subsDiv = document.createElement('div');
-  subsDiv.className = 'subsections';
+  const block = document.createElement('div');
+  block.className = 'room-block';
 
-  room.subsections.forEach(sub => {
-    const key = `${room.id}::${sub}`;
-    const val = state.data[room.id]?.[sub] || '';
-    const flagged = findForbidden(val);
-    const card = document.createElement('div');
-    card.className = 'subsection-card' + (val ? ' has-content' : '') + (flagged.length ? ' flagged' : '');
-    card.id = `card-${key}`;
-
-    const icon = flagged.length ? '⚠' : (val ? '✓' : '🎤');
-
-    card.innerHTML = `
-      <div class="subsection-header" onclick="toggleSub('${encodeKey(key)}')">
-        <div class="subsection-icon">${icon}</div>
-        <div style="flex:1;min-width:0">
-          <div class="subsection-name">${escapeHtml(sub)}</div>
-          ${val ? `<div class="subsection-preview">${escapeHtml(val.substring(0,60))}${val.length>60?'…':''}</div>` : ''}
-        </div>
-        <div style="color:var(--border);font-size:18px" id="chevron-${encodeKey(key)}">›</div>
-      </div>
-      <div class="subsection-body" id="body-${encodeKey(key)}">
-        <p class="field-note">Tap the field and dictate with your keyboard mic, or type directly.</p>
-        <textarea class="transcription" id="ta-${encodeKey(key)}" rows="3" placeholder="Tap here, then the 🎤 on your keyboard…"
-          oninput="onTextEdit('${encodeKey(key)}')">${escapeHtml(val)}</textarea>
-        <div class="forbidden-warning ${flagged.length ? 'show' : ''}" id="warn-${encodeKey(key)}">
-          ${flagged.length ? '⚠️ Avoid: ' + flagged.join(', ') : ''}
-        </div>
-        <div class="action-row">
-          <button class="btn-dictate" id="btn-${encodeKey(key)}" onclick="toggleDictate('${encodeKey(key)}', event)">
-            🎤 Dictate
-          </button>
-          ${val ? `<button class="btn-clear" onclick="clearSub('${encodeKey(key)}')">Clear</button>` : ''}
-        </div>
-      </div>
-    `;
-    subsDiv.appendChild(card);
+  // Checklist of subsections (reminder + optional progress ticks)
+  let chips = '';
+  room.subsections.forEach((sub, i) => {
+    const done = !!(state.checked[room.id] && state.checked[room.id][sub]);
+    chips += `<span class="checklist-item ${done ? 'done' : ''}" id="chk-${room.id}-${i}" onclick="toggleCheck('${room.id}', ${i})">${escapeHtml(sub)}</span>`;
   });
 
-  content.appendChild(subsDiv);
+  const flagged = findForbidden(val);
 
-  // Prev/Next button labels
+  block.innerHTML = `
+    <div class="checklist-title">Cover these, in order — tap to tick off (optional)</div>
+    <div class="checklist">${chips}</div>
+    <div class="room-field-label">Talk through the room</div>
+    <p class="field-note">Tap the box, then the 🎤 on your keyboard, and speak each item in order. You can also type.</p>
+    <textarea class="room-dictate ${flagged.length ? 'flagged' : ''}" id="roomta-${room.id}" rows="9"
+      placeholder="e.g. Ceiling white and clean. Walls clean throughout. Light fittings working..."
+      oninput="onRoomEdit('${room.id}')">${escapeHtml(val)}</textarea>
+    <div class="forbidden-warning ${flagged.length ? 'show' : ''}" id="roomwarn-${room.id}">
+      ${flagged.length ? '⚠️ Avoid: ' + flagged.join(', ') : ''}
+    </div>
+    <div class="action-row">
+      <button class="btn-dictate" id="dbtn-${room.id}" onclick="toggleDictate('${room.id}', event)">🎤 Dictate room</button>
+      ${val ? `<button class="btn-clear" onclick="clearRoom('${room.id}')">Clear</button>` : ''}
+    </div>
+  `;
+  content.appendChild(block);
+
   const isLast = state.currentRoomIdx === state.activeRooms.length - 1;
   document.getElementById('btnNextRoom').textContent = isLast ? 'Review Report →' : 'Next Room →';
   document.getElementById('btnPrevRoom').style.opacity = state.currentRoomIdx === 0 ? '0.3' : '1';
@@ -1320,87 +1375,66 @@ function renderMandatoryFields(content) {
   content.appendChild(div);
 }
 
-function toggleSub(encKey) {
-  const body = document.getElementById(`body-${encKey}`);
-  const chevron = document.getElementById(`chevron-${encKey}`);
-  const isOpen = body.classList.contains('open');
-  // Close all
-  document.querySelectorAll('.subsection-body.open').forEach(b => b.classList.remove('open'));
-  document.querySelectorAll('[id^="chevron-"]').forEach(c => c.textContent = '›');
-  if (!isOpen) {
-    body.classList.add('open');
-    chevron.textContent = '⌄';
-    document.getElementById(`ta-${encKey}`)?.focus();
-  }
-}
-
-function onTextEdit(encKey) {
-  const key = decodeKey(encKey);
-  const [roomId, sub] = key.split('::');
-  const val = document.getElementById(`ta-${encKey}`).value;
-  if (!state.data[roomId]) state.data[roomId] = {};
-  state.data[roomId][sub] = val;
-  updateCardState(encKey, val);
-  updateProgress();
+function toggleCheck(roomId, i) {
+  const room = state.activeRooms.find(r => r.id === roomId);
+  if (!room) return;
+  const sub = room.subsections[i];
+  if (!state.checked[roomId]) state.checked[roomId] = {};
+  if (state.checked[roomId][sub]) delete state.checked[roomId][sub];
+  else state.checked[roomId][sub] = true;
+  const el = document.getElementById(`chk-${roomId}-${i}`);
+  if (el) el.classList.toggle('done');
   saveState();
 }
 
-function clearSub(encKey) {
-  const key = decodeKey(encKey);
-  const [roomId, sub] = key.split('::');
-  state.data[roomId][sub] = '';
-  const ta = document.getElementById(`ta-${encKey}`);
-  if (ta) ta.value = '';
-  updateCardState(encKey, '');
+function onRoomEdit(roomId) {
+  const ta = document.getElementById(`roomta-${roomId}`);
+  if (!ta) return;
+  state.roomNotes[roomId] = ta.value;
+  updateRoomFieldState(roomId, ta.value);
+  updateProgress();
   renderRoomNav();
-  updateProgress();
   saveState();
 }
 
-function updateCardState(encKey, val) {
-  const card = document.getElementById(`card-${encKey}`);
-  if (!card) return;
+function clearRoom(roomId) {
+  state.roomNotes[roomId] = '';
+  const ta = document.getElementById(`roomta-${roomId}`);
+  if (ta) ta.value = '';
+  updateRoomFieldState(roomId, '');
+  updateProgress();
+  renderRoomNav();
+  saveState();
+}
+
+function updateRoomFieldState(roomId, val) {
+  const ta = document.getElementById(`roomta-${roomId}`);
+  const warn = document.getElementById(`roomwarn-${roomId}`);
   const flagged = findForbidden(val);
-  card.classList.toggle('has-content', !!(val && val.trim()));
-  card.classList.toggle('flagged', flagged.length > 0);
-  const icon = card.querySelector('.subsection-icon');
-  if (icon) icon.textContent = flagged.length ? '⚠' : (val && val.trim() ? '✓' : '🎤');
-  const warn = document.getElementById(`warn-${encKey}`);
+  if (ta) ta.classList.toggle('flagged', flagged.length > 0);
   if (warn) {
-    if (flagged.length) {
-      warn.textContent = '⚠️ Avoid: ' + flagged.join(', ');
-      warn.classList.add('show');
-    } else {
-      warn.classList.remove('show');
-    }
+    if (flagged.length) { warn.textContent = '⚠️ Avoid: ' + flagged.join(', '); warn.classList.add('show'); }
+    else warn.classList.remove('show');
   }
 }
 
 function updateProgress() {
-  const total = state.activeRooms.reduce((s, r) => s + r.subsections.length, 0);
-  const done = state.activeRooms.reduce((s, r) => s + getRoomFillCount(r), 0);
-  document.getElementById('progressBar').style.width = total ? `${(done/total)*100}%` : '0%';
-  renderRoomNav();
+  const total = state.activeRooms.length;
+  const done = state.activeRooms.filter(roomHasNotes).length;
+  document.getElementById('progressBar').style.width = total ? `${(done / total) * 100}%` : '0%';
 }
 
-// ─── DICTATION (optional Web Speech API; keyboard mic is the primary path) ─────
-function getRecognition() {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  return SR ? new SR() : null;
-}
-
-function toggleDictate(encKey, e) {
+// ─── DICTATION (keyboard mic is primary; web speech where available) ──────────
+function toggleDictate(roomId, e) {
   e.stopPropagation();
-  const ta = document.getElementById(`ta-${encKey}`);
+  const ta = document.getElementById(`roomta-${roomId}`);
 
-  // If currently listening on this field, stop.
-  if (listeningKey === encKey) { stopListening(); return; }
-  if (listeningKey) stopListening();
+  if (listeningRoom === roomId) { stopListening(); return; }
+  if (listeningRoom) stopListening();
 
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
-    // No in-browser recognition: just focus the field so the keyboard mic can be used.
-    ta?.focus();
+    ta && ta.focus();
     showToast('Tap the 🎤 on your keyboard to dictate');
     return;
   }
@@ -1409,49 +1443,41 @@ function toggleDictate(encKey, e) {
     recognition = new SR();
     recognition.lang = 'en-AU';
     recognition.interimResults = false;
-    recognition.continuous = false;
-    listeningKey = encKey;
+    recognition.continuous = true;
+    listeningRoom = roomId;
 
-    const btn = document.getElementById(`btn-${encKey}`);
+    const btn = document.getElementById(`dbtn-${roomId}`);
     if (btn) { btn.textContent = '⏹ Stop'; btn.classList.add('listening'); }
-    ta?.focus();
+    ta && ta.focus();
 
     recognition.onresult = (event) => {
       let chunk = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        chunk += event.results[i][0].transcript;
+        if (event.results[i].isFinal) chunk += event.results[i][0].transcript;
       }
       if (chunk && ta) {
         const existing = ta.value.trim();
-        ta.value = existing ? (existing + ' ' + chunk) : chunk;
-        onTextEdit(encKey);
+        ta.value = existing ? (existing + ' ' + chunk.trim()) : chunk.trim();
+        onRoomEdit(roomId);
       }
     };
-    recognition.onerror = () => {
-      stopListening();
-      ta?.focus();
-      showToast('Voice unavailable — use the 🎤 on your keyboard');
-    };
+    recognition.onerror = () => { stopListening(); ta && ta.focus(); showToast('Voice unavailable — use the 🎤 on your keyboard'); };
     recognition.onend = () => { stopListening(); };
-
     recognition.start();
   } catch (err) {
     stopListening();
-    ta?.focus();
+    ta && ta.focus();
     showToast('Use the 🎤 on your keyboard to dictate');
   }
 }
 
 function stopListening() {
-  if (recognition) {
-    try { recognition.stop(); } catch (e) {}
-    recognition = null;
+  if (recognition) { try { recognition.stop(); } catch (e) {} recognition = null; }
+  if (listeningRoom) {
+    const btn = document.getElementById(`dbtn-${listeningRoom}`);
+    if (btn) { btn.textContent = '🎤 Dictate room'; btn.classList.remove('listening'); }
   }
-  if (listeningKey) {
-    const btn = document.getElementById(`btn-${listeningKey}`);
-    if (btn) { btn.textContent = '🎤 Dictate'; btn.classList.remove('listening'); }
-  }
-  listeningKey = null;
+  listeningRoom = null;
 }
 
 // ─── NAVIGATION ──────────────────────────────────────────────────────────────
@@ -1488,13 +1514,11 @@ function showReview() {
   body.innerHTML = '';
   reviewItems = [];
 
-  // How-to-transfer hint
   const hint = document.createElement('div');
   hint.className = 'review-hint';
-  hint.innerHTML = '📋 Tap <strong>Copy</strong> on any line to paste it into one field, or use <strong>Download CSV</strong> at the bottom to import the whole report.';
+  hint.innerHTML = '📋 Each room is one block. Tap <strong>Copy</strong> to grab a room, or use <strong>Download CSV</strong> / <strong>Send to VA</strong> below. The VA splits each block into subsections (a Claude prompt does this).';
   body.appendChild(hint);
 
-  // Warnings
   const warnings = checkMandatory();
   if (warnings.length) {
     const banner = document.createElement('div');
@@ -1503,23 +1527,18 @@ function showReview() {
     body.appendChild(banner);
   }
 
-  // Forbidden word summary
   const forbiddenHits = [];
   state.activeRooms.forEach(room => {
-    room.subsections.forEach(sub => {
-      const val = state.data[room.id]?.[sub] || '';
-      const hits = findForbidden(val);
-      if (hits.length) forbiddenHits.push(`${room.name} · ${sub}`);
-    });
+    const hits = findForbidden(state.roomNotes[room.id] || '');
+    if (hits.length) forbiddenHits.push(`${room.name}: ${hits.join(', ')}`);
   });
   if (forbiddenHits.length) {
     const banner = document.createElement('div');
     banner.className = 'warning-banner';
-    banner.innerHTML = `⚠️ <div><strong>Forbidden words to fix (${forbiddenHits.length}):</strong><br>${forbiddenHits.join('<br>')}</div>`;
+    banner.innerHTML = `⚠️ <div><strong>Forbidden words to fix:</strong><br>${forbiddenHits.join('<br>')}</div>`;
     body.appendChild(banner);
   }
 
-  // Mandatory summary
   const mandDiv = document.createElement('div');
   mandDiv.className = 'review-room';
   mandDiv.innerHTML = `
@@ -1531,16 +1550,10 @@ function showReview() {
   `;
   body.appendChild(mandDiv);
 
-  // Room by room
   state.activeRooms.forEach(room => {
     const div = document.createElement('div');
     div.className = 'review-room';
-    let rows = '';
-    room.subsections.forEach(sub => {
-      const val = state.data[room.id]?.[sub] || '';
-      rows += renderReviewItem(sub, val);
-    });
-    div.innerHTML = `<div class="review-room-title">${escapeHtml(room.name)}</div>${rows}`;
+    div.innerHTML = `<div class="review-room-title">${escapeHtml(room.name)}</div>${renderReviewItem('Room notes', state.roomNotes[room.id] || '')}`;
     body.appendChild(div);
   });
 }
@@ -1591,26 +1604,19 @@ function buildReportText() {
   report += `Water Meter: ${state.mandatory.waterMeter} — ${state.mandatory.waterMeterLocation}\n`;
   report += `RCD Box: ${state.mandatory.rcdBox}\n`;
   report += `Smoke Alarms: ${state.mandatory.smokeAlarms}\n`;
-  report += `NBN Box: ${state.mandatory.nbnBox}\n\n`;
+  report += `NBN Box: ${state.mandatory.nbnBox}\n`;
 
   state.activeRooms.forEach(room => {
-    report += `\n${room.name.toUpperCase()}\n${'-'.repeat(30)}\n`;
-    room.subsections.forEach(sub => {
-      const val = state.data[room.id]?.[sub];
-      if (val?.trim()) {
-        report += `${sub}: ${val}\n`;
-      }
-    });
+    const val = state.roomNotes[room.id];
+    if (val && val.trim()) {
+      report += `\n\n${room.name.toUpperCase()}\n${'-'.repeat(30)}\n${val.trim()}\n`;
+    }
   });
 
-  // Words for the VA to fix before submitting
   const flagged = [];
   state.activeRooms.forEach(room => {
-    room.subsections.forEach(sub => {
-      const val = state.data[room.id]?.[sub] || '';
-      const hits = findForbidden(val);
-      if (hits.length) flagged.push(`${room.name} · ${sub}: ${hits.join(', ')}`);
-    });
+    const hits = findForbidden(state.roomNotes[room.id] || '');
+    if (hits.length) flagged.push(`${room.name}: ${hits.join(', ')}`);
   });
   if (flagged.length) {
     report += `\n\n⚠ WORDS TO FIX BEFORE SUBMITTING\n${'-'.repeat(30)}\n`;
@@ -1628,7 +1634,6 @@ async function shareReport() {
   const text = buildReportText();
   const csv = buildCSVString();
 
-  // Best case: share the CSV file itself (VA gets the structured file)
   if (csv && navigator.canShare) {
     try {
       const file = new File(['﻿' + csv], csvFilename(), { type: 'text/csv' });
@@ -1636,47 +1641,16 @@ async function shareReport() {
         await navigator.share({ files: [file], title: 'Inspection Report', text: text });
         return;
       }
-    } catch (e) {
-      if (e && e.name === 'AbortError') return; // user cancelled
-    }
+    } catch (e) { if (e && e.name === 'AbortError') return; }
   }
-  // Next best: share the text (opens email / WhatsApp / Messages picker)
   if (navigator.share) {
-    try {
-      await navigator.share({ title: 'Inspection Report — ' + state.address, text: text });
-      return;
-    } catch (e) {
-      if (e && e.name === 'AbortError') return;
-    }
+    try { await navigator.share({ title: 'Inspection Report — ' + state.address, text: text }); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
   }
-  // Fallback (e.g. desktop): copy so they can paste into an email
   copyText(text, '✓ Report copied — paste it into an email to your VA');
 }
 
-function copyText(text, msg) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text)
-      .then(() => showToast(msg))
-      .catch(() => legacyCopy(text, msg));
-  } else {
-    legacyCopy(text, msg);
-  }
-}
-
-function legacyCopy(text, msg) {
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed';
-  ta.style.opacity = '0';
-  document.body.appendChild(ta);
-  ta.focus();
-  ta.select();
-  try { document.execCommand('copy'); showToast(msg || '✓ Copied'); }
-  catch (e) { showToast('Could not copy — select the text manually'); }
-  document.body.removeChild(ta);
-}
-
-// ─── CSV EXPORT (for platforms that import a spreadsheet) ─────────────────────
+// ─── CSV EXPORT ───────────────────────────────────────────────────────────────
 function csvCell(v) {
   const s = String(v == null ? '' : v);
   return '"' + s.replace(/"/g, '""') + '"';
@@ -1696,10 +1670,8 @@ function buildCSVRows() {
   mand.forEach(([item, val]) => { if (val && val.trim()) rows.push([...meta, 'Mandatory Items', item, val]); });
 
   state.activeRooms.forEach(room => {
-    room.subsections.forEach(sub => {
-      const val = state.data[room.id]?.[sub];
-      if (val && val.trim()) rows.push([...meta, room.name, sub, val]);
-    });
+    const val = state.roomNotes[room.id];
+    if (val && val.trim()) rows.push([...meta, room.name, 'Full room notes (to categorise)', val.trim()]);
   });
   return rows;
 }
@@ -1718,7 +1690,6 @@ function csvFilename() {
 function downloadCSV() {
   const csv = buildCSVString();
   if (!csv) { showToast('Nothing to export yet'); return; }
-  // BOM so Excel reads UTF-8 correctly
   const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1731,10 +1702,9 @@ function downloadCSV() {
 }
 
 function finishAndClear() {
-  if (confirm('Finished with this inspection? This clears the saved data so you can start a fresh one. Make sure you have copied the report first.')) {
+  if (confirm('Finished with this inspection? This clears the saved data so you can start a fresh one. Make sure you have sent or copied the report first.')) {
     clearSaved();
-    // reset state
-    state.data = {}; state.activeRooms = []; state.selectedRooms = [];
+    state.roomNotes = {}; state.checked = {}; state.activeRooms = []; state.selectedRooms = [];
     state.currentRoomIdx = 0; state.startedAt = null;
     state.mandatory = { waterMeter:'', waterMeterLocation:'', rcdBox:'', smokeAlarms:'', nbnBox:'' };
     document.getElementById('resumeBanner').style.display = 'none';
@@ -1758,9 +1728,26 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-// Encode the room::subsection key so it is safe inside HTML id/onclick attributes.
-function encodeKey(key) { return btoa(unescape(encodeURIComponent(key))).replace(/=/g, '_'); }
-function decodeKey(enc) { return decodeURIComponent(escape(atob(enc.replace(/_/g, '=')))); }
+function copyText(text, msg) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => showToast(msg)).catch(() => legacyCopy(text, msg));
+  } else {
+    legacyCopy(text, msg);
+  }
+}
+
+function legacyCopy(text, msg) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try { document.execCommand('copy'); showToast(msg || '✓ Copied'); }
+  catch (e) { showToast('Could not copy — select the text manually'); }
+  document.body.removeChild(ta);
+}
 
 function escapeHtml(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -1771,6 +1758,12 @@ function escapeAttr(s) {
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
 initSetup();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>

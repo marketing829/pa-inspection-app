@@ -1121,6 +1121,9 @@ let state = {
 
 let recognition = null;
 let listeningRoom = null;
+let wantListening = false;   // stays true until the user taps Stop
+let dictStart = 0;           // timestamp of last recognition start
+let dictFailFast = 0;        // counts instant failures to avoid a runaway loop
 let reviewItems = []; // flat list of {name, val} for field-by-field copy
 
 // ─── PERSISTENCE ──────────────────────────────────────────────────────────────
@@ -1322,7 +1325,7 @@ function renderRoomContent() {
     <div class="checklist-title">Cover these, in order — tap to tick off (optional)</div>
     <div class="checklist">${chips}</div>
     <div class="room-field-label">Talk through the room</div>
-    <p class="field-note">Tap the box, then the 🎤 on your keyboard, and speak each item in order. You can also type.</p>
+    <p class="field-note">Tap <strong>Dictate room</strong> to talk hands-free — it keeps listening until you tap Stop. Or tap the box and use the 🎤 on your keyboard. You can also type.</p>
     <textarea class="room-dictate ${flagged.length ? 'flagged' : ''}" id="roomta-${room.id}" rows="9"
       placeholder="e.g. Ceiling white and clean. Walls clean throughout. Light fittings working..."
       oninput="onRoomEdit('${room.id}')">${escapeHtml(val)}</textarea>
@@ -1439,16 +1442,27 @@ function toggleDictate(roomId, e) {
     return;
   }
 
+  listeningRoom = roomId;
+  wantListening = true;
+  dictFailFast = 0;
+  const btn = document.getElementById(`dbtn-${roomId}`);
+  if (btn) { btn.textContent = '⏹ Stop'; btn.classList.add('listening'); }
+  ta && ta.focus();
+  showToast('Listening — keeps going until you tap Stop');
+  startRecognition(roomId);
+}
+
+// iOS stops speech recognition after a short pause, so we restart it on every
+// 'end' while the user still wants to listen — that gives continuous dictation.
+function startRecognition(roomId) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+  const ta = document.getElementById(`roomta-${roomId}`);
   try {
     recognition = new SR();
     recognition.lang = 'en-AU';
     recognition.interimResults = false;
-    recognition.continuous = true;
-    listeningRoom = roomId;
-
-    const btn = document.getElementById(`dbtn-${roomId}`);
-    if (btn) { btn.textContent = '⏹ Stop'; btn.classList.add('listening'); }
-    ta && ta.focus();
+    recognition.continuous = false;
 
     recognition.onresult = (event) => {
       let chunk = '';
@@ -1456,23 +1470,53 @@ function toggleDictate(roomId, e) {
         if (event.results[i].isFinal) chunk += event.results[i][0].transcript;
       }
       if (chunk && ta) {
+        dictFailFast = 0;
         const existing = ta.value.trim();
         ta.value = existing ? (existing + ' ' + chunk.trim()) : chunk.trim();
         onRoomEdit(roomId);
       }
     };
-    recognition.onerror = () => { stopListening(); ta && ta.focus(); showToast('Voice unavailable — use the 🎤 on your keyboard'); };
-    recognition.onend = () => { stopListening(); };
+
+    recognition.onerror = (ev) => {
+      // Permission errors are fatal — stop and point them at the keyboard mic.
+      if (ev && (ev.error === 'not-allowed' || ev.error === 'service-not-allowed')) {
+        showToast('Mic blocked — use the 🎤 on your keyboard');
+        stopListening();
+      }
+      // Other errors (no-speech, aborted, network) fall through to onend, which restarts.
+    };
+
+    recognition.onend = () => {
+      if (!(wantListening && listeningRoom === roomId)) return;
+      // Distinguish a normal silence-timeout (restart) from an instant failure loop.
+      const quick = (Date.now() - dictStart) < 500;
+      dictFailFast = quick ? dictFailFast + 1 : 0;
+      if (dictFailFast > 8) {
+        showToast('Dictation paused — tap Dictate room to resume');
+        stopListening();
+        return;
+      }
+      setTimeout(() => {
+        if (wantListening && listeningRoom === roomId) {
+          try { startRecognition(roomId); } catch (e) {}
+        }
+      }, 300);
+    };
+
+    dictStart = Date.now();
     recognition.start();
   } catch (err) {
-    stopListening();
-    ta && ta.focus();
-    showToast('Use the 🎤 on your keyboard to dictate');
+    // start() can throw if called too soon after stop(); the onend backoff retries.
   }
 }
 
 function stopListening() {
-  if (recognition) { try { recognition.stop(); } catch (e) {} recognition = null; }
+  wantListening = false;
+  if (recognition) {
+    recognition.onend = null; // don't auto-restart on a manual stop
+    try { recognition.stop(); } catch (e) {}
+    recognition = null;
+  }
   if (listeningRoom) {
     const btn = document.getElementById(`dbtn-${listeningRoom}`);
     if (btn) { btn.textContent = '🎤 Dictate room'; btn.classList.remove('listening'); }

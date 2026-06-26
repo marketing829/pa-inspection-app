@@ -635,6 +635,13 @@
     color: var(--dark);
     font-weight: 600;
   }
+  .export-note {
+    font-size: 11px;
+    color: var(--mid);
+    line-height: 1.5;
+    margin-top: 4px;
+    padding: 0 2px;
+  }
 
   /* TOAST */
   .toast {
@@ -773,10 +780,12 @@
   </div>
   <div class="review-body" id="reviewBody"></div>
   <div class="export-actions">
-    <button class="btn-export" onclick="exportReport()">📋 Copy Full Report</button>
+    <button class="btn-export" onclick="shareReport()">📤 Send Report to VA</button>
+    <button class="btn-export secondary" onclick="exportReport()">📋 Copy Full Report</button>
     <button class="btn-export secondary" onclick="downloadCSV()">⬇ Download CSV (for Excel / import)</button>
     <button class="btn-export secondary" onclick="showScreen('screenInspection')">← Back to Edit</button>
     <button class="btn-export secondary" onclick="finishAndClear()">✓ Finish & Clear This Inspection</button>
+    <p class="export-note">The VA pastes or imports this manually. Automatic import into Ailo, Inspection Express, PropertyMe, Inspection Manager and PM Inspect needs an API from each platform — not yet enabled.</p>
   </div>
 </div>
 
@@ -1567,7 +1576,7 @@ function checkMandatory() {
 }
 
 // ─── EXPORT ──────────────────────────────────────────────────────────────────
-function exportReport() {
+function buildReportText() {
   let report = '';
   report += `PROPERTY INSPECTION REPORT\n`;
   report += `${'='.repeat(40)}\n`;
@@ -1594,7 +1603,54 @@ function exportReport() {
     });
   });
 
-  copyText(report, '✓ Report copied to clipboard');
+  // Words for the VA to fix before submitting
+  const flagged = [];
+  state.activeRooms.forEach(room => {
+    room.subsections.forEach(sub => {
+      const val = state.data[room.id]?.[sub] || '';
+      const hits = findForbidden(val);
+      if (hits.length) flagged.push(`${room.name} · ${sub}: ${hits.join(', ')}`);
+    });
+  });
+  if (flagged.length) {
+    report += `\n\n⚠ WORDS TO FIX BEFORE SUBMITTING\n${'-'.repeat(30)}\n`;
+    flagged.forEach(f => { report += `${f}\n`; });
+  }
+
+  return report;
+}
+
+function exportReport() {
+  copyText(buildReportText(), '✓ Report copied to clipboard');
+}
+
+async function shareReport() {
+  const text = buildReportText();
+  const csv = buildCSVString();
+
+  // Best case: share the CSV file itself (VA gets the structured file)
+  if (csv && navigator.canShare) {
+    try {
+      const file = new File(['﻿' + csv], csvFilename(), { type: 'text/csv' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Inspection Report', text: text });
+        return;
+      }
+    } catch (e) {
+      if (e && e.name === 'AbortError') return; // user cancelled
+    }
+  }
+  // Next best: share the text (opens email / WhatsApp / Messages picker)
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'Inspection Report — ' + state.address, text: text });
+      return;
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+    }
+  }
+  // Fallback (e.g. desktop): copy so they can paste into an email
+  copyText(text, '✓ Report copied — paste it into an email to your VA');
 }
 
 function copyText(text, msg) {
@@ -1626,7 +1682,7 @@ function csvCell(v) {
   return '"' + s.replace(/"/g, '""') + '"';
 }
 
-function downloadCSV() {
+function buildCSVRows() {
   const date = new Date().toLocaleDateString('en-AU');
   const meta = [state.address, state.client, state.inspector, state.stateCode, date];
   const rows = [['Property Address','Client','Inspector','State','Date','Area','Item','Comment']];
@@ -1645,17 +1701,29 @@ function downloadCSV() {
       if (val && val.trim()) rows.push([...meta, room.name, sub, val]);
     });
   });
+  return rows;
+}
 
-  if (rows.length === 1) { showToast('Nothing to export yet'); return; }
+function buildCSVString() {
+  const rows = buildCSVRows();
+  if (rows.length === 1) return '';
+  return rows.map(r => r.map(csvCell).join(',')).join('\r\n');
+}
 
-  const csv = rows.map(r => r.map(csvCell).join(',')).join('\r\n');
+function csvFilename() {
+  const safe = (state.address || 'inspection').replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '').slice(0, 40) || 'inspection';
+  return `Inspection_${safe}_${new Date().toISOString().slice(0, 10)}.csv`;
+}
+
+function downloadCSV() {
+  const csv = buildCSVString();
+  if (!csv) { showToast('Nothing to export yet'); return; }
   // BOM so Excel reads UTF-8 correctly
   const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
-  const safe = (state.address || 'inspection').replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '').slice(0, 40) || 'inspection';
   const a = document.createElement('a');
   a.href = url;
-  a.download = `Inspection_${safe}_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = csvFilename();
   document.body.appendChild(a);
   a.click();
   setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);

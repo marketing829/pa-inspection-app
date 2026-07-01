@@ -277,7 +277,7 @@
   .room-tab .check { font-size: 10px; }
 
   .room-content {
-    padding: 0 0 120px;
+    padding: 0 0 180px;
   }
   .room-header {
     padding: 20px 20px 0;
@@ -387,16 +387,28 @@
     color: var(--mid);
     margin-bottom: 8px;
   }
+  .checklist-toggle {
+    background: var(--light);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--mid);
+    cursor: pointer;
+    margin-bottom: 10px;
+  }
   .checklist {
     background: var(--white);
     border: 1.5px solid var(--border);
     border-radius: var(--radius);
     padding: 8px 6px;
     margin-bottom: 14px;
-    display: flex;
+    display: none;
     flex-wrap: wrap;
     gap: 6px;
   }
+  .checklist.open { display: flex; }
   .checklist-item {
     font-size: 12px;
     font-weight: 500;
@@ -750,6 +762,90 @@
     margin: 0 20px 10px;
     line-height: 1.5;
   }
+
+  /* ROOM EDIT (rename / add / move / delete) */
+  .room-header-actions { display: flex; align-items: center; gap: 8px; }
+  .room-edit-btn {
+    background: var(--light);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--mid);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .room-tools {
+    display: none;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 20px 0;
+  }
+  .room-tools.open { display: flex; }
+  .room-tools button {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--dark);
+    cursor: pointer;
+  }
+  .room-tools button.danger { color: var(--red); border-color: #F1A9A0; }
+
+  /* FLOATING RECORD BUTTON */
+  .rec-status {
+    position: fixed;
+    right: 20px;
+    bottom: calc(150px + env(safe-area-inset-bottom));
+    background: var(--recording);
+    color: var(--white);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 20px;
+    z-index: 120;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.2s;
+    pointer-events: none;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+  }
+  .rec-status.show { opacity: 1; transform: translateY(0); }
+  .fab-record {
+    position: fixed;
+    right: 20px;
+    bottom: calc(84px + env(safe-area-inset-bottom));
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    border: none;
+    background: var(--surface);
+    color: var(--white);
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 120;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    transition: transform 0.12s, background 0.15s;
+  }
+  .fab-record:active { transform: scale(0.94); }
+  .fab-record.recording {
+    background: var(--recording);
+    animation: fabPulse 1.4s infinite;
+  }
+  @keyframes fabPulse {
+    0%, 100% { box-shadow: 0 6px 18px rgba(231,76,60,0.45), 0 0 0 0 rgba(231,76,60,0.5); }
+    50% { box-shadow: 0 6px 18px rgba(231,76,60,0.45), 0 0 0 14px rgba(231,76,60,0); }
+  }
+  .fab-record.captured {
+    background: var(--green);
+    transform: scale(1.06);
+  }
 </style>
 </head>
 <body>
@@ -821,6 +917,7 @@
     <div class="field-group">
       <label>Rooms Present at Property</label>
       <div class="rooms-select" id="roomsSelect"></div>
+      <span class="state-badge" onclick="addCustomSetupRoom()">＋ Add custom room</span>
     </div>
 
     <button class="btn-primary" id="btnStartInspection" onclick="startInspection()">
@@ -835,10 +932,14 @@
     <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
   </div>
   <div class="dictation-hint">
-    🎤 <span>Tap the box, then the microphone key on your keyboard, and talk through the whole room in order. Saves automatically.</span>
+    🎤 <span>Tap the round mic button to talk through the room hands-free. It keeps listening and text appears live until you tap stop. Saves automatically.</span>
   </div>
   <div class="room-nav" id="roomNav"></div>
   <div class="room-content" id="roomContent"></div>
+  <div class="rec-status" id="recStatus">● Listening…</div>
+  <button class="fab-record" id="fabRecord" onclick="toggleDictateCurrent(event)" aria-label="Record room">
+    <span class="fab-icon">🎤</span>
+  </button>
   <div class="bottom-bar">
     <button class="btn-nav" id="btnPrevRoom" onclick="prevRoom()">← Prev</button>
     <button class="btn-nav primary" id="btnNextRoom" onclick="nextRoom()">Next Room →</button>
@@ -1102,13 +1203,21 @@ const ALL_ROOMS = [
 // Rooms shown by default (commonly present)
 const DEFAULT_ROOMS = ['front_gardens','garage','entry','lounge','bedroom1','bedroom2','bedroom3','ensuite','kitchen','laundry','rear_exterior'];
 
+// Fallback subsections for any custom room the inspector adds
+const GENERIC_SUBSECTIONS = [
+  'Door/Frames/Handles','Ceiling','Light Fittings','Walls/Hooks/Door Stoppers',
+  'Windows/Screens','Blinds/Curtains','Power Points/Light Switches','Skirting','Flooring','Additional'
+];
+
+// Every room the setup screen can offer, presets plus any custom ones added at setup
+let ROOM_LIBRARY = ALL_ROOMS.map(r => ({ id: r.id, name: r.name, subsections: r.subsections }));
+
 const STORAGE_KEY = 'pa_inspection_current_v2';
 
 // ─── STATE ──────────────────────────────────────────────────────────────────
 let state = {
   address: '', client: '', inspector: '', beds: 3, baths: 2, stateCode: 'WA',
-  selectedRooms: [],
-  activeRooms: [],
+  rooms: [],       // working room list: [{ id, name, subsections }] — editable & persisted
   currentRoomIdx: 0,
   roomNotes: {},   // roomId -> dictated text block for the whole room
   checked: {},     // roomId -> { subsectionName: true }  (optional progress ticks)
@@ -1124,6 +1233,10 @@ let listeningRoom = null;
 let wantListening = false;   // stays true until the user taps Stop
 let dictStart = 0;           // timestamp of last recognition start
 let dictFailFast = 0;        // counts instant failures to avoid a runaway loop
+let dictBase = '';           // text already committed before/at the current listen session
+let dictFinal = '';          // finalised chunks heard in the current recognition cycle
+let checklistOpen = false;   // subsection checklist collapsed by default
+let roomToolsOpen = false;   // room edit panel collapsed by default
 let reviewItems = []; // flat list of {name, val} for field-by-field copy
 
 // ─── PERSISTENCE ──────────────────────────────────────────────────────────────
@@ -1133,7 +1246,7 @@ function saveState() {
     const toSave = {
       address: state.address, client: state.client, inspector: state.inspector,
       beds: state.beds, baths: state.baths, stateCode: state.stateCode,
-      selectedRooms: state.selectedRooms, currentRoomIdx: state.currentRoomIdx,
+      rooms: state.rooms, currentRoomIdx: state.currentRoomIdx,
       roomNotes: state.roomNotes, checked: state.checked,
       mandatory: state.mandatory, startedAt: state.startedAt
     };
@@ -1175,14 +1288,20 @@ function resumeSaved() {
   if (!saved) return;
   state.address = saved.address; state.client = saved.client; state.inspector = saved.inspector;
   state.beds = saved.beds; state.baths = saved.baths; state.stateCode = saved.stateCode;
-  state.selectedRooms = saved.selectedRooms || [];
   state.currentRoomIdx = saved.currentRoomIdx || 0;
   state.roomNotes = saved.roomNotes || {};
   state.checked = saved.checked || {};
   state.mandatory = saved.mandatory || state.mandatory;
   state.startedAt = saved.startedAt || Date.now();
-  state.activeRooms = ALL_ROOMS.filter(r => state.selectedRooms.includes(r.id));
-  if (state.currentRoomIdx >= state.activeRooms.length) state.currentRoomIdx = 0;
+  // New saves carry the full editable room list; older ones only stored selected IDs.
+  if (saved.rooms && saved.rooms.length) {
+    state.rooms = saved.rooms.map(r => ({ id: r.id, name: r.name, subsections: r.subsections || [...GENERIC_SUBSECTIONS] }));
+  } else {
+    state.rooms = (saved.selectedRooms || [])
+      .map(id => { const s = ALL_ROOMS.find(r => r.id === id); return s ? { id: s.id, name: s.name, subsections: [...s.subsections] } : null; })
+      .filter(Boolean);
+  }
+  if (state.currentRoomIdx >= state.rooms.length) state.currentRoomIdx = 0;
   document.getElementById('headerTitle').textContent = state.address || 'Inspection';
   showScreen('screenInspection');
   renderInspection();
@@ -1212,6 +1331,20 @@ function initSetup() {
   checkForResume();
 }
 
+function addCustomSetupRoom() {
+  const name = prompt('Name of the custom room');
+  if (!name || !name.trim()) return;
+  const room = { id: 'custom_' + Date.now(), name: name.trim(), subsections: [...GENERIC_SUBSECTIONS] };
+  ROOM_LIBRARY.push(room);
+  const container = document.getElementById('roomsSelect');
+  const div = document.createElement('div');
+  div.className = 'room-toggle selected';
+  div.textContent = room.name;
+  div.dataset.id = room.id;
+  div.onclick = () => div.classList.toggle('selected');
+  container.appendChild(div);
+}
+
 function startInspection() {
   state.address = document.getElementById('propAddress').value.trim();
   state.client = document.getElementById('propClient').value.trim();
@@ -1228,17 +1361,19 @@ function startInspection() {
   const selected = [...document.querySelectorAll('.room-toggle.selected')].map(d => d.dataset.id);
   if (!selected.length) { showToast('Select at least one room'); return; }
 
-  state.selectedRooms = selected.filter(id => {
+  const kept = selected.filter(id => {
     if (id === 'bedroom4' && state.beds < 4) return false;
     if (id === 'bedroom5' && state.beds < 5) return false;
     if (id === 'bathroom2' && state.baths < 2) return false;
     return true;
   });
 
-  state.activeRooms = ALL_ROOMS.filter(r => state.selectedRooms.includes(r.id));
+  state.rooms = kept
+    .map(id => { const s = ROOM_LIBRARY.find(r => r.id === id); return s ? { id: s.id, name: s.name, subsections: [...s.subsections] } : null; })
+    .filter(Boolean);
   state.currentRoomIdx = 0;
   state.startedAt = Date.now();
-  state.activeRooms.forEach(room => {
+  state.rooms.forEach(room => {
     if (!(room.id in state.roomNotes)) state.roomNotes[room.id] = '';
     if (!state.checked[room.id]) state.checked[room.id] = {};
   });
@@ -1264,7 +1399,7 @@ function roomHasNotes(room) {
 function renderRoomNav() {
   const nav = document.getElementById('roomNav');
   nav.innerHTML = '';
-  state.activeRooms.forEach((room, idx) => {
+  state.rooms.forEach((room, idx) => {
     const tab = document.createElement('div');
     tab.className = 'room-tab' + (idx === state.currentRoomIdx ? ' active' : '');
     const done = roomHasNotes(room);
@@ -1284,19 +1419,36 @@ function findForbidden(text) {
 }
 
 function renderRoomContent() {
-  const room = state.activeRooms[state.currentRoomIdx];
+  const room = state.rooms[state.currentRoomIdx];
   const content = document.getElementById('roomContent');
   content.innerHTML = '';
 
   const val = state.roomNotes[room.id] || '';
 
+  roomToolsOpen = false;
+
   const header = document.createElement('div');
   header.className = 'room-header';
   header.innerHTML = `
     <div class="room-title">${escapeHtml(room.name)}</div>
-    <div class="room-progress-text">${roomHasNotes(room) ? 'done' : 'not started'}</div>
+    <div class="room-header-actions">
+      <div class="room-progress-text">${roomHasNotes(room) ? 'done' : 'not started'}</div>
+      <button class="room-edit-btn" onclick="toggleRoomTools()">Edit ⚙</button>
+    </div>
   `;
   content.appendChild(header);
+
+  const tools = document.createElement('div');
+  tools.className = 'room-tools';
+  tools.id = 'roomTools';
+  tools.innerHTML = `
+    <button onclick="renameRoom()">✎ Rename</button>
+    <button onclick="addRoom()">＋ Add room</button>
+    <button onclick="moveRoom(-1)">← Move left</button>
+    <button onclick="moveRoom(1)">Move right →</button>
+    <button class="danger" onclick="deleteRoom()">🗑 Delete room</button>
+  `;
+  content.appendChild(tools);
 
   if (state.stateCode === 'NSW' && state.currentRoomIdx === 0) {
     const note = document.createElement('div');
@@ -1322,10 +1474,10 @@ function renderRoomContent() {
   const flagged = findForbidden(val);
 
   block.innerHTML = `
-    <div class="checklist-title">Cover these, in order — tap to tick off (optional)</div>
-    <div class="checklist">${chips}</div>
+    <button type="button" class="checklist-toggle" id="checklistToggle" onclick="toggleChecklist()">${checklistOpen ? '▾ Hide checklist' : '▸ Show checklist'}</button>
+    <div class="checklist ${checklistOpen ? 'open' : ''}" id="checklistBox">${chips}</div>
     <div class="room-field-label">Talk through the room</div>
-    <p class="field-note">Tap <strong>Dictate room</strong> to talk hands-free — it keeps listening until you tap Stop. Or tap the box and use the 🎤 on your keyboard. You can also type.</p>
+    <p class="field-note">Tap the round <strong>🎤</strong> button (bottom right) to talk hands-free — it keeps listening and text appears live until you tap stop. You can also type.</p>
     <textarea class="room-dictate ${flagged.length ? 'flagged' : ''}" id="roomta-${room.id}" rows="9"
       placeholder="e.g. Ceiling white and clean. Walls clean throughout. Light fittings working..."
       oninput="onRoomEdit('${room.id}')">${escapeHtml(val)}</textarea>
@@ -1333,13 +1485,12 @@ function renderRoomContent() {
       ${flagged.length ? '⚠️ Avoid: ' + flagged.join(', ') : ''}
     </div>
     <div class="action-row">
-      <button class="btn-dictate" id="dbtn-${room.id}" onclick="toggleDictate('${room.id}', event)">🎤 Dictate room</button>
-      ${val ? `<button class="btn-clear" onclick="clearRoom('${room.id}')">Clear</button>` : ''}
+      ${val ? `<button class="btn-clear" onclick="clearRoom('${room.id}')">Clear room notes</button>` : ''}
     </div>
   `;
   content.appendChild(block);
 
-  const isLast = state.currentRoomIdx === state.activeRooms.length - 1;
+  const isLast = state.currentRoomIdx === state.rooms.length - 1;
   document.getElementById('btnNextRoom').textContent = isLast ? 'Review Report →' : 'Next Room →';
   document.getElementById('btnPrevRoom').style.opacity = state.currentRoomIdx === 0 ? '0.3' : '1';
 }
@@ -1379,7 +1530,7 @@ function renderMandatoryFields(content) {
 }
 
 function toggleCheck(roomId, i) {
-  const room = state.activeRooms.find(r => r.id === roomId);
+  const room = state.rooms.find(r => r.id === roomId);
   if (!room) return;
   const sub = room.subsections[i];
   if (!state.checked[roomId]) state.checked[roomId] = {};
@@ -1401,13 +1552,82 @@ function onRoomEdit(roomId) {
 }
 
 function clearRoom(roomId) {
+  if (!confirm('Clear all notes for this room? This can\'t be undone.')) return;
+  stopListening();
   state.roomNotes[roomId] = '';
   const ta = document.getElementById(`roomta-${roomId}`);
   if (ta) ta.value = '';
   updateRoomFieldState(roomId, '');
   updateProgress();
   renderRoomNav();
+  renderRoomContent();
   saveState();
+}
+
+// ─── CHECKLIST + ROOM EDITING ─────────────────────────────────────────────────
+function toggleChecklist() {
+  checklistOpen = !checklistOpen;
+  const box = document.getElementById('checklistBox');
+  const btn = document.getElementById('checklistToggle');
+  if (box) box.classList.toggle('open', checklistOpen);
+  if (btn) btn.textContent = checklistOpen ? '▾ Hide checklist' : '▸ Show checklist';
+}
+
+function toggleRoomTools() {
+  roomToolsOpen = !roomToolsOpen;
+  const el = document.getElementById('roomTools');
+  if (el) el.classList.toggle('open', roomToolsOpen);
+}
+
+function renameRoom() {
+  const room = state.rooms[state.currentRoomIdx];
+  if (!room) return;
+  const name = prompt('Rename this room', room.name);
+  if (!name || !name.trim()) return;
+  room.name = name.trim();
+  document.getElementById('headerTitle').textContent = state.address || 'Inspection';
+  saveState();
+  renderInspection();
+}
+
+function addRoom() {
+  const name = prompt('Name of the new room', 'New Room');
+  if (!name || !name.trim()) return;
+  const room = { id: 'custom_' + Date.now(), name: name.trim(), subsections: [...GENERIC_SUBSECTIONS] };
+  state.rooms.splice(state.currentRoomIdx + 1, 0, room);
+  state.roomNotes[room.id] = '';
+  state.checked[room.id] = {};
+  state.currentRoomIdx += 1;
+  stopListening();
+  saveState();
+  renderInspection();
+  window.scrollTo(0, 0);
+}
+
+function moveRoom(dir) {
+  const i = state.currentRoomIdx;
+  const j = i + dir;
+  if (j < 0 || j >= state.rooms.length) { showToast('Already at the end'); return; }
+  const tmp = state.rooms[i];
+  state.rooms[i] = state.rooms[j];
+  state.rooms[j] = tmp;
+  state.currentRoomIdx = j;
+  stopListening();
+  saveState();
+  renderInspection();
+}
+
+function deleteRoom() {
+  if (state.rooms.length <= 1) { showToast('You need at least one room'); return; }
+  const room = state.rooms[state.currentRoomIdx];
+  if (!confirm(`Delete "${room.name}"? Any notes for it will be removed.`)) return;
+  delete state.roomNotes[room.id];
+  delete state.checked[room.id];
+  state.rooms.splice(state.currentRoomIdx, 1);
+  if (state.currentRoomIdx >= state.rooms.length) state.currentRoomIdx = state.rooms.length - 1;
+  stopListening();
+  saveState();
+  renderInspection();
 }
 
 function updateRoomFieldState(roomId, val) {
@@ -1422,14 +1642,55 @@ function updateRoomFieldState(roomId, val) {
 }
 
 function updateProgress() {
-  const total = state.activeRooms.length;
-  const done = state.activeRooms.filter(roomHasNotes).length;
+  const total = state.rooms.length;
+  const done = state.rooms.filter(roomHasNotes).length;
   document.getElementById('progressBar').style.width = total ? `${(done / total) * 100}%` : '0%';
 }
 
-// ─── DICTATION (keyboard mic is primary; web speech where available) ──────────
+// ─── DICTATION (pinned mic button; live web speech, keyboard mic as fallback) ──
+function currentRoomId() {
+  const r = state.rooms[state.currentRoomIdx];
+  return r ? r.id : null;
+}
+
+function toggleDictateCurrent(e) {
+  const id = currentRoomId();
+  if (id) toggleDictate(id, e);
+}
+
+function setFabRecording(on) {
+  const fab = document.getElementById('fabRecord');
+  const pill = document.getElementById('recStatus');
+  if (fab) {
+    fab.classList.toggle('recording', on);
+    const icon = fab.querySelector('.fab-icon');
+    if (icon) icon.textContent = on ? '⏹' : '🎤';
+  }
+  if (pill) pill.classList.toggle('show', on);
+}
+
+function flashCaptured() {
+  const fab = document.getElementById('fabRecord');
+  if (!fab) return;
+  fab.classList.add('captured');
+  setTimeout(() => fab.classList.remove('captured'), 600);
+}
+
+// Fold everything heard so far into state + textarea (survives restarts and stop).
+// Prefer the live textarea value so any last interim words on screen are kept.
+function commitDictation(roomId) {
+  const ta = document.getElementById(`roomta-${roomId}`);
+  const val = (ta ? ta.value : [dictBase, dictFinal].filter(Boolean).join(' ')).trim();
+  if (ta) ta.value = val;
+  state.roomNotes[roomId] = val;
+  updateRoomFieldState(roomId, val);
+  updateProgress();
+  renderRoomNav();
+  saveState();
+}
+
 function toggleDictate(roomId, e) {
-  e.stopPropagation();
+  if (e) e.stopPropagation();
   const ta = document.getElementById(`roomta-${roomId}`);
 
   if (listeningRoom === roomId) { stopListening(); return; }
@@ -1445,15 +1706,16 @@ function toggleDictate(roomId, e) {
   listeningRoom = roomId;
   wantListening = true;
   dictFailFast = 0;
-  const btn = document.getElementById(`dbtn-${roomId}`);
-  if (btn) { btn.textContent = '⏹ Stop'; btn.classList.add('listening'); }
+  dictBase = ta ? ta.value.trim() : '';
+  dictFinal = '';
+  setFabRecording(true);
   ta && ta.focus();
-  showToast('Listening — keeps going until you tap Stop');
+  showToast('Listening — tap the red button to stop');
   startRecognition(roomId);
 }
 
-// iOS stops speech recognition after a short pause, so we restart it on every
-// 'end' while the user still wants to listen — that gives continuous dictation.
+// iOS ends recognition after a pause, so we restart on every 'end' while the
+// user still wants to listen. interimResults streams text live as they speak.
 function startRecognition(roomId) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) return;
@@ -1461,38 +1723,52 @@ function startRecognition(roomId) {
   try {
     recognition = new SR();
     recognition.lang = 'en-AU';
-    recognition.interimResults = false;
-    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.continuous = true;
 
     recognition.onresult = (event) => {
-      let chunk = '';
+      let interim = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        if (event.results[i].isFinal) chunk += event.results[i][0].transcript;
+        const t = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          dictFinal += (dictFinal ? ' ' : '') + t.trim();
+          dictFailFast = 0;
+          flashCaptured();
+        } else {
+          interim += t;
+        }
       }
-      if (chunk && ta) {
-        dictFailFast = 0;
-        const existing = ta.value.trim();
-        ta.value = existing ? (existing + ' ' + chunk.trim()) : chunk.trim();
-        onRoomEdit(roomId);
+      if (ta) {
+        ta.value = [dictBase, dictFinal, interim.trim()].filter(Boolean).join(' ');
       }
     };
 
     recognition.onerror = (ev) => {
       // Permission errors are fatal — stop and point them at the keyboard mic.
       if (ev && (ev.error === 'not-allowed' || ev.error === 'service-not-allowed')) {
-        showToast('Mic blocked — use the 🎤 on your keyboard');
+        showToast('Mic blocked — allow mic access or use the keyboard 🎤');
         stopListening();
       }
       // Other errors (no-speech, aborted, network) fall through to onend, which restarts.
     };
 
     recognition.onend = () => {
+      // Roll anything heard into the committed base so nothing is lost on restart.
+      dictBase = [dictBase, dictFinal].filter(Boolean).join(' ').trim();
+      dictFinal = '';
+      if (ta) ta.value = dictBase;
+      state.roomNotes[roomId] = dictBase;
+      updateRoomFieldState(roomId, dictBase);
+      updateProgress();
+      renderRoomNav();
+      saveState();
+
       if (!(wantListening && listeningRoom === roomId)) return;
       // Distinguish a normal silence-timeout (restart) from an instant failure loop.
       const quick = (Date.now() - dictStart) < 500;
       dictFailFast = quick ? dictFailFast + 1 : 0;
       if (dictFailFast > 8) {
-        showToast('Dictation paused — tap Dictate room to resume');
+        showToast('Dictation paused — tap the mic button to resume');
         stopListening();
         return;
       }
@@ -1500,7 +1776,7 @@ function startRecognition(roomId) {
         if (wantListening && listeningRoom === roomId) {
           try { startRecognition(roomId); } catch (e) {}
         }
-      }, 300);
+      }, 120);
     };
 
     dictStart = Date.now();
@@ -1518,16 +1794,18 @@ function stopListening() {
     recognition = null;
   }
   if (listeningRoom) {
-    const btn = document.getElementById(`dbtn-${listeningRoom}`);
-    if (btn) { btn.textContent = '🎤 Dictate room'; btn.classList.remove('listening'); }
+    commitDictation(listeningRoom);
   }
+  dictBase = '';
+  dictFinal = '';
+  setFabRecording(false);
   listeningRoom = null;
 }
 
 // ─── NAVIGATION ──────────────────────────────────────────────────────────────
 function nextRoom() {
   stopListening();
-  if (state.currentRoomIdx < state.activeRooms.length - 1) {
+  if (state.currentRoomIdx < state.rooms.length - 1) {
     state.currentRoomIdx++;
     saveState();
     renderInspection();
@@ -1572,7 +1850,7 @@ function showReview() {
   }
 
   const forbiddenHits = [];
-  state.activeRooms.forEach(room => {
+  state.rooms.forEach(room => {
     const hits = findForbidden(state.roomNotes[room.id] || '');
     if (hits.length) forbiddenHits.push(`${room.name}: ${hits.join(', ')}`);
   });
@@ -1594,7 +1872,7 @@ function showReview() {
   `;
   body.appendChild(mandDiv);
 
-  state.activeRooms.forEach(room => {
+  state.rooms.forEach(room => {
     const div = document.createElement('div');
     div.className = 'review-room';
     div.innerHTML = `<div class="review-room-title">${escapeHtml(room.name)}</div>${renderReviewItem('Room notes', state.roomNotes[room.id] || '')}`;
@@ -1650,7 +1928,7 @@ function buildReportText() {
   report += `Smoke Alarms: ${state.mandatory.smokeAlarms}\n`;
   report += `NBN Box: ${state.mandatory.nbnBox}\n`;
 
-  state.activeRooms.forEach(room => {
+  state.rooms.forEach(room => {
     const val = state.roomNotes[room.id];
     if (val && val.trim()) {
       report += `\n\n${room.name.toUpperCase()}\n${'-'.repeat(30)}\n${val.trim()}\n`;
@@ -1658,7 +1936,7 @@ function buildReportText() {
   });
 
   const flagged = [];
-  state.activeRooms.forEach(room => {
+  state.rooms.forEach(room => {
     const hits = findForbidden(state.roomNotes[room.id] || '');
     if (hits.length) flagged.push(`${room.name}: ${hits.join(', ')}`);
   });
@@ -1713,7 +1991,7 @@ function buildCSVRows() {
   ];
   mand.forEach(([item, val]) => { if (val && val.trim()) rows.push([...meta, 'Mandatory Items', item, val]); });
 
-  state.activeRooms.forEach(room => {
+  state.rooms.forEach(room => {
     const val = state.roomNotes[room.id];
     if (val && val.trim()) rows.push([...meta, room.name, 'Full room notes (to categorise)', val.trim()]);
   });
@@ -1748,7 +2026,7 @@ function downloadCSV() {
 function finishAndClear() {
   if (confirm('Finished with this inspection? This clears the saved data so you can start a fresh one. Make sure you have sent or copied the report first.')) {
     clearSaved();
-    state.roomNotes = {}; state.checked = {}; state.activeRooms = []; state.selectedRooms = [];
+    state.roomNotes = {}; state.checked = {}; state.rooms = [];
     state.currentRoomIdx = 0; state.startedAt = null;
     state.mandatory = { waterMeter:'', waterMeterLocation:'', rcdBox:'', smokeAlarms:'', nbnBox:'' };
     document.getElementById('resumeBanner').style.display = 'none';

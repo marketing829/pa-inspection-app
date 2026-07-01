@@ -1724,23 +1724,22 @@ function startRecognition(roomId) {
     recognition = new SR();
     recognition.lang = 'en-AU';
     recognition.interimResults = true;
-    recognition.continuous = true;
+    recognition.continuous = false;
 
     recognition.onresult = (event) => {
-      let interim = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+      // Rebuild this session's transcript from scratch on every event. iOS Safari
+      // re-delivers the same interim/final results repeatedly, so accumulating them
+      // stacks up duplicates ("ceiling ceiling ceiling..."). Recomputing avoids that.
+      let finalT = '';
+      let interimT = '';
+      for (let i = 0; i < event.results.length; i++) {
         const t = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          dictFinal += (dictFinal ? ' ' : '') + t.trim();
-          dictFailFast = 0;
-          flashCaptured();
-        } else {
-          interim += t;
-        }
+        if (event.results[i].isFinal) finalT += (finalT ? ' ' : '') + t.trim();
+        else interimT += t;
       }
-      if (ta) {
-        ta.value = [dictBase, dictFinal, interim.trim()].filter(Boolean).join(' ');
-      }
+      dictFinal = finalT;   // session finals, recomputed each time — never accumulated
+      if (finalT) { dictFailFast = 0; flashCaptured(); }
+      if (ta) ta.value = [dictBase, finalT, interimT.trim()].filter(Boolean).join(' ');
     };
 
     recognition.onerror = (ev) => {
@@ -1789,7 +1788,10 @@ function startRecognition(roomId) {
 function stopListening() {
   wantListening = false;
   if (recognition) {
-    recognition.onend = null; // don't auto-restart on a manual stop
+    // Detach handlers so no late result can write after we've stopped.
+    recognition.onend = null;
+    recognition.onresult = null;
+    recognition.onerror = null;
     try { recognition.stop(); } catch (e) {}
     recognition = null;
   }

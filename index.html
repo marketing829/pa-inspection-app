@@ -1409,7 +1409,15 @@ function renderRoomNav() {
     nav.appendChild(tab);
   });
   const activeTab = nav.querySelector('.room-tab.active');
-  if (activeTab) activeTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  if (activeTab) {
+    // Scroll only the nav strip sideways to centre the active tab. Using
+    // scrollIntoView here dragged the whole page up on every dictation restart.
+    const target = nav.scrollLeft
+      + activeTab.getBoundingClientRect().left - nav.getBoundingClientRect().left
+      - (nav.clientWidth - activeTab.clientWidth) / 2;
+    if (nav.scrollTo) nav.scrollTo({ left: target, behavior: 'smooth' });
+    else nav.scrollLeft = target;
+  }
 }
 
 function findForbidden(text) {
@@ -1709,7 +1717,8 @@ function toggleDictate(roomId, e) {
   dictBase = ta ? ta.value.trim() : '';
   dictFinal = '';
   setFabRecording(true);
-  ta && ta.focus();
+  // Deliberately do NOT focus the textarea here — the mic button is hands-free,
+  // and focusing pops the iPhone keyboard and shifts the page.
   showToast('Listening — tap the red button to stop');
   startRecognition(roomId);
 }

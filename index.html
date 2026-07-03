@@ -402,24 +402,25 @@
     background: var(--white);
     border: 1.5px solid var(--border);
     border-radius: var(--radius);
-    padding: 8px 6px;
+    padding: 8px;
     margin-bottom: 14px;
     display: none;
-    flex-wrap: wrap;
+    grid-template-columns: 1fr 1fr;
     gap: 6px;
   }
-  .checklist.open { display: flex; }
+  .checklist.open { display: grid; }
   .checklist-item {
     font-size: 12px;
     font-weight: 500;
     color: var(--dark);
     background: var(--light);
     border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 5px 10px;
+    border-radius: 6px;
+    padding: 8px 10px;
     cursor: pointer;
     user-select: none;
-    line-height: 1.2;
+    line-height: 1.3;
+    text-align: left;
   }
   .checklist-item.done {
     color: var(--green);
@@ -814,6 +815,19 @@
     box-shadow: 0 4px 14px rgba(0,0,0,0.18);
   }
   .rec-status.show { opacity: 1; transform: translateY(0); }
+
+  .cloud-status {
+    display: none;
+    background: var(--green-light);
+    color: var(--green);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 20px;
+    border-bottom: 1px solid #A9D9BF;
+    line-height: 1.4;
+  }
+  .cloud-status.show { display: block; }
+  .cloud-status.offline { background: var(--light); color: var(--mid); border-bottom-color: var(--border); }
   .fab-record {
     position: fixed;
     right: 20px;
@@ -920,6 +934,12 @@
       <span class="state-badge" onclick="addCustomSetupRoom()">＋ Add custom room</span>
     </div>
 
+    <div class="field-group">
+      <label>Cloud transcription URL (optional)</label>
+      <input type="url" id="transcribeUrl" placeholder="Paste your key-service URL to turn on accurate transcription">
+      <span class="export-note" style="margin-top:2px">Leave blank to use on-device dictation only. When set, each room's audio is recorded and transcribed accurately — it works offline and uploads once you're back in signal.</span>
+    </div>
+
     <button class="btn-primary" id="btnStartInspection" onclick="startInspection()">
       Start Inspection →
     </button>
@@ -934,6 +954,7 @@
   <div class="dictation-hint">
     🎤 <span>Tap the round mic button to talk through the room hands-free. It keeps listening and text appears live until you tap stop. Saves automatically.</span>
   </div>
+  <div class="cloud-status" id="cloudStatus"></div>
   <div class="room-nav" id="roomNav"></div>
   <div class="room-content" id="roomContent"></div>
   <div class="rec-status" id="recStatus">● Listening…</div>
@@ -1239,6 +1260,16 @@ let checklistOpen = false;   // subsection checklist collapsed by default
 let roomToolsOpen = false;   // room edit panel collapsed by default
 let reviewItems = []; // flat list of {name, val} for field-by-field copy
 
+// Cloud transcription / offline audio
+let TRANSCRIBE_URL = '';     // deployed key-service URL; empty = cloud transcription off
+let mediaRecorder = null;    // records the room's audio for accurate transcription
+let mediaStream = null;      // mic stream backing the recorder
+let recChunks = [];          // audio chunks for the current recording
+let recStartRoom = null;     // room currently being audio-recorded
+let audioDB = null;          // IndexedDB handle for offline recordings
+let queueRunning = false;    // guard so the upload queue runs once at a time
+let pendingRoomMap = {};     // roomId -> 'pending' | 'uploading' for nav badges
+
 // ─── PERSISTENCE ──────────────────────────────────────────────────────────────
 function saveState() {
   try {
@@ -1305,6 +1336,8 @@ function resumeSaved() {
   document.getElementById('headerTitle').textContent = state.address || 'Inspection';
   showScreen('screenInspection');
   renderInspection();
+  updatePendingUI();
+  if (navigator.onLine) processQueue();
 }
 
 function discardSaved() {
@@ -1328,7 +1361,17 @@ function initSetup() {
     document.getElementById('nswBadge').style.display = e.target.value === 'NSW' ? 'flex' : 'none';
   });
 
+  // Load any saved cloud-transcription URL and prime the offline queue
+  try { TRANSCRIBE_URL = localStorage.getItem('pa_transcribe_url') || ''; } catch (e) { TRANSCRIBE_URL = ''; }
+  const urlInput = document.getElementById('transcribeUrl');
+  if (urlInput) urlInput.value = TRANSCRIBE_URL;
+
+  window.addEventListener('online', () => { updatePendingUI(); processQueue(); });
+  window.addEventListener('offline', () => { updatePendingUI(); });
+
   checkForResume();
+  updatePendingUI();
+  if (navigator.onLine) processQueue();
 }
 
 function addCustomSetupRoom() {
@@ -1352,6 +1395,8 @@ function startInspection() {
   state.beds = parseInt(document.getElementById('propBeds').value);
   state.baths = parseInt(document.getElementById('propBaths').value);
   state.stateCode = document.getElementById('propState').value;
+  TRANSCRIBE_URL = (document.getElementById('transcribeUrl').value || '').trim();
+  try { localStorage.setItem('pa_transcribe_url', TRANSCRIBE_URL); } catch (e) {}
 
   if (!state.address || !state.client) {
     showToast('Please enter address and client name');
@@ -1382,6 +1427,8 @@ function startInspection() {
   saveState();
   showScreen('screenInspection');
   renderInspection();
+  updatePendingUI();
+  if (navigator.onLine) processQueue();
 }
 
 // ─── INSPECTION ──────────────────────────────────────────────────────────────
@@ -1404,7 +1451,9 @@ function renderRoomNav() {
     tab.className = 'room-tab' + (idx === state.currentRoomIdx ? ' active' : '');
     const done = roomHasNotes(room);
     if (done) tab.classList.add('complete');
-    tab.innerHTML = `${room.name}${done ? '<span class="check">✓</span>' : ''}`;
+    const pend = pendingRoomMap[room.id];
+    const pendMark = pend === 'uploading' ? '<span class="check">⏳</span>' : (pend ? '<span class="check">☁︎</span>' : '');
+    tab.innerHTML = `${escapeHtml(room.name)}${done ? '<span class="check">✓</span>' : ''}${pendMark}`;
     tab.onclick = () => { stopListening(); state.currentRoomIdx = idx; renderInspection(); };
     nav.appendChild(tab);
   });
@@ -1705,7 +1754,7 @@ function toggleDictate(roomId, e) {
   if (listeningRoom) stopListening();
 
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
+  if (!SR && !cloudEnabled()) {
     ta && ta.focus();
     showToast('Tap the 🎤 on your keyboard to dictate');
     return;
@@ -1719,8 +1768,9 @@ function toggleDictate(roomId, e) {
   setFabRecording(true);
   // Deliberately do NOT focus the textarea here — the mic button is hands-free,
   // and focusing pops the iPhone keyboard and shifts the page.
-  showToast('Listening — tap the red button to stop');
-  startRecognition(roomId);
+  showToast(SR ? 'Listening — tap the red button to stop' : 'Recording — tap the red button to stop');
+  startAudioRecording(roomId);        // records audio for accurate cloud transcription
+  if (SR) startRecognition(roomId);   // live rough text where the browser supports it
 }
 
 // iOS ends recognition after a pause, so we restart on every 'end' while the
@@ -1804,6 +1854,7 @@ function stopListening() {
     try { recognition.stop(); } catch (e) {}
     recognition = null;
   }
+  const stoppedRoom = listeningRoom;
   if (listeningRoom) {
     commitDictation(listeningRoom);
   }
@@ -1811,6 +1862,170 @@ function stopListening() {
   dictFinal = '';
   setFabRecording(false);
   listeningRoom = null;
+  // Stop + save the room audio (fire-and-forget; nothing is lost if this fails)
+  if (stoppedRoom) stopAudioRecording(stoppedRoom, state.roomNotes[stoppedRoom] || '');
+}
+
+// ─── OFFLINE AUDIO + CLOUD TRANSCRIPTION ──────────────────────────────────────
+// The mic button also records the room's audio. It's saved on the phone so nothing
+// is lost with no signal, then uploaded to the key-service and swapped in as an
+// accurate transcript once online. All of this no-ops cleanly when cloud is off or
+// the browser lacks MediaRecorder/IndexedDB — dictation still works as before.
+const AUDIO_STORE = 'recordings';
+function cloudEnabled() { return !!TRANSCRIBE_URL; }
+
+function openAudioDB() {
+  return new Promise((resolve, reject) => {
+    if (audioDB) return resolve(audioDB);
+    if (!('indexedDB' in window)) return reject(new Error('no-indexeddb'));
+    const req = indexedDB.open('pa_audio_db', 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(AUDIO_STORE)) {
+        db.createObjectStore(AUDIO_STORE, { keyPath: 'id', autoIncrement: true });
+      }
+    };
+    req.onsuccess = () => { audioDB = req.result; resolve(audioDB); };
+    req.onerror = () => reject(req.error);
+  });
+}
+function dbAdd(rec) {
+  return openAudioDB().then(db => new Promise((resolve, reject) => {
+    const r = db.transaction(AUDIO_STORE, 'readwrite').objectStore(AUDIO_STORE).add(rec);
+    r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);
+  }));
+}
+function dbAll() {
+  return openAudioDB().then(db => new Promise((resolve, reject) => {
+    const r = db.transaction(AUDIO_STORE, 'readonly').objectStore(AUDIO_STORE).getAll();
+    r.onsuccess = () => resolve(r.result || []); r.onerror = () => reject(r.error);
+  }));
+}
+function dbPut(rec) {
+  return openAudioDB().then(db => new Promise((resolve, reject) => {
+    const r = db.transaction(AUDIO_STORE, 'readwrite').objectStore(AUDIO_STORE).put(rec);
+    r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);
+  }));
+}
+
+// Begin capturing mic audio for this room. Best-effort: if the mic can't be grabbed
+// for recording, dictation still runs and the inspector can type.
+async function startAudioRecording(roomId) {
+  if (!cloudEnabled()) return;
+  if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder)) return;
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    recChunks = [];
+    let mr;
+    try { mr = new MediaRecorder(mediaStream); } catch (e) { mr = new MediaRecorder(mediaStream, {}); }
+    mr.ondataavailable = (ev) => { if (ev.data && ev.data.size) recChunks.push(ev.data); };
+    mr.start();
+    mediaRecorder = mr;
+    recStartRoom = roomId;
+  } catch (e) {
+    mediaRecorder = null; mediaStream = null; recStartRoom = null;
+  }
+}
+
+// Stop recording, save the room audio, then transcribe now if we're online.
+async function stopAudioRecording(roomId, roughText) {
+  const mr = mediaRecorder, stream = mediaStream, rid = recStartRoom || roomId;
+  mediaRecorder = null; mediaStream = null; recStartRoom = null;
+  if (!mr) return;
+  await new Promise((resolve) => { mr.onstop = resolve; try { mr.stop(); } catch (e) { resolve(); } });
+  if (stream) { try { stream.getTracks().forEach(t => t.stop()); } catch (e) {} }
+  if (!recChunks.length) return;
+  const type = mr.mimeType || (recChunks[0] && recChunks[0].type) || 'audio/mp4';
+  const blob = new Blob(recChunks, { type });
+  recChunks = [];
+  try {
+    await dbAdd({
+      roomId: rid,
+      roomName: (state.rooms.find(r => r.id === rid) || {}).name || '',
+      address: state.address,
+      roughText: roughText || '',
+      blob, type, status: 'pending', createdAt: Date.now()
+    });
+    updatePendingUI();
+    if (navigator.onLine) processQueue();
+  } catch (e) { /* storage failed — the rough text is still in the room notes */ }
+}
+
+// Upload pending recordings one at a time and swap in the accurate transcripts.
+async function processQueue() {
+  if (queueRunning || !cloudEnabled() || !navigator.onLine || !('indexedDB' in window)) return;
+  queueRunning = true;
+  try {
+    const recs = (await dbAll()).filter(r => r.status === 'pending');
+    for (const rec of recs) {
+      try {
+        rec.status = 'uploading'; await dbPut(rec); updatePendingUI();
+        const res = await fetch(TRANSCRIBE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': rec.type || 'application/octet-stream' },
+          body: rec.blob
+        });
+        if (!res.ok) throw new Error('http ' + res.status);
+        const data = await res.json();
+        const transcript = ((data && (data.transcript || data.text)) || '').trim();
+        rec.status = 'done'; rec.transcript = transcript; rec.blob = null;
+        await dbPut(rec);
+        applyTranscript(rec.roomId, rec.roughText, transcript);
+        updatePendingUI();
+      } catch (e) {
+        rec.status = 'pending'; try { await dbPut(rec); } catch (e2) {}
+        updatePendingUI();
+        break; // stop on the first failure and retry on the next online/trigger
+      }
+    }
+  } finally { queueRunning = false; }
+}
+
+// Replace a room's rough text with the accurate transcript — but only if the
+// inspector hasn't edited it since (then we keep their version).
+function applyTranscript(roomId, roughText, transcript) {
+  if (!transcript) return;
+  const current = (state.roomNotes[roomId] || '').trim();
+  if (current !== '' && current !== (roughText || '').trim()) return;
+  state.roomNotes[roomId] = transcript;
+  const ta = document.getElementById(`roomta-${roomId}`);
+  if (ta) ta.value = transcript;
+  updateRoomFieldState(roomId, transcript);
+  updateProgress();
+  renderRoomNav();
+  saveState();
+  showToast('✓ Accurate transcript added');
+}
+
+// Update the status bar + per-room badges from what's in storage.
+async function updatePendingUI() {
+  const el = document.getElementById('cloudStatus');
+  if (!cloudEnabled() || !('indexedDB' in window)) { pendingRoomMap = {}; if (el) el.classList.remove('show'); return; }
+  let recs = [];
+  try { recs = await dbAll(); } catch (e) { return; }
+  const map = {};
+  recs.forEach(r => { if (r.status === 'pending' || r.status === 'uploading') map[r.roomId] = r.status; });
+  pendingRoomMap = map;
+  const pending = recs.filter(r => r.status === 'pending').length;
+  const uploading = recs.filter(r => r.status === 'uploading').length;
+  if (el) {
+    el.classList.remove('offline');
+    if (uploading) {
+      el.textContent = `☁︎ Transcribing ${uploading} recording${uploading > 1 ? 's' : ''}…`;
+      el.classList.add('show');
+    } else if (pending) {
+      if (navigator.onLine) {
+        el.textContent = `☁︎ ${pending} recording${pending > 1 ? 's' : ''} waiting to transcribe`;
+      } else {
+        el.textContent = `● Saved offline — ${pending} will transcribe when back online`;
+        el.classList.add('offline');
+      }
+      el.classList.add('show');
+    } else {
+      el.classList.remove('show');
+    }
+  }
+  if (document.getElementById('roomNav')) renderRoomNav();
 }
 
 // ─── NAVIGATION ──────────────────────────────────────────────────────────────
@@ -1839,6 +2054,7 @@ function prevRoom() {
 // ─── REVIEW ──────────────────────────────────────────────────────────────────
 function showReview() {
   stopListening();
+  if (navigator.onLine) processQueue();
   showScreen('screenReview');
   document.getElementById('reviewMeta').textContent =
     `${state.address} · ${state.client} · ${state.stateCode}`;

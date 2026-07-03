@@ -1,0 +1,13 @@
+{
+  "name": "Property Assist Inspection",
+  "short_name": "PA Inspect",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#898B8F",
+  "theme_color": "#898B8F",
+  "icons": [
+    { "src": "icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" }
+  ]
+}

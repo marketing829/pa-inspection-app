@@ -1261,7 +1261,10 @@ let roomToolsOpen = false;   // room edit panel collapsed by default
 let reviewItems = []; // flat list of {name, val} for field-by-field copy
 
 // Cloud transcription / offline audio
-let TRANSCRIBE_URL = '';     // deployed key-service URL; empty = cloud transcription off
+// Baked-in default so every device works without pasting the link. Inspectors can
+// still override it in the setup field, and it's remembered per device.
+const DEFAULT_TRANSCRIBE_URL = 'https://propertyassist--af4b319a76c011f1af681607ee4eb77e.web.val.run';
+let TRANSCRIBE_URL = '';     // resolved at startup from saved value or the default above
 let mediaRecorder = null;    // records the room's audio for accurate transcription
 let mediaStream = null;      // mic stream backing the recorder
 let recChunks = [];          // audio chunks for the current recording
@@ -1361,8 +1364,8 @@ function initSetup() {
     document.getElementById('nswBadge').style.display = e.target.value === 'NSW' ? 'flex' : 'none';
   });
 
-  // Load any saved cloud-transcription URL and prime the offline queue
-  try { TRANSCRIBE_URL = localStorage.getItem('pa_transcribe_url') || ''; } catch (e) { TRANSCRIBE_URL = ''; }
+  // Load the cloud-transcription URL (saved override, else the baked-in default) and prime the queue
+  try { TRANSCRIBE_URL = localStorage.getItem('pa_transcribe_url') || DEFAULT_TRANSCRIBE_URL; } catch (e) { TRANSCRIBE_URL = DEFAULT_TRANSCRIBE_URL; }
   const urlInput = document.getElementById('transcribeUrl');
   if (urlInput) urlInput.value = TRANSCRIBE_URL;
 

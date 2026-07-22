@@ -860,6 +860,221 @@
     background: var(--green);
     transform: scale(1.06);
   }
+  .fab-record.error {
+    background: var(--red);
+    animation: none;
+  }
+  /* Paused state — amber, no pulse; icon shows ▶ (tap to resume) */
+  .fab-record.paused {
+    background: var(--gold-dark);
+    color: var(--black);
+    animation: none;
+  }
+  /* DONE button — sits just above the record FAB while a segment is open */
+  .fab-done {
+    position: fixed;
+    right: 20px;
+    bottom: calc(162px + env(safe-area-inset-bottom));
+    background: var(--green);
+    color: var(--white);
+    border: none;
+    border-radius: 22px;
+    padding: 11px 18px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 121;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.22);
+  }
+  .fab-done:active { transform: scale(0.95); }
+  /* Move-room arrows on the room bar */
+  .room-move-btn {
+    background: var(--light);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--mid);
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+  }
+  .room-move-btn:disabled { opacity: 0.3; cursor: default; }
+  /* Serial / model numbers — typed, not dictated */
+  .serial-field { margin: 14px 20px 0; }
+  .serial-field label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--black);
+    display: block;
+    margin-bottom: 6px;
+  }
+  .serial-field label span {
+    font-weight: 500;
+    color: var(--mid);
+    font-size: 12px;
+  }
+  .serial-field textarea {
+    width: 100%;
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-size: 16px;
+    color: var(--black);
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 56px;
+    font-family: inherit;
+    outline: none;
+  }
+  .serial-field textarea:focus { border-color: var(--gold); }
+
+  /* RECORDINGS SCREEN */
+  .recordings-link {
+    background: rgba(255,255,255,0.14);
+    border: none;
+    border-radius: 16px;
+    color: var(--white);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .rec-badge {
+    background: var(--gold);
+    color: var(--black);
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 1px 7px;
+    min-width: 18px;
+    text-align: center;
+  }
+  .recording-card {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .rec-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .rec-card-room {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--black);
+  }
+  .rec-card-meta {
+    font-size: 12px;
+    color: var(--mid);
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+  .status-chip {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-radius: 12px;
+    padding: 4px 10px;
+    background: var(--light);
+    color: var(--mid);
+    border: 1px solid var(--border);
+  }
+  .status-chip.status-done { background: var(--green-light); color: var(--green); border-color: #A9D9BF; }
+  .status-chip.status-pending { background: #FFF8CC; color: #8A7500; border-color: #EDDF8A; }
+  .status-chip.status-uploading { background: #FFF8CC; color: #8A7500; border-color: #EDDF8A; }
+  .status-chip.status-recording { background: var(--red-light); color: var(--recording); border-color: #F1A9A0; }
+  .status-chip.status-failed { background: var(--red-light); color: var(--red); border-color: #F1A9A0; }
+  .status-chip.status-orphaned { background: var(--light); color: var(--mid); border-color: var(--border); }
+  .rec-transcript {
+    font-size: 13px;
+    color: var(--black);
+    line-height: 1.5;
+    background: var(--light);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .rec-transcript summary {
+    cursor: pointer;
+    color: var(--mid);
+    font-weight: 600;
+  }
+  .recording-card audio {
+    width: 100%;
+    margin-top: 4px;
+  }
+  .rec-retry-btn {
+    margin-top: 10px;
+    background: var(--gold);
+    color: var(--black);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .rec-retry-btn:active { background: var(--gold-dark); }
+  .rec-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .rec-mini-btn {
+    background: var(--light);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--dark);
+    cursor: pointer;
+  }
+  .rec-mini-btn:active { background: var(--border); }
+  .rec-backup { margin-top: 8px; font-size: 12px; font-weight: 600; }
+  .rec-backup.ok { color: var(--green); }
+  .rec-backup.pending { color: var(--mid); }
+
+  /* REVIEW: computed sub-area split */
+  .review-split {
+    margin-top: 8px;
+    background: var(--light);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+  }
+  .review-split-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-bottom: 6px;
+  }
+  .review-split-row {
+    font-size: 12px;
+    color: var(--dark);
+    line-height: 1.5;
+    padding: 3px 0;
+  }
+  .review-split-row .review-split-name {
+    font-weight: 700;
+    color: var(--black);
+  }
 </style>
 </head>
 <body>
@@ -867,6 +1082,7 @@
 <div class="header">
   <div class="header-logo">Property Assist</div>
   <div class="header-title" id="headerTitle">New Inspection</div>
+  <button class="recordings-link" onclick="showRecordings()" aria-label="Recordings">☁︎ Recordings<span class="rec-badge" id="recBadge" style="display:none">0</span></button>
 </div>
 
 <!-- SETUP SCREEN -->
@@ -940,6 +1156,12 @@
       <span class="export-note" style="margin-top:2px">Leave blank to use on-device dictation only. When set, each room's audio is recorded and transcribed accurately — it works offline and uploads once you're back in signal.</span>
     </div>
 
+    <div class="field-group">
+      <label>Dropbox archive URL (optional)</label>
+      <input type="url" id="archiveUrl" placeholder="Paste your Dropbox archive service URL to auto-save recordings">
+      <span class="export-note" style="margin-top:2px">When set, each room's audio and transcript are saved automatically into a dated property folder in Dropbox as they transcribe. Leave blank to keep recordings on the phone only.</span>
+    </div>
+
     <button class="btn-primary" id="btnStartInspection" onclick="startInspection()">
       Start Inspection →
     </button>
@@ -952,12 +1174,13 @@
     <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
   </div>
   <div class="dictation-hint">
-    🎤 <span>Tap the round mic button to talk through the room hands-free. It keeps listening and text appears live until you tap stop. Saves automatically.</span>
+    🎤 <span>Tap the round mic to talk through the room hands-free. Speak naturally — punctuation is added for you. Tap ⏸ to pause, ✓ Done to save. Saves automatically.</span>
   </div>
   <div class="cloud-status" id="cloudStatus"></div>
   <div class="room-nav" id="roomNav"></div>
   <div class="room-content" id="roomContent"></div>
   <div class="rec-status" id="recStatus">● Listening…</div>
+  <button class="fab-done" id="fabDone" onclick="finishSegment(event)" style="display:none" aria-label="Save this recording">✓ Done</button>
   <button class="fab-record" id="fabRecord" onclick="toggleDictateCurrent(event)" aria-label="Record room">
     <span class="fab-icon">🎤</span>
   </button>
@@ -981,6 +1204,20 @@
     <button class="btn-export secondary" onclick="showScreen('screenInspection')">← Back to Edit</button>
     <button class="btn-export secondary" onclick="finishAndClear()">✓ Finish & Clear This Inspection</button>
     <p class="export-note">The VA pastes or imports this manually. Automatic import into Ailo, Inspection Express, PropertyMe, Inspection Manager and PM Inspect needs an API from each platform — not yet enabled.</p>
+  </div>
+</div>
+
+<!-- RECORDINGS SCREEN -->
+<div class="screen" id="screenRecordings">
+  <div class="review-header">
+    <h2>Recordings</h2>
+    <p>Every room recording saved on this phone</p>
+  </div>
+  <div class="review-body" id="recordingsBody"></div>
+  <div class="export-actions">
+    <button class="btn-export" onclick="shareAllRecordings()">📤 Send all voice recordings to VA</button>
+    <button class="btn-export secondary" onclick="closeRecordings()">← Back</button>
+    <p class="export-note">Sends this property's saved audio so the typist can check any word the text got wrong. Audio is cleared when you tap Finish &amp; Clear.</p>
   </div>
 </div>
 
@@ -1241,6 +1478,7 @@ let state = {
   rooms: [],       // working room list: [{ id, name, subsections }] — editable & persisted
   currentRoomIdx: 0,
   roomNotes: {},   // roomId -> dictated text block for the whole room
+  serialModels: {},// roomId -> typed serial / model numbers (never dictated)
   checked: {},     // roomId -> { subsectionName: true }  (optional progress ticks)
   mandatory: {
     waterMeter: '', waterMeterLocation: '',
@@ -1251,6 +1489,8 @@ let state = {
 
 let recognition = null;
 let listeningRoom = null;
+let recPaused = false;       // a segment is open but paused (audio + text held, not finalised)
+let sessionMicStream = null; // ONE mic stream held for the whole inspection — avoids re-prompting
 let wantListening = false;   // stays true until the user taps Stop
 let dictStart = 0;           // timestamp of last recognition start
 let dictFailFast = 0;        // counts instant failures to avoid a runaway loop
@@ -1265,10 +1505,14 @@ let reviewItems = []; // flat list of {name, val} for field-by-field copy
 // still override it in the setup field, and it's remembered per device.
 const DEFAULT_TRANSCRIBE_URL = 'https://propertyassist--af4b319a76c011f1af681607ee4eb77e.web.val.run';
 let TRANSCRIBE_URL = '';     // resolved at startup from saved value or the default above
-let mediaRecorder = null;    // records the room's audio for accurate transcription
-let mediaStream = null;      // mic stream backing the recorder
-let recChunks = [];          // audio chunks for the current recording
-let recStartRoom = null;     // room currently being audio-recorded
+// Dropbox archive endpoint (the archive.ts Val). Leave blank until deployed, then
+// paste its URL here (or in the setup field). Blank = archiving off, app works as before.
+const DEFAULT_ARCHIVE_URL = 'https://propertyassist--9ecaffe4859311f181ad1607ee4eb77e.web.val.run';
+let ARCHIVE_URL = '';        // resolved at startup from saved value or the default above
+// Each recording session owns its OWN chunk array + recorder + stream, captured in
+// a closure — starting room B can never wipe room A's chunks mid-save.
+let currentRecSession = null; // { dbId, roomId, roomName, address, chunks, mr, stream, sessionBase, createdAt, stopped }
+let wakeLock = null;         // screen wake lock held while recording
 let audioDB = null;          // IndexedDB handle for offline recordings
 let queueRunning = false;    // guard so the upload queue runs once at a time
 let pendingRoomMap = {};     // roomId -> 'pending' | 'uploading' for nav badges
@@ -1281,7 +1525,7 @@ function saveState() {
       address: state.address, client: state.client, inspector: state.inspector,
       beds: state.beds, baths: state.baths, stateCode: state.stateCode,
       rooms: state.rooms, currentRoomIdx: state.currentRoomIdx,
-      roomNotes: state.roomNotes, checked: state.checked,
+      roomNotes: state.roomNotes, serialModels: state.serialModels, checked: state.checked,
       mandatory: state.mandatory, startedAt: state.startedAt
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
@@ -1324,6 +1568,7 @@ function resumeSaved() {
   state.beds = saved.beds; state.baths = saved.baths; state.stateCode = saved.stateCode;
   state.currentRoomIdx = saved.currentRoomIdx || 0;
   state.roomNotes = saved.roomNotes || {};
+  state.serialModels = saved.serialModels || {};
   state.checked = saved.checked || {};
   state.mandatory = saved.mandatory || state.mandatory;
   state.startedAt = saved.startedAt || Date.now();
@@ -1369,12 +1614,44 @@ function initSetup() {
   const urlInput = document.getElementById('transcribeUrl');
   if (urlInput) urlInput.value = TRANSCRIBE_URL;
 
+  // Dropbox archive URL (saved override, else baked-in default; blank = off)
+  try { ARCHIVE_URL = (localStorage.getItem('pa_archive_url') ?? DEFAULT_ARCHIVE_URL) || ''; } catch (e) { ARCHIVE_URL = DEFAULT_ARCHIVE_URL; }
+  const archiveInput = document.getElementById('archiveUrl');
+  if (archiveInput) archiveInput.value = ARCHIVE_URL;
+
   window.addEventListener('online', () => { updatePendingUI(); processQueue(); });
   window.addEventListener('offline', () => { updatePendingUI(); });
 
+  // Ask the browser not to evict our IndexedDB audio under storage pressure.
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+
+  // While recording: re-grab the wake lock when we come back to the foreground
+  // (the OS releases it on hide), and snapshot state + partial audio on hide.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      if (wantListening) acquireWakeLock();   // only while actively recording (not paused)
+    } else {
+      saveState();
+      if (currentRecSession) persistPartialRecording(currentRecSession);
+    }
+  });
+
+  // Retry loop: while online with pending recordings, kick the queue every 60s.
+  setInterval(async () => {
+    if (!navigator.onLine || queueRunning || !('indexedDB' in window)) return;
+    try {
+      const recs = await dbAll();
+      if (cloudEnabled() && recs.some(r => r.status === 'pending')) processQueue();
+      else if (cloudArchiveEnabled() && recs.some(r => r.status === 'done' && r.archived !== true && r.blob)) processArchiveQueue();
+    } catch (e) {}
+  }, 60000);
+
   checkForResume();
-  updatePendingUI();
-  if (navigator.onLine) processQueue();
+  // Recover any recordings interrupted by a crash, then start the queue.
+  recoverCrashedRecordings().then(() => {
+    updatePendingUI();
+    if (navigator.onLine) processQueue();
+  });
 }
 
 function addCustomSetupRoom() {
@@ -1400,6 +1677,9 @@ function startInspection() {
   state.stateCode = document.getElementById('propState').value;
   TRANSCRIBE_URL = (document.getElementById('transcribeUrl').value || '').trim();
   try { localStorage.setItem('pa_transcribe_url', TRANSCRIBE_URL); } catch (e) {}
+  const archiveEl = document.getElementById('archiveUrl');
+  ARCHIVE_URL = archiveEl ? (archiveEl.value || '').trim() : ARCHIVE_URL;
+  try { localStorage.setItem('pa_archive_url', ARCHIVE_URL); } catch (e) {}
 
   if (!state.address || !state.client) {
     showToast('Please enter address and client name');
@@ -1423,6 +1703,7 @@ function startInspection() {
   state.startedAt = Date.now();
   state.rooms.forEach(room => {
     if (!(room.id in state.roomNotes)) state.roomNotes[room.id] = '';
+    if (!(room.id in state.serialModels)) state.serialModels[room.id] = '';
     if (!state.checked[room.id]) state.checked[room.id] = {};
   });
 
@@ -1487,12 +1768,15 @@ function renderRoomContent() {
 
   roomToolsOpen = false;
 
+  const isFirst = state.currentRoomIdx === 0;
+  const isLastRoom = state.currentRoomIdx === state.rooms.length - 1;
   const header = document.createElement('div');
   header.className = 'room-header';
   header.innerHTML = `
     <div class="room-title">${escapeHtml(room.name)}</div>
     <div class="room-header-actions">
-      <div class="room-progress-text">${roomHasNotes(room) ? 'done' : 'not started'}</div>
+      <button class="room-move-btn" onclick="moveRoom(-1)" aria-label="Move room left" ${isFirst ? 'disabled' : ''}>◀</button>
+      <button class="room-move-btn" onclick="moveRoom(1)" aria-label="Move room right" ${isLastRoom ? 'disabled' : ''}>▶</button>
       <button class="room-edit-btn" onclick="toggleRoomTools()">Edit ⚙</button>
     </div>
   `;
@@ -1537,7 +1821,7 @@ function renderRoomContent() {
     <button type="button" class="checklist-toggle" id="checklistToggle" onclick="toggleChecklist()">${checklistOpen ? '▾ Hide checklist' : '▸ Show checklist'}</button>
     <div class="checklist ${checklistOpen ? 'open' : ''}" id="checklistBox">${chips}</div>
     <div class="room-field-label">Talk through the room</div>
-    <p class="field-note">Tap the round <strong>🎤</strong> button (bottom right) to talk hands-free — it keeps listening and text appears live until you tap stop. You can also type.</p>
+    <p class="field-note">Tap the round <strong>🎤</strong> (bottom right) to talk hands-free. Speak naturally — you don't need to say "full stop", punctuation is added for you. Tap <strong>⏸</strong> to pause (it keeps what you've said), then <strong>✓ Done</strong> to save. You can also type.</p>
     <textarea class="room-dictate ${flagged.length ? 'flagged' : ''}" id="roomta-${room.id}" rows="9"
       placeholder="e.g. Ceiling white and clean. Walls clean throughout. Light fittings working..."
       oninput="onRoomEdit('${room.id}')">${escapeHtml(val)}</textarea>
@@ -1546,6 +1830,12 @@ function renderRoomContent() {
     </div>
     <div class="action-row">
       ${val ? `<button class="btn-clear" onclick="clearRoom('${room.id}')">Clear room notes</button>` : ''}
+    </div>
+    <div class="serial-field">
+      <label>Serial / model numbers <span>— type these, don't dictate</span></label>
+      <textarea id="serial-${room.id}" rows="2"
+        placeholder="e.g. Dishwasher Bosch SMS46; HWS Rheem 260L SN 12345678"
+        oninput="onSerialEdit('${room.id}')">${escapeHtml(state.serialModels[room.id] || '')}</textarea>
     </div>
   `;
   content.appendChild(block);
@@ -1608,6 +1898,13 @@ function onRoomEdit(roomId) {
   updateRoomFieldState(roomId, ta.value);
   updateProgress();
   renderRoomNav();
+  saveState();
+}
+
+function onSerialEdit(roomId) {
+  const ta = document.getElementById(`serial-${roomId}`);
+  if (!ta) return;
+  state.serialModels[roomId] = ta.value;
   saveState();
 }
 
@@ -1723,10 +2020,23 @@ function setFabRecording(on) {
   const pill = document.getElementById('recStatus');
   if (fab) {
     fab.classList.toggle('recording', on);
+    fab.classList.remove('paused');
     const icon = fab.querySelector('.fab-icon');
-    if (icon) icon.textContent = on ? '⏹' : '🎤';
+    if (icon) icon.textContent = on ? '⏸' : '🎤';
   }
-  if (pill) pill.classList.toggle('show', on);
+  if (pill) { if (on) pill.textContent = '● Listening…'; pill.classList.toggle('show', on); }
+}
+
+function setFabPaused(on) {
+  const fab = document.getElementById('fabRecord');
+  const pill = document.getElementById('recStatus');
+  if (fab) {
+    fab.classList.toggle('paused', on);
+    fab.classList.remove('recording');
+    const icon = fab.querySelector('.fab-icon');
+    if (icon) icon.textContent = on ? '▶' : '🎤';
+  }
+  if (pill) { pill.textContent = '❚❚ Paused — tap ▶ to resume'; pill.classList.toggle('show', on); }
 }
 
 function flashCaptured() {
@@ -1736,11 +2046,40 @@ function flashCaptured() {
   setTimeout(() => fab.classList.remove('captured'), 600);
 }
 
+// ─── TRANSCRIPT CORRECTIONS ───────────────────────────────────────────────────
+// A conservative, whole-word cleanup applied to dictation + accurate transcripts:
+// Australian spelling and the specific mishears inspectors reported. Deliberately
+// small and safe — add new pairs to CORRECTIONS as you spot them (left = wrong,
+// right = correct, both lower-case). Case (Grey / GREY) is preserved automatically.
+const CORRECTIONS = {
+  // Australian spelling
+  'gray': 'grey', 'grays': 'greys', 'grayish': 'greyish',
+  'aluminum': 'aluminium',
+  'color': 'colour', 'colors': 'colours', 'colored': 'coloured', 'coloring': 'colouring',
+  'fiber': 'fibre', 'fibers': 'fibres',
+  // ("meter" left as-is on purpose — "water meter" / "meter box" are correct AU spelling)
+  // Reported mishears — "tile" heard as Tyre / Tyrell
+  'tyre': 'tile', 'tyres': 'tiles', 'tyrell': 'tile'
+};
+function matchCase(replacement, original) {
+  if (original.length > 1 && original === original.toUpperCase()) return replacement.toUpperCase();
+  if (original[0] === original[0].toUpperCase()) return replacement.charAt(0).toUpperCase() + replacement.slice(1);
+  return replacement;
+}
+function applyCorrections(text) {
+  if (!text) return text;
+  return text.replace(/[A-Za-z]+/g, w => {
+    const hit = CORRECTIONS[w.toLowerCase()];
+    return hit ? matchCase(hit, w) : w;
+  });
+}
+
 // Fold everything heard so far into state + textarea (survives restarts and stop).
 // Prefer the live textarea value so any last interim words on screen are kept.
 function commitDictation(roomId) {
   const ta = document.getElementById(`roomta-${roomId}`);
-  const val = (ta ? ta.value : [dictBase, dictFinal].filter(Boolean).join(' ')).trim();
+  let val = (ta ? ta.value : [dictBase, dictFinal].filter(Boolean).join(' ')).trim();
+  val = applyCorrections(val);   // AU spelling + reported mishears
   if (ta) ta.value = val;
   state.roomNotes[roomId] = val;
   updateRoomFieldState(roomId, val);
@@ -1749,38 +2088,139 @@ function commitDictation(roomId) {
   saveState();
 }
 
-function toggleDictate(roomId, e) {
+// The round button now cycles: start → pause → resume. A separate "✓ Done"
+// button finalises the segment. Pausing keeps the same audio clip and text open,
+// so nothing is ever overwritten or lost.
+async function toggleDictate(roomId, e) {
   if (e) e.stopPropagation();
+  // A segment is open for a DIFFERENT room — save it first, then start here.
+  if (listeningRoom && listeningRoom !== roomId) stopListening();
+
+  if (listeningRoom === roomId) {
+    if (recPaused) resumeListening(roomId);
+    else pauseListening();
+    return;
+  }
+  startListening(roomId);
+}
+
+async function startListening(roomId) {
   const ta = document.getElementById(`roomta-${roomId}`);
-
-  if (listeningRoom === roomId) { stopListening(); return; }
-  if (listeningRoom) stopListening();
-
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR && !cloudEnabled()) {
     ta && ta.focus();
     showToast('Tap the 🎤 on your keyboard to dictate');
     return;
   }
-
   listeningRoom = roomId;
   wantListening = true;
+  recPaused = false;
   dictFailFast = 0;
   dictBase = ta ? ta.value.trim() : '';
   dictFinal = '';
   setFabRecording(true);
-  // Deliberately do NOT focus the textarea here — the mic button is hands-free,
+  updateRecControls();
+  // Deliberately do NOT focus the textarea — the mic button is hands-free,
   // and focusing pops the iPhone keyboard and shifts the page.
-  showToast(SR ? 'Listening — tap the red button to stop' : 'Recording — tap the red button to stop');
-  startAudioRecording(roomId);        // records audio for accurate cloud transcription
-  if (SR) startRecognition(roomId);   // live rough text where the browser supports it
+  showToast('Recording — tap ⏸ to pause, ✓ Done to save');
+  acquireWakeLock();                                // keep the screen (and mic) alive while recording
+  const audioOk = await startAudioRecording(roomId); // true | false (failed) | null (not applicable)
+  let speechOk = false;
+  if (SR) speechOk = startRecognition(roomId);       // live rough text where the browser supports it
+  if (audioOk !== true && !speechOk) {
+    // NOTHING is capturing — make that impossible to miss.
+    wantListening = false;
+    listeningRoom = null;
+    recPaused = false;
+    setFabRecording(false);
+    setFabError();
+    updateRecControls();
+    releaseWakeLock();
+    showToast('Microphone unavailable — audio is NOT being recorded');
+  }
+}
+
+// Pause: stop listening but KEEP the segment open. Text heard so far is committed,
+// the audio clip is paused (not finalised), nothing uploads yet.
+function pauseListening() {
+  if (!listeningRoom || recPaused) return;
+  wantListening = false;
+  recPaused = true;
+  if (recognition) {
+    recognition.onend = null; recognition.onresult = null; recognition.onerror = null;
+    try { recognition.stop(); } catch (e) {}
+    recognition = null;
+  }
+  commitDictation(listeningRoom);
+  dictFinal = '';
+  if (currentRecSession && currentRecSession.mr && currentRecSession.mr.state === 'recording') {
+    try { currentRecSession.mr.pause(); } catch (e) {}
+  }
+  releaseWakeLock();
+  setFabPaused(true);
+  updateRecControls();
+  showToast('Paused — tap ▶ to resume, or ✓ Done to save');
+}
+
+// Resume the open segment: appends to what's there, continues the same audio clip.
+function resumeListening(roomId) {
+  const ta = document.getElementById(`roomta-${roomId}`);
+  listeningRoom = roomId;
+  wantListening = true;
+  recPaused = false;
+  dictFailFast = 0;
+  dictBase = ta ? ta.value.trim() : '';   // append to existing note
+  dictFinal = '';
+  acquireWakeLock();
+  if (currentRecSession && currentRecSession.mr && currentRecSession.mr.state === 'paused') {
+    try { currentRecSession.mr.resume(); } catch (e) {}
+  } else if (!currentRecSession) {
+    // No live audio clip (e.g. resumed after coming back) — start a fresh one;
+    // its accurate transcript will append beneath what's already in the note.
+    startAudioRecording(roomId);
+  }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SR) startRecognition(roomId);
+  setFabRecording(true);
+  updateRecControls();
+  showToast('Recording — tap ⏸ to pause, ✓ Done to save');
+}
+
+// The explicit "✓ Done" button — finalises the open segment and queues it.
+function finishSegment(e) {
+  if (e) e.stopPropagation();
+  if (!listeningRoom) return;
+  stopListening();
+  showToast('✓ Recording saved');
+}
+
+// Show/hide the Done button and keep the record-status pill in sync.
+function updateRecControls() {
+  const done = document.getElementById('fabDone');
+  if (done) done.style.display = listeningRoom ? 'flex' : 'none';
+}
+
+// Error state on the round record button — shown when neither audio recording
+// nor speech recognition could start, so the inspector knows nothing is captured.
+function setFabError() {
+  const fab = document.getElementById('fabRecord');
+  if (!fab) return;
+  fab.classList.remove('recording');
+  fab.classList.add('error');
+  const icon = fab.querySelector('.fab-icon');
+  if (icon) icon.textContent = '⚠️';
+  setTimeout(() => {
+    fab.classList.remove('error');
+    const ic = fab.querySelector('.fab-icon');
+    if (ic && !fab.classList.contains('recording')) ic.textContent = '🎤';
+  }, 5000);
 }
 
 // iOS ends recognition after a pause, so we restart on every 'end' while the
 // user still wants to listen. interimResults streams text live as they speak.
 function startRecognition(roomId) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) return;
+  if (!SR) return false;
   const ta = document.getElementById(`roomta-${roomId}`);
   try {
     recognition = new SR();
@@ -1842,8 +2282,10 @@ function startRecognition(roomId) {
 
     dictStart = Date.now();
     recognition.start();
+    return true;
   } catch (err) {
     // start() can throw if called too soon after stop(); the onend backoff retries.
+    return false;
   }
 }
 
@@ -1863,8 +2305,10 @@ function stopListening() {
   }
   dictBase = '';
   dictFinal = '';
+  recPaused = false;
   setFabRecording(false);
   listeningRoom = null;
+  updateRecControls();
   // Stop + save the room audio (fire-and-forget; nothing is lost if this fails)
   if (stoppedRoom) stopAudioRecording(stoppedRoom, state.roomNotes[stoppedRoom] || '');
 }
@@ -1910,48 +2354,161 @@ function dbPut(rec) {
     r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);
   }));
 }
+function dbDelete(id) {
+  return openAudioDB().then(db => new Promise((resolve, reject) => {
+    const r = db.transaction(AUDIO_STORE, 'readwrite').objectStore(AUDIO_STORE).delete(id);
+    r.onsuccess = () => resolve(); r.onerror = () => reject(r.error);
+  }));
+}
+
+// ─── SCREEN WAKE LOCK ─────────────────────────────────────────────────────────
+// Keeps the screen (and therefore the mic + recorder) alive while recording.
+async function acquireWakeLock() {
+  try {
+    if ('wakeLock' in navigator && navigator.wakeLock.request) {
+      wakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch (e) { wakeLock = null; }
+}
+function releaseWakeLock() {
+  if (wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; }
+}
+
+// ONE microphone stream for the whole inspection. Requesting it once (and reusing
+// it for every room) stops iOS re-showing "Allow microphone" on each recording.
+// Released on Finish. If the stream has died (interruption), it's re-requested.
+async function getSessionMic() {
+  if (sessionMicStream && sessionMicStream.active &&
+      sessionMicStream.getAudioTracks().some(t => t.readyState === 'live')) {
+    return sessionMicStream;
+  }
+  releaseSessionMic();
+  sessionMicStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  return sessionMicStream;
+}
+function releaseSessionMic() {
+  if (sessionMicStream) {
+    try { sessionMicStream.getTracks().forEach(t => t.stop()); } catch (e) {}
+    sessionMicStream = null;
+  }
+}
 
 // Begin capturing mic audio for this room. Best-effort: if the mic can't be grabbed
 // for recording, dictation still runs and the inspector can type.
+// Returns true = recording, false = tried and FAILED, null = not applicable (cloud off / unsupported).
 async function startAudioRecording(roomId) {
-  if (!cloudEnabled()) return;
-  if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder)) return;
+  if (!cloudEnabled()) return null;
+  if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder)) return null;
   try {
-    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    recChunks = [];
+    const stream = await getSessionMic();   // shared, one-prompt mic stream
     let mr;
-    try { mr = new MediaRecorder(mediaStream); } catch (e) { mr = new MediaRecorder(mediaStream, {}); }
-    mr.ondataavailable = (ev) => { if (ev.data && ev.data.size) recChunks.push(ev.data); };
-    mr.start();
-    mediaRecorder = mr;
-    recStartRoom = roomId;
+    try { mr = new MediaRecorder(stream); } catch (e) { mr = new MediaRecorder(stream, {}); }
+    const ta = document.getElementById(`roomta-${roomId}`);
+    // Per-recording session — chunks live in this closure, never in a global,
+    // so stopping room A can't have its audio wiped by starting room B.
+    const session = {
+      dbId: null,
+      roomId,
+      roomName: (state.rooms.find(r => r.id === roomId) || {}).name || '',
+      address: state.address,
+      chunks: [],
+      mr, stream: null,   // stream is shared for the whole session — never stopped per-recording
+      // What was in the textarea BEFORE this recording session — the accurate
+      // transcript later replaces only what was added after this point.
+      sessionBase: (ta ? ta.value : (state.roomNotes[roomId] || '')).trim(),
+      createdAt: Date.now(),
+      stopped: false,
+      persisting: false
+    };
+    mr.ondataavailable = (ev) => {
+      if (ev.data && ev.data.size) {
+        session.chunks.push(ev.data);
+        // Crash-safety: upsert the partial audio to IndexedDB on every timeslice,
+        // so a crash/kill mid-room still leaves recoverable audio behind.
+        persistPartialRecording(session);
+      }
+    };
+    mr.start(5000); // 5s timeslice — chunks arrive continuously, not just at stop
+    currentRecSession = session;
+    return true;
   } catch (e) {
-    mediaRecorder = null; mediaStream = null; recStartRoom = null;
+    currentRecSession = null;
+    showToast('Microphone unavailable — audio is NOT being recorded');
+    return false;
   }
+}
+
+// Upsert one IndexedDB record per session with the audio so far (status 'recording').
+// On a clean stop the same record is finalised to 'pending'; after a crash, init
+// flips any leftover 'recording' records to 'pending' so the partial audio uploads.
+async function persistPartialRecording(session) {
+  if (!session || session.stopped || session.persisting || !session.chunks.length) return;
+  session.persisting = true;
+  try {
+    const type = session.mr.mimeType || (session.chunks[0] && session.chunks[0].type) || 'audio/mp4';
+    const rec = {
+      roomId: session.roomId,
+      roomName: session.roomName,
+      address: session.address,
+      sessionBase: session.sessionBase,
+      roughText: '',
+      blob: new Blob(session.chunks, { type }),
+      type, status: 'recording', createdAt: session.createdAt
+    };
+    if (session.dbId != null) rec.id = session.dbId;
+    const id = await dbPut(rec);
+    if (session.dbId == null) session.dbId = id;
+  } catch (e) { /* best-effort — the final save at stop still runs */ }
+  finally { session.persisting = false; }
 }
 
 // Stop recording, save the room audio, then transcribe now if we're online.
 async function stopAudioRecording(roomId, roughText) {
-  const mr = mediaRecorder, stream = mediaStream, rid = recStartRoom || roomId;
-  mediaRecorder = null; mediaStream = null; recStartRoom = null;
-  if (!mr) return;
+  const session = currentRecSession;
+  currentRecSession = null;
+  releaseWakeLock();
+  if (!session) return;
+  session.stopped = true; // block any late partial persist from racing the final save
+  const { mr, stream, chunks } = session;
+  const rid = session.roomId || roomId;
   await new Promise((resolve) => { mr.onstop = resolve; try { mr.stop(); } catch (e) { resolve(); } });
   if (stream) { try { stream.getTracks().forEach(t => t.stop()); } catch (e) {} }
-  if (!recChunks.length) return;
-  const type = mr.mimeType || (recChunks[0] && recChunks[0].type) || 'audio/mp4';
-  const blob = new Blob(recChunks, { type });
-  recChunks = [];
+  if (!chunks.length) {
+    // Nothing captured — remove the (empty) partial record if one was created.
+    if (session.dbId != null) { try { await dbDelete(session.dbId); } catch (e) {} }
+    return;
+  }
+  const type = mr.mimeType || (chunks[0] && chunks[0].type) || 'audio/mp4';
+  const blob = new Blob(chunks, { type });
   try {
-    await dbAdd({
+    const rec = {
       roomId: rid,
-      roomName: (state.rooms.find(r => r.id === rid) || {}).name || '',
-      address: state.address,
+      roomName: session.roomName,
+      address: session.address,
+      sessionBase: session.sessionBase,
       roughText: roughText || '',
-      blob, type, status: 'pending', createdAt: Date.now()
-    });
+      blob, type, status: 'pending', createdAt: session.createdAt, attempts: 0
+    };
+    if (session.dbId != null) rec.id = session.dbId;
+    await dbPut(rec);
     updatePendingUI();
     if (navigator.onLine) processQueue();
   } catch (e) { /* storage failed — the rough text is still in the room notes */ }
+}
+
+// After a crash mid-recording, IndexedDB still holds a partial record with
+// status 'recording'. Flip those to 'pending' so their audio uploads anyway.
+async function recoverCrashedRecordings() {
+  try {
+    const recs = await dbAll();
+    for (const rec of recs) {
+      if (rec.status === 'recording') {
+        rec.status = 'pending';
+        if (rec.attempts == null) rec.attempts = 0;
+        await dbPut(rec);
+      }
+    }
+  } catch (e) {}
 }
 
 // Upload pending recordings one at a time and swap in the accurate transcripts.
@@ -1963,47 +2520,167 @@ async function processQueue() {
     for (const rec of recs) {
       try {
         rec.status = 'uploading'; await dbPut(rec); updatePendingUI();
-        const res = await fetch(TRANSCRIBE_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': rec.type || 'application/octet-stream' },
-          body: rec.blob
-        });
+        // 60s cap per upload so one stalled request can't hang the queue forever.
+        const controller = new AbortController();
+        const timer = setTimeout(() => { try { controller.abort(); } catch (e) {} }, 60000);
+        let res;
+        try {
+          res = await fetch(TRANSCRIBE_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': rec.type || 'application/octet-stream' },
+            body: rec.blob,
+            signal: controller.signal
+          });
+        } finally { clearTimeout(timer); }
         if (!res.ok) throw new Error('http ' + res.status);
         const data = await res.json();
         const transcript = ((data && (data.transcript || data.text)) || '').trim();
-        rec.status = 'done'; rec.transcript = transcript; rec.blob = null;
+        // Keep the audio blob (backup the VA/typist can play back) until Finish & Clear,
+        // which deletes 'done' records that are backed up. Storage is reclaimed on finish.
+        rec.status = 'done'; rec.transcript = transcript;
+        if (cloudArchiveEnabled()) {
+          try { await archiveToDropbox(rec); rec.archived = true; }
+          catch (e) { rec.archived = false; } // retried by processArchiveQueue()
+        }
         await dbPut(rec);
-        applyTranscript(rec.roomId, rec.roughText, transcript);
+        applyTranscript(rec, transcript);
         updatePendingUI();
       } catch (e) {
-        rec.status = 'pending'; try { await dbPut(rec); } catch (e2) {}
+        rec.attempts = (rec.attempts || 0) + 1;
+        if (rec.attempts >= 5) {
+          // Give up after 5 tries — mark visibly failed, keep the audio for manual retry.
+          rec.status = 'failed';
+          showToast(`A recording for ${rec.roomName || 'a room'} couldn't be transcribed. See Recordings.`);
+        } else {
+          rec.status = 'pending';
+        }
+        try { await dbPut(rec); } catch (e2) {}
         updatePendingUI();
-        break; // stop on the first failure and retry on the next online/trigger
+        // Keep going — one bad file must not block the rest of the queue.
       }
     }
-  } finally { queueRunning = false; }
+  } finally {
+    queueRunning = false;
+    if (cloudArchiveEnabled()) processArchiveQueue(); // back up anything not yet archived
+  }
 }
 
-// Replace a room's rough text with the accurate transcript — but only if the
-// inspector hasn't edited it since (then we keep their version).
-function applyTranscript(roomId, roughText, transcript) {
+// ─── DROPBOX ARCHIVE ──────────────────────────────────────────────────────────
+// As each room transcribes, push its audio + transcript into a dated property
+// folder in Dropbox via the archive Val. No-ops cleanly when ARCHIVE_URL is blank.
+function cloudArchiveEnabled() { return !!ARCHIVE_URL; }
+
+function safeSeg(s) {
+  return String(s || '').replace(/[\/\\:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60);
+}
+function archiveFolderName(rec) {
+  const d = rec.createdAt ? new Date(rec.createdAt) : new Date();
+  const date = d.toISOString().slice(0, 10); // YYYY-MM-DD
+  return `${date} - ${safeSeg(rec.address) || 'Unknown property'}`;
+}
+function archiveBaseName(rec) {
+  const d = rec.createdAt ? new Date(rec.createdAt) : new Date();
+  const hhmm = d.toTimeString().slice(0, 5).replace(':', ''); // local HHMM
+  return `${safeSeg(rec.roomName || rec.roomId) || 'Room'} - ${hhmm}`;
+}
+async function archivePut(relPath, body, contentType) {
+  const res = await fetch(ARCHIVE_URL + '?path=' + encodeURIComponent(relPath), {
+    method: 'POST',
+    headers: { 'Content-Type': contentType },
+    body
+  });
+  if (!res.ok) throw new Error('archive http ' + res.status);
+  return res;
+}
+// Upload one recording's audio and (if present) its transcript. Throws on failure
+// so the caller can leave it un-archived and retry later.
+async function archiveToDropbox(rec) {
+  if (!cloudArchiveEnabled() || !rec || !rec.blob) return false;
+  const folder = archiveFolderName(rec);
+  const base = archiveBaseName(rec);
+  await archivePut(`${folder}/${base}.${audioExt(rec.type)}`, rec.blob, rec.type || 'application/octet-stream');
+  const t = (rec.transcript || '').trim();
+  if (t) await archivePut(`${folder}/${base}.txt`, t, 'text/plain; charset=utf-8');
+  return true;
+}
+// Retry pass: back up any transcribed-but-not-archived recording that still has audio.
+async function processArchiveQueue() {
+  if (!cloudArchiveEnabled() || !navigator.onLine || !('indexedDB' in window)) return;
+  let recs = [];
+  try { recs = await dbAll(); } catch (e) { return; }
+  for (const rec of recs) {
+    if (rec.status === 'done' && rec.archived !== true && rec.blob) {
+      try {
+        await archiveToDropbox(rec);
+        rec.archived = true;
+        // Safely in Dropbox now. If it belongs to a finished/other inspection,
+        // delete it to reclaim phone storage; keep it if it's the current job so
+        // the inspector can still play or re-send it during the session.
+        if ((state.address || '') !== (rec.address || '')) {
+          await dbDelete(rec.id);
+        } else {
+          await dbPut(rec);
+        }
+        updatePendingUI();
+      } catch (e) { break; } // network/Dropbox down — try again on the next tick
+    }
+  }
+}
+
+// Loose comparison for "is this still the rough text from that session?" —
+// dictation punctuation/casing wobbles, so compare normalised words only.
+function looseTextMatch(a, b) {
+  const norm = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  return norm(a) === norm(b);
+}
+
+// Fold an accurate transcript into the room note WITHOUT destroying anything:
+// - Recordings from a different property are never applied (cross-property bleed).
+// - Only the text added during that recording session is replaced; whatever was
+//   in the note before the session (sessionBase) is preserved.
+// - If the note has been hand-edited since, the transcript is APPENDED on a new
+//   line — an accurate transcript is never thrown away, earlier text never deleted.
+function applyTranscript(rec, transcript) {
+  transcript = applyCorrections((transcript || '').trim());   // AU spelling + reported mishears
   if (!transcript) return;
+  if ((rec.address || '') !== (state.address || '')) return; // different property — don't touch this inspection
+  const roomId = rec.roomId;
   const current = (state.roomNotes[roomId] || '').trim();
-  if (current !== '' && current !== (roughText || '').trim()) return;
-  state.roomNotes[roomId] = transcript;
+  const base = (rec.sessionBase || '').trim();
+  const rough = (rec.roughText || '').trim();
+  // The rough text this session produced = full note at stop time minus the base.
+  const sessionRough = (base && rough.slice(0, base.length) === base)
+    ? rough.slice(base.length).trim() : rough;
+  let next;
+  if (current.slice(0, base.length) === base) {
+    const remainder = current.slice(base.length).trim();
+    if (!remainder || looseTextMatch(remainder, sessionRough)) {
+      // Untouched since the session — swap just the session's rough text.
+      next = base + (base ? '\n' : '') + transcript;
+    } else {
+      // Hand-edited — append rather than silently discarding the transcript.
+      next = current + '\n' + transcript;
+    }
+  } else {
+    // The base is no longer at the start (note was rewritten) — append.
+    next = current ? current + '\n' + transcript : transcript;
+  }
+  state.roomNotes[roomId] = next;
   const ta = document.getElementById(`roomta-${roomId}`);
-  if (ta) ta.value = transcript;
-  updateRoomFieldState(roomId, transcript);
+  if (ta) ta.value = next;
+  updateRoomFieldState(roomId, next);
   updateProgress();
   renderRoomNav();
   saveState();
   showToast('✓ Accurate transcript added');
 }
 
-// Update the status bar + per-room badges from what's in storage.
+// Update the status bar + per-room badges + header Recordings badge from storage.
+// Badge = pending + failed: everything that still needs attention or a retry.
 async function updatePendingUI() {
   const el = document.getElementById('cloudStatus');
-  if (!cloudEnabled() || !('indexedDB' in window)) { pendingRoomMap = {}; if (el) el.classList.remove('show'); return; }
+  const badge = document.getElementById('recBadge');
+  if (!('indexedDB' in window)) { pendingRoomMap = {}; if (el) el.classList.remove('show'); if (badge) badge.style.display = 'none'; return; }
   let recs = [];
   try { recs = await dbAll(); } catch (e) { return; }
   const map = {};
@@ -2011,24 +2688,40 @@ async function updatePendingUI() {
   pendingRoomMap = map;
   const pending = recs.filter(r => r.status === 'pending').length;
   const uploading = recs.filter(r => r.status === 'uploading').length;
+  const failed = recs.filter(r => r.status === 'failed').length;
+  if (badge) {
+    const n = pending + failed;
+    badge.textContent = n;
+    badge.style.display = n ? 'inline-block' : 'none';
+  }
   if (el) {
-    el.classList.remove('offline');
-    if (uploading) {
-      el.textContent = `☁︎ Transcribing ${uploading} recording${uploading > 1 ? 's' : ''}…`;
-      el.classList.add('show');
-    } else if (pending) {
-      if (navigator.onLine) {
-        el.textContent = `☁︎ ${pending} recording${pending > 1 ? 's' : ''} waiting to transcribe`;
-      } else {
-        el.textContent = `● Saved offline — ${pending} will transcribe when back online`;
+    if (!cloudEnabled()) { el.classList.remove('show'); }
+    else {
+      el.classList.remove('offline');
+      if (uploading) {
+        el.textContent = `☁︎ Transcribing ${uploading} recording${uploading > 1 ? 's' : ''}…`;
+        el.classList.add('show');
+      } else if (pending) {
+        if (navigator.onLine) {
+          el.textContent = `☁︎ ${pending} recording${pending > 1 ? 's' : ''} waiting to transcribe`;
+        } else {
+          el.textContent = `● Saved offline — ${pending} will transcribe when back online`;
+          el.classList.add('offline');
+        }
+        el.classList.add('show');
+      } else if (failed) {
+        el.textContent = `⚠ ${failed} recording${failed > 1 ? 's' : ''} failed to transcribe — see Recordings`;
         el.classList.add('offline');
+        el.classList.add('show');
+      } else {
+        el.classList.remove('show');
       }
-      el.classList.add('show');
-    } else {
-      el.classList.remove('show');
     }
   }
   if (document.getElementById('roomNav')) renderRoomNav();
+  // Live-refresh the Recordings screen if it's open.
+  const recScreen = document.getElementById('screenRecordings');
+  if (recScreen && recScreen.classList.contains('active')) renderRecordings();
 }
 
 // ─── NAVIGATION ──────────────────────────────────────────────────────────────
@@ -2082,7 +2775,8 @@ function showReview() {
   const forbiddenHits = [];
   state.rooms.forEach(room => {
     const hits = findForbidden(state.roomNotes[room.id] || '');
-    if (hits.length) forbiddenHits.push(`${room.name}: ${hits.join(', ')}`);
+    // Room names are user-entered — escape them before they hit innerHTML.
+    if (hits.length) forbiddenHits.push(`${escapeHtml(room.name)}: ${hits.join(', ')}`);
   });
   if (forbiddenHits.length) {
     const banner = document.createElement('div');
@@ -2105,7 +2799,19 @@ function showReview() {
   state.rooms.forEach(room => {
     const div = document.createElement('div');
     div.className = 'review-room';
-    div.innerHTML = `<div class="review-room-title">${escapeHtml(room.name)}</div>${renderReviewItem('Room notes', state.roomNotes[room.id] || '')}`;
+    const note = state.roomNotes[room.id] || '';
+    // Auto-computed sub-area split (read-only). The textarea stays the editable
+    // source of truth — this recomputes every time the review screen opens.
+    let splitHtml = '';
+    const buckets = splitNotesBySubarea(room, note);
+    if (buckets.length) {
+      splitHtml = '<div class="review-split"><div class="review-split-title">Auto-split by sub-area</div>'
+        + buckets.map(b => `<div class="review-split-row"><span class="review-split-name">${escapeHtml(b.subarea)}:</span> ${escapeHtml(b.text)}</div>`).join('')
+        + '</div>';
+    }
+    const serial = (state.serialModels[room.id] || '').trim();
+    const serialHtml = serial ? renderReviewItem('Serial / model', serial) : '';
+    div.innerHTML = `<div class="review-room-title">${escapeHtml(room.name)}</div>${renderReviewItem('Room notes', note)}${serialHtml}${splitHtml}`;
     body.appendChild(div);
   });
 }
@@ -2160,8 +2866,11 @@ function buildReportText() {
 
   state.rooms.forEach(room => {
     const val = state.roomNotes[room.id];
-    if (val && val.trim()) {
-      report += `\n\n${room.name.toUpperCase()}\n${'-'.repeat(30)}\n${val.trim()}\n`;
+    const serial = (state.serialModels[room.id] || '').trim();
+    if ((val && val.trim()) || serial) {
+      report += `\n\n${room.name.toUpperCase()}\n${'-'.repeat(30)}\n`;
+      if (val && val.trim()) report += `${val.trim()}\n`;
+      if (serial) report += `Serial / model: ${serial}\n`;
     }
   });
 
@@ -2223,7 +2932,14 @@ function buildCSVRows() {
 
   state.rooms.forEach(room => {
     const val = state.roomNotes[room.id];
-    if (val && val.trim()) rows.push([...meta, room.name, 'Full room notes (to categorise)', val.trim()]);
+    if (val && val.trim()) {
+      // One row per auto-split sub-area, plus the full note at the end for reference.
+      const buckets = splitNotesBySubarea(room, val);
+      buckets.forEach(b => rows.push([...meta, room.name, b.subarea, b.text]));
+      rows.push([...meta, room.name, 'Full room notes', val.trim()]);
+    }
+    const serial = (state.serialModels[room.id] || '').trim();
+    if (serial) rows.push([...meta, room.name, 'Serial / model numbers', serial]);
   });
   return rows;
 }
@@ -2253,17 +2969,337 @@ function downloadCSV() {
   showToast('✓ CSV downloaded');
 }
 
-function finishAndClear() {
-  if (confirm('Finished with this inspection? This clears the saved data so you can start a fresh one. Make sure you have sent or copied the report first.')) {
-    clearSaved();
-    state.roomNotes = {}; state.checked = {}; state.rooms = [];
-    state.currentRoomIdx = 0; state.startedAt = null;
-    state.mandatory = { waterMeter:'', waterMeterLocation:'', rcdBox:'', smokeAlarms:'', nbnBox:'' };
-    document.getElementById('resumeBanner').style.display = 'none';
-    document.getElementById('headerTitle').textContent = 'New Inspection';
-    showScreen('screenSetup');
-    showToast('Cleared — ready for the next property');
+async function finishAndClear() {
+  if (!confirm('Finished with this inspection? This clears the saved data so you can start a fresh one. Make sure you have sent or copied the report first.')) return;
+  stopListening();
+  // Clean up this property's recordings so they can never bleed into the next
+  // inspection. Anything not yet safe (not transcribed, or — when archiving is on —
+  // not yet backed up to Dropbox) is kept and keeps trying in the background.
+  try {
+    const recs = (await dbAll()).filter(r => (r.address || '') === (state.address || ''));
+    const notSafe = recs.filter(r =>
+      r.status === 'pending' || r.status === 'uploading' || r.status === 'recording' || r.status === 'failed' ||
+      (cloudArchiveEnabled() && r.status === 'done' && r.archived !== true));
+    if (notSafe.length) {
+      const msg = cloudArchiveEnabled()
+        ? `${notSafe.length} recording${notSafe.length === 1 ? " hasn't" : "s haven't"} finished transcribing or backing up to Dropbox yet. Finish anyway? Their audio stays on this phone and keeps trying in the background.`
+        : `${notSafe.length} recording${notSafe.length === 1 ? " hasn't" : "s haven't"} been transcribed yet. Finish anyway? Their audio will be kept but won't go into a new inspection.`;
+      if (!confirm(msg)) return;
+      // Untranscribed → orphan so they never auto-apply to a new property's notes.
+      // Not-yet-archived 'done' recordings stay as 'done' so the archive pass keeps
+      // backing them up (then deletes them once safely in Dropbox).
+      for (const rec of notSafe) {
+        if (rec.status !== 'done') { rec.status = 'orphaned'; try { await dbPut(rec); } catch (e) {} }
+      }
+    }
+    // Delete records whose audio is safely handled: transcribed AND (backed up, or archiving off).
+    for (const rec of recs) {
+      if (rec.status === 'done' && (!cloudArchiveEnabled() || rec.archived === true)) {
+        try { await dbDelete(rec.id); } catch (e) {}
+      }
+    }
+  } catch (e) { /* IndexedDB unavailable — nothing to clean */ }
+  clearSaved();
+  releaseSessionMic();   // let go of the microphone now the inspection is finished
+  state.roomNotes = {}; state.serialModels = {}; state.checked = {}; state.rooms = [];
+  state.currentRoomIdx = 0; state.startedAt = null; state.address = '';
+  state.client = ''; state.inspector = '';
+  state.mandatory = { waterMeter:'', waterMeterLocation:'', rcdBox:'', smokeAlarms:'', nbnBox:'' };
+  document.getElementById('resumeBanner').style.display = 'none';
+  document.getElementById('headerTitle').textContent = 'New Inspection';
+  showScreen('screenSetup');
+  updatePendingUI();
+  showToast('Cleared — ready for the next property');
+}
+
+// ─── RECORDINGS SCREEN ────────────────────────────────────────────────────────
+// Lists every recording in IndexedDB, newest first, with audio playback for any
+// record that still holds a blob and a Retry button for failed ones.
+let recObjectUrls = [];               // object URLs created for playback — revoked on teardown
+let recordingsReturnScreen = 'screenSetup';
+
+function showRecordings() {
+  const active = document.querySelector('.screen.active');
+  if (active && active.id !== 'screenRecordings') recordingsReturnScreen = active.id;
+  stopListening();
+  showScreen('screenRecordings');
+  renderRecordings();
+}
+
+function closeRecordings() {
+  teardownRecordingUrls();
+  showScreen(recordingsReturnScreen);
+  if (recordingsReturnScreen === 'screenInspection' && state.rooms.length) renderInspection();
+}
+
+function teardownRecordingUrls() {
+  recObjectUrls.forEach(u => { try { URL.revokeObjectURL(u); } catch (e) {} });
+  recObjectUrls = [];
+}
+
+// ─── SENDING VOICE RECORDINGS TO THE VA ───────────────────────────────────────
+function audioExt(type) {
+  type = (type || '').toLowerCase();
+  if (type.includes('mp4') || type.includes('m4a') || type.includes('aac')) return 'm4a';
+  if (type.includes('webm')) return 'webm';
+  if (type.includes('ogg')) return 'ogg';
+  if (type.includes('mpeg') || type.includes('mp3')) return 'mp3';
+  if (type.includes('wav')) return 'wav';
+  return 'audio';
+}
+function recFilename(rec) {
+  const safe = s => String(s || '').replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '').slice(0, 30);
+  const addr = safe(rec.address) || 'inspection';
+  const room = safe(rec.roomName || rec.roomId) || 'room';
+  const d = rec.createdAt ? new Date(rec.createdAt) : new Date();
+  const stamp = d.toISOString().slice(0, 16).replace(/[:T]/g, '-');
+  return `${addr}_${room}_${stamp}.${audioExt(rec.type)}`;
+}
+// Share one recording's audio (email / AirDrop / messages), falling back to a download.
+async function shareOneRecording(rec) {
+  if (!rec || !rec.blob) { showToast('Audio no longer stored for this one'); return; }
+  const file = new File([rec.blob], recFilename(rec), { type: rec.type || 'audio/mp4' });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: rec.roomName || 'Room recording' }); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
   }
+  downloadOneRecording(rec);
+}
+function downloadOneRecording(rec) {
+  if (!rec || !rec.blob) { showToast('Audio no longer stored for this one'); return; }
+  const url = URL.createObjectURL(rec.blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = recFilename(rec);
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+  showToast('✓ Audio saved');
+}
+// Send every stored recording for THIS property to the VA in one share sheet.
+async function shareAllRecordings() {
+  let recs = [];
+  try { recs = await dbAll(); } catch (e) {}
+  const mine = state.address ? recs.filter(r => (r.address || '') === state.address) : recs;
+  const withAudio = mine.filter(r => r.blob);
+  if (!withAudio.length) { showToast('No stored audio to send'); return; }
+  const files = withAudio.map(r => new File([r.blob], recFilename(r), { type: r.type || 'audio/mp4' }));
+  if (navigator.canShare && navigator.canShare({ files })) {
+    try { await navigator.share({ files, title: 'Inspection recordings — ' + (state.address || ''), text: buildReportText() }); return; }
+    catch (e) {
+      if (e && e.name === 'AbortError') return;
+      showToast('Could not send them all at once — try Send on each recording');
+      return;
+    }
+  }
+  showToast('Sharing audio isn\'t supported here — use Save on each recording');
+}
+
+async function renderRecordings() {
+  const body = document.getElementById('recordingsBody');
+  if (!body) return;
+  teardownRecordingUrls();
+  let recs = [];
+  try { recs = await dbAll(); }
+  catch (e) { body.innerHTML = '<p class="export-note">Recordings aren\'t available on this device.</p>'; return; }
+  recs.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  body.innerHTML = '';
+  if (!recs.length) {
+    body.innerHTML = '<p class="export-note">No recordings yet. Room audio appears here as you record.</p>';
+    return;
+  }
+  recs.forEach(rec => {
+    const card = document.createElement('div');
+    card.className = 'recording-card';
+    const status = String(rec.status || 'pending');
+    const when = rec.createdAt ? new Date(rec.createdAt).toLocaleString('en-AU') : '';
+    // All user text is escaped — room names, addresses and transcripts are user input.
+    let transcriptHtml = '';
+    const t = (rec.transcript || '').trim();
+    if (t) {
+      if (t.length > 240) {
+        transcriptHtml = `<details class="rec-transcript"><summary>${escapeHtml(t.slice(0, 120))}…</summary>${escapeHtml(t)}</details>`;
+      } else {
+        transcriptHtml = `<div class="rec-transcript">${escapeHtml(t)}</div>`;
+      }
+    }
+    let backupHtml = '';
+    if (cloudArchiveEnabled() && status === 'done') {
+      backupHtml = rec.archived === true
+        ? '<div class="rec-backup ok">☁ Backed up to Dropbox</div>'
+        : '<div class="rec-backup pending">☁ Backing up to Dropbox…</div>';
+    }
+    card.innerHTML = `
+      <div class="rec-card-top">
+        <div>
+          <div class="rec-card-room">${escapeHtml(rec.roomName || rec.roomId || 'Room')}</div>
+          <div class="rec-card-meta">${escapeHtml(rec.address || 'Unknown property')}${when ? ' · ' + escapeHtml(when) : ''}</div>
+        </div>
+        <span class="status-chip status-${escapeAttr(status)}">${escapeHtml(status)}</span>
+      </div>
+      ${transcriptHtml}
+      ${backupHtml}
+    `;
+    if (rec.blob) {
+      try {
+        const url = URL.createObjectURL(rec.blob);
+        recObjectUrls.push(url);
+        const audio = document.createElement('audio');
+        audio.controls = true;
+        audio.src = url;
+        card.appendChild(audio);
+      } catch (e) {}
+    }
+    if (status === 'failed') {
+      const btn = document.createElement('button');
+      btn.className = 'rec-retry-btn';
+      btn.textContent = 'Retry';
+      btn.onclick = async () => {
+        rec.attempts = 0;
+        rec.status = 'pending';
+        try { await dbPut(rec); } catch (e) {}
+        updatePendingUI();
+        renderRecordings();
+        if (navigator.onLine) processQueue();
+      };
+      card.appendChild(btn);
+    }
+    if (rec.blob) {
+      const actions = document.createElement('div');
+      actions.className = 'rec-actions';
+      const sBtn = document.createElement('button');
+      sBtn.className = 'rec-mini-btn';
+      sBtn.textContent = '📤 Send';
+      sBtn.onclick = () => shareOneRecording(rec);
+      const dBtn = document.createElement('button');
+      dBtn.className = 'rec-mini-btn';
+      dBtn.textContent = '⬇ Save';
+      dBtn.onclick = () => downloadOneRecording(rec);
+      actions.appendChild(sBtn);
+      actions.appendChild(dBtn);
+      card.appendChild(actions);
+    }
+    body.appendChild(card);
+  });
+}
+
+// ─── KEYWORD SUB-AREA SPLITTING ───────────────────────────────────────────────
+// Inspectors talk fast and won't tap sub-areas, so the room note stays one blob
+// and this splits it automatically for review + CSV export. Sentences are routed
+// to the sub-area whose keyword appears FIRST in the sentence; sentences with no
+// keyword stay with the most recent sub-area; leading strays go to 'General'.
+const SUBAREA_SYNONYMS = {
+  'Ceiling': ['ceiling','ceilings'],
+  'Walls/Hooks/Door Stoppers': ['wall','walls','hook','hooks','door stopper','door stoppers','doorstop'],
+  'Windows/Screens': ['window','windows','screen','screens','flyscreen'],
+  'Light Fittings': ['light','lights','light fitting','light fittings','downlight','downlights','globe','globes'],
+  'Floor Coverings': ['floor','floors','carpet','carpets','tile','tiles','floorboard','floorboards','vinyl'],
+  'Blinds/Curtains': ['blind','blinds','curtain','curtains','venetian','roller blind'],
+  'Doors': ['door','doors','sliding door','door handle'],
+  'Wardrobe/Shelving': ['wardrobe','robe','built in','shelving','shelves','mirror'],
+  'Power Points': ['power point','power points','powerpoint','powerpoints','gpo','socket','sockets'],
+  'Air Conditioning': ['air con','aircon','air conditioner','air conditioning','split system','ducted'],
+  'Smoke Alarms': ['smoke alarm','smoke alarms','smoke detector'],
+  'Benchtops': ['bench','benchtop','benchtops','counter'],
+  'Cupboards/Drawers': ['cupboard','cupboards','drawer','drawers','cabinet','cabinets'],
+  'Sink/Taps': ['sink','tap','taps','mixer','faucet'],
+  'Oven/Stove/Rangehood': ['oven','stove','stovetop','cooktop','rangehood','range hood','hotplate'],
+  'Dishwasher': ['dishwasher'],
+  'Toilet': ['toilet','cistern','toilet seat'],
+  'Shower': ['shower','shower screen','shower head','grout'],
+  'Bath': ['bath','bathtub'],
+  'Vanity/Basin': ['vanity','basin'],
+  'Exhaust Fan': ['exhaust','exhaust fan','extraction'],
+  'Laundry Trough': ['trough','laundry tub'],
+  'Gardens/Lawns': ['garden','gardens','lawn','lawns','grass','reticulation','retic','bore'],
+  'Fencing/Gates': ['fence','fences','fencing','gate','gates'],
+  'Pool/Spa': ['pool','spa'],
+  'Garage/Carport': ['garage','carport','roller door'],
+  'Gutters/Downpipes': ['gutter','gutters','downpipe','downpipes'],
+  'Eaves/Fascia': ['eaves','fascia'],
+  'Paving/Driveway': ['paving','driveway','pavers'],
+  'Skirting Boards': ['skirting','skirting boards','skirtings'],
+  'Cornices': ['cornice','cornices']
+};
+
+// Words too generic to identify a sub-area on their own.
+const SUBAREA_STOPWORDS = ['and','the','for','with'];
+
+// Keywords for one subsection name: the lowercase words of the name itself
+// (always matched, marked "own"), plus any synonym list whose canonical name
+// stem-matches a word of the subsection name. Own-name matches outrank synonym
+// matches so "Walls ..." lands on Walls/Hooks/Door Stoppers, not a subsection
+// that merely inherited "walls" as a synonym. Cached — names repeat across rooms.
+const subareaKeywordCache = {};
+function stemWord(w) { return (w.length > 3 && w.charAt(w.length - 1) === 's') ? w.slice(0, -1) : w; }
+function wordsStemMatch(a, b) {
+  if (a === b) return true;
+  const sa = stemWord(a), sb = stemWord(b);
+  if (sa === sb) return true;
+  return (sb.length >= 3 && sa.indexOf(sb) === 0) || (sa.length >= 3 && sb.indexOf(sa) === 0);
+}
+function keywordsForSubsection(name) {
+  if (subareaKeywordCache[name]) return subareaKeywordCache[name];
+  const lower = String(name).toLowerCase();
+  const nameWords = lower.split(/[^a-z0-9]+/).filter(w => w.length > 2 && SUBAREA_STOPWORDS.indexOf(w) === -1);
+  const kws = {}; // keyword -> true if it's an "own" name word
+  nameWords.forEach(w => { kws[w] = true; });
+  Object.keys(SUBAREA_SYNONYMS).forEach(canon => {
+    const canonWords = canon.toLowerCase().split(/[^a-z0-9]+/).filter(w => w.length > 2 && SUBAREA_STOPWORDS.indexOf(w) === -1);
+    const overlap = canonWords.some(cw => nameWords.some(nw => wordsStemMatch(cw, nw)));
+    if (overlap) SUBAREA_SYNONYMS[canon].forEach(s => { if (!(s in kws)) kws[s] = false; });
+  });
+  const list = Object.keys(kws).map(kw => ({ kw, own: kws[kw] }));
+  subareaKeywordCache[name] = list;
+  return list;
+}
+
+const subareaRegexCache = {};
+function subareaRegex(kw) {
+  if (!subareaRegexCache[kw]) {
+    subareaRegexCache[kw] = new RegExp('\\b' + kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+  }
+  return subareaRegexCache[kw];
+}
+
+// Split a room's note into ordered {subarea, text} buckets. The note itself is
+// never modified — this is computed on the fly for review and CSV export.
+function splitNotesBySubarea(room, noteText) {
+  const text = String(noteText || '').trim();
+  if (!text) return [];
+  const subs = (room.subsections || []).map(name => ({ name, kws: keywordsForSubsection(name) }));
+  // Sentence split on . ! ? and newlines (no lookbehind — older iOS Safari).
+  const sentences = text.replace(/([.!?])\s+/g, '$1\n').split(/\n+/)
+    .map(s => s.trim()).filter(Boolean);
+  const buckets = [];
+  const bucketFor = (name) => {
+    let b = null;
+    for (let i = 0; i < buckets.length; i++) { if (buckets[i].subarea === name) { b = buckets[i]; break; } }
+    if (!b) { b = { subarea: name, text: '' }; buckets.push(b); }
+    return b;
+  };
+  let current = null;
+  sentences.forEach(sentence => {
+    // Best match = keyword appearing EARLIEST in the sentence; ties prefer a
+    // subsection's own name word over an inherited synonym, then the longer
+    // keyword ("door stopper" beats "door"), then subsection order.
+    let best = null;
+    subs.forEach(sub => {
+      sub.kws.forEach(k => {
+        const m = subareaRegex(k.kw).exec(sentence);
+        if (!m) return;
+        const cand = { pos: m.index, own: k.own, len: k.kw.length, name: sub.name };
+        if (!best
+          || cand.pos < best.pos
+          || (cand.pos === best.pos && cand.own && !best.own)
+          || (cand.pos === best.pos && cand.own === best.own && cand.len > best.len)) {
+          best = cand;
+        }
+      });
+    });
+    if (best) current = best.name;
+    const b = bucketFor(best ? best.name : (current || 'General'));
+    b.text += (b.text ? ' ' : '') + sentence;
+  });
+  return buckets;
 }
 
 // ─── UTILS ───────────────────────────────────────────────────────────────────

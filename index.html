@@ -2103,13 +2103,32 @@ function applyCorrections(text) {
 // before it, back to the previous full stop. Case/punctuation-insensitive. Runs
 // live as they speak and again when the note is saved. The audio backup still has
 // everything, so nothing is truly lost.
+// Live dictation has no full stops yet, so "delete back to the last sentence" would
+// wipe the whole note. Instead we delete the command plus up to SCRATCH_MAX_WORDS
+// words before it, stopping at any sentence end — bounded, so it can never clear
+// everything. Tune SCRATCH_MAX_WORDS if inspectors want a longer/shorter cut.
+const SCRATCH_CMD = /\b(?:scratch|scrap|delete)\s+(?:that|all\s+that|all\s+of\s+that)\b[.,!?]*/i;
+const SCRATCH_MAX_WORDS = 8;
 function applyScratch(text) {
   if (!text) return text;
-  let out = String(text), prev;
-  do {
-    prev = out;
-    out = out.replace(/\s*[^.!?]*\b(?:scratch|scrap|delete)\s+(?:that|all\s+that|all\s+of\s+that)\b[\s.,!?]*/gi, ' ');
-  } while (out !== prev);
+  let out = String(text), guard = 0;
+  while (guard++ < 50) {
+    const m = SCRATCH_CMD.exec(out);
+    if (!m) break;
+    const cmdStart = m.index, cmdEnd = m.index + m[0].length;
+    const before = out.slice(0, cmdStart);
+    let i = before.length;
+    while (i > 0 && /\s/.test(before[i - 1])) i--;              // trailing space
+    let words = 0;
+    while (i > 0 && words < SCRATCH_MAX_WORDS) {
+      if (/[.!?]/.test(before[i - 1])) break;                   // don't cross a sentence end
+      let j = i;
+      while (j > 0 && !/\s/.test(before[j - 1]) && !/[.!?]/.test(before[j - 1])) j--;
+      words++; i = j;
+      while (i > 0 && /\s/.test(before[i - 1])) i--;            // eat the space before the word
+    }
+    out = out.slice(0, i) + ' ' + out.slice(cmdEnd);
+  }
   return out.replace(/\s{2,}/g, ' ').replace(/\s+([.,!?])/g, '$1').trim();
 }
 

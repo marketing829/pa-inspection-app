@@ -931,6 +931,19 @@
     outline: none;
   }
   .serial-field textarea:focus { border-color: var(--gold); }
+  .serial-photo-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+  .serial-photo-btn {
+    background: var(--white);
+    border: 1.5px solid var(--gold);
+    color: var(--black);
+    border-radius: var(--radius-sm);
+    padding: 9px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .serial-photo-btn:active { background: var(--border); }
+  .serial-photo-status { font-size: 12px; color: var(--mid); }
 
   /* RECORDINGS SCREEN */
   .recordings-link {
@@ -1174,7 +1187,7 @@
     <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
   </div>
   <div class="dictation-hint">
-    🎤 <span>Tap the round mic to talk through the room hands-free. Speak naturally — punctuation is added for you. Tap ⏸ to pause, ✓ Done to save. Saves automatically.</span>
+    🎤 <span>Tap the round mic to talk through the room hands-free. Speak naturally — punctuation is added for you. Say "scratch that" to delete your last sentence. Tap ⏸ to pause, ✓ Done to save. Saves automatically.</span>
   </div>
   <div class="cloud-status" id="cloudStatus"></div>
   <div class="room-nav" id="roomNav"></div>
@@ -1479,6 +1492,7 @@ let state = {
   currentRoomIdx: 0,
   roomNotes: {},   // roomId -> dictated text block for the whole room
   serialModels: {},// roomId -> typed serial / model numbers (never dictated)
+  serialPhotos: {},// roomId -> [{ id, ts, uploaded }] markers for photographed data plates
   checked: {},     // roomId -> { subsectionName: true }  (optional progress ticks)
   mandatory: {
     waterMeter: '', waterMeterLocation: '',
@@ -1516,6 +1530,7 @@ let wakeLock = null;         // screen wake lock held while recording
 let audioDB = null;          // IndexedDB handle for offline recordings
 let queueRunning = false;    // guard so the upload queue runs once at a time
 let pendingRoomMap = {};     // roomId -> 'pending' | 'uploading' for nav badges
+let photoQueueRunning = false; // guard so the serial-photo upload queue runs once at a time
 
 // ─── PERSISTENCE ──────────────────────────────────────────────────────────────
 function saveState() {
@@ -1525,7 +1540,7 @@ function saveState() {
       address: state.address, client: state.client, inspector: state.inspector,
       beds: state.beds, baths: state.baths, stateCode: state.stateCode,
       rooms: state.rooms, currentRoomIdx: state.currentRoomIdx,
-      roomNotes: state.roomNotes, serialModels: state.serialModels, checked: state.checked,
+      roomNotes: state.roomNotes, serialModels: state.serialModels, serialPhotos: state.serialPhotos, checked: state.checked,
       mandatory: state.mandatory, startedAt: state.startedAt
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
@@ -1569,6 +1584,7 @@ function resumeSaved() {
   state.currentRoomIdx = saved.currentRoomIdx || 0;
   state.roomNotes = saved.roomNotes || {};
   state.serialModels = saved.serialModels || {};
+  state.serialPhotos = saved.serialPhotos || {};
   state.checked = saved.checked || {};
   state.mandatory = saved.mandatory || state.mandatory;
   state.startedAt = saved.startedAt || Date.now();
@@ -1619,7 +1635,7 @@ function initSetup() {
   const archiveInput = document.getElementById('archiveUrl');
   if (archiveInput) archiveInput.value = ARCHIVE_URL;
 
-  window.addEventListener('online', () => { updatePendingUI(); processQueue(); });
+  window.addEventListener('online', () => { updatePendingUI(); processQueue(); processPhotoQueue(); });
   window.addEventListener('offline', () => { updatePendingUI(); });
 
   // Ask the browser not to evict our IndexedDB audio under storage pressure.
@@ -1643,6 +1659,7 @@ function initSetup() {
       const recs = await dbAll();
       if (cloudEnabled() && recs.some(r => r.status === 'pending')) processQueue();
       else if (cloudArchiveEnabled() && recs.some(r => r.status === 'done' && r.archived !== true && r.blob)) processArchiveQueue();
+      if (cloudArchiveEnabled()) processPhotoQueue();
     } catch (e) {}
   }, 60000);
 
@@ -1652,6 +1669,7 @@ function initSetup() {
     updatePendingUI();
     if (navigator.onLine) processQueue();
   });
+  if (navigator.onLine) processPhotoQueue();
 }
 
 function addCustomSetupRoom() {
@@ -1821,7 +1839,7 @@ function renderRoomContent() {
     <button type="button" class="checklist-toggle" id="checklistToggle" onclick="toggleChecklist()">${checklistOpen ? '▾ Hide checklist' : '▸ Show checklist'}</button>
     <div class="checklist ${checklistOpen ? 'open' : ''}" id="checklistBox">${chips}</div>
     <div class="room-field-label">Talk through the room</div>
-    <p class="field-note">Tap the round <strong>🎤</strong> (bottom right) to talk hands-free. Speak naturally — you don't need to say "full stop", punctuation is added for you. Tap <strong>⏸</strong> to pause (it keeps what you've said), then <strong>✓ Done</strong> to save. You can also type.</p>
+    <p class="field-note">Tap the round <strong>🎤</strong> (bottom right) to talk hands-free. Speak naturally — you don't need to say "full stop", punctuation is added for you. Say <strong>"scratch that"</strong> to delete your last sentence. Tap <strong>⏸</strong> to pause (it keeps what you've said), then <strong>✓ Done</strong> to save. You can also type.</p>
     <textarea class="room-dictate ${flagged.length ? 'flagged' : ''}" id="roomta-${room.id}" rows="9"
       placeholder="e.g. Ceiling white and clean. Walls clean throughout. Light fittings working..."
       oninput="onRoomEdit('${room.id}')">${escapeHtml(val)}</textarea>
@@ -1832,10 +1850,15 @@ function renderRoomContent() {
       ${val ? `<button class="btn-clear" onclick="clearRoom('${room.id}')">Clear room notes</button>` : ''}
     </div>
     <div class="serial-field">
-      <label>Serial / model numbers <span>— type these, don't dictate</span></label>
+      <label>Serial / model numbers <span>— type, or photograph the data plate</span></label>
       <textarea id="serial-${room.id}" rows="2"
         placeholder="e.g. Dishwasher Bosch SMS46; HWS Rheem 260L SN 12345678"
         oninput="onSerialEdit('${room.id}')">${escapeHtml(state.serialModels[room.id] || '')}</textarea>
+      <div class="serial-photo-row">
+        <input type="file" id="serialphoto-${room.id}" accept="image/*" capture="environment" style="display:none" onchange="onSerialPhoto('${room.id}', this)">
+        <button type="button" class="serial-photo-btn" onclick="triggerSerialPhoto('${room.id}')">📷 Photograph serial / model plate</button>
+        <span class="serial-photo-status" id="serialphoto-status-${room.id}">${serialPhotoStatusText(room.id)}</span>
+      </div>
     </div>
   `;
   content.appendChild(block);
@@ -2074,11 +2097,28 @@ function applyCorrections(text) {
   });
 }
 
+// ─── "SCRATCH THAT" VOICE COMMAND ─────────────────────────────────────────────
+// Inspectors can't fix a mishear hands-free mid-recording. Saying "scratch that"
+// (or "scrap that" / "delete that") removes the command PLUS the sentence right
+// before it, back to the previous full stop. Case/punctuation-insensitive. Runs
+// live as they speak and again when the note is saved. The audio backup still has
+// everything, so nothing is truly lost.
+function applyScratch(text) {
+  if (!text) return text;
+  let out = String(text), prev;
+  do {
+    prev = out;
+    out = out.replace(/\s*[^.!?]*\b(?:scratch|scrap|delete)\s+(?:that|all\s+that|all\s+of\s+that)\b[\s.,!?]*/gi, ' ');
+  } while (out !== prev);
+  return out.replace(/\s{2,}/g, ' ').replace(/\s+([.,!?])/g, '$1').trim();
+}
+
 // Fold everything heard so far into state + textarea (survives restarts and stop).
 // Prefer the live textarea value so any last interim words on screen are kept.
 function commitDictation(roomId) {
   const ta = document.getElementById(`roomta-${roomId}`);
   let val = (ta ? ta.value : [dictBase, dictFinal].filter(Boolean).join(' ')).trim();
+  val = applyScratch(val);       // honour any "scratch that" the inspector said
   val = applyCorrections(val);   // AU spelling + reported mishears
   if (ta) ta.value = val;
   state.roomNotes[roomId] = val;
@@ -2241,7 +2281,7 @@ function startRecognition(roomId) {
       }
       dictFinal = finalT;   // session finals, recomputed each time — never accumulated
       if (finalT) { dictFailFast = 0; flashCaptured(); }
-      if (ta) ta.value = [dictBase, finalT, interimT.trim()].filter(Boolean).join(' ');
+      if (ta) ta.value = applyScratch([dictBase, finalT, interimT.trim()].filter(Boolean).join(' '));
     };
 
     recognition.onerror = (ev) => {
@@ -2255,7 +2295,9 @@ function startRecognition(roomId) {
 
     recognition.onend = () => {
       // Roll anything heard into the committed base so nothing is lost on restart.
-      dictBase = [dictBase, dictFinal].filter(Boolean).join(' ').trim();
+      const beforeScratch = [dictBase, dictFinal].filter(Boolean).join(' ').trim();
+      dictBase = applyScratch(beforeScratch);
+      if (dictBase.length < beforeScratch.length && /\b(?:scratch|scrap|delete)\s+(?:that|all)/i.test(beforeScratch)) showToast('↩ Removed — heard \u201cscratch that\u201d');
       dictFinal = '';
       if (ta) ta.value = dictBase;
       state.roomNotes[roomId] = dictBase;
@@ -2319,17 +2361,21 @@ function stopListening() {
 // accurate transcript once online. All of this no-ops cleanly when cloud is off or
 // the browser lacks MediaRecorder/IndexedDB — dictation still works as before.
 const AUDIO_STORE = 'recordings';
+const PHOTO_STORE = 'serialphotos';
 function cloudEnabled() { return !!TRANSCRIBE_URL; }
 
 function openAudioDB() {
   return new Promise((resolve, reject) => {
     if (audioDB) return resolve(audioDB);
     if (!('indexedDB' in window)) return reject(new Error('no-indexeddb'));
-    const req = indexedDB.open('pa_audio_db', 1);
+    const req = indexedDB.open('pa_audio_db', 2);
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains(AUDIO_STORE)) {
         db.createObjectStore(AUDIO_STORE, { keyPath: 'id', autoIncrement: true });
+      }
+      if (!db.objectStoreNames.contains(PHOTO_STORE)) {
+        db.createObjectStore(PHOTO_STORE, { keyPath: 'id', autoIncrement: true });
       }
     };
     req.onsuccess = () => { audioDB = req.result; resolve(audioDB); };
@@ -2357,6 +2403,30 @@ function dbPut(rec) {
 function dbDelete(id) {
   return openAudioDB().then(db => new Promise((resolve, reject) => {
     const r = db.transaction(AUDIO_STORE, 'readwrite').objectStore(AUDIO_STORE).delete(id);
+    r.onsuccess = () => resolve(); r.onerror = () => reject(r.error);
+  }));
+}
+function photoAdd(rec) {
+  return openAudioDB().then(db => new Promise((resolve, reject) => {
+    const r = db.transaction(PHOTO_STORE, 'readwrite').objectStore(PHOTO_STORE).add(rec);
+    r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);
+  }));
+}
+function photoAll() {
+  return openAudioDB().then(db => new Promise((resolve, reject) => {
+    const r = db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE).getAll();
+    r.onsuccess = () => resolve(r.result || []); r.onerror = () => reject(r.error);
+  }));
+}
+function photoPut(rec) {
+  return openAudioDB().then(db => new Promise((resolve, reject) => {
+    const r = db.transaction(PHOTO_STORE, 'readwrite').objectStore(PHOTO_STORE).put(rec);
+    r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);
+  }));
+}
+function photoDelete(id) {
+  return openAudioDB().then(db => new Promise((resolve, reject) => {
+    const r = db.transaction(PHOTO_STORE, 'readwrite').objectStore(PHOTO_STORE).delete(id);
     r.onsuccess = () => resolve(); r.onerror = () => reject(r.error);
   }));
 }
@@ -2624,6 +2694,88 @@ async function processArchiveQueue() {
         updatePendingUI();
       } catch (e) { break; } // network/Dropbox down — try again on the next tick
     }
+  }
+}
+
+// ─── SERIAL / MODEL PLATE PHOTOS ──────────────────────────────────────────────
+// A photo of the compliance/data plate is the only 100%-accurate way to capture
+// long serials and odd brand names — dictation and typing both fumble them. Photos
+// are stored on the phone and pushed to the same dated Dropbox property folder as
+// the audio, with the same offline retry. The typist reads the number off the image.
+function photoExt(type) {
+  const t = (type || '').toLowerCase();
+  if (t.includes('png')) return 'png';
+  if (t.includes('heic')) return 'heic';
+  if (t.includes('webp')) return 'webp';
+  return 'jpg';
+}
+function serialPhotoStatusText(roomId) {
+  const arr = (state.serialPhotos && state.serialPhotos[roomId]) || [];
+  if (!arr.length) return '';
+  const done = arr.filter(p => p.uploaded).length;
+  const label = arr.length === 1 ? '1 photo' : arr.length + ' photos';
+  if (!cloudArchiveEnabled()) return label + ' saved on phone';
+  if (done >= arr.length) return label + ' \u2022 \u2601 backed up';
+  return label + ' \u2022 \u23f3 backing up\u2026';
+}
+function refreshSerialPhotoStatus(roomId) {
+  const el = document.getElementById('serialphoto-status-' + roomId);
+  if (el) el.textContent = serialPhotoStatusText(roomId);
+}
+function triggerSerialPhoto(roomId) {
+  const input = document.getElementById('serialphoto-' + roomId);
+  if (input) input.click();
+}
+async function onSerialPhoto(roomId, inputEl) {
+  const file = inputEl && inputEl.files && inputEl.files[0];
+  if (inputEl) inputEl.value = '';   // allow re-selecting the same file later
+  if (!file) return;
+  const room = (state.rooms || []).find(r => r.id === roomId) || {};
+  const rec = {
+    roomId, roomName: room.name || roomId, address: state.address || '',
+    client: state.client || '', createdAt: Date.now(),
+    blob: file, type: file.type || 'image/jpeg', uploaded: false
+  };
+  let id = null;
+  try { id = await photoAdd(rec); } catch (e) { id = rec.createdAt; }
+  if (!state.serialPhotos[roomId]) state.serialPhotos[roomId] = [];
+  state.serialPhotos[roomId].push({ id, ts: rec.createdAt, uploaded: false });
+  saveState();
+  refreshSerialPhotoStatus(roomId);
+  showToast(cloudArchiveEnabled() ? '\U0001F4F7 Serial photo saved \u2014 backing up' : '\U0001F4F7 Serial photo saved on phone');
+  if (cloudArchiveEnabled() && navigator.onLine) processPhotoQueue();
+}
+function markPhotoUploaded(roomId, id) {
+  const arr = (state.serialPhotos && state.serialPhotos[roomId]) || [];
+  const m = arr.find(p => p.id === id);
+  if (m) m.uploaded = true;
+  saveState();
+  refreshSerialPhotoStatus(roomId);
+}
+// Retry pass: push any not-yet-uploaded serial photo into its Dropbox property
+// folder, then delete it from the phone once it belongs to a finished inspection.
+async function processPhotoQueue() {
+  if (!cloudArchiveEnabled() || !navigator.onLine || !('indexedDB' in window)) return;
+  if (photoQueueRunning) return;
+  photoQueueRunning = true;
+  try {
+    let recs = [];
+    try { recs = await photoAll(); } catch (e) { return; }
+    for (const rec of recs) {
+      if (rec.uploaded) continue;
+      try {
+        const folder = archiveFolderName(rec);
+        const base = archiveBaseName(rec);
+        const rel = `${folder}/${base} - Serial plate ${rec.id}.${photoExt(rec.type)}`;
+        await archivePut(rel, rec.blob, rec.type || 'image/jpeg');
+        rec.uploaded = true;
+        if ((state.address || '') !== (rec.address || '')) { await photoDelete(rec.id); }
+        else { await photoPut(rec); }
+        markPhotoUploaded(rec.roomId, rec.id);
+      } catch (e) { break; } // Dropbox/network down \u2014 retry next tick
+    }
+  } finally {
+    photoQueueRunning = false;
   }
 }
 
@@ -2977,13 +3129,23 @@ async function finishAndClear() {
   // not yet backed up to Dropbox) is kept and keeps trying in the background.
   try {
     const recs = (await dbAll()).filter(r => (r.address || '') === (state.address || ''));
+    let unsentPhotos = 0;
+    if (cloudArchiveEnabled()) {
+      try { unsentPhotos = (await photoAll()).filter(p => (p.address || '') === (state.address || '') && !p.uploaded).length; } catch (e) {}
+    }
     const notSafe = recs.filter(r =>
       r.status === 'pending' || r.status === 'uploading' || r.status === 'recording' || r.status === 'failed' ||
       (cloudArchiveEnabled() && r.status === 'done' && r.archived !== true));
-    if (notSafe.length) {
-      const msg = cloudArchiveEnabled()
-        ? `${notSafe.length} recording${notSafe.length === 1 ? " hasn't" : "s haven't"} finished transcribing or backing up to Dropbox yet. Finish anyway? Their audio stays on this phone and keeps trying in the background.`
-        : `${notSafe.length} recording${notSafe.length === 1 ? " hasn't" : "s haven't"} been transcribed yet. Finish anyway? Their audio will be kept but won't go into a new inspection.`;
+    if (notSafe.length || unsentPhotos) {
+      let msg;
+      if (cloudArchiveEnabled()) {
+        const parts = [];
+        if (notSafe.length) parts.push(`${notSafe.length} recording${notSafe.length === 1 ? '' : 's'}`);
+        if (unsentPhotos) parts.push(`${unsentPhotos} serial photo${unsentPhotos === 1 ? '' : 's'}`);
+        msg = `${parts.join(' and ')} ${(notSafe.length + unsentPhotos) === 1 ? "hasn't" : "haven't"} finished backing up to Dropbox yet. Finish anyway? They stay on this phone and keep trying in the background.`;
+      } else {
+        msg = `${notSafe.length} recording${notSafe.length === 1 ? " hasn't" : "s haven't"} been transcribed yet. Finish anyway? Their audio will be kept but won't go into a new inspection.`;
+      }
       if (!confirm(msg)) return;
       // Untranscribed → orphan so they never auto-apply to a new property's notes.
       // Not-yet-archived 'done' recordings stay as 'done' so the archive pass keeps
@@ -2998,10 +3160,19 @@ async function finishAndClear() {
         try { await dbDelete(rec.id); } catch (e) {}
       }
     }
+    // Serial photos: one more upload attempt, then clear backed-up ones for this
+    // property. Any still unsent stay on the phone and keep retrying.
+    try {
+      if (cloudArchiveEnabled() && navigator.onLine) await processPhotoQueue();
+      const photos = (await photoAll()).filter(p => (p.address || '') === (state.address || ''));
+      for (const p of photos) {
+        if (p.uploaded) { try { await photoDelete(p.id); } catch (e) {} }
+      }
+    } catch (e) {}
   } catch (e) { /* IndexedDB unavailable — nothing to clean */ }
   clearSaved();
   releaseSessionMic();   // let go of the microphone now the inspection is finished
-  state.roomNotes = {}; state.serialModels = {}; state.checked = {}; state.rooms = [];
+  state.roomNotes = {}; state.serialModels = {}; state.serialPhotos = {}; state.checked = {}; state.rooms = [];
   state.currentRoomIdx = 0; state.startedAt = null; state.address = '';
   state.client = ''; state.inspector = '';
   state.mandatory = { waterMeter:'', waterMeterLocation:'', rcdBox:'', smokeAlarms:'', nbnBox:'' };

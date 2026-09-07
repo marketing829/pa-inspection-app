@@ -452,6 +452,108 @@
   textarea.room-dictate:focus { border-color: var(--gold); }
   textarea.room-dictate.flagged { border-color: var(--red); }
 
+  /* LIVE PREVIEW — what the phone's own dictation is hearing. A preview only:
+     the room note below fills from the accurate transcript a few seconds later. */
+  .live-preview {
+    display: none;
+    background: #ECECEA;
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--mid);
+    max-height: 150px;
+    overflow-y: auto;
+  }
+  .live-preview.show { display: block; }
+  .live-preview-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--surface-dark);
+    margin-bottom: 4px;
+  }
+
+  /* PER-ROOM STATUS — recorded / transcribing / ready / no audio backup */
+  .room-state { display: none; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .room-state.show { display: flex; }
+  .room-state-chip {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--light);
+    color: var(--mid);
+  }
+  .room-state-chip.working { background: #FFF8CC; color: #8A7500; border-color: #EDDF8A; }
+  .room-state-chip.ready { background: var(--green-light); color: var(--green); border-color: #A9D9BF; }
+  .room-state-chip.bad { background: var(--red-light); color: var(--red); border-color: #F1A9A0; }
+
+  /* Persistent warning strip — used only for things a toast must not hide. */
+  .warn-banner {
+    display: none;
+    background: var(--red-light);
+    color: var(--red);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 10px 20px;
+    border-bottom: 1px solid #F1A9A0;
+    line-height: 1.45;
+  }
+  .warn-banner.show { display: block; }
+
+  /* RUNNING ORDER PROMPT */
+  .next-sub {
+    display: none;
+    background: var(--white);
+    border: 1.5px solid var(--gold);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--black);
+  }
+  .next-sub.show { display: block; }
+  .next-sub-btn {
+    background: var(--gold);
+    border: none;
+    border-radius: 14px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--black);
+    cursor: pointer;
+    margin-left: 4px;
+  }
+
+  /* INVENTORY — kept apart from the condition note, exported as its own row. */
+  .inventory-field { margin-top: 16px; }
+  .inventory-field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--black);
+    margin-bottom: 6px;
+  }
+  .inventory-field label span { font-weight: 400; color: var(--mid); }
+  .inventory-field textarea {
+    width: 100%;
+    background: var(--light);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-size: 16px;
+    font-family: inherit;
+    color: var(--black);
+    line-height: 1.5;
+    outline: none;
+    resize: vertical;
+  }
+  .inventory-field textarea:focus { border-color: var(--gold); }
+
   textarea.transcription {
     width: 100%;
     background: var(--light);
@@ -1187,9 +1289,10 @@
     <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
   </div>
   <div class="dictation-hint">
-    🎤 <span>Tap the round mic to talk through the room hands-free. Speak naturally — punctuation is added for you. Say "scratch that" to delete your last sentence. Tap ⏸ to pause, ✓ Done to save. Saves automatically.</span>
+    🎤 <span>Tap the round mic to talk through the room hands-free. Say the subsection name, pause, then describe it — "Ceiling." … "Painted white, cracking to edges." Say "scratch that" to drop the last sentence. Tap ⏸ to pause, ✓ Done to save.</span>
   </div>
   <div class="cloud-status" id="cloudStatus"></div>
+  <div class="warn-banner" id="warnBanner"></div>
   <div class="room-nav" id="roomNav"></div>
   <div class="room-content" id="roomContent"></div>
   <div class="rec-status" id="recStatus">● Listening…</div>
@@ -1493,6 +1596,7 @@ let state = {
   roomNotes: {},   // roomId -> dictated text block for the whole room
   serialModels: {},// roomId -> typed serial / model numbers (never dictated)
   serialPhotos: {},// roomId -> [{ id, ts, uploaded }] markers for photographed data plates
+  inventory: {},   // roomId -> typed inventory list (kept out of the condition note)
   checked: {},     // roomId -> { subsectionName: true }  (optional progress ticks)
   mandatory: {
     waterMeter: '', waterMeterLocation: '',
@@ -1513,6 +1617,12 @@ let dictFinal = '';          // finalised chunks heard in the current recognitio
 let checklistOpen = false;   // subsection checklist collapsed by default
 let roomToolsOpen = false;   // room edit panel collapsed by default
 let reviewItems = []; // flat list of {name, val} for field-by-field copy
+// The phone's own dictation is now a PREVIEW, not the note. It's held here per
+// room so it survives a restart, shows while the upload is in flight, and can be
+// dropped into the note as a flagged fallback if transcription never succeeds.
+let roughDrafts = {};     // roomId -> rough dictation, deliberately out of the note
+let roomAudioFlags = {};  // roomId -> 'ok' | 'noaudio' | 'nocloud'
+let roomRecMap = {};      // roomId -> { pending, uploading, failed, done, unarchived }
 
 // Cloud transcription / offline audio
 // Baked-in default so every device works without pasting the link. Inspectors can
@@ -1541,6 +1651,7 @@ function saveState() {
       beds: state.beds, baths: state.baths, stateCode: state.stateCode,
       rooms: state.rooms, currentRoomIdx: state.currentRoomIdx,
       roomNotes: state.roomNotes, serialModels: state.serialModels, serialPhotos: state.serialPhotos, checked: state.checked,
+      inventory: state.inventory, roughDrafts: roughDrafts, roomAudioFlags: roomAudioFlags,
       mandatory: state.mandatory, startedAt: state.startedAt
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
@@ -1586,6 +1697,9 @@ function resumeSaved() {
   state.serialModels = saved.serialModels || {};
   state.serialPhotos = saved.serialPhotos || {};
   state.checked = saved.checked || {};
+  state.inventory = saved.inventory || {};
+  roughDrafts = saved.roughDrafts || {};
+  roomAudioFlags = saved.roomAudioFlags || {};
   state.mandatory = saved.mandatory || state.mandatory;
   state.startedAt = saved.startedAt || Date.now();
   // New saves carry the full editable room list; older ones only stored selected IDs.
@@ -1742,7 +1856,9 @@ function renderInspection() {
 
 function roomHasNotes(room) {
   const v = state.roomNotes[room.id];
-  return !!(v && v.trim());
+  if (v && v.trim()) return true;
+  const m = roomRecMap[room.id];
+  return !!(m && (m.pending || m.uploading || m.done));
 }
 
 function renderRoomNav() {
@@ -1838,16 +1954,25 @@ function renderRoomContent() {
   block.innerHTML = `
     <button type="button" class="checklist-toggle" id="checklistToggle" onclick="toggleChecklist()">${checklistOpen ? '▾ Hide checklist' : '▸ Show checklist'}</button>
     <div class="checklist ${checklistOpen ? 'open' : ''}" id="checklistBox">${chips}</div>
+    <div class="next-sub" id="nextSub"></div>
     <div class="room-field-label">Talk through the room</div>
-    <p class="field-note">Tap the round <strong>🎤</strong> (bottom right) to talk hands-free. Speak naturally — you don't need to say "full stop", punctuation is added for you. Say <strong>"scratch that"</strong> to delete your last sentence. Tap <strong>⏸</strong> to pause (it keeps what you've said), then <strong>✓ Done</strong> to save. You can also type.</p>
+    <p class="field-note">Tap the round <strong>🎤</strong> (bottom right) to talk hands-free. Say the subsection name, <strong>pause</strong>, then describe it. Say <strong>"scratch that"</strong> to drop the last sentence. Tap <strong>⏸</strong> to pause, then <strong>✓ Done</strong> to save. The grey box shows what the phone is hearing; the note below fills with the accurate transcript a few seconds later. You can also type.</p>
+    <div class="live-preview" id="livePreview"></div>
+    <div class="room-state" id="roomState"></div>
     <textarea class="room-dictate ${flagged.length ? 'flagged' : ''}" id="roomta-${room.id}" rows="9"
-      placeholder="e.g. Ceiling white and clean. Walls clean throughout. Light fittings working..."
+      placeholder="The accurate transcript lands here after each recording. You can also type."
       oninput="onRoomEdit('${room.id}')">${escapeHtml(val)}</textarea>
     <div class="forbidden-warning ${flagged.length ? 'show' : ''}" id="roomwarn-${room.id}">
       ${flagged.length ? '⚠️ Avoid: ' + flagged.join(', ') : ''}
     </div>
     <div class="action-row">
       ${val ? `<button class="btn-clear" onclick="clearRoom('${room.id}')">Clear room notes</button>` : ''}
+    </div>
+    <div class="inventory-field">
+      <label>Inventory <span>— items left at the property, kept out of the condition note</span></label>
+      <textarea id="inv-${room.id}" rows="2"
+        placeholder="e.g. 2 x remote controls, 1 x window key, 4 x dining chairs"
+        oninput="onInventoryEdit('${room.id}')">${escapeHtml(state.inventory[room.id] || '')}</textarea>
     </div>
     <div class="serial-field">
       <label>Serial / model numbers <span>— type, or photograph the data plate</span></label>
@@ -1862,6 +1987,10 @@ function renderRoomContent() {
     </div>
   `;
   content.appendChild(block);
+
+  renderNextSub();
+  renderLivePreview(room.id, roughDrafts[room.id] || '', listeningRoom === room.id);
+  renderRoomStatus();
 
   const isLast = state.currentRoomIdx === state.rooms.length - 1;
   document.getElementById('btnNextRoom').textContent = isLast ? 'Review Report →' : 'Next Room →';
@@ -1911,6 +2040,7 @@ function toggleCheck(roomId, i) {
   else state.checked[roomId][sub] = true;
   const el = document.getElementById(`chk-${roomId}-${i}`);
   if (el) el.classList.toggle('done');
+  renderNextSub();
   saveState();
 }
 
@@ -1924,6 +2054,85 @@ function onRoomEdit(roomId) {
   saveState();
 }
 
+function onInventoryEdit(roomId) {
+  const ta = document.getElementById(`inv-${roomId}`);
+  if (!ta) return;
+  state.inventory[roomId] = ta.value;
+  saveState();
+}
+
+// ─── RUNNING ORDER PROMPT ─────────────────────────────────────────────────────
+// Inspectors shouldn't have to remember the room's order or which subsection
+// comes next. This shows the next unticked one and asks for it to be announced,
+// which is also what lets the transcript be split correctly afterwards.
+function nextSubsection(room) {
+  const ticks = state.checked[room.id] || {};
+  return (room.subsections || []).find(sub => !ticks[sub]) || null;
+}
+function renderNextSub() {
+  const box = document.getElementById('nextSub');
+  const room = state.rooms[state.currentRoomIdx];
+  if (!box || !room) return;
+  const sub = nextSubsection(room);
+  if (!sub) { box.classList.remove('show'); box.innerHTML = ''; return; }
+  box.classList.add('show');
+  box.innerHTML = `Next: <strong>${escapeHtml(sub)}</strong> — say the name, pause, then describe it.`
+    + `<button type="button" class="next-sub-btn" onclick="tickAndAdvance()">Done, next ▸</button>`;
+}
+function tickAndAdvance() {
+  const room = state.rooms[state.currentRoomIdx];
+  if (!room) return;
+  const sub = nextSubsection(room);
+  if (!sub) return;
+  if (!state.checked[room.id]) state.checked[room.id] = {};
+  state.checked[room.id][sub] = true;
+  // Update the checklist chip in place — re-rendering the whole room would
+  // replace the textarea the open recording is writing into.
+  const chip = document.getElementById(`chk-${room.id}-${room.subsections.indexOf(sub)}`);
+  if (chip) chip.classList.add('done');
+  renderNextSub();
+  saveState();
+}
+
+// ─── LIVE PREVIEW + PER-ROOM STATUS ───────────────────────────────────────────
+// True when this room's audio is being captured and will come back as an
+// accurate transcript. In that mode the phone's rough dictation never enters the
+// note — it's a preview, so nobody reads a draft and thinks it's the output.
+function accurateModeFor(roomId) {
+  return cloudEnabled() && roomAudioFlags[roomId] === 'ok';
+}
+
+function renderLivePreview(roomId, text, live) {
+  const box = document.getElementById('livePreview');
+  if (!box || currentRoomId() !== roomId) return;
+  const t = (text || '').trim();
+  if (!t) { box.classList.remove('show'); box.innerHTML = ''; return; }
+  box.classList.add('show');
+  box.innerHTML = `<div class="live-preview-label">${live ? 'Hearing you…' : 'Heard on the phone — waiting for the accurate transcript'}</div>${escapeHtml(t)}`;
+  if (live) box.scrollTop = box.scrollHeight;
+}
+
+// An honest per-room state line. A room that produced text but no audio is the
+// worst case in the app: it looks finished, reads badly, and leaves the typist
+// nothing to check against — so it says so, and keeps saying so.
+function renderRoomStatus() {
+  const box = document.getElementById('roomState');
+  const roomId = currentRoomId();
+  if (!box || !roomId) return;
+  const chips = [];
+  const m = roomRecMap[roomId] || {};
+  if (listeningRoom === roomId) chips.push(['working', '🎙 recording']);
+  if (m.uploading) chips.push(['working', '⏳ transcribing']);
+  else if (m.pending) chips.push(['working', navigator.onLine ? '⏳ waiting to transcribe' : '● saved offline']);
+  if (m.failed) chips.push(['bad', '⚠ transcription failed — audio kept, see Recordings']);
+  if (m.done && !m.unarchived) chips.push(['ready', '✓ transcript in, backed up']);
+  else if (m.done) chips.push(['ready', '✓ transcript in, backing up']);
+  if (roomAudioFlags[roomId] === 'noaudio') chips.push(['bad', '⚠ no audio backup for this room — re-record it']);
+  if (!chips.length) { box.classList.remove('show'); box.innerHTML = ''; return; }
+  box.classList.add('show');
+  box.innerHTML = chips.map(([cls, txt]) => `<span class="room-state-chip ${cls}">${escapeHtml(txt)}</span>`).join('');
+}
+
 function onSerialEdit(roomId) {
   const ta = document.getElementById(`serial-${roomId}`);
   if (!ta) return;
@@ -1935,6 +2144,7 @@ function clearRoom(roomId) {
   if (!confirm('Clear all notes for this room? This can\'t be undone.')) return;
   stopListening();
   state.roomNotes[roomId] = '';
+  roughDrafts[roomId] = '';
   const ta = document.getElementById(`roomta-${roomId}`);
   if (ta) ta.value = '';
   updateRoomFieldState(roomId, '');
@@ -2082,8 +2292,32 @@ const CORRECTIONS = {
   'fiber': 'fibre', 'fibers': 'fibres',
   // ("meter" left as-is on purpose — "water meter" / "meter box" are correct AU spelling)
   // Reported mishears — "tile" heard as Tyre / Tyrell
-  'tyre': 'tile', 'tyres': 'tiles', 'tyrell': 'tile'
+  'tyre': 'tile', 'tyres': 'tiles', 'tyrell': 'tile',
+  // Round 2 and 3 mishears that are safe as whole words (these words have no
+  // legitimate use in an inspection, so replacing them can't damage a real note)
+  'submetal': 'stainless steel', 'cinnamon': 'ceiling',
+  'powerpoint': 'power point', 'powerpoints': 'power points',
+  'skirtings': 'skirting', 'retic': 'reticulation'
 };
+
+// Multi-word mishears. Kept as phrases because the individual words are all
+// legitimate on their own — "pool" and "kennel" only need fixing in context.
+// Applied before the single-word pass. Add pairs as testers report them.
+const PHRASE_CORRECTIONS = [
+  [/\blight fangs\b/gi, 'light fittings'],
+  [/\btile rail\b/gi, 'towel rail'],
+  [/\bflat mix step\b/gi, 'flick mixer tap'],
+  [/\bflick mixer step\b/gi, 'flick mixer tap'],
+  [/\bceiling kennel\b/gi, 'ceiling fan'],
+  [/\bkennel air[- ]?conditioner\b/gi, 'ceiling fan / air conditioner'],
+  [/\bwhy don'?t handle\b/gi, 'window handle'],
+  [/\bpool cord\b/gi, 'pull cord'],
+  [/\bpinch plate\b/gi, 'pinch pleat'],
+  [/\bhanging road\b/gi, 'hanging rod'],
+  [/\bno cereal\b/gi, 'no serial'],
+  [/\bglass paint\b/gi, 'glass pane'],
+  [/\bmiddle frame\b/gi, 'metal frame']
+];
 function matchCase(replacement, original) {
   if (original.length > 1 && original === original.toUpperCase()) return replacement.toUpperCase();
   if (original[0] === original[0].toUpperCase()) return replacement.charAt(0).toUpperCase() + replacement.slice(1);
@@ -2091,6 +2325,7 @@ function matchCase(replacement, original) {
 }
 function applyCorrections(text) {
   if (!text) return text;
+  PHRASE_CORRECTIONS.forEach(([re, to]) => { text = text.replace(re, to); });
   return text.replace(/[A-Za-z]+/g, w => {
     const hit = CORRECTIONS[w.toLowerCase()];
     return hit ? matchCase(hit, w) : w;
@@ -2107,7 +2342,7 @@ function applyCorrections(text) {
 // wipe the whole note. Instead we delete the command plus up to SCRATCH_MAX_WORDS
 // words before it, stopping at any sentence end — bounded, so it can never clear
 // everything. Tune SCRATCH_MAX_WORDS if inspectors want a longer/shorter cut.
-const SCRATCH_CMD = /\b(?:scratch|scrap|delete)\s+(?:that|all\s+that|all\s+of\s+that)\b[.,!?]*/i;
+const SCRATCH_CMD = /\b(?:scratch|scrap|strike|cancel|delete)\s+(?:that|all\s+that|all\s+of\s+that)\b[.,!?]*/i;
 const SCRATCH_MAX_WORDS = 8;
 function applyScratch(text) {
   if (!text) return text;
@@ -2119,13 +2354,25 @@ function applyScratch(text) {
     const before = out.slice(0, cmdStart);
     let i = before.length;
     while (i > 0 && /\s/.test(before[i - 1])) i--;              // trailing space
-    let words = 0;
-    while (i > 0 && words < SCRATCH_MAX_WORDS) {
-      if (/[.!?]/.test(before[i - 1])) break;                   // don't cross a sentence end
-      let j = i;
-      while (j > 0 && !/\s/.test(before[j - 1]) && !/[.!?]/.test(before[j - 1])) j--;
-      words++; i = j;
-      while (i > 0 && /\s/.test(before[i - 1])) i--;            // eat the space before the word
+    if (i > 0 && /[.!?]/.test(before[i - 1])) {
+      // Punctuated text — the accurate transcript, where the command lands in its
+      // own sentence ("... induction. Scratch that. Present."). The mistake is the
+      // whole sentence before it, so delete back past that sentence. Without this
+      // the old word-count walk hit the full stop immediately, deleted nothing,
+      // and left both the mistake AND the command in the note.
+      i--;                                                      // step over the full stop
+      while (i > 0 && /\s/.test(before[i - 1])) i--;
+      while (i > 0 && !/[.!?]/.test(before[i - 1])) i--;
+    } else {
+      // Live dictation has no full stops — delete a bounded number of words.
+      let words = 0;
+      while (i > 0 && words < SCRATCH_MAX_WORDS) {
+        if (/[.!?]/.test(before[i - 1])) break;                 // don't cross a sentence end
+        let j = i;
+        while (j > 0 && !/\s/.test(before[j - 1]) && !/[.!?]/.test(before[j - 1])) j--;
+        words++; i = j;
+        while (i > 0 && /\s/.test(before[i - 1])) i--;          // eat the space before the word
+      }
     }
     out = out.slice(0, i) + ' ' + out.slice(cmdEnd);
   }
@@ -2136,6 +2383,15 @@ function applyScratch(text) {
 // Prefer the live textarea value so any last interim words on screen are kept.
 function commitDictation(roomId) {
   const ta = document.getElementById(`roomta-${roomId}`);
+  if (accurateModeFor(roomId)) {
+    // Rough dictation is held as a preview and a fallback, never written into the
+    // note. The note is filled by applyTranscript() when Deepgram comes back.
+    let rough = applyCorrections(applyScratch([dictBase, dictFinal].filter(Boolean).join(' ').trim()));
+    roughDrafts[roomId] = rough;
+    renderLivePreview(roomId, rough, false);
+    saveState();
+    return;
+  }
   let val = (ta ? ta.value : [dictBase, dictFinal].filter(Boolean).join(' ')).trim();
   val = applyScratch(val);       // honour any "scratch that" the inspector said
   val = applyCorrections(val);   // AU spelling + reported mishears
@@ -2175,7 +2431,6 @@ async function startListening(roomId) {
   wantListening = true;
   recPaused = false;
   dictFailFast = 0;
-  dictBase = ta ? ta.value.trim() : '';
   dictFinal = '';
   setFabRecording(true);
   updateRecControls();
@@ -2184,6 +2439,13 @@ async function startListening(roomId) {
   showToast('Recording — tap ⏸ to pause, ✓ Done to save');
   acquireWakeLock();                                // keep the screen (and mic) alive while recording
   const audioOk = await startAudioRecording(roomId); // true | false (failed) | null (not applicable)
+  // Record the outcome per room. 'noaudio' means the recorder failed but dictation
+  // may still run — the room would look finished with nothing behind it, so it
+  // stays flagged on the room card until it's re-recorded.
+  roomAudioFlags[roomId] = audioOk === true ? 'ok' : (audioOk === false ? 'noaudio' : 'nocloud');
+  dictBase = accurateModeFor(roomId) ? (roughDrafts[roomId] || '') : (ta ? ta.value.trim() : '');
+  renderRoomStatus();
+  updatePendingUI();
   let speechOk = false;
   if (SR) speechOk = startRecognition(roomId);       // live rough text where the browser supports it
   if (audioOk !== true && !speechOk) {
@@ -2195,6 +2457,7 @@ async function startListening(roomId) {
     setFabError();
     updateRecControls();
     releaseWakeLock();
+    renderRoomStatus();
     showToast('Microphone unavailable — audio is NOT being recorded');
   }
 }
@@ -2228,7 +2491,7 @@ function resumeListening(roomId) {
   wantListening = true;
   recPaused = false;
   dictFailFast = 0;
-  dictBase = ta ? ta.value.trim() : '';   // append to existing note
+  dictBase = accurateModeFor(roomId) ? (roughDrafts[roomId] || '') : (ta ? ta.value.trim() : '');
   dictFinal = '';
   acquireWakeLock();
   if (currentRecSession && currentRecSession.mr && currentRecSession.mr.state === 'paused') {
@@ -2300,7 +2563,9 @@ function startRecognition(roomId) {
       }
       dictFinal = finalT;   // session finals, recomputed each time — never accumulated
       if (finalT) { dictFailFast = 0; flashCaptured(); }
-      if (ta) ta.value = applyScratch([dictBase, finalT, interimT.trim()].filter(Boolean).join(' '));
+      const heard = applyScratch([dictBase, finalT, interimT.trim()].filter(Boolean).join(' '));
+      if (accurateModeFor(roomId)) renderLivePreview(roomId, heard, true);
+      else if (ta) ta.value = heard;
     };
 
     recognition.onerror = (ev) => {
@@ -2318,12 +2583,18 @@ function startRecognition(roomId) {
       dictBase = applyScratch(beforeScratch);
       if (dictBase.length < beforeScratch.length && /\b(?:scratch|scrap|delete)\s+(?:that|all)/i.test(beforeScratch)) showToast('↩ Removed — heard \u201cscratch that\u201d');
       dictFinal = '';
-      if (ta) ta.value = dictBase;
-      state.roomNotes[roomId] = dictBase;
-      updateRoomFieldState(roomId, dictBase);
-      updateProgress();
-      renderRoomNav();
-      saveState();
+      if (accurateModeFor(roomId)) {
+        roughDrafts[roomId] = dictBase;
+        renderLivePreview(roomId, dictBase, wantListening);
+        saveState();
+      } else {
+        if (ta) ta.value = dictBase;
+        state.roomNotes[roomId] = dictBase;
+        updateRoomFieldState(roomId, dictBase);
+        updateProgress();
+        renderRoomNav();
+        saveState();
+      }
 
       if (!(wantListening && listeningRoom === roomId)) return;
       // Distinguish a normal silence-timeout (restart) from an instant failure loop.
@@ -2370,8 +2641,16 @@ function stopListening() {
   setFabRecording(false);
   listeningRoom = null;
   updateRecControls();
-  // Stop + save the room audio (fire-and-forget; nothing is lost if this fails)
-  if (stoppedRoom) stopAudioRecording(stoppedRoom, state.roomNotes[stoppedRoom] || '');
+  renderRoomStatus();
+  // Stop + save the room audio (fire-and-forget; nothing is lost if this fails).
+  // The rough text travels with the recording so it can be used as a fallback if
+  // transcription never succeeds, and shown beside the audio in Dropbox.
+  if (stoppedRoom) {
+    const rough = accurateModeFor(stoppedRoom)
+      ? (roughDrafts[stoppedRoom] || '')
+      : (state.roomNotes[stoppedRoom] || '');
+    stopAudioRecording(stoppedRoom, rough);
+  }
 }
 
 // ─── OFFLINE AUDIO + CLOUD TRANSCRIPTION ──────────────────────────────────────
@@ -2500,6 +2779,9 @@ async function startAudioRecording(roomId) {
       roomId,
       roomName: (state.rooms.find(r => r.id === roomId) || {}).name || '',
       address: state.address,
+      // Carried on the record so the Dropbox file can be written with headings
+      // even after the inspection has been finished and cleared.
+      subsections: ((state.rooms.find(r => r.id === roomId) || {}).subsections || []).slice(),
       chunks: [],
       mr, stream: null,   // stream is shared for the whole session — never stopped per-recording
       // What was in the textarea BEFORE this recording session — the accurate
@@ -2539,6 +2821,7 @@ async function persistPartialRecording(session) {
       roomId: session.roomId,
       roomName: session.roomName,
       address: session.address,
+      subsections: session.subsections || [],
       sessionBase: session.sessionBase,
       roughText: '',
       blob: new Blob(session.chunks, { type }),
@@ -2574,6 +2857,7 @@ async function stopAudioRecording(roomId, roughText) {
       roomId: rid,
       roomName: session.roomName,
       address: session.address,
+      subsections: session.subsections || [],
       sessionBase: session.sessionBase,
       roughText: roughText || '',
       blob, type, status: 'pending', createdAt: session.createdAt, attempts: 0
@@ -2585,15 +2869,24 @@ async function stopAudioRecording(roomId, roughText) {
   } catch (e) { /* storage failed — the rough text is still in the room notes */ }
 }
 
-// After a crash mid-recording, IndexedDB still holds a partial record with
-// status 'recording'. Flip those to 'pending' so their audio uploads anyway.
+// Anything left mid-flight goes back into the queue on startup:
+//   'recording' — the app was killed mid-room; the partial audio still uploads
+//   'uploading' — killed mid-upload; nothing had failed, so try again
+//   'orphaned'  — stranded by an older build's Finish & Clear. No queue ever
+//                 looked at those again, so they sat on the phone forever even
+//                 though the dialog promised they'd keep trying. Revive them.
 async function recoverCrashedRecordings() {
   try {
     const recs = await dbAll();
     for (const rec of recs) {
-      if (rec.status === 'recording') {
+      if (rec.status === 'recording' || rec.status === 'uploading' || rec.status === 'orphaned') {
+        // A crash-recovered partial gets its own filename in Dropbox — two records
+        // with the same createdAt used to write two same-named files, one of them
+        // a truncated fragment, with no way for the typist to tell them apart.
+        if (rec.status === 'recording') rec.recovered = true;
+        if (rec.status === 'orphaned') rec.closed = true;
         rec.status = 'pending';
-        if (rec.attempts == null) rec.attempts = 0;
+        rec.attempts = 0;
         await dbPut(rec);
       }
     }
@@ -2639,6 +2932,7 @@ async function processQueue() {
         if (rec.attempts >= 5) {
           // Give up after 5 tries — mark visibly failed, keep the audio for manual retry.
           rec.status = 'failed';
+          insertRoughFallback(rec);
           showToast(`A recording for ${rec.roomName || 'a room'} couldn't be transcribed. See Recordings.`);
         } else {
           rec.status = 'pending';
@@ -2652,6 +2946,26 @@ async function processQueue() {
     queueRunning = false;
     if (cloudArchiveEnabled()) processArchiveQueue(); // back up anything not yet archived
   }
+}
+
+// No accurate transcript is coming for this room. Rather than leave the note
+// empty, drop the phone's rough text in with a marker so nobody mistakes it for
+// the finished text — and so the typist knows to work from the audio.
+function insertRoughFallback(rec) {
+  if (!rec || (rec.address || '') !== (state.address || '')) return;
+  const rough = (rec.roughText || '').trim();
+  if (!rough) return;
+  const roomId = rec.roomId;
+  if ((state.roomNotes[roomId] || '').trim()) return;   // something's already there — leave it alone
+  const marked = '⚠ NOT TRANSCRIBED — phone dictation only, check against the audio:\n' + rough;
+  state.roomNotes[roomId] = marked;
+  const ta = document.getElementById(`roomta-${roomId}`);
+  if (ta) ta.value = marked;
+  updateRoomFieldState(roomId, marked);
+  updateProgress();
+  renderRoomNav();
+  renderRoomStatus();
+  saveState();
 }
 
 // ─── DROPBOX ARCHIVE ──────────────────────────────────────────────────────────
@@ -2670,7 +2984,12 @@ function archiveFolderName(rec) {
 function archiveBaseName(rec) {
   const d = rec.createdAt ? new Date(rec.createdAt) : new Date();
   const hhmm = d.toTimeString().slice(0, 5).replace(':', ''); // local HHMM
-  return `${safeSeg(rec.roomName || rec.roomId) || 'Room'} - ${hhmm}`;
+  const base = `${safeSeg(rec.roomName || rec.roomId) || 'Room'} - ${hhmm}`;
+  // A crash-recovered fragment shares its createdAt with the finished clip, so
+  // both used to generate the same name and Dropbox quietly renamed one to
+  // "(1)" — a 25 KB stub sitting beside a 987 KB recording with nothing to say
+  // which was which. Name it for what it is instead.
+  return rec.recovered ? `${base} - partial (crash recovery)` : base;
 }
 async function archivePut(relPath, body, contentType) {
   const res = await fetch(ARCHIVE_URL + '?path=' + encodeURIComponent(relPath), {
@@ -2681,15 +3000,46 @@ async function archivePut(relPath, body, contentType) {
   if (!res.ok) throw new Error('archive http ' + res.status);
   return res;
 }
-// Upload one recording's audio and (if present) its transcript. Throws on failure
-// so the caller can leave it un-archived and retry later.
+// The typist's file. Cleaned text, split into the room's subsections, with the
+// full transcript underneath as the source of truth. The archive used to get
+// rec.transcript raw, so every file said "gray" where the app said "grey" and
+// every "scratch that" was still sitting in the text.
+function buildArchiveText(rec, clean) {
+  const header = [
+    rec.address ? 'Property: ' + rec.address : '',
+    'Room: ' + (rec.roomName || rec.roomId || ''),
+    rec.createdAt ? 'Recorded: ' + new Date(rec.createdAt).toLocaleString('en-AU') : ''
+  ].filter(Boolean).join('\n');
+  const subs = rec.subsections || [];
+  const buckets = subs.length ? splitNotesBySubarea({ subsections: subs }, clean) : [];
+  const body = buckets.length > 1
+    ? buckets.map(b => b.subarea.toUpperCase() + '\n' + b.text).join('\n\n')
+    : clean;
+  return header + '\n\n' + body + '\n\n' + '-'.repeat(40)
+    + '\nFull transcript, unsplit:\n' + clean + '\n';
+}
+
+// Upload one recording's audio and its text. Throws on failure so the caller can
+// leave it un-archived and retry later.
 async function archiveToDropbox(rec) {
   if (!cloudArchiveEnabled() || !rec || !rec.blob) return false;
   const folder = archiveFolderName(rec);
   const base = archiveBaseName(rec);
   await archivePut(`${folder}/${base}.${audioExt(rec.type)}`, rec.blob, rec.type || 'application/octet-stream');
-  const t = (rec.transcript || '').trim();
-  if (t) await archivePut(`${folder}/${base}.txt`, t, 'text/plain; charset=utf-8');
+  const raw = (rec.transcript || '').trim();
+  if (raw) {
+    const clean = applyCorrections(applyScratch(raw));
+    await archivePut(`${folder}/${base}.txt`, buildArchiveText(rec, clean), 'text/plain; charset=utf-8');
+    // The untouched engine output beside it, so nothing the app changed is lost.
+    await archivePut(`${folder}/${base} - raw.txt`, raw, 'text/plain; charset=utf-8');
+  } else {
+    // Transcription failed or never ran. The audio still has to reach the typist,
+    // and the file beside it has to say why there's no transcript.
+    const rough = (rec.roughText || '').trim();
+    const body = 'NO ACCURATE TRANSCRIPT FOR THIS RECORDING — please type from the audio.\n\n'
+      + (rough ? 'Phone dictation only, mishears expected:\n' + rough + '\n' : '');
+    await archivePut(`${folder}/${base} - transcription failed.txt`, body, 'text/plain; charset=utf-8');
+  }
   return true;
 }
 // Retry pass: back up any transcribed-but-not-archived recording that still has audio.
@@ -2698,21 +3048,23 @@ async function processArchiveQueue() {
   let recs = [];
   try { recs = await dbAll(); } catch (e) { return; }
   for (const rec of recs) {
-    if (rec.status === 'done' && rec.archived !== true && rec.blob) {
-      try {
-        await archiveToDropbox(rec);
-        rec.archived = true;
-        // Safely in Dropbox now. If it belongs to a finished/other inspection,
-        // delete it to reclaim phone storage; keep it if it's the current job so
-        // the inspector can still play or re-send it during the session.
-        if ((state.address || '') !== (rec.address || '')) {
-          await dbDelete(rec.id);
-        } else {
-          await dbPut(rec);
-        }
-        updatePendingUI();
-      } catch (e) { break; } // network/Dropbox down — try again on the next tick
-    }
+    // 'failed' and 'orphaned' recordings are archived too. The audio backup is
+    // the typist's whole safety net, and it used to have a hole exactly where it
+    // was needed most: anything that failed transcription reached Dropbox never.
+    const archivable = rec.status === 'done' || rec.status === 'failed' || rec.status === 'orphaned';
+    if (!archivable || rec.archived === true || !rec.blob) continue;
+    try {
+      await archiveToDropbox(rec);
+      rec.archived = true;
+      // Safely in Dropbox now. A transcribed recording from a finished job can go,
+      // to reclaim phone storage. Anything that failed stays put so Retry still works.
+      if ((state.address || '') !== (rec.address || '') && rec.status === 'done') {
+        await dbDelete(rec.id);
+      } else {
+        await dbPut(rec);
+      }
+      updatePendingUI();
+    } catch (e) { continue; } // this file's turn will come round again; don't block the others
   }
 }
 
@@ -2791,59 +3143,47 @@ async function processPhotoQueue() {
         if ((state.address || '') !== (rec.address || '')) { await photoDelete(rec.id); }
         else { await photoPut(rec); }
         markPhotoUploaded(rec.roomId, rec.id);
-      } catch (e) { break; } // Dropbox/network down \u2014 retry next tick
+      } catch (e) { continue; } // don't let one bad photo block the rest of the pass
     }
   } finally {
     photoQueueRunning = false;
   }
 }
 
-// Loose comparison for "is this still the rough text from that session?" —
-// dictation punctuation/casing wobbles, so compare normalised words only.
-function looseTextMatch(a, b) {
-  const norm = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-  return norm(a) === norm(b);
-}
-
-// Fold an accurate transcript into the room note WITHOUT destroying anything:
-// - Recordings from a different property are never applied (cross-property bleed).
-// - Only the text added during that recording session is replaced; whatever was
-//   in the note before the session (sessionBase) is preserved.
-// - If the note has been hand-edited since, the transcript is APPENDED on a new
-//   line — an accurate transcript is never thrown away, earlier text never deleted.
+// Fold an accurate transcript into the room note. Now that the phone's rough
+// dictation stays out of the note, this is a straight append — no diffing
+// against a rough draft that may or may not still be there, and nothing an
+// inspector typed or an earlier recording produced can ever be overwritten.
+// "Scratch that" is applied HERE as well as live: the transcript used to arrive
+// with the command and the mistake both intact and overwrite the cleaned-up
+// version, which is what Brandon reported in July and Bonnie again in September.
 function applyTranscript(rec, transcript) {
-  transcript = applyCorrections((transcript || '').trim());   // AU spelling + reported mishears
+  transcript = applyCorrections(applyScratch((transcript || '').trim()));
   if (!transcript) return;
-  if ((rec.address || '') !== (state.address || '')) return; // different property — don't touch this inspection
   const roomId = rec.roomId;
-  const current = (state.roomNotes[roomId] || '').trim();
-  const base = (rec.sessionBase || '').trim();
-  const rough = (rec.roughText || '').trim();
-  // The rough text this session produced = full note at stop time minus the base.
-  const sessionRough = (base && rough.slice(0, base.length) === base)
-    ? rough.slice(base.length).trim() : rough;
-  let next;
-  if (current.slice(0, base.length) === base) {
-    const remainder = current.slice(base.length).trim();
-    if (!remainder || looseTextMatch(remainder, sessionRough)) {
-      // Untouched since the session — swap just the session's rough text.
-      next = base + (base ? '\n' : '') + transcript;
-    } else {
-      // Hand-edited — append rather than silently discarding the transcript.
-      next = current + '\n' + transcript;
-    }
-  } else {
-    // The base is no longer at the start (note was rewritten) — append.
-    next = current ? current + '\n' + transcript : transcript;
+  if ((rec.address || '') !== (state.address || '')) {
+    // Belongs to another property — usually the job that was just finished. It
+    // must not be written into this inspection's notes, but it isn't lost: it's
+    // on the record, it's in Dropbox, and Recordings can copy it out.
+    showToast(`Transcript ready for ${rec.roomName || 'a room'} at ${rec.address || 'another property'} — see Recordings`);
+    return;
   }
+  const current = (state.roomNotes[roomId] || '').trim();
+  const next = current ? current + '\n' + transcript : transcript;
   state.roomNotes[roomId] = next;
+  // The preview has served its purpose — the accurate text is in the note now.
+  if (listeningRoom !== roomId) {
+    roughDrafts[roomId] = '';
+    renderLivePreview(roomId, '', false);
+  }
   const ta = document.getElementById(`roomta-${roomId}`);
   if (ta) ta.value = next;
   updateRoomFieldState(roomId, next);
   updateProgress();
   renderRoomNav();
+  renderRoomStatus();
   saveState();
-  showToast('✓ Accurate transcript added');
+  showToast(`✓ Transcript added — ${rec.roomName || 'room'}`);
 }
 
 // Update the status bar + per-room badges + header Recordings badge from storage.
@@ -2857,6 +3197,17 @@ async function updatePendingUI() {
   const map = {};
   recs.forEach(r => { if (r.status === 'pending' || r.status === 'uploading') map[r.roomId] = r.status; });
   pendingRoomMap = map;
+  // Per-room roll-up for the status chips on the room card.
+  const rmap = {};
+  recs.forEach(r => {
+    if ((r.address || '') !== (state.address || '')) return;
+    const m = rmap[r.roomId] = rmap[r.roomId] || { pending: 0, uploading: 0, failed: 0, done: 0, unarchived: 0 };
+    if (r.status === 'pending' || r.status === 'recording') m.pending++;
+    else if (r.status === 'uploading') m.uploading++;
+    else if (r.status === 'failed') m.failed++;
+    else if (r.status === 'done') { m.done++; if (cloudArchiveEnabled() && r.archived !== true) m.unarchived++; }
+  });
+  roomRecMap = rmap;
   const pending = recs.filter(r => r.status === 'pending').length;
   const uploading = recs.filter(r => r.status === 'uploading').length;
   const failed = recs.filter(r => r.status === 'failed').length;
@@ -2889,6 +3240,21 @@ async function updatePendingUI() {
       }
     }
   }
+  // Warnings that a toast would hide. These stay on screen until they're not true.
+  const warn = document.getElementById('warnBanner');
+  if (warn) {
+    const msgs = [];
+    if (!cloudEnabled()) {
+      msgs.push('⚠ Accurate transcription is off — no room audio is being recorded at all. Add the transcription link on the setup screen before inspecting.');
+    }
+    const noAudio = (state.rooms || []).filter(r => roomAudioFlags[r.id] === 'noaudio').map(r => r.name);
+    if (noAudio.length) {
+      msgs.push('⚠ No audio backup for: ' + noAudio.join(', ') + '. Re-record ' + (noAudio.length === 1 ? 'that room' : 'those rooms') + ' — the typist has nothing to check against.');
+    }
+    warn.innerHTML = msgs.map(escapeHtml).join('<br>');
+    warn.classList.toggle('show', msgs.length > 0);
+  }
+  renderRoomStatus();
   if (document.getElementById('roomNav')) renderRoomNav();
   // Live-refresh the Recordings screen if it's open.
   const recScreen = document.getElementById('screenRecordings');
@@ -2932,8 +3298,29 @@ function showReview() {
 
   const hint = document.createElement('div');
   hint.className = 'review-hint';
-  hint.innerHTML = '📋 Each room is one block. Tap <strong>Copy</strong> to grab a room, or use <strong>Download CSV</strong> / <strong>Send to VA</strong> below. The VA splits each block into subsections (a Claude prompt does this).';
+  hint.innerHTML = '📋 Each room shows its note, then the same text split by subsection. Tap <strong>Copy</strong> to grab a field, or use <strong>Download CSV</strong> / <strong>Send to VA</strong> below. The full note always travels with the split, so nothing depends on the split being perfect.';
   body.appendChild(hint);
+
+  // The note fills from the accurate transcript, so a room recorded out of range
+  // is legitimately empty until it uploads. Say so loudly on the export screen.
+  const waitingRooms = state.rooms
+    .filter(r => { const m = roomRecMap[r.id]; return m && (m.pending || m.uploading); })
+    .map(r => r.name);
+  if (waitingRooms.length) {
+    const banner = document.createElement('div');
+    banner.className = 'warning-banner';
+    banner.innerHTML = `⏳ <div><strong>Still waiting on transcripts:</strong><br>${escapeHtml(waitingRooms.join(', '))}<br>Get back into signal and let these finish before you export — their notes are empty until they do.</div>`;
+    body.appendChild(banner);
+  }
+  const failedRooms = state.rooms
+    .filter(r => { const m = roomRecMap[r.id]; return m && m.failed; })
+    .map(r => r.name);
+  if (failedRooms.length) {
+    const banner = document.createElement('div');
+    banner.className = 'warning-banner';
+    banner.innerHTML = `⚠️ <div><strong>Transcription failed:</strong><br>${escapeHtml(failedRooms.join(', '))}<br>The audio is kept and goes to Dropbox — the typist works from that.</div>`;
+    body.appendChild(banner);
+  }
 
   const warnings = checkMandatory();
   if (warnings.length) {
@@ -2976,13 +3363,15 @@ function showReview() {
     let splitHtml = '';
     const buckets = splitNotesBySubarea(room, note);
     if (buckets.length) {
-      splitHtml = '<div class="review-split"><div class="review-split-title">Auto-split by sub-area</div>'
+      splitHtml = '<div class="review-split"><div class="review-split-title">Split by subsection</div>'
         + buckets.map(b => `<div class="review-split-row"><span class="review-split-name">${escapeHtml(b.subarea)}:</span> ${escapeHtml(b.text)}</div>`).join('')
         + '</div>';
     }
     const serial = (state.serialModels[room.id] || '').trim();
     const serialHtml = serial ? renderReviewItem('Serial / model', serial) : '';
-    div.innerHTML = `<div class="review-room-title">${escapeHtml(room.name)}</div>${renderReviewItem('Room notes', note)}${serialHtml}${splitHtml}`;
+    const inv = (state.inventory[room.id] || '').trim();
+    const invHtml = inv ? renderReviewItem('Inventory', inv) : '';
+    div.innerHTML = `<div class="review-room-title">${escapeHtml(room.name)}</div>${renderReviewItem('Room notes', note)}${invHtml}${serialHtml}${splitHtml}`;
     body.appendChild(div);
   });
 }
@@ -3038,9 +3427,11 @@ function buildReportText() {
   state.rooms.forEach(room => {
     const val = state.roomNotes[room.id];
     const serial = (state.serialModels[room.id] || '').trim();
-    if ((val && val.trim()) || serial) {
+    const inv = (state.inventory[room.id] || '').trim();
+    if ((val && val.trim()) || serial || inv) {
       report += `\n\n${room.name.toUpperCase()}\n${'-'.repeat(30)}\n`;
       if (val && val.trim()) report += `${val.trim()}\n`;
+      if (inv) report += `Inventory: ${inv}\n`;
       if (serial) report += `Serial / model: ${serial}\n`;
     }
   });
@@ -3109,6 +3500,8 @@ function buildCSVRows() {
       buckets.forEach(b => rows.push([...meta, room.name, b.subarea, b.text]));
       rows.push([...meta, room.name, 'Full room notes', val.trim()]);
     }
+    const inv = (state.inventory[room.id] || '').trim();
+    if (inv) rows.push([...meta, room.name, 'Inventory', inv]);
     const serial = (state.serialModels[room.id] || '').trim();
     if (serial) rows.push([...meta, room.name, 'Serial / model numbers', serial]);
   });
@@ -3161,16 +3554,23 @@ async function finishAndClear() {
         const parts = [];
         if (notSafe.length) parts.push(`${notSafe.length} recording${notSafe.length === 1 ? '' : 's'}`);
         if (unsentPhotos) parts.push(`${unsentPhotos} serial photo${unsentPhotos === 1 ? '' : 's'}`);
-        msg = `${parts.join(' and ')} ${(notSafe.length + unsentPhotos) === 1 ? "hasn't" : "haven't"} finished backing up to Dropbox yet. Finish anyway? They stay on this phone and keep trying in the background.`;
+        msg = `${parts.join(' and ')} ${(notSafe.length + unsentPhotos) === 1 ? "hasn't" : "haven't"} finished backing up to Dropbox yet. Finish anyway? They stay on this phone and keep trying in the background — you can check them under Recordings.`;
       } else {
         msg = `${notSafe.length} recording${notSafe.length === 1 ? " hasn't" : "s haven't"} been transcribed yet. Finish anyway? Their audio will be kept but won't go into a new inspection.`;
       }
       if (!confirm(msg)) return;
-      // Untranscribed → orphan so they never auto-apply to a new property's notes.
-      // Not-yet-archived 'done' recordings stay as 'done' so the archive pass keeps
-      // backing them up (then deletes them once safely in Dropbox).
+      // These stay in the queue and really do keep trying. They used to be set to
+      // 'orphaned', a status neither queue ever looked at again — so the dialog's
+      // promise was false and the audio sat on the phone forever. Writing into the
+      // next property's notes is already prevented by the address check in
+      // applyTranscript(), so the status doesn't need to do that job.
       for (const rec of notSafe) {
-        if (rec.status !== 'done') { rec.status = 'orphaned'; try { await dbPut(rec); } catch (e) {} }
+        rec.closed = true;                 // belongs to a finished job
+        if (rec.status !== 'done' && rec.status !== 'failed') {
+          rec.status = 'pending';
+          rec.attempts = 0;
+        }
+        try { await dbPut(rec); } catch (e) {}
       }
     }
     // Delete records whose audio is safely handled: transcribed AND (backed up, or archiving off).
@@ -3192,6 +3592,7 @@ async function finishAndClear() {
   clearSaved();
   releaseSessionMic();   // let go of the microphone now the inspection is finished
   state.roomNotes = {}; state.serialModels = {}; state.serialPhotos = {}; state.checked = {}; state.rooms = [];
+  state.inventory = {}; roughDrafts = {}; roomAudioFlags = {}; roomRecMap = {};
   state.currentRoomIdx = 0; state.startedAt = null; state.address = '';
   state.client = ''; state.inspector = '';
   state.mandatory = { waterMeter:'', waterMeterLocation:'', rcdBox:'', smokeAlarms:'', nbnBox:'' };
@@ -3312,7 +3713,11 @@ async function renderRecordings() {
       }
     }
     let backupHtml = '';
-    if (cloudArchiveEnabled() && status === 'done') {
+    if (cloudArchiveEnabled() && status === 'failed') {
+      backupHtml = rec.archived === true
+        ? '<div class="rec-backup ok">☁ Audio in Dropbox — no transcript, type from the audio</div>'
+        : '<div class="rec-backup pending">☁ Sending audio to Dropbox…</div>';
+    } else if (cloudArchiveEnabled() && status === 'done') {
       backupHtml = rec.archived === true
         ? '<div class="rec-backup ok">☁ Backed up to Dropbox</div>'
         : '<div class="rec-backup pending">☁ Backing up to Dropbox…</div>';
@@ -3338,10 +3743,12 @@ async function renderRecordings() {
         card.appendChild(audio);
       } catch (e) {}
     }
-    if (status === 'failed') {
+    if (status !== 'done') {
+      // Retry used to be offered on 'failed' only, which left every other
+      // unfinished status with no way out of the app at all.
       const btn = document.createElement('button');
       btn.className = 'rec-retry-btn';
-      btn.textContent = 'Retry';
+      btn.textContent = status === 'failed' ? 'Retry' : 'Try now';
       btn.onclick = async () => {
         rec.attempts = 0;
         rec.status = 'pending';
@@ -3351,6 +3758,13 @@ async function renderRecordings() {
         if (navigator.onLine) processQueue();
       };
       card.appendChild(btn);
+    }
+    if (t) {
+      const cBtn = document.createElement('button');
+      cBtn.className = 'rec-mini-btn';
+      cBtn.textContent = '⧉ Copy transcript';
+      cBtn.onclick = () => copyText(applyCorrections(applyScratch(t)), '✓ Transcript copied');
+      card.appendChild(cBtn);
     }
     if (rec.blob) {
       const actions = document.createElement('div');
@@ -3371,18 +3785,19 @@ async function renderRecordings() {
   });
 }
 
-// ─── KEYWORD SUB-AREA SPLITTING ───────────────────────────────────────────────
+// ─── SUB-AREA SPLITTING ───────────────────────────────────────────────────────
 // Inspectors talk fast and won't tap sub-areas, so the room note stays one blob
-// and this splits it automatically for review + CSV export. Sentences are routed
-// to the sub-area whose keyword appears FIRST in the sentence; sentences with no
-// keyword stay with the most recent sub-area; leading strays go to 'General'.
+// and this splits it for the review screen, the CSV and the Dropbox file.
+// Synonyms below are inherited by any subsection whose name shares a word with
+// the canonical name on the left — they help identify a subsection but never
+// start one on their own.
 const SUBAREA_SYNONYMS = {
   'Ceiling': ['ceiling','ceilings'],
   'Walls/Hooks/Door Stoppers': ['wall','walls','hook','hooks','door stopper','door stoppers','doorstop'],
   'Windows/Screens': ['window','windows','screen','screens','flyscreen'],
   'Light Fittings': ['light','lights','light fitting','light fittings','downlight','downlights','globe','globes'],
   'Floor Coverings': ['floor','floors','carpet','carpets','tile','tiles','floorboard','floorboards','vinyl'],
-  'Blinds/Curtains': ['blind','blinds','curtain','curtains','venetian','roller blind'],
+  'Blinds/Curtains': ['blind','blinds','curtain','curtains','venetian','venetians','roller blind'],
   'Doors': ['door','doors','sliding door','door handle'],
   'Wardrobe/Shelving': ['wardrobe','robe','built in','shelving','shelves','mirror'],
   'Power Points': ['power point','power points','powerpoint','powerpoints','gpo','socket','sockets'],
@@ -3430,64 +3845,150 @@ function keywordsForSubsection(name) {
   if (subareaKeywordCache[name]) return subareaKeywordCache[name];
   const lower = String(name).toLowerCase();
   const nameWords = lower.split(/[^a-z0-9]+/).filter(w => w.length > 2 && SUBAREA_STOPWORDS.indexOf(w) === -1);
-  const kws = {}; // keyword -> true if it's an "own" name word
-  nameWords.forEach(w => { kws[w] = true; });
+  // "Heading" words: the first word of each slash-separated part of the name.
+  // "Windows/Screens" can be announced as windows OR screens; "Cupboard Ceiling"
+  // is announced as cupboard. Only a heading word starts a new subsection —
+  // "one silver metal handle" shouldn't reopen Door/Frames/Handles.
+  const heads = {};
+  lower.split('/').forEach(part => {
+    const w = part.trim().split(/[^a-z0-9]+/).filter(Boolean)[0];
+    if (w && w.length > 2 && SUBAREA_STOPWORDS.indexOf(w) === -1) heads[w] = true;
+  });
+  const kws = {};   // keyword -> { own, head }
+  const spoken = lower.replace(/[\/]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (spoken.indexOf(' ') !== -1) kws[spoken] = { own: true, head: true };
+  nameWords.forEach(w => { kws[w] = { own: true, head: !!heads[w] }; });
   Object.keys(SUBAREA_SYNONYMS).forEach(canon => {
     const canonWords = canon.toLowerCase().split(/[^a-z0-9]+/).filter(w => w.length > 2 && SUBAREA_STOPWORDS.indexOf(w) === -1);
     const overlap = canonWords.some(cw => nameWords.some(nw => wordsStemMatch(cw, nw)));
-    if (overlap) SUBAREA_SYNONYMS[canon].forEach(s => { if (!(s in kws)) kws[s] = false; });
+    if (overlap) SUBAREA_SYNONYMS[canon].forEach(s => { if (!(s in kws)) kws[s] = { own: false, head: false }; });
   });
-  const list = Object.keys(kws).map(kw => ({ kw, own: kws[kw] }));
+  const list = Object.keys(kws).map(kw => ({ kw, own: kws[kw].own, head: kws[kw].head }));
+  list.sort((a, b) => b.kw.length - a.kw.length);
   subareaKeywordCache[name] = list;
   return list;
 }
 
-const subareaRegexCache = {};
-function subareaRegex(kw) {
-  if (!subareaRegexCache[kw]) {
-    subareaRegexCache[kw] = new RegExp('\\b' + kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+const SUBAREA_MIN_WORDS = 5;
+const SUBAREA_MAX_JUMP = 3;
+
+// Plural/singular variants of a subsection's own name words, so an inspector
+// saying "doors and frames" still matches the subsection called "Door/Frames".
+const IRREGULAR_SINGULAR = { shelves: 'shelf', knives: 'knife', leaves: 'leaf' };
+function wordVariants(w) {
+  const out = {};
+  out[w] = true;
+  if (IRREGULAR_SINGULAR[w]) out[IRREGULAR_SINGULAR[w]] = true;
+  if (w.slice(-3) === 'ies') out[w.slice(0, -3) + 'y'] = true;
+  if (w.slice(-2) === 'es') out[w.slice(0, -2)] = true;
+  if (w.slice(-1) === 's') out[w.slice(0, -1)] = true;
+  else { out[w + 's'] = true; out[w + 'es'] = true; }
+  return Object.keys(out).filter(Boolean);
+}
+
+const subareaAltCache = {};
+function subareaRegexG(kw, own) {
+  const key = (own ? 'O:' : 'S:') + kw;
+  if (!subareaAltCache[key]) {
+    const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Own name words match their plural/singular too; inherited synonyms match as written.
+    const alts = (own && kw.indexOf(' ') === -1) ? wordVariants(kw) : [kw];
+    subareaAltCache[key] = new RegExp('\\b(?:' + alts.map(esc).join('|') + ')\\b', 'gi');
   }
-  return subareaRegexCache[kw];
+  subareaAltCache[key].lastIndex = 0;
+  return subareaAltCache[key];
 }
 
 // Split a room's note into ordered {subarea, text} buckets. The note itself is
-// never modified — this is computed on the fly for review and CSV export.
+// never modified — this is computed on the fly for review, CSV and the Dropbox file.
+//
+// The old version split on full stops and keyword-matched each sentence, so
+// unpunctuated phone dictation became a single sentence, a single bucket, and the
+// first keyword spoken (always "door") took the whole room. This works on the raw
+// text instead, cutting at each subsection heading it can identify, and only ever
+// moves FORWARD through the room's running order — which is how inspectors work
+// down a room, and what the announce-the-subsection method makes explicit.
 function splitNotesBySubarea(room, noteText) {
-  const text = String(noteText || '').trim();
+  const text = String(noteText || '').replace(/\s+/g, ' ').trim();
   if (!text) return [];
-  const subs = (room.subsections || []).map(name => ({ name, kws: keywordsForSubsection(name) }));
-  // Sentence split on . ! ? and newlines (no lookbehind — older iOS Safari).
-  const sentences = text.replace(/([.!?])\s+/g, '$1\n').split(/\n+/)
-    .map(s => s.trim()).filter(Boolean);
+  const subs = (room.subsections || []).map((name, idx) => ({ name, idx, kws: keywordsForSubsection(name) }));
+  if (!subs.length) return [{ subarea: 'General', text }];
+
+  // Every keyword hit across the whole note, grouped by where it starts.
+  const byPos = {};
+  subs.forEach(sub => {
+    sub.kws.forEach(k => {
+      const re = subareaRegexG(k.kw, k.own);
+      let m;
+      while ((m = re.exec(text)) !== null) {
+        const h = { pos: m.index, len: m[0].length, kwLen: k.kw.length, own: k.own, head: k.head, name: sub.name, idx: sub.idx };
+        (byPos[m.index] = byPos[m.index] || []).push(h);
+        if (m.index === re.lastIndex) re.lastIndex++;
+      }
+    });
+  });
+  const positions = Object.keys(byPos).map(Number).sort((a, b) => a - b);
+  if (!positions.length) return [{ subarea: 'General', text }];
+
+  // Punctuated text (an accurate transcript) gives a reliable signal: only start
+  // a new subsection at a sentence start. Without punctuation, fall back to
+  // "enough words have gone by".
+  const punctuated = (text.match(/[.!?]/g) || []).length >= 2;
+  const wordsBetween = (from, to) => {
+    const seg = text.slice(Math.max(0, from), to).trim();
+    return seg ? seg.split(' ').length : 0;
+  };
+
+  const cuts = [];
+  let lastPos = 0, lastIdx = -1, lastEnd = 0, lastName = null, seen = {};
+  positions.forEach(pos => {
+    if (pos < lastEnd) return;                       // inside the heading we just cut on
+    const cands = byPos[pos];
+    // A word belonging to the section we're already in is a description, not a
+    // new heading — "one silver metal handle" stays under Door/Frames/Handles.
+    for (let i = 0; i < cands.length; i++) if (cands[i].name === lastName) return;
+    const afterStop = pos === 0 || /[.!?]["')\]]?\s*$/.test(text.slice(Math.max(0, pos - 3), pos));
+    if (punctuated && !afterStop) return;
+    if (!afterStop && wordsBetween(lastPos, pos) < SUBAREA_MIN_WORDS) return;
+    const ranked = cands.slice().sort((a, b) =>
+      ((b.head === true) - (a.head === true)) || (b.kwLen - a.kwLen) || (a.idx - b.idx));
+    for (let i = 0; i < ranked.length; i++) {
+      const c = ranked[i];
+      if (!c.head) continue;                         // only a heading word starts a subsection
+      // Mid-sentence, only ever move forward through the room — that's how
+      // inspectors work down a room, and it stops a stray "…near the door" at the
+      // end of a note reopening Doors. After a full stop the heading is deliberate,
+      // so an inspector who covers the room out of order is still followed.
+      if (c.idx <= lastIdx && !afterStop) continue;
+      if (seen[c.name]) continue;
+      // Mid-sentence, don't leap most of the way down the room on one word.
+      if (!afterStop && lastIdx >= 0 && c.idx - lastIdx > SUBAREA_MAX_JUMP) continue;
+      cuts.push({ pos, name: c.name });
+      seen[c.name] = true;
+      lastPos = pos; lastIdx = c.idx; lastEnd = pos + c.len; lastName = c.name;
+      break;
+    }
+  });
+
+  if (!cuts.length) return [{ subarea: 'General', text }];
+
   const buckets = [];
   const bucketFor = (name) => {
-    let b = null;
-    for (let i = 0; i < buckets.length; i++) { if (buckets[i].subarea === name) { b = buckets[i]; break; } }
-    if (!b) { b = { subarea: name, text: '' }; buckets.push(b); }
+    for (let i = 0; i < buckets.length; i++) if (buckets[i].subarea === name) return buckets[i];
+    const b = { subarea: name, text: '' };
+    buckets.push(b);
     return b;
   };
-  let current = null;
-  sentences.forEach(sentence => {
-    // Best match = keyword appearing EARLIEST in the sentence; ties prefer a
-    // subsection's own name word over an inherited synonym, then the longer
-    // keyword ("door stopper" beats "door"), then subsection order.
-    let best = null;
-    subs.forEach(sub => {
-      sub.kws.forEach(k => {
-        const m = subareaRegex(k.kw).exec(sentence);
-        if (!m) return;
-        const cand = { pos: m.index, own: k.own, len: k.kw.length, name: sub.name };
-        if (!best
-          || cand.pos < best.pos
-          || (cand.pos === best.pos && cand.own && !best.own)
-          || (cand.pos === best.pos && cand.own === best.own && cand.len > best.len)) {
-          best = cand;
-        }
-      });
-    });
-    if (best) current = best.name;
-    const b = bucketFor(best ? best.name : (current || 'General'));
-    b.text += (b.text ? ' ' : '') + sentence;
+  if (cuts[0].pos > 0) {
+    const lead = text.slice(0, cuts[0].pos).trim();
+    if (lead) bucketFor('General').text = lead;
+  }
+  cuts.forEach((c, i) => {
+    const end = i + 1 < cuts.length ? cuts[i + 1].pos : text.length;
+    const seg = text.slice(c.pos, end).trim().replace(/^[,;:.\s]+/, '');
+    if (!seg) return;
+    const b = bucketFor(c.name);
+    b.text += (b.text ? ' ' : '') + seg;
   });
   return buckets;
 }

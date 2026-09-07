@@ -1348,239 +1348,485 @@ const FORBIDDEN_WORDS = [
   'untidy','washable marks','faded','wipeable marks','wearing'
 ];
 
+// Every room and every line item, taken verbatim from FOR CHATGPT PA MASTER BASE
+// TEMPLATE - WA. Order matches the form, so the report, the CSV and the Dropbox
+// headings all come out in the order the typist fills the PCR. Only whitespace
+// around slashes has been tidied — the wording is the form's.
 const ALL_ROOMS = [
   {
-    id: 'front_gardens',
-    name: 'Front Gardens',
+    id: 'front_gardens', name: 'Front Gardens',
     subsections: [
-      'Exterior Walls','Light Fittings','Eaves','Gutters/Downpipes','Flooring',
-      'Garden Beds','Reticulation','Lawn/Edges','Taps/Hoses','Driveway',
-      'Letterbox/Street Number','Fences & Gates','Garbage Bins',
-      'Power Points/Light Switches','Electrical Meter Box','Gas Meter Box',
-      'Water Meter Reading','Verandah/Portico Ceiling','Verandah/Portico Light Fittings',
-      'Verandah/Portico Walls','Verandah/Portico Flooring','Air Conditioner External Motor',
+      'Exterior Walls',
+      'Light Fittings',
+      'Eaves',
+      'Gutters/Downpipes',
+      'Flooring',
+      'Garden Beds',
+      'Reticulation',
+      'Lawn/Edges',
+      'Taps/Hoses',
+      'Driveway',
+      'Letterbox/Street Number',
+      'Fences & Gates',
+      'Garbage Bins',
+      'Power Points/Light Switches',
+      'Electrical Meter Box',
+      'Gas Meter Box',
+      'Verandah/Portico',
       'Additional'
     ]
   },
   {
-    id: 'garage',
-    name: 'Garage/Carport',
+    id: 'garage', name: 'Garage/Carport',
     subsections: [
-      'Door/Frames/Handles','Ceiling','Light Fittings','Walls/Shelves/Hooks/Stoppers',
-      'Power Points/Light Switches','Flooring','Automatic Door/Roller Door',
-      'Automatic Door Motor','Garbage Bins','Additional'
+      'Door/Door Frames/Handles',
+      'Ceiling',
+      'Light Fittings',
+      'Walls/Shelves',
+      'Power Points/Light Switches',
+      'Flooring',
+      'Automatic Door/Roller Door',
+      'Automatic Door Motor',
+      'Additional'
     ]
   },
   {
-    id: 'entry',
-    name: 'Entry',
+    id: 'entry', name: 'Entry',
     subsections: [
-      'Door/Frames/Handles','Screen Door/Handles','Ceiling','Light Fittings',
-      'Walls/Hooks/Door Stoppers','Windows/Screens','Blinds/Curtains',
-      'Power Points/Light Switches','Skirting','Flooring','Ceiling Fan/Air Conditioner',
-      'Cupboard Door/Frames/Handle','Cupboard Ceiling','Cupboard Light Fitting',
-      'Cupboard Walls','Cupboard Power Points/Light Switches','Cupboard Skirting',
-      'Cupboard Flooring','Cupboard Shelves','Additional'
+      'Front Door/Frames/Handles',
+      'Screen Door/Security Door/Handles',
+      'Ceiling/Cornice',
+      'Light Fittings',
+      'Walls/Hooks/Door stopper',
+      'Windows/Screens',
+      'Blinds/Curtains',
+      'Power Points/Light Switches',
+      'Skirting',
+      'Flooring',
+      'Ceiling Fan/Air Conditioner',
+      'Cupboard Door and frame/ceiling/wall/skirting/flooring/shelves',
+      'Additional'
     ]
   },
   {
-    id: 'lounge',
-    name: 'Lounge/Family/Dining',
+    id: 'lounge', name: 'Lounge',
     subsections: [
-      'Door/Frames/Handles','Ceiling','Light Fittings','Walls/Hooks/Door Stoppers',
-      'Windows/Screens','Blinds/Curtains','TV/Power Points/Light Switches',
-      'Skirting','Flooring','Ceiling Fan/Air Conditioner','Additional'
+      'Door/Doorway Frames/Handles',
+      'Ceiling/cornice',
+      'Light Fittings',
+      'Walls/Hooks/door stoppers',
+      'Windows/Screens',
+      'Blinds/Curtains',
+      'TV/Power Points/Light Switches',
+      'Skirting',
+      'Flooring',
+      'Ceiling Fan/Air Conditioner',
+      'Additional'
     ]
   },
   {
-    id: 'passage',
-    name: 'Passage',
+    id: 'passage', name: 'Passage',
     subsections: [
-      'Door/Frames/Handles','Screen Door/Handles','Ceiling','Light Fittings',
-      'Walls/Hooks/Door Stoppers','Windows/Screens','Blinds/Curtains',
-      'Power Points/Light Switches','Skirting','Flooring',
-      'Linen Cupboard Door/Frames/Handle','Linen Cupboard Ceiling','Linen Cupboard Light Fitting',
-      'Linen Cupboard Walls','Linen Cupboard Power Points/Light Switches',
-      'Linen Cupboard Skirting','Linen Cupboard Flooring','Linen Cupboard Shelves','Additional'
+      'Door/Doorway Frames/Handles',
+      'Ceiling/cornice',
+      'Light Fittings',
+      'Walls/Hooks/door stoppers',
+      'Windows/Screens',
+      'Blinds/Curtains',
+      'Power Points/Light Switches',
+      'Skirting',
+      'Flooring',
+      'Cupboard Door and frame/ceiling/wall/skirting/flooring/shelves',
+      'Additional'
     ]
   },
   {
-    id: 'staircase',
-    name: 'Staircase & Landing',
+    id: 'staircase', name: 'Staircase & Landing',
     subsections: [
-      'Ceiling','Light Fittings','Walls/Hooks/Door Stoppers','Windows/Screens',
-      'Blinds/Curtains','Power Points/Light Switches','Skirting','Flooring',
-      'Staircase Railing','Cupboard Door/Frames/Handle','Cupboard Ceiling',
-      'Cupboard Light Fitting','Cupboard Walls','Cupboard Power Points/Light Switches',
-      'Cupboard Skirting','Cupboard Flooring','Cupboard Shelves',
-      'Ceiling Fan/Air Conditioner','Additional'
+      'Ceiling/cornice',
+      'Light Fittings',
+      'Walls/Hooks/door stoppers',
+      'Windows/Screens',
+      'Blinds/Curtains',
+      'Power Points/Light Switches',
+      'Skirting',
+      'Flooring',
+      'Staircase Railing',
+      'Cupboard',
+      'Ceiling Fan/Air Conditioner',
+      'Additional'
     ]
   },
   {
     id: 'bedroom1', name: 'Bedroom 1',
     subsections: [
-      'Door/Frames/Handles','Screen Door/Handles','Ceiling','Light Fittings',
-      'Walls/Hooks/Door Stoppers','Windows/Screens','Blinds/Curtains',
-      'Power Points/Light Switches','Skirting','Flooring','Ceiling Fan/Air Conditioner',
-      'Cupboard Door/Frames/Handle','Cupboard Ceiling','Cupboard Light Fitting',
-      'Cupboard Walls','Cupboard Power Points/Light Switches','Cupboard Skirting',
-      'Cupboard Flooring','Cupboard Shelves','Additional'
+      'Door/Doorway Frames/Handles',
+      'Ceiling/cornice',
+      'Light Fittings',
+      'Walls/Hooks/door stoppers',
+      'Windows/Screens',
+      'Blinds/Curtains',
+      'Power Points/Light Switches',
+      'Skirting',
+      'Flooring',
+      'Ceiling Fan/Air Conditioner',
+      'Wardrobe/Doors/ceiling/wall/skirting/flooring/Shelves',
+      'Additional'
+    ]
+  },
+  {
+    id: 'ensuite', name: 'Ensuite',
+    subsections: [
+      'Door/Doorway Frames/Handles',
+      'Ceiling',
+      'Heating/Exhaust Fan/Vent',
+      'Light Fittings',
+      'Walls/Picture Hooks',
+      'Windows/Screens',
+      'Blinds/Curtains',
+      'Power Points/Light Switches',
+      'Skirting',
+      'Flooring',
+      'Wash Basin',
+      'Tapware',
+      'Benchtop',
+      'Splash Back',
+      'Mirror',
+      'Underbench Cupboards/Drawers',
+      'Shower/Screen/Curtain',
+      'Shower Tiles',
+      'Shower Tapware',
+      'Towel Rails',
+      'Toilet Bowl/Cistern/Seat/Cover',
+      'Toilet Roll Holder',
+      'Bath',
+      'Bath Tiles',
+      'Bath Tapware',
+      'Additional'
+    ]
+  },
+  {
+    id: 'ensuite_toilet', name: 'Ensuite Toilet',
+    subsections: [
+      'Door/Doorway Frames/Handles',
+      'Ceiling',
+      'Heating/Exhaust Fan/Vent',
+      'Light Fitting',
+      'Walls/Picture Hooks',
+      'Windows/Screens',
+      'Blinds/Curtains',
+      'Power Points/Light Switches',
+      'Skirting',
+      'Flooring',
+      'Toilet/Cistern/Seat',
+      'Toilet Roll Holder',
+      'Additional'
     ]
   },
   {
     id: 'bedroom2', name: 'Bedroom 2',
     subsections: [
-      'Door/Frames/Handles','Screen Door/Handles','Ceiling','Light Fittings',
-      'Walls/Hooks/Door Stoppers','Windows/Screens','Blinds/Curtains',
-      'Power Points/Light Switches','Skirting','Flooring','Ceiling Fan/Air Conditioner',
-      'Cupboard Door/Frames/Handle','Cupboard Ceiling','Cupboard Light Fitting',
-      'Cupboard Walls','Cupboard Power Points/Light Switches','Cupboard Skirting',
-      'Cupboard Flooring','Cupboard Shelves','Additional'
+      'Door/Doorway Frames/Handles',
+      'Ceiling/cornice',
+      'Light Fittings',
+      'Walls/Hooks/door stoppers',
+      'Windows/Screens',
+      'Blinds/Curtains',
+      'Power Points/Light Switches',
+      'Skirting',
+      'Flooring',
+      'Ceiling Fan/Air Conditioner',
+      'Wardrobe/Doors/ceiling/wall/skirting/flooring/Shelves',
+      'Additional'
     ]
   },
   {
     id: 'bedroom3', name: 'Bedroom 3',
     subsections: [
-      'Door/Frames/Handles','Screen Door/Handles','Ceiling','Light Fittings',
-      'Walls/Hooks/Door Stoppers','Windows/Screens','Blinds/Curtains',
-      'Power Points/Light Switches','Skirting','Flooring','Ceiling Fan/Air Conditioner',
-      'Cupboard Door/Frames/Handle','Cupboard Ceiling','Cupboard Light Fitting',
-      'Cupboard Walls','Cupboard Power Points/Light Switches','Cupboard Skirting',
-      'Cupboard Flooring','Cupboard Shelves','Additional'
+      'Door/Doorway Frames/Handles',
+      'Ceiling/cornice',
+      'Light Fittings',
+      'Walls/Hooks/door stoppers',
+      'Windows/Screens',
+      'Blinds/Curtains',
+      'Power Points/Light Switches',
+      'Skirting',
+      'Flooring',
+      'Ceiling Fan/Air Conditioner',
+      'Wardrobe/Doors/ceiling/wall/skirting/flooring/Shelves',
+      'Additional'
     ]
   },
   {
     id: 'bedroom4', name: 'Bedroom 4',
     subsections: [
-      'Door/Frames/Handles','Screen Door/Handles','Ceiling','Light Fittings',
-      'Walls/Hooks/Door Stoppers','Windows/Screens','Blinds/Curtains',
-      'Power Points/Light Switches','Skirting','Flooring','Ceiling Fan/Air Conditioner',
-      'Cupboard Door/Frames/Handle','Cupboard Ceiling','Cupboard Light Fitting',
-      'Cupboard Walls','Cupboard Power Points/Light Switches','Cupboard Skirting',
-      'Cupboard Flooring','Cupboard Shelves','Additional'
+      'Door/Doorway Frames/Handles',
+      'Ceiling/cornice',
+      'Light Fittings',
+      'Walls/Hooks/door stoppers',
+      'Windows/Screens',
+      'Blinds/Curtains',
+      'Power Points/Light Switches',
+      'Skirting',
+      'Flooring',
+      'Ceiling Fan/Air Conditioner',
+      'Wardrobe/Doors/ceiling/wall/skirting/flooring/Shelves',
+      'Additional'
     ]
   },
   {
-    id: 'bedroom5', name: 'Bedroom 5',
+    id: 'study', name: 'Study',
     subsections: [
-      'Door/Frames/Handles','Screen Door/Handles','Ceiling','Light Fittings',
-      'Walls/Hooks/Door Stoppers','Windows/Screens','Blinds/Curtains',
-      'Power Points/Light Switches','Skirting','Flooring','Ceiling Fan/Air Conditioner',
-      'Cupboard Door/Frames/Handle','Cupboard Ceiling','Cupboard Light Fitting',
-      'Cupboard Walls','Cupboard Power Points/Light Switches','Cupboard Skirting',
-      'Cupboard Flooring','Cupboard Shelves','Additional'
-    ]
-  },
-  {
-    id: 'ensuite', name: 'Ensuite/Bathroom',
-    subsections: [
-      'Door/Frames/Handles','Ceiling','Heating/Exhaust Fan/Vent','Light Fittings',
-      'Walls/Hooks/Door Stoppers','Windows/Screens','Blinds/Curtains',
-      'Power Points/Light Switches','Skirting','Flooring/Drains','Wash Basin','Tapware',
-      'Benchtop','Splash Back','Mirror','Under Bench Cupboards/Drawers',
-      'Shower Screen/Curtain/Frame','Shower Tiles','Shower Tapware','Towel Rails',
-      'Toilet Bowl/Cistern/Seat/Cover','Toilet Roll Holder','Bath','Bath Tiles',
-      'Bath Tapware','Additional'
+      'Door/Doorway Frames/Handles',
+      'Ceiling/cornice',
+      'Light Fittings',
+      'Walls/Hooks/door stoppers',
+      'Windows/Screens',
+      'Blinds/Curtains',
+      'Power Points/Light Switches',
+      'Skirting',
+      'Flooring',
+      'Ceiling Fan/Air Conditioner',
+      'Wardrobe/Doors/ceiling/wall/skirting/flooring/Shelves',
+      'Additional'
     ]
   },
   {
     id: 'bathroom2', name: 'Bathroom 2',
     subsections: [
-      'Door/Frames/Handles','Ceiling','Heating/Exhaust Fan/Vent','Light Fittings',
-      'Walls/Hooks/Door Stoppers','Windows/Screens','Blinds/Curtains',
-      'Power Points/Light Switches','Skirting','Flooring/Drains','Wash Basin','Tapware',
-      'Benchtop','Splash Back','Mirror','Under Bench Cupboards/Drawers',
-      'Shower Screen/Curtain/Frame','Shower Tiles','Shower Tapware','Towel Rails',
-      'Toilet Bowl/Cistern/Seat/Cover','Toilet Roll Holder','Bath','Bath Tiles',
-      'Bath Tapware','Additional'
+      'Door/Doorway Frames/Handles',
+      'Ceiling',
+      'Heating/Exhaust Fan/Vent',
+      'Light Fittings',
+      'Walls/Picture Hooks',
+      'Windows/Screens',
+      'Blinds/Curtains',
+      'Power Points/Light Switches',
+      'Skirting',
+      'Flooring',
+      'Wash Basin',
+      'Tapware',
+      'Benchtop',
+      'Splash Back',
+      'Mirror',
+      'Underbench Cupboards/Drawers',
+      'Shower/Screen/Curtain',
+      'Shower Tiles',
+      'Shower Tapware',
+      'Towel Rails',
+      'Toilet/Cistern/Seat',
+      'Toilet Roll Holder',
+      'Bath',
+      'Bath Tiles',
+      'Bath Tapware',
+      'Additional'
     ]
   },
   {
     id: 'toilet', name: 'Toilet',
     subsections: [
-      'Door/Frames/Handles','Ceiling','Heating/Exhaust Fan/Vent','Light Fitting',
-      'Walls/Hooks/Door Stoppers','Windows/Screens','Blinds/Curtains',
-      'Power Points/Light Switches','Skirting','Flooring/Drains',
-      'Toilet/Cistern/Seat','Toilet Roll Holder','Additional'
-    ]
-  },
-  {
-    id: 'powder_room', name: 'Powder Room',
-    subsections: [
-      'Door/Doorway Frames/Handles','Ceiling','Heating/Exhaust Fan/Vent','Light Fitting',
-      'Walls/Hooks/Door Stoppers','Windows/Screens','Blinds/Curtains',
-      'Power Points/Light Switches','Skirting','Flooring/Drains','Basin','Basin Tapware',
-      'Splash Back','Benchtop','Cupboards','Mirror',
-      'Hand Towel Rail','Toilet/Bowl/Cistern/Seat/Cover/Tap','Toilet Roll Holder','Additional'
+      'Door/Doorway Frames/Handles',
+      'Ceiling',
+      'Heating/Exhaust Fan/Vent',
+      'Light Fitting',
+      'Walls/Picture Hooks',
+      'Windows/Screens',
+      'Blinds/Curtains',
+      'Power Points/Light Switches',
+      'Skirting',
+      'Flooring',
+      'Toilet/Cistern/Seat',
+      'Toilet Roll Holder',
+      'Additional'
     ]
   },
   {
     id: 'kitchen', name: 'Kitchen',
     subsections: [
-      'Door/Frames/Handles','Ceiling','Light Fittings','Walls/Hooks/Door Stoppers',
-      'Windows/Handles/Locks/Screens','Blinds/Curtains','Power Points/Light Switches',
-      'Skirting/Kickboards','Flooring','Overhead Cupboards','Drawers',
-      'Under Bench Cupboards','Bench Tops','Splash Back/Tiling','Sink','Tapware',
-      'Exhaust Fan/Range Hood','Stove Top/Hot Plates','Oven/Griller',
-      'Pantry Doors/Frames/Handles','Pantry Ceiling','Pantry Light Fitting',
-      'Pantry Walls','Pantry Power Points/Light Switch','Pantry Skirting',
-      'Pantry Flooring','Pantry Shelves','Dishwasher','Fridge Recess Cabinetry','Additional'
+      'Door/Doorway Frames/Handles',
+      'Ceiling',
+      'Light Fittings',
+      'Walls/Picture Hooks',
+      'Windows/Window Safety Devices',
+      'Blinds/Curtains',
+      'Power Points/Light Switches',
+      'Skirting',
+      'Flooring',
+      'Overhead Cupboards',
+      'Drawers',
+      'Underbench Cupboards',
+      'Bench Tops',
+      'Splash Back/Tiling',
+      'Sink',
+      'Tapware',
+      'Exhaust Fan/Range Hood',
+      'Stove Top/Hot Plates',
+      'Oven/Griller',
+      'Pantry',
+      'Dishwasher',
+      'Fridge Recess Cabinetry',
+      'Additional'
+    ]
+  },
+  {
+    id: 'dining', name: 'Dining',
+    subsections: [
+      'Door/Doorway Frames/Handles',
+      'Ceiling/cornice',
+      'Light Fittings',
+      'Walls/Hooks/door stoppers',
+      'Windows/Screens',
+      'Blinds/Curtains',
+      'Power Points/Light Switches',
+      'Skirting',
+      'Flooring',
+      'Ceiling Fan/Air Conditioner',
+      'Additional'
+    ]
+  },
+  {
+    id: 'family', name: 'Family Room',
+    subsections: [
+      'Door/Doorway Frames/Handles',
+      'Ceiling/cornice',
+      'Light Fittings',
+      'Walls/Hooks/door stoppers',
+      'Windows/Screens',
+      'Blinds/Curtains',
+      'Power Points/Light Switches',
+      'Skirting',
+      'Flooring',
+      'Ceiling Fan/Air Conditioner',
+      'Additional'
+    ]
+  },
+  {
+    id: 'theatre', name: 'Theatre Room',
+    subsections: [
+      'Door/Doorway Frames/Handles',
+      'Ceiling/cornice',
+      'Light Fittings',
+      'Walls/Hooks/door stoppers',
+      'Windows/Screens',
+      'Blinds/Curtains',
+      'Power Points/Light Switches',
+      'Skirting',
+      'Flooring',
+      'Ceiling Fan/Air Conditioner',
+      'Additional'
+    ]
+  },
+  {
+    id: 'powder_room', name: 'Powder Room',
+    subsections: [
+      'Door/Doorway Frames/Handles',
+      'Ceiling/Cornice',
+      'Heating/Exhaust Fan/Vent',
+      'Light Fitting',
+      'Walls/Hooks/Door stopper',
+      'Windows/Screens',
+      'Blinds/Curtains',
+      'Power Points/Light Switches',
+      'Skirting',
+      'Flooring',
+      'Basin',
+      'Basin Tapware',
+      'Splash Back',
+      'Benchtop',
+      'Cupboards',
+      'Mirror',
+      'Hand Towel Rail',
+      'Toilet Bowl/Cistern/Seat/Cover',
+      'Toilet Roll Holder',
+      'Additional'
     ]
   },
   {
     id: 'laundry', name: 'Laundry',
     subsections: [
-      'Door/Doorway/Frames/Handles','Outside Door','Ceiling','Heating/Exhaust Fan/Vents',
-      'Light Fittings','Walls/Hooks/Door Stoppers','Power Points/Light Switches',
-      'Windows/Screens','Blinds/Curtains','Skirting','Flooring/Drains',
-      'Washing Machine Taps','Trough/Washing Tub','Trough Cabinet','Tapware',
-      'Benchtops','Splash Back','Under Bench Cupboards','Overhead Cupboards',
-      'Linen Cupboard Door/Frames/Handle','Linen Cupboard Ceiling','Linen Cupboard Light Fitting',
-      'Linen Cupboard Walls','Linen Cupboard Power Points/Light Switch',
-      'Linen Cupboard Skirting','Linen Cupboard Flooring','Linen Cupboard Shelves','Additional'
+      'Door/Doorway Frames/Handles',
+      'Outside Door',
+      'Ceiling/Cornice',
+      'Heating/Exhaust Fan/Vents',
+      'Light Fittings',
+      'Walls/Hooks/door stopper',
+      'Windows/Screens',
+      'Blinds/Curtains',
+      'Power Points/Light Switches',
+      'Skirting',
+      'Flooring',
+      'Washing Machine Taps',
+      'Trough/Washing Tub',
+      'Trough Cabinet',
+      'Tapware',
+      'Benchtops',
+      'Splash Back',
+      'Underbench Cupboards',
+      'Overhead Cupboards',
+      'Linen Cupboards',
+      'Additional'
     ]
   },
   {
     id: 'balcony', name: 'Balcony',
     subsections: [
-      'Ceiling','Exterior Walls','Light Fittings','Eaves','Power Points/Light Switches',
-      'Skirting','Flooring/Drains','Balustrading/Railing','Water Tap','Additional'
+      'Ceiling',
+      'Exterior Walls',
+      'Light Fittings',
+      'Eaves',
+      'Power Points/Light Switches',
+      'Skirting',
+      'Flooring',
+      'Balustrading/Railing',
+      'Water Tap',
+      'Additional'
     ]
   },
   {
-    id: 'shed', name: 'Shed/Storeroom',
+    id: 'shed', name: 'Shed/Store Room',
     subsections: [
-      'Doors/Handles','Ceiling','Light Fittings','Walls/Frame Work',
-      'Shelves','Power Points/Light Switches','Flooring','Additional'
+      'Doors/Handles',
+      'Ceiling',
+      'Light Fittings',
+      'Walls/Frame Work',
+      'Shelves',
+      'Power Points/Light Switches',
+      'Flooring',
+      'Additional'
     ]
   },
   {
     id: 'rear_exterior', name: 'Rear Exterior',
     subsections: [
-      'Exterior Walls','Light Fittings','Power Points/Light Switches',
-      'Gutters/Downpipes','Eaves','Fences/Gates','Taps & Hoses',
-      'Lawn/Edges Garden Beds','Reticulation','Patio/Pergola Ceiling',
-      'Patio/Pergola Light Fittings','Patio/Pergola Walls','Patio/Pergola Flooring',
-      'Clothesline','Exterior Flooring/Drains','Hot Water System','Aircon Motor',
-      'Garbage Bins','Additional'
-    ]
-  },
-  {
-    id: 'pool', name: 'Pool/Spa',
-    subsections: [
-      'Fences/Gate','Garden Beds','Reticulation','Pool/Spa','Pool/Spa Pumps',
-      'Taps & Hoses','Additional'
+      'Exterior Walls',
+      'Light Fittings',
+      'Power Points/Light Switches',
+      'Gutters/Downpipes',
+      'Eaves',
+      'Fences/Gates',
+      'Taps & Hoses',
+      'Lawn/Edges',
+      'Garden Beds',
+      'Reticulation',
+      'Patio/Pergola',
+      'Clothesline',
+      'Exterior Flooring',
+      'Hot Water System',
+      'Pool',
+      'Additional'
     ]
   }
 ];
 
 // Rooms shown by default (commonly present)
-const DEFAULT_ROOMS = ['front_gardens','garage','entry','lounge','bedroom1','bedroom2','bedroom3','ensuite','kitchen','laundry','rear_exterior'];
+const DEFAULT_ROOMS = ['front_gardens','garage','entry','lounge','passage','bedroom1','ensuite',
+  'bedroom2','bedroom3','bathroom2','toilet','kitchen','dining','laundry','rear_exterior'];
 
 // Fallback subsections for any custom room the inspector adds
 const GENERIC_SUBSECTIONS = [
-  'Door/Frames/Handles','Ceiling','Light Fittings','Walls/Hooks/Door Stoppers',
-  'Windows/Screens','Blinds/Curtains','Power Points/Light Switches','Skirting','Flooring','Additional'
+  'Door/Doorway Frames/Handles','Ceiling/cornice','Light Fittings','Walls/Hooks/door stoppers',
+  'Windows/Screens','Blinds/Curtains','Power Points/Light Switches','Skirting','Flooring',
+  'Ceiling Fan/Air Conditioner','Additional'
 ];
 
 // Every room the setup screen can offer, presets plus any custom ones added at setup
@@ -1623,6 +1869,7 @@ let reviewItems = []; // flat list of {name, val} for field-by-field copy
 let roughDrafts = {};     // roomId -> rough dictation, deliberately out of the note
 let roomAudioFlags = {};  // roomId -> 'ok' | 'noaudio' | 'nocloud'
 let roomRecMap = {};      // roomId -> { pending, uploading, failed, done, unarchived }
+let roomMismatches = {};  // roomId -> { said, saidRoom, filedUnder } when the announcement disagrees
 
 // Cloud transcription / offline audio
 // Baked-in default so every device works without pasting the link. Inspectors can
@@ -1652,6 +1899,7 @@ function saveState() {
       rooms: state.rooms, currentRoomIdx: state.currentRoomIdx,
       roomNotes: state.roomNotes, serialModels: state.serialModels, serialPhotos: state.serialPhotos, checked: state.checked,
       inventory: state.inventory, roughDrafts: roughDrafts, roomAudioFlags: roomAudioFlags,
+      roomMismatches: roomMismatches,
       mandatory: state.mandatory, startedAt: state.startedAt
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
@@ -1700,6 +1948,7 @@ function resumeSaved() {
   state.inventory = saved.inventory || {};
   roughDrafts = saved.roughDrafts || {};
   roomAudioFlags = saved.roomAudioFlags || {};
+  roomMismatches = saved.roomMismatches || {};
   state.mandatory = saved.mandatory || state.mandatory;
   state.startedAt = saved.startedAt || Date.now();
   // New saves carry the full editable room list; older ones only stored selected IDs.
@@ -1823,7 +2072,6 @@ function startInspection() {
 
   const kept = selected.filter(id => {
     if (id === 'bedroom4' && state.beds < 4) return false;
-    if (id === 'bedroom5' && state.beds < 5) return false;
     if (id === 'bathroom2' && state.baths < 2) return false;
     return true;
   });
@@ -2128,6 +2376,8 @@ function renderRoomStatus() {
   if (m.done && !m.unarchived) chips.push(['ready', '✓ transcript in, backed up']);
   else if (m.done) chips.push(['ready', '✓ transcript in, backing up']);
   if (roomAudioFlags[roomId] === 'noaudio') chips.push(['bad', '⚠ no audio backup for this room — re-record it']);
+  const mm = roomMismatches[roomId];
+  if (mm) chips.push(['bad', `⚠ you said "${mm.said}" — saved under ${mm.filedUnder}`]);
   if (!chips.length) { box.classList.remove('show'); box.innerHTML = ''; return; }
   box.classList.add('show');
   box.innerHTML = chips.map(([cls, txt]) => `<span class="room-state-chip ${cls}">${escapeHtml(txt)}</span>`).join('');
@@ -2145,6 +2395,7 @@ function clearRoom(roomId) {
   stopListening();
   state.roomNotes[roomId] = '';
   roughDrafts[roomId] = '';
+  delete roomMismatches[roomId];
   const ta = document.getElementById(`roomta-${roomId}`);
   if (ta) ta.value = '';
   updateRoomFieldState(roomId, '');
@@ -3168,6 +3419,10 @@ function applyTranscript(rec, transcript) {
     showToast(`Transcript ready for ${rec.roomName || 'a room'} at ${rec.address || 'another property'} — see Recordings`);
     return;
   }
+  const mismatch = checkSpokenRoom(rec, transcript);
+  if (mismatch) {
+    showToast(`⚠ You said "${mismatch.said}" — this is saved under ${mismatch.filedUnder}`);
+  }
   const current = (state.roomNotes[roomId] || '').trim();
   const next = current ? current + '\n' + transcript : transcript;
   state.roomNotes[roomId] = next;
@@ -3312,6 +3567,16 @@ function showReview() {
     banner.innerHTML = `⏳ <div><strong>Still waiting on transcripts:</strong><br>${escapeHtml(waitingRooms.join(', '))}<br>Get back into signal and let these finish before you export — their notes are empty until they do.</div>`;
     body.appendChild(banner);
   }
+  const mismatched = state.rooms
+    .filter(r => roomMismatches[r.id])
+    .map(r => `${r.name} — the inspector said "${roomMismatches[r.id].said}"`);
+  if (mismatched.length) {
+    const banner = document.createElement('div');
+    banner.className = 'warning-banner';
+    banner.innerHTML = `⚠️ <div><strong>Room may be filed under the wrong heading:</strong><br>${escapeHtml(mismatched.join('; '))}<br>Check before exporting — moving the text now is far cheaper than the typist finding it later.</div>`;
+    body.appendChild(banner);
+  }
+
   const failedRooms = state.rooms
     .filter(r => { const m = roomRecMap[r.id]; return m && m.failed; })
     .map(r => r.name);
@@ -3592,7 +3857,7 @@ async function finishAndClear() {
   clearSaved();
   releaseSessionMic();   // let go of the microphone now the inspection is finished
   state.roomNotes = {}; state.serialModels = {}; state.serialPhotos = {}; state.checked = {}; state.rooms = [];
-  state.inventory = {}; roughDrafts = {}; roomAudioFlags = {}; roomRecMap = {};
+  state.inventory = {}; roughDrafts = {}; roomAudioFlags = {}; roomRecMap = {}; roomMismatches = {};
   state.currentRoomIdx = 0; state.startedAt = null; state.address = '';
   state.client = ''; state.inspector = '';
   state.mandatory = { waterMeter:'', waterMeterLocation:'', rcdBox:'', smokeAlarms:'', nbnBox:'' };
@@ -3785,6 +4050,80 @@ async function renderRecordings() {
   });
 }
 
+// ─── SPOKEN ROOM ANNOUNCEMENTS ────────────────────────────────────────────────
+// Inspectors almost always open a room by saying "coming into the master
+// bedroom". That's worth reading: if it names a different room from the tab
+// they've got open, the whole room is about to be filed under the wrong heading,
+// and nobody finds out until the typist does.
+const ROOM_MARKER = /\b(?:coming|going|moving|heading|walking)\s+(?:in|into|to|through)\b|\bnow\s+(?:in|at|into)\b|\bnext\s+(?:is|room|up)\b|\bthis\s+is\b/i;
+
+// What inspectors say, mapped to the template's room ids. Left side is spoken.
+const SPOKEN_ROOMS = {
+  front_gardens: ['front garden', 'front gardens', 'front yard', 'front of the property', 'front exterior', 'street front'],
+  garage: ['garage', 'carport', 'garaging'],
+  entry: ['entry', 'entrance', 'entry way', 'entryway', 'foyer', 'front door area'],
+  lounge: ['lounge', 'living room', 'living area', 'sitting room'],
+  passage: ['passage', 'passageway', 'hallway', 'hall', 'corridor'],
+  staircase: ['staircase', 'stairs', 'stairwell', 'landing'],
+  bedroom1: ['bedroom one', 'bedroom 1', 'master bedroom', 'master', 'main bedroom', 'first bedroom'],
+  ensuite: ['ensuite', 'en suite', 'master ensuite'],
+  ensuite_toilet: ['ensuite toilet', 'ensuite wc'],
+  bedroom2: ['bedroom two', 'bedroom 2', 'second bedroom'],
+  bedroom3: ['bedroom three', 'bedroom 3', 'third bedroom'],
+  bedroom4: ['bedroom four', 'bedroom 4', 'fourth bedroom'],
+  study: ['study', 'office', 'home office'],
+  bathroom2: ['bathroom', 'bathroom two', 'bathroom 2', 'main bathroom', 'second bathroom'],
+  toilet: ['toilet', 'separate toilet', 'wc', 'loo'],
+  kitchen: ['kitchen'],
+  dining: ['dining', 'dining room', 'dining area', 'meals', 'meals area'],
+  family: ['family room', 'family area', 'games room'],
+  theatre: ['theatre', 'theatre room', 'theater', 'media room', 'cinema room'],
+  powder_room: ['powder room', 'powder'],
+  laundry: ['laundry', 'laundry room'],
+  balcony: ['balcony', 'deck', 'verandah'],
+  shed: ['shed', 'store room', 'storeroom', 'storage room', 'workshop'],
+  rear_exterior: ['rear exterior', 'rear', 'back yard', 'backyard', 'rear garden', 'rear of the property', 'alfresco', 'patio', 'pergola', 'outside at the back']
+};
+
+// The room the inspector named, or null. Only the FIRST announcement in the text
+// counts — a later "coming into" usually means they've walked on, which is a
+// different problem (see the mismatch flag).
+function detectSpokenRoom(text) {
+  const t = ' ' + String(text || '').toLowerCase().replace(/\s+/g, ' ') + ' ';
+  const m = ROOM_MARKER.exec(t);
+  if (!m) return null;
+  // Look at the words right after the marker, not the whole note.
+  const after = t.slice(m.index + m[0].length, m.index + m[0].length + 60);
+  let best = null;
+  Object.keys(SPOKEN_ROOMS).forEach(id => {
+    SPOKEN_ROOMS[id].forEach(phrase => {
+      const at = after.indexOf(phrase);
+      if (at === -1) return;
+      // Earliest match wins; on a tie the longer phrase wins, so "master
+      // bedroom" beats "master" and "ensuite toilet" beats "ensuite".
+      if (!best || at < best.at || (at === best.at && phrase.length > best.len)) {
+        best = { id, at, len: phrase.length, phrase };
+      }
+    });
+  });
+  return best ? { roomId: best.id, phrase: best.phrase } : null;
+}
+
+// Compare what they said against the room they recorded it under. Anything that
+// disagrees is held on the room so the chip and the review screen can show it.
+function checkSpokenRoom(rec, text) {
+  const spoken = detectSpokenRoom(text);
+  if (!spoken) return null;
+  const room = (state.rooms || []).find(r => r.id === rec.roomId);
+  // The ids only line up when the recording was made against a template room.
+  if (!room || spoken.roomId === rec.roomId) return null;
+  const named = (state.rooms || []).find(r => r.id === spoken.roomId);
+  const mismatch = { said: spoken.phrase, saidRoom: named ? named.name : spoken.roomId, filedUnder: room.name };
+  roomMismatches[rec.roomId] = mismatch;
+  saveState();
+  return mismatch;
+}
+
 // ─── SUB-AREA SPLITTING ───────────────────────────────────────────────────────
 // Inspectors talk fast and won't tap sub-areas, so the room note stays one blob
 // and this splits it for the review screen, the CSV and the Dropbox file.
@@ -3921,7 +4260,7 @@ function splitNotesBySubarea(room, noteText) {
       const re = subareaRegexG(k.kw, k.own);
       let m;
       while ((m = re.exec(text)) !== null) {
-        const h = { pos: m.index, len: m[0].length, kwLen: k.kw.length, own: k.own, head: k.head, name: sub.name, idx: sub.idx };
+        const h = { pos: m.index, len: m[0].length, kwWords: k.kw.split(' ').length, own: k.own, head: k.head, name: sub.name, idx: sub.idx };
         (byPos[m.index] = byPos[m.index] || []).push(h);
         if (m.index === re.lastIndex) re.lastIndex++;
       }
@@ -3950,8 +4289,13 @@ function splitNotesBySubarea(room, noteText) {
     const afterStop = pos === 0 || /[.!?]["')\]]?\s*$/.test(text.slice(Math.max(0, pos - 3), pos));
     if (punctuated && !afterStop) return;
     if (!afterStop && wordsBetween(lastPos, pos) < SUBAREA_MIN_WORDS) return;
+    // Ranked by how many WORDS of the subsection name matched, not how many
+    // characters: an announced "power points and light switches" has to beat a
+    // bare "light", but a longer single word must not beat a shorter one —
+    // "Doors" (in the wardrobe line) outranking "Door" was enough to make the
+    // wardrobe swallow a whole bedroom.
     const ranked = cands.slice().sort((a, b) =>
-      ((b.head === true) - (a.head === true)) || (b.kwLen - a.kwLen) || (a.idx - b.idx));
+      ((b.head === true) - (a.head === true)) || (b.kwWords - a.kwWords) || (a.idx - b.idx));
     for (let i = 0; i < ranked.length; i++) {
       const c = ranked[i];
       if (!c.head) continue;                         // only a heading word starts a subsection
@@ -3981,7 +4325,9 @@ function splitNotesBySubarea(room, noteText) {
   };
   if (cuts[0].pos > 0) {
     const lead = text.slice(0, cuts[0].pos).trim();
-    if (lead) bucketFor('General').text = lead;
+    // "Coming into the master bedroom" opens most rooms — name it for what it
+    // is rather than dropping it in with genuinely unplaceable text.
+    if (lead) bucketFor(ROOM_MARKER.test(lead) ? 'Room announcement' : 'General').text = lead;
   }
   cuts.forEach((c, i) => {
     const end = i + 1 < cuts.length ? cuts[i + 1].pos : text.length;

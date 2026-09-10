@@ -161,7 +161,8 @@
     border-color: var(--gold);
   }
 
-  .rooms-select {
+  .rooms-select,
+  .engine-select {
     background: var(--white);
     border: 1.5px solid var(--border);
     border-radius: var(--radius-sm);
@@ -170,7 +171,9 @@
     grid-template-columns: 1fr 1fr;
     gap: 4px;
   }
-  .room-toggle {
+  .engine-select { margin-bottom: 6px; }
+  .room-toggle,
+  .engine-toggle {
     padding: 10px 8px;
     border-radius: 6px;
     font-size: 12px;
@@ -182,7 +185,8 @@
     user-select: none;
     line-height: 1.3;
   }
-  .room-toggle.selected {
+  .room-toggle.selected,
+  .engine-toggle.selected {
     background: var(--surface);
     color: var(--white);
     font-weight: 600;
@@ -1266,9 +1270,11 @@
     </div>
 
     <div class="field-group">
-      <label>Cloud transcription URL (optional)</label>
-      <input type="url" id="transcribeUrl" placeholder="Paste your key-service URL to turn on accurate transcription">
-      <span class="export-note" style="margin-top:2px">Leave blank to use on-device dictation only. When set, each room's audio is recorded and transcribed accurately — it works offline and uploads once you're back in signal.</span>
+      <label>Transcription engine</label>
+      <div class="engine-select" id="engineSelect"></div>
+      <input type="url" id="transcribeUrl" placeholder="Paste the service URL for this engine">
+      <span class="export-note" id="engineNote" style="margin-top:2px"></span>
+      <span class="export-note" style="margin-top:2px">Each engine remembers its own URL, so switching back and forth is one tap. Leave the URL blank to use on-device dictation only. When set, each room's audio is recorded and transcribed accurately — it works offline and uploads once you're back in signal.</span>
     </div>
 
     <div class="field-group">
@@ -1872,10 +1878,82 @@ let roomRecMap = {};      // roomId -> { pending, uploading, failed, done, unarc
 let roomMismatches = {};  // roomId -> { said, saidRoom, filedUnder } when the announcement disagrees
 
 // Cloud transcription / offline audio
-// Baked-in default so every device works without pasting the link. Inspectors can
-// still override it in the setup field, and it's remembered per device.
-const DEFAULT_TRANSCRIBE_URL = 'https://propertyassist--af4b319a76c011f1af681607ee4eb77e.web.val.run';
-let TRANSCRIBE_URL = '';     // resolved at startup from saved value or the default above
+// Two engines are wired up so they can be judged against each other on real
+// inspections: the Deepgram service the app has always used, and an AssemblyAI
+// twin that speaks the same contract (POST the audio, get {transcript} back).
+// Only one runs at a time. The choice is per device, remembered between jobs,
+// and each engine keeps its own URL so switching back never means re-pasting a
+// link. Baked-in defaults mean a phone works without anyone pasting anything.
+const ENGINES = {
+  deepgram: {
+    label: 'Deepgram',
+    note: 'Nova-3, Australian English. Returns the transcript straight away.',
+    url: 'https://propertyassist--af4b319a76c011f1af681607ee4eb77e.web.val.run',
+    timeoutMs: 60000
+  },
+  assemblyai: {
+    label: 'AssemblyAI',
+    note: 'Universal-3.5 Pro, Australian English. Transcribes after the recording is uploaded, so a long room can take a few seconds longer to come back.',
+    url: 'https://propertyassist--7e43f138ad2311f186b71607ee4eb77e.web.val.run',
+    timeoutMs: 120000
+  }
+};
+const DEFAULT_ENGINE = 'deepgram';
+let ENGINE = DEFAULT_ENGINE; // resolved at startup from the saved choice
+let TRANSCRIBE_URL = '';     // resolved at startup from the saved URL for that engine
+
+function engineDef(id) { return ENGINES[id] || ENGINES[DEFAULT_ENGINE]; }
+function engineLabel(id) { return ENGINES[id] ? ENGINES[id].label : (id || ''); }
+// A pasted URL beats the baked-in default, per engine. An empty saved string is
+// a deliberate "turn this off", so it wins over the default too.
+function engineUrl(id) {
+  try {
+    const saved = localStorage.getItem('pa_transcribe_url_' + id);
+    if (saved !== null) return saved;
+  } catch (e) {}
+  return engineDef(id).url;
+}
+// Draw the two-button picker on the setup screen and keep the URL box and the
+// help line in step with whichever engine is selected.
+let lastRenderedUrl = null;  // what the URL box was last filled with, so an
+                             // untouched box is never mistaken for an edit
+function renderEngineSelect() {
+  const box = document.getElementById('engineSelect');
+  if (box) {
+    box.innerHTML = '';
+    Object.keys(ENGINES).forEach(id => {
+      const b = document.createElement('div');
+      b.className = 'engine-toggle' + (id === ENGINE ? ' selected' : '');
+      b.textContent = ENGINES[id].label;
+      b.onclick = () => selectEngine(id);
+      box.appendChild(b);
+    });
+  }
+  const input = document.getElementById('transcribeUrl');
+  if (input) { input.value = TRANSCRIBE_URL; lastRenderedUrl = TRANSCRIBE_URL; }
+  const note = document.getElementById('engineNote');
+  if (note) {
+    note.textContent = TRANSCRIBE_URL
+      ? engineDef(ENGINE).note
+      : engineLabel(ENGINE) + ' has no service URL yet — paste it above, or this phone falls back to on-device dictation only.';
+  }
+}
+function selectEngine(id) {
+  if (!ENGINES[id]) return;
+  // Save the box against the engine being left, so a pasted URL survives a
+  // switch there and back. Only when it was actually edited: an empty box that
+  // nobody touched must not overwrite that engine's URL with nothing, while a
+  // box someone deliberately cleared must stick as "this engine is off".
+  const input = document.getElementById('transcribeUrl');
+  const typed = input ? (input.value || '').trim() : null;
+  if (input && lastRenderedUrl !== null && typed !== lastRenderedUrl) {
+    try { localStorage.setItem('pa_transcribe_url_' + ENGINE, typed); } catch (e) {}
+  }
+  ENGINE = id;
+  try { localStorage.setItem('pa_engine', ENGINE); } catch (e) {}
+  TRANSCRIBE_URL = engineUrl(ENGINE);
+  renderEngineSelect();
+}
 // Dropbox archive endpoint (the archive.ts Val). Leave blank until deployed, then
 // paste its URL here (or in the setup field). Blank = archiving off, app works as before.
 const DEFAULT_ARCHIVE_URL = 'https://propertyassist--9ecaffe4859311f181ad1607ee4eb77e.web.val.run';
@@ -1988,10 +2066,21 @@ function initSetup() {
     document.getElementById('nswBadge').style.display = e.target.value === 'NSW' ? 'flex' : 'none';
   });
 
-  // Load the cloud-transcription URL (saved override, else the baked-in default) and prime the queue
-  try { TRANSCRIBE_URL = localStorage.getItem('pa_transcribe_url') || DEFAULT_TRANSCRIBE_URL; } catch (e) { TRANSCRIBE_URL = DEFAULT_TRANSCRIBE_URL; }
-  const urlInput = document.getElementById('transcribeUrl');
-  if (urlInput) urlInput.value = TRANSCRIBE_URL;
+  // Load the engine choice and that engine's URL (saved override, else the
+  // baked-in default), then draw the picker.
+  try {
+    const savedEngine = localStorage.getItem('pa_engine');
+    if (savedEngine && ENGINES[savedEngine]) ENGINE = savedEngine;
+    // One-time migration: before the picker existed there was a single saved
+    // URL, and it was always the Deepgram service. Move it into that engine's
+    // slot so nobody who had pasted an override loses it.
+    const legacy = localStorage.getItem('pa_transcribe_url');
+    if (legacy !== null && localStorage.getItem('pa_transcribe_url_deepgram') === null) {
+      localStorage.setItem('pa_transcribe_url_deepgram', legacy);
+    }
+  } catch (e) {}
+  TRANSCRIBE_URL = engineUrl(ENGINE);
+  renderEngineSelect();
 
   // Dropbox archive URL (saved override, else baked-in default; blank = off)
   try { ARCHIVE_URL = (localStorage.getItem('pa_archive_url') ?? DEFAULT_ARCHIVE_URL) || ''; } catch (e) { ARCHIVE_URL = DEFAULT_ARCHIVE_URL; }
@@ -2057,7 +2146,10 @@ function startInspection() {
   state.baths = parseInt(document.getElementById('propBaths').value);
   state.stateCode = document.getElementById('propState').value;
   TRANSCRIBE_URL = (document.getElementById('transcribeUrl').value || '').trim();
-  try { localStorage.setItem('pa_transcribe_url', TRANSCRIBE_URL); } catch (e) {}
+  try {
+    localStorage.setItem('pa_engine', ENGINE);
+    localStorage.setItem('pa_transcribe_url_' + ENGINE, TRANSCRIBE_URL);
+  } catch (e) {}
   const archiveEl = document.getElementById('archiveUrl');
   ARCHIVE_URL = archiveEl ? (archiveEl.value || '').trim() : ARCHIVE_URL;
   try { localStorage.setItem('pa_archive_url', ARCHIVE_URL); } catch (e) {}
@@ -2067,7 +2159,7 @@ function startInspection() {
     return;
   }
 
-  const selected = [...document.querySelectorAll('.room-toggle.selected')].map(d => d.dataset.id);
+  const selected = [...document.querySelectorAll('#roomsSelect .room-toggle.selected')].map(d => d.dataset.id);
   if (!selected.length) { showToast('Select at least one room'); return; }
 
   const kept = selected.filter(id => {
@@ -2540,15 +2632,35 @@ const CORRECTIONS = {
   'gray': 'grey', 'grays': 'greys', 'grayish': 'greyish',
   'aluminum': 'aluminium',
   'color': 'colour', 'colors': 'colours', 'colored': 'coloured', 'coloring': 'colouring',
+  'coloration': 'colouration', 'colorations': 'colourations',
+  // "Discoloured" is the single most common word in a routine report and the
+  // engine spells it American every time. The word-level pass can't reach it
+  // through "color", so each form is listed.
+  'discolor': 'discolour', 'discolors': 'discolours', 'discolored': 'discoloured',
+  'discoloring': 'discolouring', 'discoloration': 'discolouration',
+  'discolorations': 'discolourations',
   'fiber': 'fibre', 'fibers': 'fibres',
+  // The rest of the US spellings that turn up in a condition report. "Mould"
+  // is the one that matters most — it goes in writing to a tenant.
+  'mold': 'mould', 'molds': 'moulds', 'moldy': 'mouldy', 'molding': 'moulding',
+  'odor': 'odour', 'odors': 'odours', 'vapor': 'vapour',
+  'center': 'centre', 'centers': 'centres', 'centered': 'centred',
+  'labeled': 'labelled', 'labeling': 'labelling',
+  'neighbor': 'neighbour', 'neighboring': 'neighbouring',
   // ("meter" left as-is on purpose — "water meter" / "meter box" are correct AU spelling)
   // Reported mishears — "tile" heard as Tyre / Tyrell
-  'tyre': 'tile', 'tyres': 'tiles', 'tyrell': 'tile',
+  'tyre': 'tile', 'tyres': 'tiles', 'tyrell': 'tile', 'tole': 'tile', 'toles': 'tiles',
   // Round 2 and 3 mishears that are safe as whole words (these words have no
   // legitimate use in an inspection, so replacing them can't damage a real note)
-  'submetal': 'stainless steel', 'cinnamon': 'ceiling',
+  // "submetal" was mapped to "stainless steel" on the strength of the July
+  // transcripts. The Beaufort Street corrections say otherwise: the inspector
+  // is saying "silver metal", which is also what "sub metal" and "soft metal"
+  // below turn out to be.
+  'submetal': 'silver metal', 'cinnamon': 'ceiling',
   'powerpoint': 'power point', 'powerpoints': 'power points',
-  'skirtings': 'skirting', 'retic': 'reticulation'
+  'skirtings': 'skirting', 'scirting': 'skirting', 'retic': 'reticulation',
+  // Beaufort Street, 9 September
+  'throwing': 'flooring', 'notebooks': 'no hooks', 'inter': 'interior'
 };
 
 // Multi-word mishears. Kept as phrases because the individual words are all
@@ -2567,20 +2679,63 @@ const PHRASE_CORRECTIONS = [
   [/\bhanging road\b/gi, 'hanging rod'],
   [/\bno cereal\b/gi, 'no serial'],
   [/\bglass paint\b/gi, 'glass pane'],
-  [/\bmiddle frame\b/gi, 'metal frame']
+  [/\bmiddle frame\b/gi, 'metal frame'],
+  // ── Beaufort Street, 9 September ────────────────────────────────────────────
+  // "Silver metal" is the most-said phrase in the whole inspection and the
+  // engine has three different ways of getting it wrong.
+  [/\bsoft metal\b/gi, 'silver metal'],
+  [/\bsub metal\b/gi, 'silver metal'],
+  [/\bmodel frame\b/gi, 'metal frame'],
+  [/\bmuds and marks\b/gi, 'smudge marks'],
+  [/\bno books\b/gi, 'no hooks'],
+  [/\bhide traffic\b/gi, 'high traffic'],
+  [/\bwould look laminate\b/gi, 'wood look laminate'],
+  [/\bfixed on siding\b/gi, 'fixed and one sliding'],
+  // "Nib wall" is a real thing, so only the toilet sense is corrected.
+  [/\bnib (?=white |black |cream )/gi, 'seat and lid '],
+  [/\bplastic system\b/gi, 'plastic cistern'],
+  // A towel rail dictated at speed loses its last word.
+  [/\btowel\b(?!\s+(?:rail|ladder|rack|holder))/gi, 'towel rail'],
+  // "Grey tile, grey grout" is said in every wet area and comes back mangled.
+  [/\bgrey tall grey grout\b/gi, 'grey tile, grey grout'],
+  // Phrases run before the spelling pass, so both spellings have to match.
+  [/\bis a grey colou?ration throughout the grey\b/gi, 'is grey tile with grey grout, discolouration throughout the grout.'],
+  [/\bmarble,\s*look stone\b/gi, 'marble look stone'],
+  [/\bmetal\.\s+Tray\b/g, 'metal tray']
 ];
 function matchCase(replacement, original) {
   if (original.length > 1 && original === original.toUpperCase()) return replacement.toUpperCase();
   if (original[0] === original[0].toUpperCase()) return replacement.charAt(0).toUpperCase() + replacement.slice(1);
   return replacement;
 }
+// Spoken digits read out as a run are a unit number, a model number or a
+// serial — "one silver metal panel with a black four zero two" is unit 402.
+// Three in a row is the threshold: two in a row ("two, three white shelves")
+// is usually a count, and a comma or full stop between them breaks the run, so
+// a list of quantities is never swallowed.
+const SPOKEN_DIGITS = { zero: '0', oh: '0', one: '1', two: '2', three: '3', four: '4', five: '5', six: '6', seven: '7', eight: '8', nine: '9' };
+const DIGIT_RUN = /\b(?:zero|oh|one|two|three|four|five|six|seven|eight|nine)(?:[ -](?:zero|oh|one|two|three|four|five|six|seven|eight|nine)){2,}\b/gi;
+function applyNumerals(text) {
+  if (!text) return text;
+  return text.replace(DIGIT_RUN, run =>
+    run.split(/[ -]+/).map(w => SPOKEN_DIGITS[w.toLowerCase()]).join('')
+  );
+}
+// A correction that lands at the start of a sentence arrives lower case, and
+// splitting a run-on sentence creates a new one that needs a capital. Both are
+// tidied here rather than in every rule.
+function recapitalise(text) {
+  return text.replace(/(^|[.!?]\s+)([a-z])/g, (m, pre, ch) => pre + ch.toUpperCase());
+}
 function applyCorrections(text) {
   if (!text) return text;
   PHRASE_CORRECTIONS.forEach(([re, to]) => { text = text.replace(re, to); });
-  return text.replace(/[A-Za-z]+/g, w => {
+  text = applyNumerals(text);
+  text = text.replace(/[A-Za-z]+/g, w => {
     const hit = CORRECTIONS[w.toLowerCase()];
     return hit ? matchCase(hit, w) : w;
   });
+  return recapitalise(text);
 }
 
 // ─── "SCRATCH THAT" VOICE COMMAND ─────────────────────────────────────────────
@@ -3153,9 +3308,13 @@ async function processQueue() {
     for (const rec of recs) {
       try {
         rec.status = 'uploading'; await dbPut(rec); updatePendingUI();
-        // 60s cap per upload so one stalled request can't hang the queue forever.
+        // Cap each upload so one stalled request can't hang the queue forever.
+        // Deepgram answers in one round trip; AssemblyAI uploads the file, waits
+        // for the job and then answers, so it gets a longer leash. Either way the
+        // recording stays on the phone and the queue retries it.
+        const engineAtUpload = ENGINE;
         const controller = new AbortController();
-        const timer = setTimeout(() => { try { controller.abort(); } catch (e) {} }, 60000);
+        const timer = setTimeout(() => { try { controller.abort(); } catch (e) {} }, engineDef(engineAtUpload).timeoutMs || 60000);
         let res;
         try {
           res = await fetch(TRANSCRIBE_URL, {
@@ -3171,6 +3330,9 @@ async function processQueue() {
         // Keep the audio blob (backup the VA/typist can play back) until Finish & Clear,
         // which deletes 'done' records that are backed up. Storage is reclaimed on finish.
         rec.status = 'done'; rec.transcript = transcript;
+        // Which engine produced this text. Goes into the Dropbox file so the
+        // typist — and anyone comparing the two — can see it at a glance.
+        rec.engine = (data && data.engine) || engineAtUpload;
         if (cloudArchiveEnabled()) {
           try { await archiveToDropbox(rec); rec.archived = true; }
           catch (e) { rec.archived = false; } // retried by processArchiveQueue()
@@ -3259,7 +3421,8 @@ function buildArchiveText(rec, clean) {
   const header = [
     rec.address ? 'Property: ' + rec.address : '',
     'Room: ' + (rec.roomName || rec.roomId || ''),
-    rec.createdAt ? 'Recorded: ' + new Date(rec.createdAt).toLocaleString('en-AU') : ''
+    rec.createdAt ? 'Recorded: ' + new Date(rec.createdAt).toLocaleString('en-AU') : '',
+    rec.engine ? 'Transcribed by: ' + engineLabel(rec.engine) : ''
   ].filter(Boolean).join('\n');
   const subs = rec.subsections || [];
   const buckets = subs.length ? splitNotesBySubarea({ subsections: subs }, clean) : [];

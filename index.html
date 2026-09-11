@@ -281,7 +281,8 @@
   .room-tab .check { font-size: 10px; }
 
   .room-content {
-    padding: 0 0 180px;
+    /* Clears the record dock and the nav bar below it. */
+    padding: 0 0 250px;
   }
   .room-header {
     padding: 20px 20px 0;
@@ -827,6 +828,21 @@
     color: var(--dark);
     font-weight: 600;
   }
+  /* Live line above Finish & Clear. Transcription lands a little after the
+     inspector stops talking, and finishing before it does is the one action in
+     the app that can't be undone from the inspection screen — so the state is
+     spelled out rather than left to the confirm dialog. */
+  .finish-status {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.4;
+    padding: 10px 12px;
+    border-radius: 10px;
+    margin-top: 4px;
+  }
+  .finish-status.waiting { background: #FFF8D6; color: #7A6300; border: 1.5px solid #E6C800; }
+  .finish-status.ready { background: var(--green-light); color: var(--green); }
+  .btn-export.blocked { opacity: 0.55; }
   .export-note {
     font-size: 11px;
     color: var(--mid);
@@ -902,25 +918,19 @@
   }
   .room-tools button.danger { color: var(--red); border-color: #F1A9A0; }
 
-  /* FLOATING RECORD BUTTON */
+  /* RECORD DOCK */
+  /* Sits inside the record dock, under the button. Always readable — the old
+     floating pill faded in and out and was easy to miss. */
   .rec-status {
-    position: fixed;
-    right: 20px;
-    bottom: calc(150px + env(safe-area-inset-bottom));
-    background: var(--recording);
-    color: var(--white);
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
-    padding: 6px 12px;
-    border-radius: 20px;
-    z-index: 120;
-    opacity: 0;
-    transform: translateY(8px);
-    transition: all 0.2s;
-    pointer-events: none;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+    color: var(--mid);
+    text-align: center;
+    line-height: 1.3;
+    min-height: 17px;
   }
-  .rec-status.show { opacity: 1; transform: translateY(0); }
+  .rec-status.show { color: var(--recording); }
+  .rec-status.paused { color: var(--gold-dark); }
 
   .cloud-status {
     display: none;
@@ -934,65 +944,106 @@
   }
   .cloud-status.show { display: block; }
   .cloud-status.offline { background: var(--light); color: var(--mid); border-bottom-color: var(--border); }
-  .fab-record {
+  /* The record control is a dock across the bottom rather than a small corner
+     button. Inspectors were missing the tap entirely and walking a whole room
+     believing they were recording, so the target is now large, centred, and
+     says in words what state it is in. */
+  .rec-dock {
     position: fixed;
-    right: 20px;
-    bottom: calc(84px + env(safe-area-inset-bottom));
-    width: 68px;
-    height: 68px;
+    left: 0;
+    right: 0;
+    bottom: calc(61px + env(safe-area-inset-bottom));
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px 10px;
+    z-index: 110;
+    box-shadow: 0 -4px 18px rgba(0,0,0,0.06);
+  }
+  .rec-dock-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 88px;
+  }
+  .fab-record {
+    position: relative;
+    width: 88px;
+    height: 88px;
     border-radius: 50%;
-    border: none;
+    border: 4px solid var(--border);
     background: var(--surface);
     color: var(--white);
-    font-size: 28px;
+    font-size: 36px;
+    line-height: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    z-index: 120;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.25);
-    transition: transform 0.12s, background 0.15s;
+    flex: 0 0 auto;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+    transition: transform 0.12s, background 0.15s, border-color 0.15s;
   }
   .fab-record:active { transform: scale(0.94); }
   .fab-record.recording {
     background: var(--recording);
-    animation: fabPulse 1.4s infinite;
+    border-color: rgba(231,76,60,0.28);
   }
-  @keyframes fabPulse {
-    0%, 100% { box-shadow: 0 6px 18px rgba(231,76,60,0.45), 0 0 0 0 rgba(231,76,60,0.5); }
-    50% { box-shadow: 0 6px 18px rgba(231,76,60,0.45), 0 0 0 14px rgba(231,76,60,0); }
+  /* The pulse animates a ring on a pseudo-element, not the button's box-shadow.
+     Animating box-shadow repaints the whole button every frame, which is where
+     a good part of the laggy feel came from. */
+  .fab-record.recording::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 3px solid var(--recording);
+    animation: recPulse 1.6s ease-out infinite;
+    will-change: transform, opacity;
+    pointer-events: none;
+  }
+  @keyframes recPulse {
+    0%   { transform: scale(1);    opacity: 0.55; }
+    100% { transform: scale(1.28); opacity: 0; }
   }
   .fab-record.captured {
     background: var(--green);
-    transform: scale(1.06);
+    border-color: rgba(39,174,96,0.3);
   }
   .fab-record.error {
     background: var(--red);
-    animation: none;
+    border-color: rgba(192,57,43,0.3);
   }
-  /* Paused state — amber, no pulse; icon shows ▶ (tap to resume) */
+  /* Paused — amber, no pulse; icon shows ▶ (tap to resume) */
   .fab-record.paused {
     background: var(--gold-dark);
     color: var(--black);
-    animation: none;
+    border-color: rgba(0,0,0,0.12);
   }
-  /* DONE button — sits just above the record FAB while a segment is open */
+  /* DONE — pinned to the right of the dock while a segment is open, so the
+     record button stays centred whether it's there or not. */
   .fab-done {
-    position: fixed;
-    right: 20px;
-    bottom: calc(162px + env(safe-area-inset-bottom));
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
     background: var(--green);
     color: var(--white);
     border: none;
-    border-radius: 22px;
-    padding: 11px 18px;
-    font-size: 14px;
+    border-radius: 26px;
+    padding: 16px 18px;
+    font-size: 15px;
     font-weight: 700;
     cursor: pointer;
-    z-index: 121;
     box-shadow: 0 4px 14px rgba(0,0,0,0.22);
   }
-  .fab-done:active { transform: scale(0.95); }
+  .fab-done:active { transform: translateY(-50%) scale(0.95); }
+  @media (max-width: 360px) {
+    .fab-record { width: 78px; height: 78px; font-size: 32px; }
+    .rec-dock-row { min-height: 78px; }
+    .fab-done { padding: 13px 14px; font-size: 14px; }
+  }
   /* Move-room arrows on the room bar */
   .room-move-btn {
     background: var(--light);
@@ -1190,6 +1241,30 @@
     line-height: 1.5;
     padding: 3px 0;
   }
+  /* The spots the cleanup pass wasn't sure about. Short by design — a long list
+     means the room is worth listening to, a short one means it isn't. */
+  .review-check {
+    margin-top: 8px;
+    background: #FFF8D6;
+    border: 1.5px solid #E6C800;
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+  }
+  .review-check-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #7A6300;
+    margin-bottom: 6px;
+  }
+  .review-check-row {
+    font-size: 12px;
+    color: var(--dark);
+    line-height: 1.5;
+    padding: 3px 0;
+  }
+  .review-check-row span { color: #7A6300; }
   .review-split-row .review-split-name {
     font-weight: 700;
     color: var(--black);
@@ -1283,6 +1358,12 @@
       <span class="export-note" style="margin-top:2px">When set, each room's audio and transcript are saved automatically into a dated property folder in Dropbox as they transcribe. Leave blank to keep recordings on the phone only.</span>
     </div>
 
+    <div class="field-group">
+      <label>AI cleanup URL (optional)</label>
+      <input type="url" id="cleanupUrl" placeholder="Paste your cleanup service URL">
+      <span class="export-note" style="margin-top:2px">When set, each room's transcript gets a second pass that fixes mishears in context, breaks run-on sentences, files the text under the right subsections, and lists anything it wasn't sure about so the typist can check just those spots instead of playing the whole recording. Leave blank to use the app's own keyword split.</span>
+    </div>
+
     <button class="btn-primary" id="btnStartInspection" onclick="startInspection()">
       Start Inspection →
     </button>
@@ -1295,17 +1376,21 @@
     <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
   </div>
   <div class="dictation-hint">
-    🎤 <span>Tap the round mic to talk through the room hands-free. Say the subsection name, pause, then describe it — "Ceiling." … "Painted white, cracking to edges." Say "scratch that" to drop the last sentence. Tap ⏸ to pause, ✓ Done to save.</span>
+    🎤 <span>Say the subsection name, <strong>pause</strong>, then describe it — "Ceiling." … "Painted white, cracking to edges." Say "scratch that" to drop the last sentence.</span>
   </div>
   <div class="cloud-status" id="cloudStatus"></div>
   <div class="warn-banner" id="warnBanner"></div>
   <div class="room-nav" id="roomNav"></div>
   <div class="room-content" id="roomContent"></div>
-  <div class="rec-status" id="recStatus">● Listening…</div>
-  <button class="fab-done" id="fabDone" onclick="finishSegment(event)" style="display:none" aria-label="Save this recording">✓ Done</button>
-  <button class="fab-record" id="fabRecord" onclick="toggleDictateCurrent(event)" aria-label="Record room">
-    <span class="fab-icon">🎤</span>
-  </button>
+  <div class="rec-dock">
+    <div class="rec-dock-row">
+      <button class="fab-record" id="fabRecord" onclick="toggleDictateCurrent(event)" aria-label="Start recording this room">
+        <span class="fab-icon">🎤</span>
+      </button>
+      <button class="fab-done" id="fabDone" onclick="finishSegment(event)" style="display:none" aria-label="Save this recording">✓ Done</button>
+    </div>
+    <div class="rec-status" id="recStatus">Tap to start recording</div>
+  </div>
   <div class="bottom-bar">
     <button class="btn-nav" id="btnPrevRoom" onclick="prevRoom()">← Prev</button>
     <button class="btn-nav primary" id="btnNextRoom" onclick="nextRoom()">Next Room →</button>
@@ -1324,7 +1409,8 @@
     <button class="btn-export secondary" onclick="exportReport()">📋 Copy Full Report</button>
     <button class="btn-export secondary" onclick="downloadCSV()">⬇ Download CSV (for Excel / import)</button>
     <button class="btn-export secondary" onclick="showScreen('screenInspection')">← Back to Edit</button>
-    <button class="btn-export secondary" onclick="finishAndClear()">✓ Finish & Clear This Inspection</button>
+    <div class="finish-status" id="finishStatus"></div>
+    <button class="btn-export secondary" id="btnFinish" onclick="finishAndClear()">✓ Finish & Clear This Inspection</button>
     <p class="export-note">The VA pastes or imports this manually. Automatic import into Ailo, Inspection Express, PropertyMe, Inspection Manager and PM Inspect needs an API from each platform — not yet enabled.</p>
   </div>
 </div>
@@ -1850,6 +1936,8 @@ let state = {
   serialPhotos: {},// roomId -> [{ id, ts, uploaded }] markers for photographed data plates
   inventory: {},   // roomId -> typed inventory list (kept out of the condition note)
   checked: {},     // roomId -> { subsectionName: true }  (optional progress ticks)
+  roomSections: {},// roomId -> [{ name, text }] from the AI cleanup pass, when it ran
+  roomChecks: {},  // roomId -> [{ quote, why }] the cleanup pass wasn't sure about
   mandatory: {
     waterMeter: '', waterMeterLocation: '',
     rcdBox: '', smokeAlarms: '', nbnBox: ''
@@ -1958,6 +2046,13 @@ function selectEngine(id) {
 // paste its URL here (or in the setup field). Blank = archiving off, app works as before.
 const DEFAULT_ARCHIVE_URL = 'https://propertyassist--9ecaffe4859311f181ad1607ee4eb77e.web.val.run';
 let ARCHIVE_URL = '';        // resolved at startup from saved value or the default above
+
+// AI cleanup endpoint (the inspectionapp-cleanup Val). Paste its URL here after
+// deploying and every phone picks it up. Blank = off, and the app falls back to
+// its own keyword split, which is what shipped before this existed.
+const DEFAULT_CLEANUP_URL = '';
+let CLEANUP_URL = '';
+const CLEANUP_TIMEOUT_MS = 60000;
 // Each recording session owns its OWN chunk array + recorder + stream, captured in
 // a closure — starting room B can never wipe room A's chunks mid-save.
 let currentRecSession = null; // { dbId, roomId, roomName, address, chunks, mr, stream, sessionBase, createdAt, stopped }
@@ -1968,7 +2063,21 @@ let pendingRoomMap = {};     // roomId -> 'pending' | 'uploading' for nav badges
 let photoQueueRunning = false; // guard so the serial-photo upload queue runs once at a time
 
 // ─── PERSISTENCE ──────────────────────────────────────────────────────────────
+// localStorage writes are synchronous and serialise the whole inspection every
+// time. saveState() used to run on every keystroke and every dictation restart,
+// which is a good part of why the app felt laggy on a phone. The write is now
+// coalesced; flushSaveState() forces it at the points where losing half a second
+// of typing would actually matter.
+let saveTimer = null;
 function saveState() {
+  if (saveTimer) return;
+  saveTimer = setTimeout(() => { saveTimer = null; saveStateNow(); }, 600);
+}
+function flushSaveState() {
+  if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+  saveStateNow();
+}
+function saveStateNow() {
   try {
     if (!state.startedAt) return;
     const toSave = {
@@ -1978,6 +2087,7 @@ function saveState() {
       roomNotes: state.roomNotes, serialModels: state.serialModels, serialPhotos: state.serialPhotos, checked: state.checked,
       inventory: state.inventory, roughDrafts: roughDrafts, roomAudioFlags: roomAudioFlags,
       roomMismatches: roomMismatches,
+      roomSections: state.roomSections, roomChecks: state.roomChecks,
       mandatory: state.mandatory, startedAt: state.startedAt
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
@@ -1993,6 +2103,9 @@ function loadSaved() {
 }
 
 function clearSaved() {
+  // Drop any coalesced write first, or it fires after this and puts the
+  // finished inspection straight back.
+  if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
   try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
 }
 
@@ -2024,6 +2137,8 @@ function resumeSaved() {
   state.serialPhotos = saved.serialPhotos || {};
   state.checked = saved.checked || {};
   state.inventory = saved.inventory || {};
+  state.roomSections = saved.roomSections || {};
+  state.roomChecks = saved.roomChecks || {};
   roughDrafts = saved.roughDrafts || {};
   roomAudioFlags = saved.roomAudioFlags || {};
   roomMismatches = saved.roomMismatches || {};
@@ -2087,6 +2202,11 @@ function initSetup() {
   const archiveInput = document.getElementById('archiveUrl');
   if (archiveInput) archiveInput.value = ARCHIVE_URL;
 
+  // AI cleanup URL (saved override, else baked-in default; blank = off)
+  try { CLEANUP_URL = (localStorage.getItem('pa_cleanup_url') ?? DEFAULT_CLEANUP_URL) || ''; } catch (e) { CLEANUP_URL = DEFAULT_CLEANUP_URL; }
+  const cleanupInput = document.getElementById('cleanupUrl');
+  if (cleanupInput) cleanupInput.value = CLEANUP_URL;
+
   window.addEventListener('online', () => { updatePendingUI(); processQueue(); processPhotoQueue(); });
   window.addEventListener('offline', () => { updatePendingUI(); });
 
@@ -2099,12 +2219,17 @@ function initSetup() {
     if (document.visibilityState === 'visible') {
       if (wantListening) acquireWakeLock();   // only while actively recording (not paused)
     } else {
-      saveState();
+      flushSaveState();
       if (currentRecSession) persistPartialRecording(currentRecSession);
     }
   });
+  // Backgrounding on iOS doesn't always fire visibilitychange before the app is
+  // frozen, so the coalesced write is forced here too.
+  window.addEventListener('pagehide', flushSaveState);
 
-  // Retry loop: while online with pending recordings, kick the queue every 60s.
+  // Retry loop: while online with pending recordings, kick the queue every 20s.
+  // It was 60s, which meant a momentary signal drop could add a full minute to
+  // the wait before Finish & Clear — the thing Bonnie noticed.
   setInterval(async () => {
     if (!navigator.onLine || queueRunning || !('indexedDB' in window)) return;
     try {
@@ -2113,7 +2238,7 @@ function initSetup() {
       else if (cloudArchiveEnabled() && recs.some(r => r.status === 'done' && r.archived !== true && r.blob)) processArchiveQueue();
       if (cloudArchiveEnabled()) processPhotoQueue();
     } catch (e) {}
-  }, 60000);
+  }, 20000);
 
   checkForResume();
   // Recover any recordings interrupted by a crash, then start the queue.
@@ -2153,6 +2278,9 @@ function startInspection() {
   const archiveEl = document.getElementById('archiveUrl');
   ARCHIVE_URL = archiveEl ? (archiveEl.value || '').trim() : ARCHIVE_URL;
   try { localStorage.setItem('pa_archive_url', ARCHIVE_URL); } catch (e) {}
+  const cleanupEl = document.getElementById('cleanupUrl');
+  CLEANUP_URL = cleanupEl ? (cleanupEl.value || '').trim() : CLEANUP_URL;
+  try { localStorage.setItem('pa_cleanup_url', CLEANUP_URL); } catch (e) {}
 
   if (!state.address || !state.client) {
     showToast('Please enter address and client name');
@@ -2296,7 +2424,7 @@ function renderRoomContent() {
     <div class="checklist ${checklistOpen ? 'open' : ''}" id="checklistBox">${chips}</div>
     <div class="next-sub" id="nextSub"></div>
     <div class="room-field-label">Talk through the room</div>
-    <p class="field-note">Tap the round <strong>🎤</strong> (bottom right) to talk hands-free. Say the subsection name, <strong>pause</strong>, then describe it. Say <strong>"scratch that"</strong> to drop the last sentence. Tap <strong>⏸</strong> to pause, then <strong>✓ Done</strong> to save. The grey box shows what the phone is hearing; the note below fills with the accurate transcript a few seconds later. You can also type.</p>
+    <p class="field-note">Tap the big <strong>🎤</strong> at the bottom of the screen to talk hands-free. Say the subsection name, <strong>pause</strong>, then describe it. Say <strong>"scratch that"</strong> to drop the last sentence. Tap <strong>⏸</strong> to pause, then <strong>✓ Done</strong> to save. The grey box shows what the phone is hearing; the note below fills with the accurate transcript a few seconds later. You can also type.</p>
     <div class="live-preview" id="livePreview"></div>
     <div class="room-state" id="roomState"></div>
     <textarea class="room-dictate ${flagged.length ? 'flagged' : ''}" id="roomta-${room.id}" rows="9"
@@ -2384,13 +2512,23 @@ function toggleCheck(roomId, i) {
   saveState();
 }
 
+// The room strip rebuilds every tab and smooth-scrolls the active one into
+// view. Doing that on every keystroke is what made typing into a note feel
+// sticky, so redraws are coalesced to one a frame.
+let navRedrawQueued = false;
+function scheduleRoomNav() {
+  if (navRedrawQueued) return;
+  navRedrawQueued = true;
+  requestAnimationFrame(() => { navRedrawQueued = false; renderRoomNav(); });
+}
+
 function onRoomEdit(roomId) {
   const ta = document.getElementById(`roomta-${roomId}`);
   if (!ta) return;
   state.roomNotes[roomId] = ta.value;
   updateRoomFieldState(roomId, ta.value);
   updateProgress();
-  renderRoomNav();
+  scheduleRoomNav();
   saveState();
 }
 
@@ -2442,14 +2580,33 @@ function accurateModeFor(roomId) {
   return cloudEnabled() && roomAudioFlags[roomId] === 'ok';
 }
 
+// Only the tail is drawn. This box is a ticker confirming the mic is live, not
+// the output — re-escaping and re-laying-out a whole room's text on every
+// interim speech result got slower the longer the inspector talked.
+const LIVE_PREVIEW_TAIL = 320;
 function renderLivePreview(roomId, text, live) {
   const box = document.getElementById('livePreview');
   if (!box || currentRoomId() !== roomId) return;
-  const t = (text || '').trim();
-  if (!t) { box.classList.remove('show'); box.innerHTML = ''; return; }
+  const full = (text || '').trim();
+  if (!full) { box.classList.remove('show'); box.innerHTML = ''; return; }
+  const t = full.length > LIVE_PREVIEW_TAIL ? '… ' + full.slice(-LIVE_PREVIEW_TAIL) : full;
   box.classList.add('show');
   box.innerHTML = `<div class="live-preview-label">${live ? 'Hearing you…' : 'Heard on the phone — waiting for the accurate transcript'}</div>${escapeHtml(t)}`;
   if (live) box.scrollTop = box.scrollHeight;
+}
+
+// Speech results arrive far faster than the screen refreshes; without this the
+// preview redrew several times per frame.
+let livePreviewQueued = null, livePreviewRaf = 0;
+function scheduleLivePreview(roomId, text, live) {
+  livePreviewQueued = { roomId, text, live };
+  if (livePreviewRaf) return;
+  livePreviewRaf = requestAnimationFrame(() => {
+    livePreviewRaf = 0;
+    const p = livePreviewQueued;
+    livePreviewQueued = null;
+    if (p) renderLivePreview(p.roomId, p.text, p.live);
+  });
 }
 
 // An honest per-room state line. A room that produced text but no audio is the
@@ -2467,6 +2624,11 @@ function renderRoomStatus() {
   if (m.failed) chips.push(['bad', '⚠ transcription failed — audio kept, see Recordings']);
   if (m.done && !m.unarchived) chips.push(['ready', '✓ transcript in, backed up']);
   else if (m.done) chips.push(['ready', '✓ transcript in, backing up']);
+  const secs = state.roomSections && state.roomSections[roomId];
+  if (secs && secs.length) {
+    const n = ((state.roomChecks && state.roomChecks[roomId]) || []).length;
+    chips.push(['ready', n ? `✨ cleaned — ${n} to check` : '✨ cleaned — nothing flagged']);
+  }
   if (roomAudioFlags[roomId] === 'noaudio') chips.push(['bad', '⚠ no audio backup for this room — re-record it']);
   const mm = roomMismatches[roomId];
   if (mm) chips.push(['bad', `⚠ you said "${mm.said}" — saved under ${mm.filedUnder}`]);
@@ -2591,16 +2753,22 @@ function toggleDictateCurrent(e) {
   if (id) toggleDictate(id, e);
 }
 
+const REC_IDLE_TEXT = 'Tap to start recording';
 function setFabRecording(on) {
   const fab = document.getElementById('fabRecord');
   const pill = document.getElementById('recStatus');
   if (fab) {
     fab.classList.toggle('recording', on);
     fab.classList.remove('paused');
+    fab.setAttribute('aria-label', on ? 'Pause recording' : 'Start recording this room');
     const icon = fab.querySelector('.fab-icon');
     if (icon) icon.textContent = on ? '⏸' : '🎤';
   }
-  if (pill) { if (on) pill.textContent = '● Listening…'; pill.classList.toggle('show', on); }
+  if (pill) {
+    pill.textContent = on ? '● Recording — tap ⏸ to pause' : REC_IDLE_TEXT;
+    pill.classList.toggle('show', on);
+    pill.classList.remove('paused');
+  }
 }
 
 function setFabPaused(on) {
@@ -2609,10 +2777,15 @@ function setFabPaused(on) {
   if (fab) {
     fab.classList.toggle('paused', on);
     fab.classList.remove('recording');
+    fab.setAttribute('aria-label', on ? 'Resume recording' : 'Start recording this room');
     const icon = fab.querySelector('.fab-icon');
     if (icon) icon.textContent = on ? '▶' : '🎤';
   }
-  if (pill) { pill.textContent = '❚❚ Paused — tap ▶ to resume'; pill.classList.toggle('show', on); }
+  if (pill) {
+    pill.textContent = on ? '❚❚ Paused — tap ▶ to resume' : REC_IDLE_TEXT;
+    pill.classList.toggle('paused', on);
+    pill.classList.remove('show');
+  }
 }
 
 function flashCaptured() {
@@ -2727,8 +2900,26 @@ function applyNumerals(text) {
 function recapitalise(text) {
   return text.replace(/(^|[.!?]\s+)([a-z])/g, (m, pre, ch) => pre + ch.toUpperCase());
 }
+// ─── FILLERS ──────────────────────────────────────────────────────────────────
+// Inspectors say "sorry" when they misspeak, and it lands in the report. There
+// is no legitimate use of the word in a condition note, so it comes out — along
+// with the umms and ahhs the phone's own dictation types out (the cloud engines
+// already drop those, the phone doesn't). Only the word goes: whatever was said
+// either side of it is left exactly as spoken, so nothing real is ever lost and
+// the typist still sees the correction the inspector made.
+const FILLER_WORDS = /\b(?:sorry|um+|uh+|erm+|ahh+|hmm+)\b/gi;
+function stripFillers(text) {
+  if (!text) return text;
+  let out = String(text).replace(FILLER_WORDS, '');
+  out = out.replace(/\s*\s*/g, ' ');
+  out = out.replace(/\s+([.,!?;:])/g, '$1');          // "light ." → "light."
+  out = out.replace(/([,;:])\s*([.,!?;:])/g, '$2');   // "light, ," → "light,"
+  out = out.replace(/^[\s,;:.]+/, '');                // "Sorry, walls…" → "walls…"
+  return out.replace(/\s{2,}/g, ' ').trim();
+}
 function applyCorrections(text) {
   if (!text) return text;
+  text = stripFillers(text);
   PHRASE_CORRECTIONS.forEach(([re, to]) => { text = text.replace(re, to); });
   text = applyNumerals(text);
   text = text.replace(/[A-Za-z]+/g, w => {
@@ -2932,6 +3123,8 @@ function updateRecControls() {
 // nor speech recognition could start, so the inspector knows nothing is captured.
 function setFabError() {
   const fab = document.getElementById('fabRecord');
+  const pill = document.getElementById('recStatus');
+  if (pill) { pill.textContent = '⚠️ Mic unavailable — nothing is being recorded'; pill.classList.remove('show', 'paused'); }
   if (!fab) return;
   fab.classList.remove('recording');
   fab.classList.add('error');
@@ -2941,6 +3134,7 @@ function setFabError() {
     fab.classList.remove('error');
     const ic = fab.querySelector('.fab-icon');
     if (ic && !fab.classList.contains('recording')) ic.textContent = '🎤';
+    if (pill && !fab.classList.contains('recording') && !fab.classList.contains('paused')) pill.textContent = REC_IDLE_TEXT;
   }, 5000);
 }
 
@@ -2970,7 +3164,7 @@ function startRecognition(roomId) {
       dictFinal = finalT;   // session finals, recomputed each time — never accumulated
       if (finalT) { dictFailFast = 0; flashCaptured(); }
       const heard = applyScratch([dictBase, finalT, interimT.trim()].filter(Boolean).join(' '));
-      if (accurateModeFor(roomId)) renderLivePreview(roomId, heard, true);
+      if (accurateModeFor(roomId)) scheduleLivePreview(roomId, heard, true);
       else if (ta) ta.value = heard;
     };
 
@@ -2998,7 +3192,7 @@ function startRecognition(roomId) {
         state.roomNotes[roomId] = dictBase;
         updateRoomFieldState(roomId, dictBase);
         updateProgress();
-        renderRoomNav();
+        scheduleRoomNav();
         saveState();
       }
 
@@ -3057,6 +3251,7 @@ function stopListening() {
       : (state.roomNotes[stoppedRoom] || '');
     stopAudioRecording(stoppedRoom, rough);
   }
+  flushSaveState();   // a room just finished — don't leave it sitting in the timer
 }
 
 // ─── OFFLINE AUDIO + CLOUD TRANSCRIPTION ──────────────────────────────────────
@@ -3327,12 +3522,21 @@ async function processQueue() {
         if (!res.ok) throw new Error('http ' + res.status);
         const data = await res.json();
         const transcript = ((data && (data.transcript || data.text)) || '').trim();
+        // Word timings, when the engine val sends them. Only the word and its
+        // start second are kept — enough to tell a typist where to listen, and
+        // small enough to sit in IndexedDB beside the audio.
+        rec.words = normaliseWords(data && data.words);
         // Keep the audio blob (backup the VA/typist can play back) until Finish & Clear,
         // which deletes 'done' records that are backed up. Storage is reclaimed on finish.
         rec.status = 'done'; rec.transcript = transcript;
         // Which engine produced this text. Goes into the Dropbox file so the
         // typist — and anyone comparing the two — can see it at a glance.
         rec.engine = (data && data.engine) || engineAtUpload;
+        // Second pass: fix what a word list can't and file the text under the
+        // room's real subsections. Best-effort — on any failure the record keeps
+        // only its engine transcript and everything downstream uses the app's
+        // own keyword split, exactly as before.
+        await runCleanup(rec);
         if (cloudArchiveEnabled()) {
           try { await archiveToDropbox(rec); rec.archived = true; }
           catch (e) { rec.archived = false; } // retried by processArchiveQueue()
@@ -3384,6 +3588,145 @@ function insertRoughFallback(rec) {
 // ─── DROPBOX ARCHIVE ──────────────────────────────────────────────────────────
 // As each room transcribes, push its audio + transcript into a dated property
 // folder in Dropbox via the archive Val. No-ops cleanly when ARCHIVE_URL is blank.
+// ─── AI CLEANUP PASS ──────────────────────────────────────────────────────────
+// The engines hear words; they don't know what a routine inspection is. This
+// pass reads the room's transcript with the room's subsection list in hand and
+// returns it cleaned and filed, plus a list of anything it wasn't sure about.
+// That list is the point: a VA checks those few spots against the audio instead
+// of playing the whole room, which is where the typing time actually goes.
+function cleanupEnabled() { return !!CLEANUP_URL; }
+
+// ─── WORD TIMINGS → "LISTEN AT 2:14" ─────────────────────────────────────────
+// Both engines can return every word with the second it was said. That is what
+// turns a flag from "check this phrase somewhere in the room" into "play 2:14",
+// which is the difference between a VA scrubbing a five-minute recording and
+// hearing four seconds of it.
+//
+// Engines disagree on units and field names, so everything is normalised to
+// { w: <lower-case word>, s: <seconds> } here and nowhere else.
+function normaliseWords(raw) {
+  if (!Array.isArray(raw)) return null;
+  const pairs = [];
+  for (const it of raw) {
+    if (!it) continue;
+    const w = String(it.word || it.text || '').toLowerCase().replace(/[^a-z0-9']/g, '');
+    if (!w) continue;
+    let s = it.start;
+    if (s == null) s = it.start_time;
+    if (s == null) continue;
+    s = Number(s);
+    if (!isFinite(s) || s < 0) continue;
+    pairs.push([w, s]);
+  }
+  if (!pairs.length) return null;
+  // AssemblyAI counts in milliseconds, Deepgram in seconds. Decide once for the
+  // whole room rather than per word — judging each value on its own turned an
+  // early AssemblyAI word into two and a half hours. No room recording runs
+  // past two hours, so a last word beyond that means the array is milliseconds.
+  const last = pairs.reduce((m, p) => Math.max(m, p[1]), 0);
+  const scale = last > 7200 ? 0.001 : 1;
+  return pairs.map(([w, s]) => ({ w, s: Math.round(s * scale * 10) / 10 }));
+}
+
+function formatClock(sec) {
+  const t = Math.max(0, Math.floor(Number(sec) || 0));
+  const m = Math.floor(t / 60), s = t % 60;
+  return m + ':' + (s < 10 ? '0' : '') + s;
+}
+
+// Find where a phrase was said. Matches on the phrase's own words in order,
+// scoring each candidate start position, and gives up rather than guessing when
+// nothing matches well — a wrong timestamp is worse than none.
+function findPhraseTime(words, phrase) {
+  if (!words || !words.length) return null;
+  const want = String(phrase || '').toLowerCase().match(/[a-z0-9']+/g);
+  if (!want || !want.length) return null;
+  const probe = want.slice(0, 6);
+  let best = -1, bestScore = 0;
+  for (let i = 0; i + 1 <= words.length; i++) {
+    let hits = 0;
+    for (let j = 0; j < probe.length && i + j < words.length; j++) {
+      if (words[i + j].w === probe[j]) hits++;
+    }
+    if (hits > bestScore) { bestScore = hits; best = i; }
+    if (bestScore === probe.length) break;
+  }
+  // At least half the probe words have to line up, and at least two of them,
+  // before a time is claimed.
+  const need = Math.max(2, Math.ceil(probe.length / 2));
+  if (best < 0 || bestScore < Math.min(need, probe.length)) return null;
+  return words[best].s;
+}
+
+// Stamp each flag with the moment it was said, where the phrase can be found.
+function timestampChecks(rec) {
+  if (!rec || !rec.check || !rec.check.length) return;
+  rec.check.forEach(c => {
+    const at = findPhraseTime(rec.words, c.heard || c.quote);
+    if (at != null) { c.at = at; c.clock = formatClock(at); }
+  });
+}
+
+async function runCleanup(rec) {
+  if (!cleanupEnabled() || !rec || !(rec.transcript || '').trim()) return;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => { try { ctrl.abort(); } catch (e) {} }, CLEANUP_TIMEOUT_MS);
+  try {
+    const res = await fetch(CLEANUP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        transcript: applyCorrections(applyScratch(rec.transcript)),
+        room: rec.roomName || '',
+        subsections: rec.subsections || [],
+        address: rec.address || ''
+      }),
+      signal: ctrl.signal
+    });
+    if (!res.ok) throw new Error('http ' + res.status);
+    const out = await res.json();
+    if (!out || out.ok !== true) throw new Error((out && out.error) || 'cleanup declined');
+    const sections = (out.sections || [])
+      .map(s => ({ name: String((s && s.name) || '').trim(), text: String((s && s.text) || '').trim() }))
+      .filter(s => s.name && s.text);
+    if (!sections.length) throw new Error('no sections');
+    rec.sections = sections;
+    rec.check = (out.check || [])
+      .map(c => ({
+        quote: String((c && c.quote) || '').trim(),
+        heard: String((c && (c.heard || c.quote)) || '').trim(),
+        why: String((c && c.why) || '').trim()
+      }))
+      .filter(c => c.quote);
+    timestampChecks(rec);
+    rec.cleanedBy = out.model || 'cleanup';
+    delete rec.cleanupError;
+  } catch (e) {
+    rec.sections = null;
+    rec.check = null;
+    rec.cleanupError = (e && e.message) ? String(e.message).slice(0, 120) : 'failed';
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Sections read back as a note: the same text, in order, as continuous prose.
+function sectionsToNote(sections) {
+  return (sections || []).map(s => s.text).filter(Boolean).join(' ').trim();
+}
+
+// A room can be recorded in more than one go, so a second pass has to join the
+// first rather than replace it. Same subsection name = same bucket.
+function mergeSections(existing, incoming) {
+  const out = (existing || []).map(s => ({ name: s.name, text: s.text }));
+  (incoming || []).forEach(s => {
+    const hit = out.find(o => o.name.toLowerCase() === s.name.toLowerCase());
+    if (hit) hit.text = (hit.text + ' ' + s.text).trim();
+    else out.push({ name: s.name, text: s.text });
+  });
+  return out;
+}
+
 function cloudArchiveEnabled() { return !!ARCHIVE_URL; }
 
 function safeSeg(s) {
@@ -3418,19 +3761,40 @@ async function archivePut(relPath, body, contentType) {
 // rec.transcript raw, so every file said "gray" where the app said "grey" and
 // every "scratch that" was still sitting in the text.
 function buildArchiveText(rec, clean) {
+  const cleaned = Array.isArray(rec.sections) && rec.sections.length;
   const header = [
     rec.address ? 'Property: ' + rec.address : '',
     'Room: ' + (rec.roomName || rec.roomId || ''),
     rec.createdAt ? 'Recorded: ' + new Date(rec.createdAt).toLocaleString('en-AU') : '',
-    rec.engine ? 'Transcribed by: ' + engineLabel(rec.engine) : ''
+    rec.engine ? 'Transcribed by: ' + engineLabel(rec.engine) : '',
+    cleaned ? 'Cleaned by: ' + rec.cleanedBy : (rec.cleanupError ? 'Cleanup did not run: ' + rec.cleanupError : '')
   ].filter(Boolean).join('\n');
+
+  // The whole point of this block: a typist reads it, plays those few seconds of
+  // audio, and never has to listen to the rest of the room. If it's empty,
+  // nothing in this room needed a second opinion.
+  let checkBlock = '';
+  if (cleaned && rec.check && rec.check.length) {
+    // The time is first on the line so the list reads as a play list: open the
+    // room's audio file, jump to each one, done.
+    checkBlock = 'CHECK THESE AGAINST THE AUDIO (' + rec.check.length + ')\n'
+      + 'Open the .m4a beside this file and play the times listed.\n\n'
+      + rec.check.map(c => '  ' + (c.clock ? '[' + c.clock + '] ' : '[ — ] ')
+          + '"' + c.quote + '"' + (c.why ? ' — ' + c.why : '')).join('\n')
+      + '\n\n' + '-'.repeat(40) + '\n\n';
+  } else if (cleaned) {
+    checkBlock = 'Nothing flagged for checking in this room.\n\n' + '-'.repeat(40) + '\n\n';
+  }
+
   const subs = rec.subsections || [];
-  const buckets = subs.length ? splitNotesBySubarea({ subsections: subs }, clean) : [];
+  const buckets = cleaned
+    ? rec.sections.map(s => ({ subarea: s.name, text: s.text }))
+    : (subs.length ? splitNotesBySubarea({ subsections: subs }, clean) : []);
   const body = buckets.length > 1
     ? buckets.map(b => b.subarea.toUpperCase() + '\n' + b.text).join('\n\n')
     : clean;
-  return header + '\n\n' + body + '\n\n' + '-'.repeat(40)
-    + '\nFull transcript, unsplit:\n' + clean + '\n';
+  return header + '\n\n' + checkBlock + body + '\n\n' + '-'.repeat(40)
+    + '\nFull transcript, unsplit:\n' + (cleaned ? sectionsToNote(rec.sections) : clean) + '\n';
 }
 
 // Upload one recording's audio and its text. Throws on failure so the caller can
@@ -3442,7 +3806,7 @@ async function archiveToDropbox(rec) {
   await archivePut(`${folder}/${base}.${audioExt(rec.type)}`, rec.blob, rec.type || 'application/octet-stream');
   const raw = (rec.transcript || '').trim();
   if (raw) {
-    const clean = applyCorrections(applyScratch(raw));
+    const clean = punctuateBySubarea({ subsections: rec.subsections || [] }, applyCorrections(applyScratch(raw)));
     await archivePut(`${folder}/${base}.txt`, buildArchiveText(rec, clean), 'text/plain; charset=utf-8');
     // The untouched engine output beside it, so nothing the app changed is lost.
     await archivePut(`${folder}/${base} - raw.txt`, raw, 'text/plain; charset=utf-8');
@@ -3572,7 +3936,19 @@ async function processPhotoQueue() {
 // with the command and the mistake both intact and overwrite the cleaned-up
 // version, which is what Brandon reported in July and Bonnie again in September.
 function applyTranscript(rec, transcript) {
-  transcript = applyCorrections(applyScratch((transcript || '').trim()));
+  // When the cleanup pass ran, its text is the transcript — already corrected,
+  // sentenced and filed. Otherwise fall back to the rule layer: word fixes, then
+  // sentence boundaries put back at the subsection edges, because the engine's
+  // full stops fall where the inspector drew breath rather than where one
+  // subsection ends and the next begins. The typist should be fixing wrong
+  // words, not punctuation.
+  const cleaned = rec && Array.isArray(rec.sections) && rec.sections.length;
+  if (cleaned) {
+    transcript = sectionsToNote(rec.sections);
+  } else {
+    transcript = applyCorrections(applyScratch((transcript || '').trim()));
+    transcript = punctuateBySubarea({ subsections: (rec && rec.subsections) || [] }, transcript);
+  }
   if (!transcript) return;
   const roomId = rec.roomId;
   if ((rec.address || '') !== (state.address || '')) {
@@ -3589,6 +3965,12 @@ function applyTranscript(rec, transcript) {
   const current = (state.roomNotes[roomId] || '').trim();
   const next = current ? current + '\n' + transcript : transcript;
   state.roomNotes[roomId] = next;
+  if (cleaned) {
+    state.roomSections[roomId] = mergeSections(state.roomSections[roomId], rec.sections);
+    if (rec.check && rec.check.length) {
+      state.roomChecks[roomId] = (state.roomChecks[roomId] || []).concat(rec.check);
+    }
+  }
   // The preview has served its purpose — the accurate text is in the note now.
   if (listeningRoom !== roomId) {
     roughDrafts[roomId] = '';
@@ -3673,10 +4055,38 @@ async function updatePendingUI() {
     warn.classList.toggle('show', msgs.length > 0);
   }
   renderRoomStatus();
-  if (document.getElementById('roomNav')) renderRoomNav();
+  renderFinishStatus();
+  if (document.getElementById('roomNav')) scheduleRoomNav();
   // Live-refresh the Recordings screen if it's open.
   const recScreen = document.getElementById('screenRecordings');
   if (recScreen && recScreen.classList.contains('active')) renderRecordings();
+}
+
+// Rooms whose audio hasn't finished the round trip yet — recording, waiting to
+// upload, uploading, or transcribed but not yet in Dropbox. Finishing while any
+// of these are outstanding is what strands work, so it gets its own line on the
+// export screen and its own sentence in the confirm dialog.
+function roomsStillWorking() {
+  return (state.rooms || []).filter(r => {
+    const m = roomRecMap[r.id];
+    return !!(m && (m.pending || m.uploading || m.unarchived));
+  }).map(r => r.name);
+}
+function renderFinishStatus() {
+  const box = document.getElementById('finishStatus');
+  const btn = document.getElementById('btnFinish');
+  if (!box) return;
+  const waiting = roomsStillWorking();
+  if (waiting.length) {
+    box.className = 'finish-status waiting';
+    box.textContent = `⏳ ${waiting.length} room${waiting.length === 1 ? '' : 's'} still finishing: ${waiting.join(', ')}. `
+      + 'Wait for these before you finish — transcription lands a few seconds after you stop talking.';
+    if (btn) { btn.classList.add('blocked'); btn.textContent = '✓ Finish & Clear (still working…)'; }
+  } else {
+    box.className = 'finish-status ready';
+    box.textContent = '✓ Every room is transcribed and backed up. Safe to finish.';
+    if (btn) { btn.classList.remove('blocked'); btn.textContent = '✓ Finish & Clear This Inspection'; }
+  }
 }
 
 // ─── NAVIGATION ──────────────────────────────────────────────────────────────
@@ -3707,6 +4117,7 @@ function showReview() {
   stopListening();
   if (navigator.onLine) processQueue();
   showScreen('screenReview');
+  renderFinishStatus();
   document.getElementById('reviewMeta').textContent =
     `${state.address} · ${state.client} · ${state.stateCode}`;
 
@@ -3789,17 +4200,26 @@ function showReview() {
     // Auto-computed sub-area split (read-only). The textarea stays the editable
     // source of truth — this recomputes every time the review screen opens.
     let splitHtml = '';
-    const buckets = splitNotesBySubarea(room, note);
+    const buckets = subareasForRoom(room, note);
     if (buckets.length) {
       splitHtml = '<div class="review-split"><div class="review-split-title">Split by subsection</div>'
         + buckets.map(b => `<div class="review-split-row"><span class="review-split-name">${escapeHtml(b.subarea)}:</span> ${escapeHtml(b.text)}</div>`).join('')
         + '</div>';
     }
+    // The short list of spots worth playing back. Everything not on it has been
+    // read in context and understood, which is what lets a VA stop listening to
+    // the whole room.
+    const checks = (state.roomChecks && state.roomChecks[room.id]) || [];
+    const checkHtml = checks.length
+      ? '<div class="review-check"><div class="review-check-title">🎧 Check these against the audio (' + checks.length + ')</div>'
+        + checks.map(c => `<div class="review-check-row"><b>${escapeHtml(c.clock ? '[' + c.clock + ']' : '[ — ]')}</b> “${escapeHtml(c.quote)}”${c.why ? ` <span>— ${escapeHtml(c.why)}</span>` : ''}</div>`).join('')
+        + '</div>'
+      : '';
     const serial = (state.serialModels[room.id] || '').trim();
     const serialHtml = serial ? renderReviewItem('Serial / model', serial) : '';
     const inv = (state.inventory[room.id] || '').trim();
     const invHtml = inv ? renderReviewItem('Inventory', inv) : '';
-    div.innerHTML = `<div class="review-room-title">${escapeHtml(room.name)}</div>${renderReviewItem('Room notes', note)}${invHtml}${serialHtml}${splitHtml}`;
+    div.innerHTML = `<div class="review-room-title">${escapeHtml(room.name)}</div>${renderReviewItem('Room notes', note)}${invHtml}${serialHtml}${splitHtml}${checkHtml}`;
     body.appendChild(div);
   });
 }
@@ -3924,7 +4344,7 @@ function buildCSVRows() {
     const val = state.roomNotes[room.id];
     if (val && val.trim()) {
       // One row per auto-split sub-area, plus the full note at the end for reference.
-      const buckets = splitNotesBySubarea(room, val);
+      const buckets = subareasForRoom(room, val);
       buckets.forEach(b => rows.push([...meta, room.name, b.subarea, b.text]));
       rows.push([...meta, room.name, 'Full room notes', val.trim()]);
     }
@@ -3962,6 +4382,16 @@ function downloadCSV() {
 }
 
 async function finishAndClear() {
+  // Named rooms, before the generic warning. "3 recordings haven't finished" is
+  // easy to wave past; "Bedroom 2, Ensuite and Kitchen" is not.
+  const working = roomsStillWorking();
+  if (working.length) {
+    if (!confirm(
+      `Still finishing: ${working.join(', ')}.\n\n`
+      + 'Transcription lands a few seconds after you stop talking, and these rooms are still going through. '
+      + 'Wait until this line is green before you finish.\n\nFinish anyway?'
+    )) return;
+  }
   if (!confirm('Finished with this inspection? This clears the saved data so you can start a fresh one. Make sure you have sent or copied the report first.')) return;
   stopListening();
   // Clean up this property's recordings so they can never bleed into the next
@@ -4020,7 +4450,8 @@ async function finishAndClear() {
   clearSaved();
   releaseSessionMic();   // let go of the microphone now the inspection is finished
   state.roomNotes = {}; state.serialModels = {}; state.serialPhotos = {}; state.checked = {}; state.rooms = [];
-  state.inventory = {}; roughDrafts = {}; roomAudioFlags = {}; roomRecMap = {}; roomMismatches = {};
+  state.inventory = {}; state.roomSections = {}; state.roomChecks = {};
+  roughDrafts = {}; roomAudioFlags = {}; roomRecMap = {}; roomMismatches = {};
   state.currentRoomIdx = 0; state.startedAt = null; state.address = '';
   state.client = ''; state.inspector = '';
   state.mandatory = { waterMeter:'', waterMeterLocation:'', rcdBox:'', smokeAlarms:'', nbnBox:'' };
@@ -4372,7 +4803,35 @@ function keywordsForSubsection(name) {
 }
 
 const SUBAREA_MIN_WORDS = 5;
-const SUBAREA_MAX_JUMP = 3;
+const SUBAREA_MAX_JUMP = 5;
+
+// Mid-sentence heading guards. An inspector talking at pace gets full stops in
+// the middle of a subsection and none at the start of the next one, so the
+// heading has to be allowed to cut mid-sentence — but only when it reads as a
+// heading. Two things say it doesn't:
+//
+//   1. The word before it makes it part of a description. "marks near the door",
+//      "no hooks or doors", "one glass pane" — a heading never follows an
+//      article, preposition, conjunction or quantity.
+//   2. The word before it belongs to the same subsection's own name, so the
+//      match is inside a longer phrase. "wear near the wardrobe doors" must not
+//      open Wardrobe on the word "doors".
+const SUBAREA_LEAD_IN = /\b(?:the|a|an|this|that|these|those|its|it's|their|my|our|no|of|to|in|on|at|near|under|over|behind|beside|above|below|from|by|with|or|both|each|all|some|any|into|onto|around|through|between|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|\d+)\s+$/i;
+function precedingWord(text, pos) {
+  const m = /([A-Za-z']+)[^A-Za-z']*$/.exec(text.slice(Math.max(0, pos - 30), pos));
+  return m ? m[1].toLowerCase() : '';
+}
+const subareaNameWordCache = {};
+function subsectionNameWords(name) {
+  if (!subareaNameWordCache[name]) {
+    const set = {};
+    String(name).toLowerCase().split(/[^a-z0-9]+/).forEach(w => {
+      if (w.length > 2 && SUBAREA_STOPWORDS.indexOf(w) === -1) wordVariants(w).forEach(v => { set[v] = true; });
+    });
+    subareaNameWordCache[name] = set;
+  }
+  return subareaNameWordCache[name];
+}
 
 // Plural/singular variants of a subsection's own name words, so an inspector
 // saying "doors and frames" still matches the subsection called "Door/Frames".
@@ -4401,6 +4860,45 @@ function subareaRegexG(kw, own) {
   return subareaAltCache[key];
 }
 
+// One subsection's worth of text, written as a sentence: capital at the front,
+// full stop at the end. A cut made mid-sentence otherwise hands the typist
+// "light fitting is a frosted glass with three metal clips" with no capital and
+// no full stop, which is exactly the kind of tidying the app should be doing
+// rather than a person.
+function sentenceTidy(t) {
+  let out = String(t || '').trim().replace(/^[,;:.\s]+/, '');
+  if (!out) return '';
+  out = out.charAt(0).toUpperCase() + out.slice(1);
+  if (!/[.!?]["')\]]?$/.test(out)) out += '.';
+  return out;
+}
+
+// Put sentence boundaries back at the subsection edges of a whole room note.
+// Used on the accurate transcript before it lands in the note, so the note, the
+// review screen, the CSV and the Dropbox file all read the same way.
+function punctuateBySubarea(room, text) {
+  const t = String(text || '').trim();
+  if (!t) return t;
+  const buckets = splitNotesBySubarea(room, t);
+  if (buckets.length < 2) return sentenceTidy(t);
+  return buckets.map(b => b.text).join(' ');
+}
+
+// What the review screen, the CSV and the Dropbox file all ask for: this room's
+// text, filed. The cleanup pass's own filing is used when it ran and the note
+// still matches what it produced; edit the note by hand and the keyword split
+// takes over again, so what's on screen always describes the text that's there.
+function subareasForRoom(room, noteText) {
+  const secs = state.roomSections && state.roomSections[room.id];
+  if (secs && secs.length) {
+    const norm = s => String(s || '').replace(/\s+/g, ' ').trim();
+    if (norm(sectionsToNote(secs)) === norm(noteText)) {
+      return secs.map(s => ({ subarea: s.name, text: s.text }));
+    }
+  }
+  return splitNotesBySubarea(room, noteText);
+}
+
 // Split a room's note into ordered {subarea, text} buckets. The note itself is
 // never modified — this is computed on the fly for review, CSV and the Dropbox file.
 //
@@ -4414,7 +4912,7 @@ function splitNotesBySubarea(room, noteText) {
   const text = String(noteText || '').replace(/\s+/g, ' ').trim();
   if (!text) return [];
   const subs = (room.subsections || []).map((name, idx) => ({ name, idx, kws: keywordsForSubsection(name) }));
-  if (!subs.length) return [{ subarea: 'General', text }];
+  if (!subs.length) return [{ subarea: 'General', text: sentenceTidy(text) }];
 
   // Every keyword hit across the whole note, grouped by where it starts.
   const byPos = {};
@@ -4430,7 +4928,7 @@ function splitNotesBySubarea(room, noteText) {
     });
   });
   const positions = Object.keys(byPos).map(Number).sort((a, b) => a - b);
-  if (!positions.length) return [{ subarea: 'General', text }];
+  if (!positions.length) return [{ subarea: 'General', text: sentenceTidy(text) }];
 
   // Punctuated text (an accurate transcript) gives a reliable signal: only start
   // a new subsection at a sentence start. Without punctuation, fall back to
@@ -4450,8 +4948,15 @@ function splitNotesBySubarea(room, noteText) {
     // new heading — "one silver metal handle" stays under Door/Frames/Handles.
     for (let i = 0; i < cands.length; i++) if (cands[i].name === lastName) return;
     const afterStop = pos === 0 || /[.!?]["')\]]?\s*$/.test(text.slice(Math.max(0, pos - 3), pos));
-    if (punctuated && !afterStop) return;
-    if (!afterStop && wordsBetween(lastPos, pos) < SUBAREA_MIN_WORDS) return;
+    // Mid-sentence headings used to be refused outright in punctuated text —
+    // which is why a room dictated at pace came back with the light fittings
+    // and the walls both filed under the ceiling. They're allowed now, behind
+    // the guards above.
+    if (!afterStop) {
+      if (wordsBetween(lastPos, pos) < SUBAREA_MIN_WORDS) return;
+      if (SUBAREA_LEAD_IN.test(text.slice(Math.max(0, pos - 20), pos))) return;
+    }
+    const prevWord = afterStop ? '' : precedingWord(text, pos);
     // Ranked by how many WORDS of the subsection name matched, not how many
     // characters: an announced "power points and light switches" has to beat a
     // bare "light", but a longer single word must not beat a shorter one —
@@ -4470,6 +4975,9 @@ function splitNotesBySubarea(room, noteText) {
       if (seen[c.name]) continue;
       // Mid-sentence, don't leap most of the way down the room on one word.
       if (!afterStop && lastIdx >= 0 && c.idx - lastIdx > SUBAREA_MAX_JUMP) continue;
+      // "…wear near the wardrobe doors" is a description of the flooring, not
+      // the start of the wardrobe: the word before belongs to the same name.
+      if (prevWord && subsectionNameWords(c.name)[prevWord]) continue;
       cuts.push({ pos, name: c.name });
       seen[c.name] = true;
       lastPos = pos; lastIdx = c.idx; lastEnd = pos + c.len; lastName = c.name;
@@ -4477,7 +4985,7 @@ function splitNotesBySubarea(room, noteText) {
     }
   });
 
-  if (!cuts.length) return [{ subarea: 'General', text }];
+  if (!cuts.length) return [{ subarea: 'General', text: sentenceTidy(text) }];
 
   const buckets = [];
   const bucketFor = (name) => {
@@ -4494,11 +5002,16 @@ function splitNotesBySubarea(room, noteText) {
   }
   cuts.forEach((c, i) => {
     const end = i + 1 < cuts.length ? cuts[i + 1].pos : text.length;
-    const seg = text.slice(c.pos, end).trim().replace(/^[,;:.\s]+/, '');
+    // A mid-sentence cut leaves the connector that led into the next heading
+    // dangling on the end of this one — "…scuff marks and".
+    const seg = text.slice(c.pos, end).trim()
+      .replace(/^[,;:.\s]+/, '')
+      .replace(/[,;\s]*\b(?:and|or|with|plus)\s*$/i, '');
     if (!seg) return;
     const b = bucketFor(c.name);
     b.text += (b.text ? ' ' : '') + seg;
   });
+  buckets.forEach(b => { b.text = sentenceTidy(b.text); });
   return buckets;
 }
 

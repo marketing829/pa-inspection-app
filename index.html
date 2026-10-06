@@ -62,14 +62,17 @@
     text-transform: uppercase;
     color: var(--gold);
   }
+  .header { flex-wrap: wrap; row-gap: 6px; }
+  /* The address gets its own full-width line under the logo and Recordings,
+     so "14/37 Engler Street, Mount Lawley" isn't cut to "14/37 Engler Street, …". */
   .header-title {
-    font-size: 13px;
-    color: rgba(255,255,255,0.5);
-    font-weight: 400;
-    max-width: 55%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    order: 3;
+    flex: 1 0 100%;
+    font-size: 14px;
+    color: rgba(255,255,255,0.85);
+    font-weight: 600;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
   }
 
   /* SCREENS */
@@ -281,8 +284,8 @@
   .room-tab .check { font-size: 10px; }
 
   .room-content {
-    /* Clears the record dock and the nav bar below it. */
-    padding: 0 0 250px;
+    /* Clears the record dock (record button and Prev/Next in one bar). */
+    padding: 0 0 150px;
   }
   .room-header {
     padding: 20px 20px 0;
@@ -482,6 +485,16 @@
 
   /* PER-ROOM STATUS — recorded / transcribing / ready / no audio backup */
   .room-state { display: none; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .safari-banner { margin: 0 20px 14px; padding: 12px 14px; border-radius: var(--radius-sm); background: var(--red-light); color: var(--red); border: 1px solid #F1A9A0; font-size: 13px; line-height: 1.45; }
+  .admin-settings { margin: 4px 0 18px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--white); }
+  .admin-settings > summary { padding: 12px 14px; font-size: 13px; font-weight: 600; color: var(--mid); cursor: pointer; list-style: none; }
+  .admin-settings > summary::-webkit-details-marker { display: none; }
+  .admin-settings > summary::before { content: '⚙ '; }
+  .admin-settings[open] > summary { border-bottom: 1px solid var(--border); }
+  .admin-settings > .field-group, .admin-settings > .admin-warn { margin-left: 14px; margin-right: 14px; }
+  .admin-warn { font-size: 12px; color: var(--red); margin: 10px 0; }
+  .room-state-top { padding: 8px 20px 0; margin-bottom: 0; }
+  .field-note.one-line { padding: 4px 0 8px; }
   .room-state.show { display: flex; }
   .room-state-chip {
     font-size: 11px;
@@ -508,6 +521,24 @@
     line-height: 1.45;
   }
   .warn-banner.show { display: block; }
+  /* Shown after the inspector leaves the app (Camera, a call) and comes back. */
+  .back-banner {
+    display: none;
+    background: var(--green-light);
+    color: var(--green);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 12px 44px 12px 20px;
+    border-bottom: 1px solid #A9D9BF;
+    line-height: 1.45;
+    position: relative;
+  }
+  .back-banner.show { display: block; }
+  .back-banner button {
+    position: absolute; top: 6px; right: 8px;
+    background: none; border: none; color: var(--green);
+    font-size: 20px; font-weight: 700; padding: 6px 10px; cursor: pointer;
+  }
 
   /* RUNNING ORDER PROMPT */
   .next-sub {
@@ -725,6 +756,14 @@
   .review-room {
     margin-bottom: 20px;
   }
+  details.review-room.fold { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0 12px; margin-bottom: 8px; }
+  details.review-room.fold[open] { padding-bottom: 10px; }
+  details.review-room.fold > summary { list-style: none; cursor: pointer; border-bottom: none; margin: 0; padding: 12px 0; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  details.review-room.fold > summary::-webkit-details-marker { display: none; }
+  details.review-room.fold > summary::after { content: '▸'; color: var(--mid); }
+  details.review-room.fold[open] > summary::after { content: '▾'; }
+  details.review-room.fold[open] > summary { border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+  .review-room-sum { flex: 1; text-align: right; font-weight: 500; letter-spacing: 0; text-transform: none; font-size: 12px; }
   .review-room-title {
     font-size: 13px;
     font-weight: 700;
@@ -843,6 +882,52 @@
   .finish-status.waiting { background: #FFF8D6; color: #7A6300; border: 1.5px solid #E6C800; }
   .finish-status.ready { background: var(--green-light); color: var(--green); }
   .btn-export.blocked { opacity: 0.55; }
+  a.btn-export { text-decoration: none; box-sizing: border-box; }
+  a.btn-export.disabled { opacity: 0.5; pointer-events: none; }
+  .btn-link {
+    background: none; border: none; color: var(--mid);
+    font-size: 14px; font-weight: 600; text-decoration: underline;
+    padding: 10px; cursor: pointer; width: 100%;
+  }
+  /* Area status — one line per room: transcript, then Dropbox. */
+  .area-status { margin: 12px 16px 0; }
+  .area-status:empty { display: none; }
+  .area-status-card {
+    background: var(--white); border: 1.5px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .area-status-head {
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    padding: 12px 14px; font-size: 14px; font-weight: 700; color: var(--black);
+    border-bottom: 1px solid var(--border);
+  }
+  .area-status-head span { font-size: 12px; font-weight: 600; color: var(--mid); }
+  .area-row {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px;
+    align-items: center; padding: 9px 14px; border-bottom: 1px solid var(--light);
+    font-size: 13px;
+  }
+  .area-row:last-child { border-bottom: none; }
+  .area-row.cols { font-size: 11px; font-weight: 700; color: var(--mid); text-transform: uppercase; letter-spacing: 0.03em; padding-top: 7px; padding-bottom: 7px; }
+  .area-name { font-weight: 600; color: var(--dark); overflow-wrap: anywhere; }
+  .area-chip {
+    font-size: 12px; font-weight: 700; border-radius: 12px; padding: 3px 8px;
+    white-space: nowrap; text-align: center; min-width: 74px; box-sizing: border-box;
+  }
+  .area-chip.ok { background: var(--green-light); color: var(--green); }
+  .area-skip {
+    margin-left: 6px; font-size: 11px; font-weight: 700; color: var(--mid);
+    background: var(--light); border: 1px solid var(--border); border-radius: 10px;
+    padding: 2px 8px; cursor: pointer; vertical-align: middle;
+  }
+  .finish-list { margin: 6px 0 4px 18px; padding: 0; font-weight: 600; }
+  .finish-list li { margin: 2px 0; }
+  .btn-export.locked { background: var(--light); color: var(--mid); border-color: var(--border); }
+  .area-chip.wait { background: #FFF8D6; color: #7A6300; }
+  .area-chip.bad { background: var(--red-light); color: var(--red); }
+  .area-chip.none { background: var(--light); color: var(--mid); }
+  .area-row.cols .area-chip { background: none; color: var(--mid); font-size: 11px; padding: 0 8px; }
+  @media (max-width: 360px) { .area-chip { min-width: 64px; font-size: 11px; padding: 3px 6px; } }
   .export-note {
     font-size: 11px;
     color: var(--mid);
@@ -854,7 +939,7 @@
   /* TOAST */
   .toast {
     position: fixed;
-    bottom: 100px;
+    bottom: calc(100px + env(safe-area-inset-bottom));
     left: 50%;
     transform: translateX(-50%) translateY(20px);
     background: var(--surface);
@@ -864,11 +949,19 @@
     font-size: 13px;
     font-weight: 500;
     opacity: 0;
-    transition: all 0.25s;
+    transition: opacity 0.25s, transform 0.25s;
     z-index: 200;
-    white-space: nowrap;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    box-sizing: border-box;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.35;
     pointer-events: none;
   }
+  /* On the room screen the bottom of the screen belongs to the record dock
+     (61px nav bar + ~130px dock). The toast goes above it, never over it. */
+  body.on-inspection .toast { bottom: calc(61px + 142px + env(safe-area-inset-bottom)); }
   .toast.show {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
@@ -931,6 +1024,7 @@
   }
   .rec-status.show { color: var(--recording); }
   .rec-status.paused { color: var(--gold-dark); }
+  .rec-status.mic-problem { color: var(--white); background: var(--red); border-radius: 10px; padding: 6px 10px; margin: 4px auto 0; max-width: 340px; }
 
   .cloud-status {
     display: none;
@@ -952,10 +1046,10 @@
     position: fixed;
     left: 0;
     right: 0;
-    bottom: calc(61px + env(safe-area-inset-bottom));
+    bottom: 0;
     background: var(--white);
     border-top: 1px solid var(--border);
-    padding: 12px 16px 10px;
+    padding: 8px 16px calc(6px + env(safe-area-inset-bottom));
     z-index: 110;
     box-shadow: 0 -4px 18px rgba(0,0,0,0.06);
   }
@@ -963,18 +1057,21 @@
     position: relative;
     display: flex;
     align-items: center;
-    justify-content: center;
-    min-height: 88px;
+    gap: 10px;
+    min-height: 76px;
   }
+  .dock-side { flex: 1 1 0; min-width: 0; display: flex; }
+  .dock-side .btn-nav, .dock-side .fab-done { flex: 1; min-width: 0; }
+  .dock-nav { padding: 13px 6px; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .fab-record {
     position: relative;
-    width: 88px;
-    height: 88px;
+    width: 76px;
+    height: 76px;
     border-radius: 50%;
     border: 4px solid var(--border);
     background: var(--surface);
     color: var(--white);
-    font-size: 36px;
+    font-size: 32px;
     line-height: 1;
     display: flex;
     align-items: center;
@@ -1024,10 +1121,6 @@
   /* DONE — pinned to the right of the dock while a segment is open, so the
      record button stays centred whether it's there or not. */
   .fab-done {
-    position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
     background: var(--green);
     color: var(--white);
     border: none;
@@ -1038,11 +1131,11 @@
     cursor: pointer;
     box-shadow: 0 4px 14px rgba(0,0,0,0.22);
   }
-  .fab-done:active { transform: translateY(-50%) scale(0.95); }
+  .fab-done:active { transform: scale(0.95); }
   @media (max-width: 360px) {
-    .fab-record { width: 78px; height: 78px; font-size: 32px; }
-    .rec-dock-row { min-height: 78px; }
-    .fab-done { padding: 13px 14px; font-size: 14px; }
+    .fab-record { width: 68px; height: 68px; font-size: 30px; }
+    .rec-dock-row { min-height: 68px; gap: 8px; }
+    .fab-done { padding: 13px 8px; font-size: 14px; }
   }
   /* Move-room arrows on the room bar */
   .room-move-btn {
@@ -1275,8 +1368,8 @@
 
 <div class="header">
   <div class="header-logo">Property Assist</div>
-  <div class="header-title" id="headerTitle">New Inspection</div>
   <button class="recordings-link" onclick="showRecordings()" aria-label="Recordings">☁︎ Recordings<span class="rec-badge" id="recBadge" style="display:none">0</span></button>
+  <div class="header-title" id="headerTitle">New Inspection</div>
 </div>
 
 <!-- SETUP SCREEN -->
@@ -1285,6 +1378,8 @@
     <h1>Start <span>Inspection</span></h1>
     <p>Fill in the property details, select the rooms present, then talk through each room in one go.</p>
   </div>
+
+  <div class="safari-banner" id="safariBanner" style="display:none">⚠ <b>You're in Safari.</b> Please use the <b>PA icon on your Home Screen</b> instead. Safari keeps a separate copy of jobs and can delete recordings after 7 days. No icon yet? Tap Share → Add to Home Screen.</div>
 
   <div class="resume-banner" id="resumeBanner" style="display:none">
     <div class="rb-title">Resume in-progress inspection?</div>
@@ -1309,22 +1404,12 @@
       <input type="text" id="propInspector" placeholder="Your name">
     </div>
     <div class="field-group">
-      <label>Bedrooms</label>
-      <select id="propBeds">
-        <option value="1">1 Bedroom</option>
-        <option value="2">2 Bedrooms</option>
-        <option value="3" selected>3 Bedrooms</option>
-        <option value="4">4 Bedrooms</option>
-        <option value="5">5 Bedrooms</option>
-      </select>
-    </div>
-    <div class="field-group">
-      <label>Bathrooms</label>
-      <select id="propBaths">
-        <option value="1">1 Bathroom</option>
-        <option value="2" selected>2 Bathrooms</option>
-        <option value="3">3 Bathrooms</option>
-      </select>
+      <label>Inspection type</label>
+      <div class="engine-select insp-type" id="inspTypeSelect">
+        <div class="engine-toggle" data-type="Entry" onclick="selectInspType('Entry')">Entry</div>
+        <div class="engine-toggle" data-type="Routine" onclick="selectInspType('Routine')">Routine</div>
+        <div class="engine-toggle" data-type="Exit" onclick="selectInspType('Exit')">Exit</div>
+      </div>
     </div>
     <div class="field-group">
       <label>State</label>
@@ -1344,6 +1429,11 @@
       <span class="state-badge" onclick="addCustomSetupRoom()">＋ Add custom room</span>
     </div>
 
+    <!-- Service settings. Inspectors never need these, and a stray tap here
+         used to be able to break uploads, so they're tucked away. -->
+    <details class="admin-settings" id="adminSettings">
+      <summary>Admin settings</summary>
+      <p class="admin-warn">For Daphne / admin only. Changing these can stop recordings reaching Dropbox.</p>
     <div class="field-group">
       <label>Transcription engine</label>
       <div class="engine-select" id="engineSelect"></div>
@@ -1363,6 +1453,7 @@
       <input type="url" id="cleanupUrl" placeholder="Paste your cleanup service URL">
       <span class="export-note" style="margin-top:2px">When set, each room's transcript gets a second pass that fixes mishears in context, breaks run-on sentences, files the text under the right subsections, and lists anything it wasn't sure about so the typist can check just those spots instead of playing the whole recording. Leave blank to use the app's own keyword split.</span>
     </div>
+    </details>
 
     <button class="btn-primary" id="btnStartInspection" onclick="startInspection()">
       Start Inspection →
@@ -1375,25 +1466,27 @@
   <div class="progress-bar-wrap">
     <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
   </div>
-  <div class="dictation-hint">
-    🎤 <span>Say the subsection name, <strong>pause</strong>, then describe it — "Ceiling." … "Painted white, cracking to edges." Say "scratch that" to drop the last sentence.</span>
-  </div>
   <div class="cloud-status" id="cloudStatus"></div>
   <div class="warn-banner" id="warnBanner"></div>
+  <div class="back-banner" id="backBanner" role="status"><span id="backBannerText"></span><button onclick="hideBackBanner()" aria-label="Dismiss">×</button></div>
   <div class="room-nav" id="roomNav"></div>
   <div class="room-content" id="roomContent"></div>
+  <!-- One dock: Prev | record | Next. While a recording is open, Done takes
+       Next's place on the right, so the old Done-then-Next habit still works. -->
   <div class="rec-dock">
     <div class="rec-dock-row">
+      <div class="dock-side left">
+        <button class="btn-nav dock-nav" id="btnPrevRoom" onclick="prevRoom()">← Prev</button>
+      </div>
       <button class="fab-record" id="fabRecord" onclick="toggleDictateCurrent(event)" aria-label="Start recording this room">
         <span class="fab-icon">🎤</span>
       </button>
-      <button class="fab-done" id="fabDone" onclick="finishSegment(event)" style="display:none" aria-label="Save this recording">✓ Done</button>
+      <div class="dock-side right">
+        <button class="btn-nav primary dock-nav" id="btnNextRoom" onclick="nextRoomFromDock()">Next room →</button>
+        <button class="fab-done" id="fabDone" onclick="finishSegment(event)" style="display:none" aria-label="Save this recording">✓ Done</button>
+      </div>
     </div>
     <div class="rec-status" id="recStatus">Tap to start recording</div>
-  </div>
-  <div class="bottom-bar">
-    <button class="btn-nav" id="btnPrevRoom" onclick="prevRoom()">← Prev</button>
-    <button class="btn-nav primary" id="btnNextRoom" onclick="nextRoom()">Next Room →</button>
   </div>
 </div>
 
@@ -1403,15 +1496,14 @@
     <h2>Review Report</h2>
     <p id="reviewMeta">Check all entries before exporting</p>
   </div>
+  <div class="area-status" id="areaStatus"></div>
   <div class="review-body" id="reviewBody"></div>
   <div class="export-actions">
-    <button class="btn-export" onclick="shareReport()">📤 Send Report to VA</button>
-    <button class="btn-export secondary" onclick="exportReport()">📋 Copy Full Report</button>
-    <button class="btn-export secondary" onclick="downloadCSV()">⬇ Download CSV (for Excel / import)</button>
-    <button class="btn-export secondary" onclick="showScreen('screenInspection')">← Back to Edit</button>
+    <a class="btn-export" id="btnDropbox" href="#" target="_blank" rel="noopener">📂 Check it in Dropbox</a>
+    <button class="btn-export secondary" onclick="showScreen('screenInspection')">← Back to edit</button>
     <div class="finish-status" id="finishStatus"></div>
     <button class="btn-export secondary" id="btnFinish" onclick="finishAndClear()">✓ Finish & Clear This Inspection</button>
-    <p class="export-note">The VA pastes or imports this manually. Automatic import into Ailo, Inspection Express, PropertyMe, Inspection Manager and PM Inspect needs an API from each platform — not yet enabled.</p>
+    <button class="btn-link" onclick="shareReport()">💾 Save a backup to this phone</button>
   </div>
 </div>
 
@@ -1928,7 +2020,7 @@ const STORAGE_KEY = 'pa_inspection_current_v2';
 
 // ─── STATE ──────────────────────────────────────────────────────────────────
 let state = {
-  address: '', client: '', inspector: '', beds: 3, baths: 2, stateCode: 'WA',
+  address: '', client: '', inspector: '', beds: 3, baths: 2, stateCode: 'WA', jobId: '',
   rooms: [],       // working room list: [{ id, name, subsections }] — editable & persisted
   currentRoomIdx: 0,
   roomNotes: {},   // roomId -> dictated text block for the whole room
@@ -1937,6 +2029,7 @@ let state = {
   inventory: {},   // roomId -> typed inventory list (kept out of the condition note)
   checked: {},     // roomId -> { subsectionName: true }  (optional progress ticks)
   roomSections: {},// roomId -> [{ name, text }] from the AI cleanup pass, when it ran
+  roomSectionParts: {},// roomId -> [[{ name, text }], …] one entry per recording, in order
   roomChecks: {},  // roomId -> [{ quote, why }] the cleanup pass wasn't sure about
   mandatory: {
     waterMeter: '', waterMeterLocation: '',
@@ -1986,7 +2079,9 @@ const ENGINES = {
     timeoutMs: 120000
   }
 };
-const DEFAULT_ENGINE = 'deepgram';
+// AssemblyAI won the field tests (Beaufort, Stirling, Engler) — see the
+// engine field-test doc. Deepgram stays one tap away under Admin settings.
+const DEFAULT_ENGINE = 'assemblyai';
 let ENGINE = DEFAULT_ENGINE; // resolved at startup from the saved choice
 let TRANSCRIBE_URL = '';     // resolved at startup from the saved URL for that engine
 
@@ -2038,7 +2133,7 @@ function selectEngine(id) {
     try { localStorage.setItem('pa_transcribe_url_' + ENGINE, typed); } catch (e) {}
   }
   ENGINE = id;
-  try { localStorage.setItem('pa_engine', ENGINE); } catch (e) {}
+  try { localStorage.setItem('pa_engine', ENGINE); localStorage.setItem('pa_engine_chosen', '1'); } catch (e) {}
   TRANSCRIBE_URL = engineUrl(ENGINE);
   renderEngineSelect();
 }
@@ -2050,8 +2145,12 @@ let ARCHIVE_URL = '';        // resolved at startup from saved value or the defa
 // AI cleanup endpoint (the inspectionapp-cleanup Val). Paste its URL here after
 // deploying and every phone picks it up. Blank = off, and the app falls back to
 // its own keyword split, which is what shipped before this existed.
-const DEFAULT_CLEANUP_URL = '';
+// ▼▼ Paste the inspectionapp-cleanup val's URL between the quotes ▼▼
+const DEFAULT_CLEANUP_URL = 'https://propertyassist--a1d7b510c12511f1bf831607ee4eb77e.web.val.run';
 let CLEANUP_URL = '';
+// Set by checkCleanupReady(). Until the val says it's ready (its Anthropic key
+// is set), no room is sent to it: no failed calls, no error lines in files.
+let cleanupReady = false;
 const CLEANUP_TIMEOUT_MS = 60000;
 // Each recording session owns its OWN chunk array + recorder + stream, captured in
 // a closure — starting room B can never wipe room A's chunks mid-save.
@@ -2059,6 +2158,11 @@ let currentRecSession = null; // { dbId, roomId, roomName, address, chunks, mr, 
 let wakeLock = null;         // screen wake lock held while recording
 let audioDB = null;          // IndexedDB handle for offline recordings
 let queueRunning = false;    // guard so the upload queue runs once at a time
+let queueStartedAt = 0;      // when the running pass started — the watchdog uses it
+let queueRunId = 0;          // bumps on every pass; a pass the watchdog abandoned stops writing
+let queueController = null;  // aborts whatever request the running pass is waiting on
+const QUEUE_STUCK_MS = 7 * 60 * 1000; // longer than every timeout on one room added together
+const audioInFlight = new Set(); // record ids whose audio is uploading right now (no double uploads)
 let pendingRoomMap = {};     // roomId -> 'pending' | 'uploading' for nav badges
 let photoQueueRunning = false; // guard so the serial-photo upload queue runs once at a time
 
@@ -2069,6 +2173,7 @@ let photoQueueRunning = false; // guard so the serial-photo upload queue runs on
 // coalesced; flushSaveState() forces it at the points where losing half a second
 // of typing would actually matter.
 let saveTimer = null;
+let stateSaveFailed = false;
 function saveState() {
   if (saveTimer) return;
   saveTimer = setTimeout(() => { saveTimer = null; saveStateNow(); }, 600);
@@ -2081,17 +2186,21 @@ function saveStateNow() {
   try {
     if (!state.startedAt) return;
     const toSave = {
-      address: state.address, client: state.client, inspector: state.inspector,
-      beds: state.beds, baths: state.baths, stateCode: state.stateCode,
+      address: state.address, client: state.client, inspector: state.inspector, jobId: state.jobId,
+      beds: state.beds, baths: state.baths, stateCode: state.stateCode, inspType: state.inspType,
       rooms: state.rooms, currentRoomIdx: state.currentRoomIdx,
       roomNotes: state.roomNotes, serialModels: state.serialModels, serialPhotos: state.serialPhotos, checked: state.checked,
       inventory: state.inventory, roughDrafts: roughDrafts, roomAudioFlags: roomAudioFlags,
       roomMismatches: roomMismatches,
-      roomSections: state.roomSections, roomChecks: state.roomChecks,
+      roomSections: state.roomSections, roomSectionParts: state.roomSectionParts, roomChecks: state.roomChecks, skippedRooms: state.skippedRooms, typedOnly: state.typedOnly,
       mandatory: state.mandatory, startedAt: state.startedAt
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
-  } catch (e) {}
+    if (stateSaveFailed) { stateSaveFailed = false; storageRecovered(); }
+  } catch (e) {
+    stateSaveFailed = true;
+    reportStorageFailure('Notes aren\'t saving on the phone');
+  }
 }
 
 function loadSaved() {
@@ -2130,7 +2239,9 @@ function resumeSaved() {
   const saved = loadSaved();
   if (!saved) return;
   state.address = saved.address; state.client = saved.client; state.inspector = saved.inspector;
+  state.jobId = saved.jobId || '';   // older saves have none — address matching applies
   state.beds = saved.beds; state.baths = saved.baths; state.stateCode = saved.stateCode;
+  state.inspType = saved.inspType || '';
   state.currentRoomIdx = saved.currentRoomIdx || 0;
   state.roomNotes = saved.roomNotes || {};
   state.serialModels = saved.serialModels || {};
@@ -2138,7 +2249,10 @@ function resumeSaved() {
   state.checked = saved.checked || {};
   state.inventory = saved.inventory || {};
   state.roomSections = saved.roomSections || {};
+  state.roomSectionParts = saved.roomSectionParts || {};
   state.roomChecks = saved.roomChecks || {};
+  state.skippedRooms = saved.skippedRooms || {};
+  state.typedOnly = saved.typedOnly || {};
   roughDrafts = saved.roughDrafts || {};
   roomAudioFlags = saved.roomAudioFlags || {};
   roomMismatches = saved.roomMismatches || {};
@@ -2160,8 +2274,72 @@ function resumeSaved() {
   if (navigator.onLine) processQueue();
 }
 
+// ─── LEAVING THE APP AND COMING BACK ──────────────────────────────────────────
+// A web page can't keep the mic running in the background on iPhone, so the
+// honest thing is to save what was recorded the moment the app is left, and
+// make carrying on one tap when it comes back.
+const AWAY_KEY = 'pa_away_v1';
+function onAppLeave() {
+  const room = listeningRoom;
+  if (room) {
+    const r = (state.rooms || []).find(x => x.id === room) || {};
+    try { localStorage.setItem(AWAY_KEY, JSON.stringify({ roomId: room, roomName: r.name || '', at: Date.now(), address: state.address || '', jobId: state.jobId || '' })); } catch (e) {}
+    // Belt and braces: write what's captured so far before anything else, in
+    // case iOS freezes the page before the recorder finishes stopping.
+    if (currentRecSession) persistPartialRecording(currentRecSession);
+    stopListening();   // finalises the clip and queues it — same as tapping ✓ Done
+  }
+  // Whatever the mic stream looks like when we come back, don't trust it.
+  micNeedsRefresh = true;
+  flushSaveState();
+}
+function onAppReturn() {
+  if (wantListening) acquireWakeLock();
+  checkCleanupReady();
+  showAwayNotice();
+  // Anything that was mid-upload when the phone froze gets picked up now,
+  // rather than on the next 20-second tick.
+  queueWatchdog().then(() => {
+    updatePendingUI();
+    if (navigator.onLine) { processQueue(); processPhotoQueue(); }
+  });
+}
+function showAwayNotice() {
+  let away = null;
+  try { away = JSON.parse(localStorage.getItem(AWAY_KEY) || 'null'); } catch (e) {}
+  try { localStorage.removeItem(AWAY_KEY); } catch (e) {}
+  if (!away || !sameJob(away) || !state.address) return;
+  const idx = (state.rooms || []).findIndex(r => r.id === away.roomId);
+  if (idx >= 0 && idx !== state.currentRoomIdx) {
+    state.currentRoomIdx = idx;
+    renderInspection();
+  }
+  const name = away.roomName || 'this room';
+  const at = new Date(away.at).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' });
+  const el = document.getElementById('backBanner');
+  const txt = document.getElementById('backBannerText');
+  if (el && txt) {
+    txt.textContent = `✓ Welcome back. Your ${name} recording was saved when you left at ${at}. Tap 🎤 to carry on — it adds to the same room.`;
+    el.classList.add('show');
+  }
+}
+function hideBackBanner() {
+  const el = document.getElementById('backBanner');
+  if (el) el.classList.remove('show');
+}
+function autoResumeIfRecent() {
+  const saved = loadSaved();
+  if (!saved || !saved.address || !saved.startedAt) return false;
+  if (Date.now() - saved.startedAt > 12 * 60 * 60 * 1000) return false;
+  resumeSaved();
+  showAwayNotice();
+  return true;
+}
+
 function discardSaved() {
   clearSaved();
+  state.jobId = ''; state.address = '';
+  sweepOldJobs();
   document.getElementById('resumeBanner').style.display = 'none';
 }
 
@@ -2177,6 +2355,9 @@ function initSetup() {
     container.appendChild(div);
   });
 
+  if (inSafariTab()) { const sb = document.getElementById('safariBanner'); if (sb) sb.style.display = 'block'; }
+  // The inspector's name is remembered on this phone — it's always the same person.
+  try { const n = localStorage.getItem('pa_inspector_name'); if (n) document.getElementById('propInspector').value = n; } catch (e) {}
   document.getElementById('propState').addEventListener('change', e => {
     document.getElementById('nswBadge').style.display = e.target.value === 'NSW' ? 'flex' : 'none';
   });
@@ -2184,7 +2365,15 @@ function initSetup() {
   // Load the engine choice and that engine's URL (saved override, else the
   // baked-in default), then draw the picker.
   try {
-    const savedEngine = localStorage.getItem('pa_engine');
+    let savedEngine = localStorage.getItem('pa_engine');
+    // Every Start used to save the engine, so a saved "deepgram" mostly means
+    // "never touched the picker". Move those phones to the new default once.
+    // A choice made in the picker from now on is kept.
+    if (savedEngine === 'deepgram' && !localStorage.getItem('pa_engine_chosen') && !localStorage.getItem('pa_engine_default_v2')) {
+      savedEngine = DEFAULT_ENGINE;
+      localStorage.setItem('pa_engine', savedEngine);
+    }
+    localStorage.setItem('pa_engine_default_v2', '1');
     if (savedEngine && ENGINES[savedEngine]) ENGINE = savedEngine;
     // One-time migration: before the picker existed there was a single saved
     // URL, and it was always the Deepgram service. Move it into that engine's
@@ -2203,11 +2392,22 @@ function initSetup() {
   if (archiveInput) archiveInput.value = ARCHIVE_URL;
 
   // AI cleanup URL (saved override, else baked-in default; blank = off)
-  try { CLEANUP_URL = (localStorage.getItem('pa_cleanup_url') ?? DEFAULT_CLEANUP_URL) || ''; } catch (e) { CLEANUP_URL = DEFAULT_CLEANUP_URL; }
+  try {
+    // Phones saved a blank here before there was a default, and a saved blank
+    // beats the default for ever. Clear it once so the built-in link applies.
+    if (localStorage.getItem('pa_cleanup_url') === '' && !localStorage.getItem('pa_cleanup_blank_fixed')) localStorage.removeItem('pa_cleanup_url');
+    localStorage.setItem('pa_cleanup_blank_fixed', '1');
+    CLEANUP_URL = (localStorage.getItem('pa_cleanup_url') ?? DEFAULT_CLEANUP_URL) || '';
+  } catch (e) { CLEANUP_URL = DEFAULT_CLEANUP_URL; }
+  checkCleanupReady();
   const cleanupInput = document.getElementById('cleanupUrl');
   if (cleanupInput) cleanupInput.value = CLEANUP_URL;
 
-  window.addEventListener('online', () => { updatePendingUI(); processQueue(); processPhotoQueue(); });
+  window.addEventListener('online', async () => {
+    // Signal is back: anything waiting out a no-signal back-off can go now.
+    try { for (const r of await dbAll()) { if (r.status === 'pending' && r.nextTryAt && !(r.attempts > 0 && !r.netFails)) { delete r.nextTryAt; await dbPut(r); } } } catch (e) {}
+    updatePendingUI(); processQueue(); processPhotoQueue();
+  });
   window.addEventListener('offline', () => { updatePendingUI(); });
 
   // Ask the browser not to evict our IndexedDB audio under storage pressure.
@@ -2217,36 +2417,53 @@ function initSetup() {
   // (the OS releases it on hide), and snapshot state + partial audio on hide.
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
-      if (wantListening) acquireWakeLock();   // only while actively recording (not paused)
+      onAppReturn();
     } else {
-      flushSaveState();
-      if (currentRecSession) persistPartialRecording(currentRecSession);
+      onAppLeave();
     }
   });
   // Backgrounding on iOS doesn't always fire visibilitychange before the app is
   // frozen, so the coalesced write is forced here too.
-  window.addEventListener('pagehide', flushSaveState);
+  window.addEventListener('pagehide', () => { if (document.visibilityState !== 'hidden') onAppLeave(); else flushSaveState(); });
 
   // Retry loop: while online with pending recordings, kick the queue every 20s.
   // It was 60s, which meant a momentary signal drop could add a full minute to
   // the wait before Finish & Clear — the thing Bonnie noticed.
+  // Live clock on "transcribing 0:42" — redraw the card every 2s while busy.
+  setInterval(() => {
+    const m = roomRecMap[currentRoomId && currentRoomId()] || {};
+    if (m.uploading) renderRoomStatus();
+  }, 2000);
   setInterval(async () => {
+    await queueWatchdog();
     if (!navigator.onLine || queueRunning || !('indexedDB' in window)) return;
     try {
+      await autoRetryFailed();
       const recs = await dbAll();
-      if (cloudEnabled() && recs.some(r => r.status === 'pending')) processQueue();
-      else if (cloudArchiveEnabled() && recs.some(r => r.status === 'done' && r.archived !== true && r.blob)) processArchiveQueue();
+      const now = Date.now();
+      if (cloudEnabled() && recs.some(r => r.status === 'pending' && !(r.nextTryAt > now))) processQueue();
+      else if (cloudArchiveEnabled() && recs.some(r => (r.status === 'done' || r.status === 'failed') && r.archived !== true && r.blob)) processArchiveQueue();
       if (cloudArchiveEnabled()) processPhotoQueue();
     } catch (e) {}
   }, 20000);
 
-  checkForResume();
+  // iOS throws the page away when the Camera app needs the memory. If there's an
+  // inspection from the last 12 hours, go straight back into it on the same room
+  // rather than leaving it behind a Resume button on the setup screen.
+  if (!autoResumeIfRecent()) checkForResume();
   // Recover any recordings interrupted by a crash, then start the queue.
   recoverCrashedRecordings().then(() => {
+    sweepOldJobs();
     updatePendingUI();
     if (navigator.onLine) processQueue();
   });
   if (navigator.onLine) processPhotoQueue();
+}
+
+let selectedInspType = '';
+function selectInspType(t) {
+  selectedInspType = t;
+  document.querySelectorAll('#inspTypeSelect .engine-toggle').forEach(el => el.classList.toggle('selected', el.dataset.type === t));
 }
 
 function addCustomSetupRoom() {
@@ -2267,8 +2484,7 @@ function startInspection() {
   state.address = document.getElementById('propAddress').value.trim();
   state.client = document.getElementById('propClient').value.trim();
   state.inspector = document.getElementById('propInspector').value.trim();
-  state.beds = parseInt(document.getElementById('propBeds').value);
-  state.baths = parseInt(document.getElementById('propBaths').value);
+  state.inspType = selectedInspType;
   state.stateCode = document.getElementById('propState').value;
   TRANSCRIBE_URL = (document.getElementById('transcribeUrl').value || '').trim();
   try {
@@ -2279,28 +2495,40 @@ function startInspection() {
   ARCHIVE_URL = archiveEl ? (archiveEl.value || '').trim() : ARCHIVE_URL;
   try { localStorage.setItem('pa_archive_url', ARCHIVE_URL); } catch (e) {}
   const cleanupEl = document.getElementById('cleanupUrl');
-  CLEANUP_URL = cleanupEl ? (cleanupEl.value || '').trim() : CLEANUP_URL;
-  try { localStorage.setItem('pa_cleanup_url', CLEANUP_URL); } catch (e) {}
+  const newCleanup = cleanupEl ? (cleanupEl.value || '').trim() : CLEANUP_URL;
+  // Only save it when someone actually changed it; otherwise the built-in
+  // default keeps applying (and can be updated in a later build).
+  if (newCleanup !== CLEANUP_URL) {
+    CLEANUP_URL = newCleanup;
+    try { localStorage.setItem('pa_cleanup_url', CLEANUP_URL); } catch (e) {}
+    checkCleanupReady();
+  }
 
   if (!state.address || !state.client) {
     showToast('Please enter address and client name');
     return;
   }
+  // Every Dropbox file carries the inspector's name and the paperwork is
+  // labelled by type, so neither can be left blank.
+  if (!state.inspector) { showToast('Please enter your name'); document.getElementById('propInspector').focus(); return; }
+  if (!state.inspType) { showToast('Choose the inspection type: Entry, Routine or Exit'); return; }
+  try { localStorage.setItem('pa_inspector_name', state.inspector); } catch (e) {}
 
   const selected = [...document.querySelectorAll('#roomsSelect .room-toggle.selected')].map(d => d.dataset.id);
   if (!selected.length) { showToast('Select at least one room'); return; }
 
-  const kept = selected.filter(id => {
-    if (id === 'bedroom4' && state.beds < 4) return false;
-    if (id === 'bathroom2' && state.baths < 2) return false;
-    return true;
-  });
+  // The room toggles are the only place rooms are chosen now. Bedrooms and
+  // bathrooms are counted from them for the details file.
+  const kept = selected;
+  state.beds = kept.filter(id => /^bedroom/.test(id)).length;
+  state.baths = kept.filter(id => /^bathroom|^ensuite$/.test(id)).length;
 
   state.rooms = kept
     .map(id => { const s = ROOM_LIBRARY.find(r => r.id === id); return s ? { id: s.id, name: s.name, subsections: [...s.subsections] } : null; })
     .filter(Boolean);
   state.currentRoomIdx = 0;
   state.startedAt = Date.now();
+  state.jobId = newJobId();
   state.rooms.forEach(room => {
     if (!(room.id in state.roomNotes)) state.roomNotes[room.id] = '';
     if (!(room.id in state.serialModels)) state.serialModels[room.id] = '';
@@ -2335,11 +2563,18 @@ function renderRoomNav() {
   state.rooms.forEach((room, idx) => {
     const tab = document.createElement('div');
     tab.className = 'room-tab' + (idx === state.currentRoomIdx ? ' active' : '');
-    const done = roomHasNotes(room);
-    if (done) tab.classList.add('complete');
-    const pend = pendingRoomMap[room.id];
-    const pendMark = pend === 'uploading' ? '<span class="check">⏳</span>' : (pend ? '<span class="check">☁︎</span>' : '');
-    tab.innerHTML = `${escapeHtml(room.name)}${done ? '<span class="check">✓</span>' : ''}${pendMark}`;
+    // ✓ = audio confirmed in Dropbox and nothing still in flight. Anything less
+    // is shown as what it is. A queued recording used to tick the tab too.
+    const m = roomRecMap[room.id] || {};
+    const inFlight = m.pending || m.uploading;
+    const safe = m.withAudio > 0 && (m.audioUp >= m.withAudio || !cloudArchiveEnabled()) && !inFlight;
+    let mark = '';
+    if (safe) { tab.classList.add('complete'); mark = '<span class="check">✓</span>'; }
+    else if (m.uploading) mark = '<span class="check">⏳</span>';
+    else if (m.withAudio) mark = '<span class="check">☁︎</span>';
+    else if (m.noAudio) mark = '<span class="check" style="color:var(--red)">⚠</span>';
+    else if ((state.roomNotes[room.id] || '').trim()) mark = '<span class="check">✎</span>';
+    tab.innerHTML = `${escapeHtml(room.name)}${mark}`;
     tab.onclick = () => { stopListening(); state.currentRoomIdx = idx; renderInspection(); };
     nav.appendChild(tab);
   });
@@ -2384,6 +2619,13 @@ function renderRoomContent() {
   `;
   content.appendChild(header);
 
+  // Audio / transcript status sits right under the room name, where it can be
+  // seen without scrolling. It used to sit under the instructions, off screen.
+  const stateBox = document.createElement('div');
+  stateBox.className = 'room-state room-state-top';
+  stateBox.id = 'roomState';
+  content.appendChild(stateBox);
+
   const tools = document.createElement('div');
   tools.className = 'room-tools';
   tools.id = 'roomTools';
@@ -2423,10 +2665,8 @@ function renderRoomContent() {
     <button type="button" class="checklist-toggle" id="checklistToggle" onclick="toggleChecklist()">${checklistOpen ? '▾ Hide checklist' : '▸ Show checklist'}</button>
     <div class="checklist ${checklistOpen ? 'open' : ''}" id="checklistBox">${chips}</div>
     <div class="next-sub" id="nextSub"></div>
-    <div class="room-field-label">Talk through the room</div>
-    <p class="field-note">Tap the big <strong>🎤</strong> at the bottom of the screen to talk hands-free. Say the subsection name, <strong>pause</strong>, then describe it. Say <strong>"scratch that"</strong> to drop the last sentence. Tap <strong>⏸</strong> to pause, then <strong>✓ Done</strong> to save. The grey box shows what the phone is hearing; the note below fills with the accurate transcript a few seconds later. You can also type.</p>
+    <p class="field-note one-line">🎤 Say the subsection, <strong>pause</strong>, describe it. "Scratch that" drops the last sentence.</p>
     <div class="live-preview" id="livePreview"></div>
-    <div class="room-state" id="roomState"></div>
     <textarea class="room-dictate ${flagged.length ? 'flagged' : ''}" id="roomta-${room.id}" rows="9"
       placeholder="The accurate transcript lands here after each recording. You can also type."
       oninput="onRoomEdit('${room.id}')">${escapeHtml(val)}</textarea>
@@ -2461,7 +2701,7 @@ function renderRoomContent() {
   renderRoomStatus();
 
   const isLast = state.currentRoomIdx === state.rooms.length - 1;
-  document.getElementById('btnNextRoom').textContent = isLast ? 'Review Report →' : 'Next Room →';
+  document.getElementById('btnNextRoom').textContent = isLast ? 'Review →' : 'Next room →';
   document.getElementById('btnPrevRoom').style.opacity = state.currentRoomIdx === 0 ? '0.3' : '1';
 }
 
@@ -2554,7 +2794,7 @@ function renderNextSub() {
   const sub = nextSubsection(room);
   if (!sub) { box.classList.remove('show'); box.innerHTML = ''; return; }
   box.classList.add('show');
-  box.innerHTML = `Next: <strong>${escapeHtml(sub)}</strong> — say the name, pause, then describe it.`
+  box.innerHTML = `Next: <strong>${escapeHtml(sub)}</strong>`
     + `<button type="button" class="next-sub-btn" onclick="tickAndAdvance()">Done, next ▸</button>`;
 }
 function tickAndAdvance() {
@@ -2618,12 +2858,36 @@ function renderRoomStatus() {
   if (!box || !roomId) return;
   const chips = [];
   const m = roomRecMap[roomId] || {};
+  const online = navigator.onLine;
   if (listeningRoom === roomId) chips.push(['working', '🎙 recording']);
-  if (m.uploading) chips.push(['working', '⏳ transcribing']);
-  else if (m.pending) chips.push(['working', navigator.onLine ? '⏳ waiting to transcribe' : '● saved offline']);
-  if (m.failed) chips.push(['bad', '⚠ transcription failed — audio kept, see Recordings']);
-  if (m.done && !m.unarchived) chips.push(['ready', '✓ transcript in, backed up']);
-  else if (m.done) chips.push(['ready', '✓ transcript in, backing up']);
+  // Audio — the part the typist can't do without.
+  if (m.withAudio || m.noAudio) {
+    if (m.withAudio && m.audioUp >= m.withAudio) chips.push(['ready', '✓ audio in Dropbox']);
+    else if (m.withAudio && !cloudArchiveEnabled()) chips.push(['working', '📱 audio on this phone (Dropbox off)']);
+    else if (m.withAudio && !online) chips.push(['working', '📱 audio on this phone — uploads when you have signal']);
+    else if (m.withAudio) chips.push(['working', '☁︎ audio sending to Dropbox…' + (m.audioError ? ` (last try: ${m.audioError})` : '')]);
+    if (m.noAudio && !m.withAudio) chips.push(['bad', '⚠ no audio captured — record this room again']);
+  }
+  // Transcript — with a live clock and the reason for any retry.
+  if (m.uploading) {
+    const secs = m.since ? Math.max(0, Math.round((Date.now() - m.since) / 1000)) : 0;
+    chips.push(['working', `⏳ transcribing ${formatClock(secs)}` + (m.attempts ? ` — try ${m.attempts + 1} of 5` : '')]);
+  } else if (m.pending) {
+    if (!online) chips.push(['working', '⏸ transcript waits for signal']);
+    else {
+      const wait = m.nextTryAt > Date.now() ? ` — next try in ${formatClock(Math.round((m.nextTryAt - Date.now()) / 1000))}` : '';
+      if (m.attempts) chips.push(['working', `⏳ retrying — try ${m.attempts + 1} of 5 (last: ${m.lastError || 'failed'})${wait}`]);
+      else if (m.lastError === 'no connection') chips.push(['working', `⏸ no data signal${wait || ' — retrying'}`]);
+      else chips.push(['working', '⏳ queued to transcribe']);
+    }
+  }
+  if (m.failed && !m.done && !m.noAudio && m.finalError) {
+    chips.push(['bad', `⚠ ${m.finalError} — the typist works from the audio`]);
+  } else if (m.failed && !m.done && !m.noAudio) {
+    const again = m.autoRetryAt ? ` — tries again by itself at ${new Date(m.autoRetryAt).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })}` : ' — tap Retry in Recordings';
+    chips.push(['bad', `⚠ transcript failed after 5 tries (${m.lastError || 'error'})${again}. The typist can work from the audio.`]);
+  }
+  if (m.done) chips.push(['ready', '✓ transcript in']);
   const secs = state.roomSections && state.roomSections[roomId];
   if (secs && secs.length) {
     const n = ((state.roomChecks && state.roomChecks[roomId]) || []).length;
@@ -2650,6 +2914,9 @@ function clearRoom(roomId) {
   state.roomNotes[roomId] = '';
   roughDrafts[roomId] = '';
   delete roomMismatches[roomId];
+  if (state.roomSections) delete state.roomSections[roomId];
+  if (state.roomSectionParts) delete state.roomSectionParts[roomId];
+  if (state.roomChecks) delete state.roomChecks[roomId];
   const ta = document.getElementById(`roomta-${roomId}`);
   if (ta) ta.value = '';
   updateRoomFieldState(roomId, '');
@@ -2765,7 +3032,7 @@ function setFabRecording(on) {
     if (icon) icon.textContent = on ? '⏸' : '🎤';
   }
   if (pill) {
-    pill.textContent = on ? '● Recording — tap ⏸ to pause' : REC_IDLE_TEXT;
+    pill.textContent = on ? '● Recording' : REC_IDLE_TEXT;
     pill.classList.toggle('show', on);
     pill.classList.remove('paused');
   }
@@ -2782,7 +3049,7 @@ function setFabPaused(on) {
     if (icon) icon.textContent = on ? '▶' : '🎤';
   }
   if (pill) {
-    pill.textContent = on ? '❚❚ Paused — tap ▶ to resume' : REC_IDLE_TEXT;
+    pill.textContent = on ? '❚❚ Paused' : REC_IDLE_TEXT;
     pill.classList.toggle('paused', on);
     pill.classList.remove('show');
   }
@@ -2867,14 +3134,25 @@ const PHRASE_CORRECTIONS = [
   // "Nib wall" is a real thing, so only the toilet sense is corrected.
   [/\bnib (?=white |black |cream )/gi, 'seat and lid '],
   [/\bplastic system\b/gi, 'plastic cistern'],
-  // A towel rail dictated at speed loses its last word.
-  [/\btowel\b(?!\s+(?:rail|ladder|rack|holder))/gi, 'towel rail'],
+  // A towel rail dictated at speed loses its last word. Only a bare "towel"
+  // is finished off: towel ring, towel hooks, towel bar and the rest are
+  // fittings in their own right and were coming out as "towel rail ring".
+  [/\btowel\b(?![\s-]+(?:rails?|ladders?|racks?|holders?|rings?|hooks?|bars?|rods?|warmers?|shelf|shelves|hangers?|rail))/gi, 'towel rail'],
   // "Grey tile, grey grout" is said in every wet area and comes back mangled.
   [/\bgrey tall grey grout\b/gi, 'grey tile, grey grout'],
   // Phrases run before the spelling pass, so both spellings have to match.
   [/\bis a grey colou?ration throughout the grey\b/gi, 'is grey tile with grey grout, discolouration throughout the grout.'],
   [/\bmarble,\s*look stone\b/gi, 'marble look stone'],
-  [/\bmetal\.\s+Tray\b/g, 'metal tray']
+  [/\bmetal\.\s+Tray\b/g, 'metal tray'],
+  // ── Field test (Stirling, Engler, Beaufort), 5 October ──────────────────────
+  [/\bbuild\s?up\b/gi, 'build-up'],
+  [/\bdoor stops\b/gi, 'doorstops'],
+  [/\bdoor stop\b/gi, 'doorstop'],
+  [/\bself closers\b/gi, 'self-closers'],
+  [/\bself closer\b/gi, 'self-closer'],
+  [/\b(wood|stone|marble|timber|tile|concrete|brick)\s+look\b(?=\s+[a-z])/gi, (m, w) => w + '-look'],
+  [/\bNBN coax(?: box)?\b/gi, 'NBN Co box'],
+  [/\bNBN co box\b/g, 'NBN Co box']
 ];
 function matchCase(replacement, original) {
   if (original.length > 1 && original === original.toUpperCase()) return replacement.toUpperCase();
@@ -2910,7 +3188,10 @@ function recapitalise(text) {
 const FILLER_WORDS = /\b(?:sorry|um+|uh+|erm+|ahh+|hmm+)\b/gi;
 function stripFillers(text) {
   if (!text) return text;
-  let out = String(text).replace(FILLER_WORDS, '');
+  // "er" is too often part of a real word to strip everywhere, but ", er," is
+  // only ever a filler. AssemblyAI writes it that way.
+  let out = String(text).replace(/,\s*er\s*,/gi, ',').replace(/(^|[.!?]\s+)er,\s*/gi, '$1');
+  out = out.replace(FILLER_WORDS, '');
   out = out.replace(/\s*\s*/g, ' ');
   out = out.replace(/\s+([.,!?;:])/g, '$1');          // "light ." → "light."
   out = out.replace(/([,;:])\s*([.,!?;:])/g, '$2');   // "light, ," → "light,"
@@ -3016,6 +3297,15 @@ async function toggleDictate(roomId, e) {
   startListening(roomId);
 }
 
+// Every start and stop bumps this. Opening the mic can take a second (longer
+// just after coming back to the app), and the inspector can tap another room
+// in that time. Anything that finishes after the token has moved on belongs to
+// a start nobody wants any more, and must not touch the room.
+let listenToken = 0;
+function listenStillWanted(token, roomId) {
+  return token === listenToken && listeningRoom === roomId && wantListening && currentRoomId() === roomId;
+}
+
 async function startListening(roomId) {
   const ta = document.getElementById(`roomta-${roomId}`);
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -3024,18 +3314,23 @@ async function startListening(roomId) {
     showToast('Tap the 🎤 on your keyboard to dictate');
     return;
   }
+  const token = ++listenToken;
   listeningRoom = roomId;
   wantListening = true;
   recPaused = false;
   dictFailFast = 0;
   dictFinal = '';
+  hideBackBanner();
   setFabRecording(true);
   updateRecControls();
   // Deliberately do NOT focus the textarea — the mic button is hands-free,
   // and focusing pops the iPhone keyboard and shifts the page.
-  showToast('Recording — tap ⏸ to pause, ✓ Done to save');
   acquireWakeLock();                                // keep the screen (and mic) alive while recording
-  const audioOk = await startAudioRecording(roomId); // true | false (failed) | null (not applicable)
+  const audioOk = await startAudioRecording(roomId, () => listenStillWanted(token, roomId)); // true | false (failed) | null (not applicable) | 'abandoned'
+  // The inspector moved on while the mic was opening. stopListening() has
+  // already saved this room; starting speech now would leave a stray engine
+  // that later writes an empty draft over this room's note.
+  if (audioOk === 'abandoned' || !listenStillWanted(token, roomId)) return;
   // Record the outcome per room. 'noaudio' means the recorder failed but dictation
   // may still run — the room would look finished with nothing behind it, so it
   // stays flagged on the room card until it's re-recorded.
@@ -3078,7 +3373,6 @@ function pauseListening() {
   releaseWakeLock();
   setFabPaused(true);
   updateRecControls();
-  showToast('Paused — tap ▶ to resume, or ✓ Done to save');
 }
 
 // Resume the open segment: appends to what's there, continues the same audio clip.
@@ -3096,27 +3390,43 @@ function resumeListening(roomId) {
   } else if (!currentRecSession) {
     // No live audio clip (e.g. resumed after coming back) — start a fresh one;
     // its accurate transcript will append beneath what's already in the note.
-    startAudioRecording(roomId);
+    const token = ++listenToken;
+    startAudioRecording(roomId, () => listenStillWanted(token, roomId));
   }
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (SR) startRecognition(roomId);
   setFabRecording(true);
   updateRecControls();
-  showToast('Recording — tap ⏸ to pause, ✓ Done to save');
 }
 
 // The explicit "✓ Done" button — finalises the open segment and queues it.
 function finishSegment(e) {
   if (e) e.stopPropagation();
   if (!listeningRoom) return;
-  stopListening();
-  showToast('✓ Recording saved');
+  // The toast comes from the save itself now — it used to say "saved" before
+  // anything had been written, and kept saying it when the phone was full.
+  const hadAudio = !!currentRecSession;
+  stopListening({ announce: true });
+  if (!hadAudio) showToast('✓ Saved');
 }
 
 // Show/hide the Done button and keep the record-status pill in sync.
+let nextLockedUntil = 0;
 function updateRecControls() {
   const done = document.getElementById('fabDone');
-  if (done) done.style.display = listeningRoom ? 'flex' : 'none';
+  const next = document.getElementById('btnNextRoom');
+  const open = !!listeningRoom;
+  if (done) done.style.display = open ? 'flex' : 'none';
+  if (next) {
+    // Done sits where Next was. When it goes, hold Next for a moment so a
+    // double tap on Done can't skip straight past the room.
+    if (!open && next.style.display === 'none') nextLockedUntil = Date.now() + 700;
+    next.style.display = open ? 'none' : '';
+  }
+}
+function nextRoomFromDock() {
+  if (Date.now() < nextLockedUntil) return;
+  nextRoom();
 }
 
 // Error state on the round record button — shown when neither audio recording
@@ -3146,11 +3456,13 @@ function startRecognition(roomId) {
   const ta = document.getElementById(`roomta-${roomId}`);
   try {
     recognition = new SR();
+    const me = recognition;   // a handler from an older engine must never write
     recognition.lang = 'en-AU';
     recognition.interimResults = true;
     recognition.continuous = false;
 
     recognition.onresult = (event) => {
+      if (recognition !== me || listeningRoom !== roomId) return;
       // Rebuild this session's transcript from scratch on every event. iOS Safari
       // re-delivers the same interim/final results repeatedly, so accumulating them
       // stacks up duplicates ("ceiling ceiling ceiling..."). Recomputing avoids that.
@@ -3178,6 +3490,7 @@ function startRecognition(roomId) {
     };
 
     recognition.onend = () => {
+      if (recognition !== me || listeningRoom !== roomId) return;
       // Roll anything heard into the committed base so nothing is lost on restart.
       const beforeScratch = [dictBase, dictFinal].filter(Boolean).join(' ').trim();
       dictBase = applyScratch(beforeScratch);
@@ -3221,7 +3534,8 @@ function startRecognition(roomId) {
   }
 }
 
-function stopListening() {
+function stopListening(opts) {
+  listenToken++;          // any mic still opening for the old room is now abandoned
   wantListening = false;
   if (recognition) {
     // Detach handlers so no late result can write after we've stopped.
@@ -3249,7 +3563,7 @@ function stopListening() {
     const rough = accurateModeFor(stoppedRoom)
       ? (roughDrafts[stoppedRoom] || '')
       : (state.roomNotes[stoppedRoom] || '');
-    stopAudioRecording(stoppedRoom, rough);
+    stopAudioRecording(stoppedRoom, rough, !!(opts && opts.announce));
   }
   flushSaveState();   // a room just finished — don't leave it sitting in the timer
 }
@@ -3332,12 +3646,22 @@ function photoDelete(id) {
 
 // ─── SCREEN WAKE LOCK ─────────────────────────────────────────────────────────
 // Keeps the screen (and therefore the mic + recorder) alive while recording.
+// Without it, the screen locking mid-room stops the recording. Say so once per
+// session, with the setting that fixes it.
+let wakeLockWarned = false;
 async function acquireWakeLock() {
+  let ok = false;
   try {
     if ('wakeLock' in navigator && navigator.wakeLock.request) {
       wakeLock = await navigator.wakeLock.request('screen');
+      ok = !!wakeLock;
     }
   } catch (e) { wakeLock = null; }
+  if (!ok && !wakeLockWarned && document.visibilityState === 'visible') {
+    wakeLockWarned = true;
+    showToast('⚠ This phone can\'t keep the screen on by itself. Set Auto-Lock to Never (Settings → Display & Brightness) for the inspection, or the recording stops when the screen locks.');
+  }
+  return ok;
 }
 function releaseWakeLock() {
   if (wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; }
@@ -3346,11 +3670,13 @@ function releaseWakeLock() {
 // ONE microphone stream for the whole inspection. Requesting it once (and reusing
 // it for every room) stops iOS re-showing "Allow microphone" on each recording.
 // Released on Finish. If the stream has died (interruption), it's re-requested.
+let micNeedsRefresh = false;   // set when the app is left — iOS kills the mic in the background
 async function getSessionMic() {
-  if (sessionMicStream && sessionMicStream.active &&
-      sessionMicStream.getAudioTracks().some(t => t.readyState === 'live')) {
+  if (!micNeedsRefresh && sessionMicStream && sessionMicStream.active &&
+      sessionMicStream.getAudioTracks().some(t => t.readyState === 'live' && !t.muted && t.enabled)) {
     return sessionMicStream;
   }
+  micNeedsRefresh = false;
   releaseSessionMic();
   sessionMicStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   return sessionMicStream;
@@ -3365,11 +3691,14 @@ function releaseSessionMic() {
 // Begin capturing mic audio for this room. Best-effort: if the mic can't be grabbed
 // for recording, dictation still runs and the inspector can type.
 // Returns true = recording, false = tried and FAILED, null = not applicable (cloud off / unsupported).
-async function startAudioRecording(roomId) {
+async function startAudioRecording(roomId, stillWanted) {
   if (!cloudEnabled()) return null;
   if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder)) return null;
   try {
     const stream = await getSessionMic();   // shared, one-prompt mic stream
+    // The inspector may have tapped another room while the mic was opening.
+    // Starting a recorder now would leave one running for a room nobody is in.
+    if (stillWanted && !stillWanted()) return 'abandoned';
     let mr;
     try { mr = new MediaRecorder(stream); } catch (e) { mr = new MediaRecorder(stream, {}); }
     const ta = document.getElementById(`roomta-${roomId}`);
@@ -3380,9 +3709,11 @@ async function startAudioRecording(roomId) {
       roomId,
       roomName: (state.rooms.find(r => r.id === roomId) || {}).name || '',
       address: state.address,
+      jobId: state.jobId || '',
       // Carried on the record so the Dropbox file can be written with headings
       // even after the inspection has been finished and cleared.
       subsections: ((state.rooms.find(r => r.id === roomId) || {}).subsections || []).slice(),
+      meta: inspectionMeta(),
       chunks: [],
       mr, stream: null,   // stream is shared for the whole session — never stopped per-recording
       // What was in the textarea BEFORE this recording session — the accurate
@@ -3394,20 +3725,208 @@ async function startAudioRecording(roomId) {
     };
     mr.ondataavailable = (ev) => {
       if (ev.data && ev.data.size) {
+        session.lastChunkAt = Date.now();
         session.chunks.push(ev.data);
-        // Crash-safety: upsert the partial audio to IndexedDB on every timeslice,
-        // so a crash/kill mid-room still leaves recoverable audio behind.
-        persistPartialRecording(session);
+        // Crash-safety: upsert the partial audio to IndexedDB every 15s (and on
+        // backgrounding, below), so a crash/kill mid-room still leaves
+        // recoverable audio behind without rewriting the clip every 5s.
+        if (!session.lastPersist || Date.now() - session.lastPersist > 15000) {
+          session.lastPersist = Date.now();
+          persistPartialRecording(session);
+        }
       }
     };
+    // A phone call, Siri or another app can take the mic and kill the recorder
+    // outright. That used to look like "paused" to the guard below, so the dock
+    // kept saying Recording while nothing was. Now it's a mic failure.
+    mr.onerror = () => onRecorderDied(session, 'recorder error');
     mr.start(5000); // 5s timeslice — chunks arrive continuously, not just at stop
     currentRecSession = session;
+    startMicGuard(session, stream);
+    // Which go at this room this is, for the file name.
+    try {
+      const before = (await dbAll()).filter(r => r.roomId === roomId && sameJob(r) && !r.recovered).length;
+      session.part = before + 1;
+    } catch (e) { session.part = 1; }
     return true;
   } catch (e) {
+    if (stillWanted && !stillWanted()) return 'abandoned';
     currentRecSession = null;
     showToast('Microphone unavailable — audio is NOT being recorded');
     return false;
   }
+}
+
+// ─── MIC GUARD ────────────────────────────────────────────────────────────────
+// Two checks while a room is recording, four times a second:
+//   - the recorder has handed over audio in the last 15 seconds (5s slices)
+//   - the mic is not returning perfect digital silence. A real room is never
+//     exactly zero for 10 seconds — even a quiet one has hiss. A muted/dead iOS mic is.
+// Either failing turns the dock red with a plain instruction. It can't fix the
+// mic, but it turns "found out back at the office" into "found out in the room".
+let micGuardTimer = null;
+let micGuardCtx = null;
+function startMicGuard(session, stream) {
+  stopMicGuard();
+  session.startedAt = Date.now();
+  session.lastSoundAt = Date.now();
+  let analyser = null, buf = null;
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) {
+      micGuardCtx = new AC();
+      if (micGuardCtx.state === 'suspended') micGuardCtx.resume().catch(() => {});
+      const src = micGuardCtx.createMediaStreamSource(stream);
+      analyser = micGuardCtx.createAnalyser();
+      analyser.fftSize = 8192;   // ~170ms per look, four looks a second
+      src.connect(analyser);   // not connected to the speakers — listen only
+      // Float samples, not bytes: 8-bit samples round a quiet, noise-suppressed
+      // room down to zero, which would cry wolf. A dead iOS mic is exactly 0.0.
+      buf = analyser.getFloatTimeDomainData ? new Float32Array(analyser.fftSize) : new Uint8Array(analyser.fftSize);
+    }
+  } catch (e) { analyser = null; }
+  // The track ending (mic taken by a call, Siri, another app) is the other way
+  // the recorder dies. The stream is shared, so check it's still this session.
+  const onTrackEnded = () => { if (currentRecSession === session) onRecorderDied(session, 'mic taken'); };
+  try { stream.getAudioTracks().forEach(t => t.addEventListener('ended', onTrackEnded, { once: true })); } catch (e) {}
+  micGuardTimer = setInterval(() => {
+    if (currentRecSession !== session || session.stopped) { stopMicGuard(); return; }
+    const now = Date.now();
+    const st = session.mr ? session.mr.state : 'inactive';
+    // Stopped without anyone tapping Done, or paused without anyone tapping
+    // pause: the phone did that, not the inspector.
+    if (st === 'inactive' || (st === 'paused' && !recPaused)) { onRecorderDied(session, 'recorder stopped'); return; }
+    if (session.died) { showMicProblem(true); return; }
+    if (st !== 'recording') {   // paused by the inspector — restart the clocks for when it resumes
+      session.lastSoundAt = now; session.lastChunkAt = now; return;
+    }
+    if (analyser && micGuardCtx && micGuardCtx.state === 'running') {
+      let peak = 0;
+      if (buf instanceof Float32Array) {
+        analyser.getFloatTimeDomainData(buf);
+        for (let i = 0; i < buf.length; i++) { const d = Math.abs(buf[i]); if (d > peak) peak = d; }
+      } else {
+        analyser.getByteTimeDomainData(buf);
+        for (let i = 0; i < buf.length; i++) { const d = Math.abs(buf[i] - 128); if (d > peak) peak = d; }
+      }
+      if (peak > 0) session.lastSoundAt = now;
+    } else {
+      session.lastSoundAt = now;   // can't measure on this phone — rely on the chunk check
+    }
+    const noChunks = now - (session.lastChunkAt || session.startedAt) > 15000;
+    const silent = now - session.lastSoundAt > 10000;
+    showMicProblem(noChunks || silent);
+  }, 250);
+}
+function onRecorderDied(session, why) {
+  if (!session || session.stopped || session.died) return;
+  session.died = why || 'stopped';
+  showMicProblem(true);
+  // Keep what was captured before it died. The recorder hands over its last
+  // slice as it stops, so give that a moment to land first.
+  setTimeout(() => { if (!session.stopped) { session.lastPersist = 0; persistPartialRecording(session); } }, 300);
+}
+function stopMicGuard() {
+  if (micGuardTimer) { clearInterval(micGuardTimer); micGuardTimer = null; }
+  if (micGuardCtx) { try { micGuardCtx.close(); } catch (e) {} micGuardCtx = null; }
+  showMicProblem(false);
+}
+let micProblemShown = false;
+function showMicProblem(on) {
+  const pill = document.getElementById('recStatus');
+  const fab = document.getElementById('fabRecord');
+  if (on && !micProblemShown) {
+    micProblemShown = true;
+    if (navigator.vibrate) { try { navigator.vibrate([200, 100, 200]); } catch (e) {} }
+    showToast('⚠ The mic isn\'t picking anything up. Tap ✓ Done, then 🎤 to start the room again.');
+  }
+  if (!on && !micProblemShown) return;
+  if (!on) micProblemShown = false;
+  if (pill) {
+    pill.classList.toggle('mic-problem', on);
+    if (on) pill.textContent = '⚠ Mic not recording — tap ✓ Done, then 🎤 again';
+    else if (fab && fab.classList.contains('recording')) pill.textContent = '● Recording';
+  }
+}
+
+// ─── WHICH JOB A RECORD BELONGS TO ────────────────────────────────────────────
+// Records used to be matched to the open inspection by address. The same
+// address inspected twice (an entry, then a routine), or an address typed two
+// ways, mixed jobs up. Every job now gets an id; the address is only the
+// fallback for records saved by older builds.
+function newJobId() {
+  return 'J' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+function sameJob(rec) {
+  if (!rec || !state.address) return false;
+  if (rec.jobId && state.jobId) return rec.jobId === state.jobId;
+  return (rec.address || '') === (state.address || '');
+}
+
+// ─── SHARED KEY FOR THE VALS ──────────────────────────────────────────────────
+// Every val checks this before doing any work, so finding a val's address is no
+// longer enough to run up the transcription or Claude bill or write into
+// Dropbox. It travels as ?k= rather than a header, because a custom header
+// would make every browser call need a CORS pre-check the vals don't answer.
+// It sits in a public page, so it's a lock on the door, not a safe: change it
+// here and in each val's PA_KEY env var if it ever leaks. Vals that haven't
+// been updated yet ignore it.
+const PA_KEY = 'ZfFSr6J42MtujG_F88NgF1go';
+function withKey(url) {
+  if (!url) return url;
+  return url + (url.indexOf('?') === -1 ? '?' : '&') + 'k=' + encodeURIComponent(PA_KEY);
+}
+
+// ─── SAFARI TAB vs HOME SCREEN APP ────────────────────────────────────────────
+// On iPhone the two keep separate storage. A job started in one is invisible
+// in the other, and Safari can clear its copy after 7 days without use.
+function inSafariTab() {
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (!ios) return false;
+  const standalone = window.navigator.standalone === true || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  return !standalone;
+}
+
+// ─── PHONE STORAGE FAILURES ───────────────────────────────────────────────────
+// A full phone used to fail in silence: "✓ Recording saved" with nothing saved,
+// photos "backing up…" for ever. Every save failure now says so, once per
+// minute at most, and the warning banner stays up until a save works again.
+let storageProblem = false, storageToastAt = 0;
+function reportStorageFailure(what) {
+  storageProblem = true;
+  if (Date.now() - storageToastAt > 60000) {
+    storageToastAt = Date.now();
+    if (navigator.vibrate) { try { navigator.vibrate([200, 100, 200]); } catch (e) {} }
+    showToast(`⚠ ${what} — the phone may be out of storage. Free some space (old photos/videos), then carry on.`);
+  }
+  updatePendingUI();
+}
+function storageRecovered() {
+  if (!storageProblem) return;
+  storageProblem = false;
+  updatePendingUI();
+}
+// The recording couldn't be stored, so the phone's own text is all there is.
+// Put it in the note, marked, so the room isn't left empty.
+function keepRoughAfterSaveFailure(roomId, roomName, job, rough) {
+  rough = (rough || '').trim();
+  if (!sameJob(job)) return;
+  roomAudioFlags[roomId] = 'noaudio';
+  if (!rough) { saveState(); return; }
+  const marked = '⚠ AUDIO NOT SAVED (phone storage) — phone dictation only:\n' + rough;
+  const current = (state.roomNotes[roomId] || '').trim();
+  if (current.includes(rough)) { saveState(); return; }
+  const next = current ? current + '\n' + marked : marked;
+  state.roomNotes[roomId] = next;
+  roughDrafts[roomId] = '';
+  const ta = document.getElementById(`roomta-${roomId}`);
+  if (ta) ta.value = next;
+  renderLivePreview(roomId, '', false);
+  updateRoomFieldState(roomId, next);
+  updateProgress();
+  renderRoomNav();
+  renderRoomStatus();
+  saveState();
 }
 
 // Upsert one IndexedDB record per session with the audio so far (status 'recording').
@@ -3422,7 +3941,10 @@ async function persistPartialRecording(session) {
       roomId: session.roomId,
       roomName: session.roomName,
       address: session.address,
+      jobId: session.jobId || '',
       subsections: session.subsections || [],
+      meta: session.meta || null,
+      part: session.part || 1,
       sessionBase: session.sessionBase,
       roughText: '',
       blob: new Blob(session.chunks, { type }),
@@ -3431,12 +3953,13 @@ async function persistPartialRecording(session) {
     if (session.dbId != null) rec.id = session.dbId;
     const id = await dbPut(rec);
     if (session.dbId == null) session.dbId = id;
-  } catch (e) { /* best-effort — the final save at stop still runs */ }
+    storageRecovered();
+  } catch (e) { reportStorageFailure('Audio isn\'t saving'); }
   finally { session.persisting = false; }
 }
 
 // Stop recording, save the room audio, then transcribe now if we're online.
-async function stopAudioRecording(roomId, roughText) {
+async function stopAudioRecording(roomId, roughText, announce) {
   const session = currentRecSession;
   currentRecSession = null;
   releaseWakeLock();
@@ -3444,11 +3967,44 @@ async function stopAudioRecording(roomId, roughText) {
   session.stopped = true; // block any late partial persist from racing the final save
   const { mr, stream, chunks } = session;
   const rid = session.roomId || roomId;
-  await new Promise((resolve) => { mr.onstop = resolve; try { mr.stop(); } catch (e) { resolve(); } });
+  // A recorder that already died never fires onstop again, and one frozen by
+  // the phone may not fire it at all. Either used to leave the record on
+  // 'recording' until the app was restarted, holding the Finish lock.
+  await new Promise((resolve) => {
+    if (!mr || mr.state === 'inactive') return resolve();
+    const t = setTimeout(resolve, 3000);
+    mr.onstop = () => { clearTimeout(t); resolve(); };
+    try { mr.stop(); } catch (e) { clearTimeout(t); resolve(); }
+  });
+  // Wait for a partial save already in flight, or it can land after the final
+  // save and put the record back to 'recording'.
+  for (let i = 0; i < 20 && session.persisting; i++) await new Promise(r => setTimeout(r, 100));
   if (stream) { try { stream.getTracks().forEach(t => t.stop()); } catch (e) {} }
+  stopMicGuard();
   if (!chunks.length) {
-    // Nothing captured — remove the (empty) partial record if one was created.
-    if (session.dbId != null) { try { await dbDelete(session.dbId); } catch (e) {} }
+    const rough = (roughText || '').trim();
+    if (!rough) {
+      // Nothing captured and nothing said — a tap on and straight off. Tidy it away.
+      if (session.dbId != null) { try { await dbDelete(session.dbId); } catch (e) {} }
+      return;
+    }
+    // The phone heard words but the recorder got no audio. This used to be
+    // deleted without a word — the Engler kitchen. Keep it, say so, and get
+    // the phone's text to the typist.
+    const failedRec = {
+      roomId: rid, roomName: session.roomName, address: session.address, jobId: session.jobId || '',
+      subsections: session.subsections || [], meta: session.meta || null, part: session.part || 1,
+      sessionBase: session.sessionBase, roughText: rough, blob: null, noAudio: true,
+      type: 'audio/mp4', status: 'failed', createdAt: session.createdAt, attempts: 0
+    };
+    if (session.dbId != null) failedRec.id = session.dbId;
+    try { await dbPut(failedRec); }
+    catch (e) { reportStorageFailure('Couldn\'t save this room'); keepRoughAfterSaveFailure(rid, session.roomName, session, rough); return; }
+    roomAudioFlags[rid] = 'noaudio';
+    insertRoughFallback(failedRec);
+    showToast(`⚠ No audio was captured for ${session.roomName || 'this room'}. Record it again.`);
+    updatePendingUI();
+    if (navigator.onLine && cloudArchiveEnabled()) processArchiveQueue();
     return;
   }
   const type = mr.mimeType || (chunks[0] && chunks[0].type) || 'audio/mp4';
@@ -3458,16 +4014,25 @@ async function stopAudioRecording(roomId, roughText) {
       roomId: rid,
       roomName: session.roomName,
       address: session.address,
+      jobId: session.jobId || '',
       subsections: session.subsections || [],
+      meta: session.meta || null,
+      part: session.part || 1,
       sessionBase: session.sessionBase,
       roughText: roughText || '',
       blob, type, status: 'pending', createdAt: session.createdAt, attempts: 0
     };
     if (session.dbId != null) rec.id = session.dbId;
     await dbPut(rec);
+    storageRecovered();
+    if (announce) showToast(session.died ? '✓ Saved what was recorded before the mic stopped' : '✓ Recording saved');
     updatePendingUI();
     if (navigator.onLine) processQueue();
-  } catch (e) { /* storage failed — the rough text is still in the room notes */ }
+  } catch (e) {
+    // The audio is gone. Say so, and keep the phone's text in the note.
+    reportStorageFailure(`The ${session.roomName || 'room'} recording was NOT saved`);
+    keepRoughAfterSaveFailure(rid, session.roomName, session, roughText);
+  }
 }
 
 // Anything left mid-flight goes back into the queue on startup:
@@ -3498,36 +4063,61 @@ async function recoverCrashedRecordings() {
 async function processQueue() {
   if (queueRunning || !cloudEnabled() || !navigator.onLine || !('indexedDB' in window)) return;
   queueRunning = true;
+  queueStartedAt = Date.now();
+  const runId = ++queueRunId;
+  const live = () => runId === queueRunId;   // false once the watchdog has given up on this pass
   try {
-    const recs = (await dbAll()).filter(r => r.status === 'pending');
+    // A record that just failed waits its turn (see retryDelay) rather than
+    // going straight back on the next 20-second tick.
+    const now = Date.now();
+    const recs = (await dbAll()).filter(r => r.status === 'pending' && !(r.nextTryAt > now));
     for (const rec of recs) {
+      if (!live()) break;
+      if (!rec.blob) { rec.status = 'failed'; rec.noAudio = true; try { await dbPut(rec); } catch (e) {} continue; }
+      // Some failures will never succeed, however often they're tried. Re-sending
+      // a 70 MB file every 20 seconds used mobile data and held the Finish lock.
+      if (rec.blob.size > MAX_TRANSCRIBE_BYTES) { await failForGood(rec, 'too large to transcribe (over ' + Math.round(MAX_TRANSCRIBE_BYTES / 1e6) + ' MB)'); continue; }
       try {
-        rec.status = 'uploading'; await dbPut(rec); updatePendingUI();
+        rec.status = 'uploading'; rec.uploadStartedAt = Date.now(); await dbPut(rec); updatePendingUI();
+        queueStartedAt = Date.now();   // the watchdog times each room, not the whole pass
+        // Audio first. Whatever happens to the transcript, the typist has the
+        // recording in Dropbox — Engler's kitchen had neither.
+        if (cloudArchiveEnabled() && !rec.audioArchived && !rec.audioTooLarge) {
+          try { if (await archiveAudio(rec)) { delete rec.audioError; await dbPut(rec); } updatePendingUI(); }
+          catch (e) { rec.audioError = describeError(e); /* the archive pass retries it */ }
+        }
+        if (!live()) break;
         // Cap each upload so one stalled request can't hang the queue forever.
         // Deepgram answers in one round trip; AssemblyAI uploads the file, waits
         // for the job and then answers, so it gets a longer leash. Either way the
         // recording stays on the phone and the queue retries it.
         const engineAtUpload = ENGINE;
         const controller = new AbortController();
-        const timer = setTimeout(() => { try { controller.abort(); } catch (e) {} }, engineDef(engineAtUpload).timeoutMs || 60000);
+        queueController = controller;
+        const timer = setTimeout(() => { try { controller.abort(); } catch (e) {} }, uploadTimeout(engineDef(engineAtUpload).timeoutMs || 60000, rec.blob && rec.blob.size));
         let res;
         try {
-          res = await fetch(TRANSCRIBE_URL, {
+          res = await fetch(withKey(TRANSCRIBE_URL), {
             method: 'POST',
             headers: { 'Content-Type': rec.type || 'application/octet-stream' },
             body: rec.blob,
             signal: controller.signal
           });
         } finally { clearTimeout(timer); }
+        if (res.status === 413) throw new Error('too large');
         if (!res.ok) throw new Error('http ' + res.status);
         const data = await res.json();
         const transcript = ((data && (data.transcript || data.text)) || '').trim();
+        // An empty answer for a real recording is a failure, not a finished room.
+        // It used to be marked done, with nothing to show for it.
+        if (!transcript) throw new Error('empty transcript');
         // Word timings, when the engine val sends them. Only the word and its
         // start second are kept — enough to tell a typist where to listen, and
         // small enough to sit in IndexedDB beside the audio.
         rec.words = normaliseWords(data && data.words);
         // Keep the audio blob (backup the VA/typist can play back) until Finish & Clear,
         // which deletes 'done' records that are backed up. Storage is reclaimed on finish.
+        delete rec.nextTryAt; delete rec.netFails;
         rec.status = 'done'; rec.transcript = transcript;
         // Which engine produced this text. Goes into the Dropbox file so the
         // typist — and anyone comparing the two — can see it at a glance.
@@ -3537,6 +4127,7 @@ async function processQueue() {
         // only its engine transcript and everything downstream uses the app's
         // own keyword split, exactly as before.
         await runCleanup(rec);
+        if (!live()) break;
         if (cloudArchiveEnabled()) {
           try { await archiveToDropbox(rec); rec.archived = true; }
           catch (e) { rec.archived = false; } // retried by processArchiveQueue()
@@ -3545,12 +4136,22 @@ async function processQueue() {
         applyTranscript(rec, transcript);
         updatePendingUI();
       } catch (e) {
-        rec.attempts = (rec.attempts || 0) + 1;
+        if (!live()) break;   // abandoned by the watchdog — the record is reset there
+        if (/too large/.test(String(e && e.message))) { await failForGood(rec, 'too large to transcribe'); continue; }
+        rec.lastError = describeError(e);
+        // Only a real answer from the server counts as a try. An iPhone says
+        // "online" with no data at all, and every blip used to burn one of the
+        // five — all five gone in about a minute on a bad street.
+        if (rec.lastError === 'no connection') rec.netFails = (rec.netFails || 0) + 1;
+        else rec.attempts = (rec.attempts || 0) + 1;
+        rec.nextTryAt = Date.now() + retryDelay((rec.attempts || 0) + (rec.netFails || 0));
         if (rec.attempts >= 5) {
-          // Give up after 5 tries — mark visibly failed, keep the audio for manual retry.
+          // Five real failures — show it, keep the audio, and come back to it
+          // later by itself (autoRetryFailed) in case the fault has cleared.
           rec.status = 'failed';
+          rec.autoRetryAt = Date.now() + AUTO_RETRY_MS * ((rec.autoRetries || 0) + 1);
           insertRoughFallback(rec);
-          showToast(`A recording for ${rec.roomName || 'a room'} couldn't be transcribed. See Recordings.`);
+          showToast(`A recording for ${rec.roomName || 'a room'} couldn't be transcribed yet. It will try again by itself.`);
         } else {
           rec.status = 'pending';
         }
@@ -3560,21 +4161,128 @@ async function processQueue() {
       }
     }
   } finally {
-    queueRunning = false;
-    if (cloudArchiveEnabled()) processArchiveQueue(); // back up anything not yet archived
+    if (live()) {
+      queueRunning = false;
+      queueController = null;
+      if (cloudArchiveEnabled()) processArchiveQueue(); // back up anything not yet archived
+    }
   }
+}
+
+// Transcription files above this are refused by the engine vals.
+const MAX_TRANSCRIBE_BYTES = 60e6;
+// Mark a recording failed for good: no more tries, no auto retry, and say so.
+// The audio stays on the phone (Send/Save in Recordings) and still goes to
+// Dropbox if it's small enough for the archive.
+async function failForGood(rec, why) {
+  rec.status = 'failed';
+  rec.finalError = why;
+  rec.lastError = why;
+  rec.autoRetries = AUTO_RETRY_MAX;
+  delete rec.autoRetryAt; delete rec.nextTryAt;
+  insertRoughFallback(rec);
+  try { await dbPut(rec); } catch (e) {}
+  showToast(`⚠ ${rec.roomName || 'A recording'}: ${why}. The audio is kept — the typist works from it.`);
+  updatePendingUI();
+}
+
+// Back-off between tries: 15s, 30s, 1m, 2m, then every 5 minutes.
+function retryDelay(n) {
+  if (!n) return 0;
+  return Math.min(5 * 60000, 15000 * Math.pow(2, n - 1));
+}
+// A room that failed five times gets another full round on its own: after 10
+// minutes, then 20, 30… up to six rounds. Nobody has to remember to tap Retry.
+const AUTO_RETRY_MS = 10 * 60000;
+const AUTO_RETRY_MAX = 6;
+// Phone storage from jobs that are over. "Start new", the 12-hour expiry, or a
+// phone that was never finished left every recording of the old job on the
+// phone for ever, which is what fills a phone up (see the storage warnings).
+// Only things already safe in Dropbox go, and never anything from this job.
+async function sweepOldJobs() {
+  if (!('indexedDB' in window)) return 0;
+  let n = 0;
+  // A job saved on the phone but not reopened yet (the Resume banner) is still
+  // a live job: leave its records alone.
+  const saved = loadSaved();
+  const savedJob = r => !!(saved && saved.address && (r.jobId && saved.jobId ? r.jobId === saved.jobId : (r.address || '') === saved.address));
+  try {
+    for (const rec of await dbAll()) {
+      if (sameJob(rec) || savedJob(rec) || rec.archived !== true) continue;
+      const finished = rec.status === 'done'
+        || (rec.status === 'failed' && (rec.noAudio || (rec.autoRetries || 0) >= AUTO_RETRY_MAX));
+      if (finished) { await dbDelete(rec.id); n++; }
+    }
+    for (const p of await photoAll()) {
+      if (p.uploaded && !sameJob(p) && !savedJob(p)) { await photoDelete(p.id); n++; }
+    }
+  } catch (e) {}
+  if (n) updatePendingUI();
+  return n;
+}
+async function autoRetryFailed() {
+  if (!cloudEnabled() || !navigator.onLine || !('indexedDB' in window)) return false;
+  let moved = false;
+  try {
+    const now = Date.now();
+    for (const rec of await dbAll()) {
+      if (rec.status !== 'failed' || !rec.blob || rec.noAudio) continue;
+      if ((rec.autoRetries || 0) >= AUTO_RETRY_MAX) continue;
+      if (!rec.autoRetryAt || rec.autoRetryAt > now) continue;
+      rec.autoRetries = (rec.autoRetries || 0) + 1;
+      rec.status = 'pending'; rec.attempts = 0; rec.netFails = 0; delete rec.nextTryAt; delete rec.autoRetryAt;
+      await dbPut(rec);
+      moved = true;
+    }
+  } catch (e) {}
+  return moved;
+}
+
+// The safety net under all of the above. If a pass has sat on one room for seven
+// minutes, something is hung — abort it, put the room back in the queue and
+// start again. Records left on 'uploading' with nothing working on them (the
+// app was frozen or killed mid-upload) go back to 'pending' the same way.
+function describeError(e) {
+  const m = String((e && (e.name === 'AbortError' ? 'timed out' : e.message)) || e || 'failed');
+  if (/too large/i.test(m)) return 'too large';
+  if (/timed out|abort/i.test(m)) return 'timed out';
+  if (/failed to fetch|network|load failed/i.test(m)) return 'no connection';
+  const h = m.match(/http (\d{3})/);
+  if (h) return 'server said ' + h[1];
+  return m.slice(0, 40);
+}
+
+async function queueWatchdog() {
+  if (queueRunning && Date.now() - queueStartedAt > QUEUE_STUCK_MS) {
+    queueRunId++;                       // the stuck pass stops writing when it wakes
+    try { if (queueController) queueController.abort(); } catch (e) {}
+    queueController = null;
+    queueRunning = false;
+  }
+  if (queueRunning || !('indexedDB' in window)) return;
+  try {
+    const recs = await dbAll();
+    for (const rec of recs) {
+      if (rec.status === 'uploading') {
+        rec.status = 'pending';
+        rec.attempts = (rec.attempts || 0) + 1;
+        await dbPut(rec);
+      }
+    }
+  } catch (e) {}
 }
 
 // No accurate transcript is coming for this room. Rather than leave the note
 // empty, drop the phone's rough text in with a marker so nobody mistakes it for
 // the finished text — and so the typist knows to work from the audio.
 function insertRoughFallback(rec) {
-  if (!rec || (rec.address || '') !== (state.address || '')) return;
+  if (!rec || !sameJob(rec)) return;
   const rough = (rec.roughText || '').trim();
   if (!rough) return;
   const roomId = rec.roomId;
   if ((state.roomNotes[roomId] || '').trim()) return;   // something's already there — leave it alone
   const marked = '⚠ NOT TRANSCRIBED — phone dictation only, check against the audio:\n' + rough;
+  rec.fallbackText = marked;   // so the real transcript can take its place later
   state.roomNotes[roomId] = marked;
   const ta = document.getElementById(`roomta-${roomId}`);
   if (ta) ta.value = marked;
@@ -3594,7 +4302,21 @@ function insertRoughFallback(rec) {
 // returns it cleaned and filed, plus a list of anything it wasn't sure about.
 // That list is the point: a VA checks those few spots against the audio instead
 // of playing the whole room, which is where the typing time actually goes.
-function cleanupEnabled() { return !!CLEANUP_URL; }
+function cleanupEnabled() { return !!CLEANUP_URL && cleanupReady; }
+// Ask the cleanup val whether it's switched on. It answers ok:true once its
+// Anthropic key is set. Checked at start-up and whenever the app comes back.
+async function checkCleanupReady() {
+  if (!CLEANUP_URL || !navigator.onLine) { cleanupReady = false; return false; }
+  const ctrl = new AbortController();
+  const t = setTimeout(() => { try { ctrl.abort(); } catch (e) {} }, 8000);
+  try {
+    const res = await fetch(withKey(CLEANUP_URL), { method: 'GET', signal: ctrl.signal });
+    const out = await res.json().catch(() => null);
+    cleanupReady = !!(res.ok && out && out.ok === true);
+  } catch (e) { cleanupReady = false; }
+  finally { clearTimeout(t); }
+  return cleanupReady;
+}
 
 // ─── WORD TIMINGS → "LISTEN AT 2:14" ─────────────────────────────────────────
 // Both engines can return every word with the second it was said. That is what
@@ -3658,6 +4380,70 @@ function findPhraseTime(words, phrase) {
   return words[best].s;
 }
 
+// Same idea, but searching forward from a cursor, so a sentence said twice in a
+// room ("one silver metal handle secured to both sides") gets the right time
+// each time rather than the first one twice. Returns { at, idx } or null.
+function findPhraseFrom(words, phrase, from) {
+  if (!words || !words.length) return null;
+  const want = String(phrase || '').toLowerCase().match(/[a-z0-9']+/g);
+  if (!want || !want.length) return null;
+  const probe = want.slice(0, 6);
+  const need = Math.min(probe.length, Math.max(2, Math.ceil(probe.length / 2)));
+  const scan = (start, end) => {
+    let best = -1, bestScore = 0;
+    for (let i = start; i < end; i++) {
+      let hits = 0;
+      for (let j = 0; j < probe.length && i + j < words.length; j++) if (words[i + j].w === probe[j]) hits++;
+      if (hits > bestScore) { bestScore = hits; best = i; }
+      if (bestScore === probe.length) break;
+    }
+    return bestScore >= need ? best : -1;
+  };
+  let i = scan(Math.max(0, from || 0), words.length);
+  if (i < 0) i = scan(0, words.length);
+  return i < 0 ? null : { at: words[i].s, idx: i };
+}
+
+// Every sentence of a block of text, prefixed with when it was said.
+function timecodeSentences(text, words, cursor) {
+  const parts = String(text || '').match(/[^.!?]+[.!?]*\s*/g) || [];
+  const c = cursor || { idx: 0 };
+  return parts.map(p => {
+    const sentence = p.trim();
+    if (!sentence) return '';
+    const hit = findPhraseFrom(words, sentence, c.idx);
+    if (!hit) return sentence;
+    c.idx = hit.idx + 1;
+    return '[' + formatClock(hit.at) + '] ' + sentence;
+  }).filter(Boolean).join(' ');
+}
+
+// The raw transcript with a time at each sentence start and at least every
+// 15 seconds. Walks the engine's words alongside the text in order, so it is
+// exact rather than a search.
+function timecodeRaw(raw, words) {
+  const toks = String(raw || '').split(/\s+/).filter(Boolean);
+  if (!words || !words.length || !toks.length) return String(raw || '');
+  let wi = 0, lastStamp = -999, sentenceStart = true;
+  const out = [];
+  for (const tok of toks) {
+    const norm = tok.toLowerCase().replace(/[^a-z0-9']/g, '');
+    let at = null;
+    if (norm) {
+      for (let k = wi; k < Math.min(words.length, wi + 6); k++) {
+        if (words[k].w === norm) { at = words[k].s; wi = k + 1; break; }
+      }
+    }
+    if (at != null && (sentenceStart || at - lastStamp >= 15)) {
+      out.push((out.length ? '\n' : '') + '[' + formatClock(at) + ']');
+      lastStamp = at;
+    }
+    out.push(tok);
+    if (norm) sentenceStart = /[.!?]$/.test(tok);
+  }
+  return out.join(' ').replace(/ \n/g, '\n');
+}
+
 // Stamp each flag with the moment it was said, where the phrase can be found.
 function timestampChecks(rec) {
   if (!rec || !rec.check || !rec.check.length) return;
@@ -3672,7 +4458,7 @@ async function runCleanup(rec) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => { try { ctrl.abort(); } catch (e) {} }, CLEANUP_TIMEOUT_MS);
   try {
-    const res = await fetch(CLEANUP_URL, {
+    const res = await fetch(withKey(CLEANUP_URL), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -3732,29 +4518,108 @@ function cloudArchiveEnabled() { return !!ARCHIVE_URL; }
 function safeSeg(s) {
   return String(s || '').replace(/[\/\\:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60);
 }
+function localDateStamp(d) {
+  const p = n => (n < 10 ? '0' : '') + n;
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+}
 function archiveFolderName(rec) {
-  const d = rec.createdAt ? new Date(rec.createdAt) : new Date();
-  const date = d.toISOString().slice(0, 10); // YYYY-MM-DD
-  return `${date} - ${safeSeg(rec.address) || 'Unknown property'}`;
+  // The inspection's start date when we have it, so every file of one job lands
+  // in one folder even if it runs past midnight.
+  const t = (rec.meta && rec.meta.startedAt) || rec.createdAt;
+  const d = t ? new Date(t) : new Date();
+  return `${localDateStamp(d)} - ${safeSeg(rec.address) || 'Unknown property'}`;
+}
+
+// What the inspector typed on the setup screen, snapshotted onto each recording.
+function inspectionMeta() {
+  return {
+    client: state.client || '', inspector: state.inspector || '',
+    beds: state.beds, baths: state.baths, stateCode: state.stateCode || '', inspType: state.inspType || '',
+    startedAt: state.startedAt || null
+  };
+}
+function metaFor(rec) {
+  if (rec && rec.meta) return rec.meta;
+  // Older recordings (made before this build) carry no snapshot — use the live
+  // inspection if it's the same property.
+  if (rec && sameJob(rec) && state.address) return inspectionMeta();
+  return {};
+}
+function detailLines(address, m) {
+  const bb = (m.beds || m.beds === 0) && !isNaN(m.beds)
+    ? `${m.beds} bed / ${isNaN(m.baths) ? '?' : m.baths} bath` : '';
+  return [
+    address ? 'Property: ' + address : '',
+    m.client ? 'Client: ' + m.client : '',
+    m.inspType ? 'Inspection type: ' + m.inspType : '',
+    'Inspector: ' + (m.inspector || 'not entered'),
+    bb ? 'Beds / baths: ' + bb : '',
+    m.stateCode ? 'State: ' + m.stateCode : '',
+    m.startedAt ? 'Inspection started: ' + new Date(m.startedAt).toLocaleString('en-AU') : ''
+  ].filter(Boolean);
 }
 function archiveBaseName(rec) {
   const d = rec.createdAt ? new Date(rec.createdAt) : new Date();
   const hhmm = d.toTimeString().slice(0, 5).replace(':', ''); // local HHMM
-  const base = `${safeSeg(rec.roomName || rec.roomId) || 'Room'} - ${hhmm}`;
+  // The record number makes every recording's name its own. Two recordings in
+  // the same minute, or a re-send after a lost answer, used to make Dropbox
+  // add "(1)", and the text file could then name the wrong audio.
+  const base = `${safeSeg(rec.roomName || rec.roomId) || 'Room'} - ${hhmm}` + ((rec.part || 1) > 1 ? ` - part ${rec.part}` : '')
+    + (rec.id != null ? ` - rec ${rec.id}` : '');
   // A crash-recovered fragment shares its createdAt with the finished clip, so
   // both used to generate the same name and Dropbox quietly renamed one to
   // "(1)" — a 25 KB stub sitting beside a 987 KB recording with nothing to say
   // which was which. Name it for what it is instead.
   return rec.recovered ? `${base} - partial (crash recovery)` : base;
 }
-async function archivePut(relPath, body, contentType) {
-  const res = await fetch(ARCHIVE_URL + '?path=' + encodeURIComponent(relPath), {
-    method: 'POST',
-    headers: { 'Content-Type': contentType },
-    body
-  });
-  if (!res.ok) throw new Error('archive http ' + res.status);
-  return res;
+// Every Dropbox write has a time limit. These used to have none, so one request
+// that never answered (signal drop, the phone frozen mid-upload) held the whole
+// queue forever — the "still finishing" that never finished.
+// A fixed limit cut long rooms off on a slow connection: a 40 MB rear-yard
+// walk can't get up a 1 Mbps link in two minutes. Allow ~8 seconds per MB on
+// top of the base, capped at ten minutes.
+function uploadTimeout(baseMs, bytes) {
+  return Math.min(10 * 60000, baseMs + Math.round(((bytes || 0) / 1e6) * 8000));
+}
+async function archivePut(relPath, body, contentType, timeoutMs) {
+  const ctrl = new AbortController();
+  const limit = timeoutMs || (/^audio|^image|octet/.test(contentType || '') ? uploadTimeout(120000, body && body.size) : 30000);
+  const timer = setTimeout(() => { try { ctrl.abort(); } catch (e) {} }, limit);
+  try {
+    // mode=overwrite: sending the same file again replaces it instead of adding
+    // a "(1)" copy. (Needs the updated dropbox-archive val; older vals ignore it.)
+    const res = await fetch(withKey(ARCHIVE_URL + '?path=' + encodeURIComponent(relPath) + '&mode=overwrite'), {
+      method: 'POST',
+      headers: { 'Content-Type': contentType },
+      body,
+      signal: ctrl.signal
+    });
+    if (res.status === 413) throw new Error('too large');
+    if (!res.ok) throw new Error('archive http ' + res.status);
+    return res;
+  } finally { clearTimeout(timer); }
+}
+
+// The audio on its own. Runs BEFORE transcription, so a room's recording is in
+// Dropbox whether or not a transcript ever comes back. Safe to call twice: the
+// flag and the in-flight set stop a second copy going up.
+async function archiveAudio(rec) {
+  if (!cloudArchiveEnabled() || !rec || !rec.blob || rec.audioArchived) return false;
+  if (audioInFlight.has(rec.id)) return false;
+  audioInFlight.add(rec.id);
+  try {
+    const res = await archivePut(`${archiveFolderName(rec)}/${archiveBaseName(rec)}.${audioExt(rec.type)}`,
+      rec.blob, rec.type || 'application/octet-stream');
+    // Where it actually landed, if the val says. The text file names this.
+    try { const out = await res.clone().json(); const p = out && (out.path || out.path_display); if (p) rec.audioPath = String(p).split('/').pop(); } catch (e) {}
+    rec.audioArchived = true;
+    delete rec.audioTooLarge;
+    rec.audioArchivedAt = Date.now();
+    return true;
+  } catch (e) {
+    if (/too large/.test(String(e && e.message))) rec.audioTooLarge = true;
+    throw e;
+  } finally { audioInFlight.delete(rec.id); }
 }
 // The typist's file. Cleaned text, split into the room's subsections, with the
 // full transcript underneath as the source of truth. The archive used to get
@@ -3762,13 +4627,24 @@ async function archivePut(relPath, body, contentType) {
 // every "scratch that" was still sitting in the text.
 function buildArchiveText(rec, clean) {
   const cleaned = Array.isArray(rec.sections) && rec.sections.length;
+  const thisJob = sameJob(rec);
+  const serial = thisJob ? (state.serialModels[rec.roomId] || '').trim() : '';
+  const inv = thisJob ? (state.inventory[rec.roomId] || '').trim() : '';
   const header = [
-    rec.address ? 'Property: ' + rec.address : '',
+    ...detailLines(rec.address, metaFor(rec)),
+    '',
     'Room: ' + (rec.roomName || rec.roomId || ''),
     rec.createdAt ? 'Recorded: ' + new Date(rec.createdAt).toLocaleString('en-AU') : '',
+    'Audio: ' + (rec.audioPath || (archiveBaseName(rec) + '.' + audioExt(rec.type))),
     rec.engine ? 'Transcribed by: ' + engineLabel(rec.engine) : '',
-    cleaned ? 'Cleaned by: ' + rec.cleanedBy : (rec.cleanupError ? 'Cleanup did not run: ' + rec.cleanupError : '')
-  ].filter(Boolean).join('\n');
+    cleaned ? 'Sorted into subareas by: ' + rec.cleanedBy
+      : (rec.cleanupError ? 'AI sort did not run (' + rec.cleanupError + ') — subareas split by keyword' : 'Subareas split by keyword'),
+    'Timecodes: ' + (rec.words && rec.words.length
+      ? 'on — [m:ss] is where it was said in the audio'
+      : 'not available (the transcription service did not send word timings)'),
+    serial ? 'Serial / model (typed): ' + serial : '',
+    inv ? 'Inventory (typed): ' + inv : ''
+  ].filter((l, i, a) => l !== '' || (i > 0 && a[i - 1] !== '')).join('\n').trim();
 
   // The whole point of this block: a typist reads it, plays those few seconds of
   // audio, and never has to listen to the rest of the room. If it's empty,
@@ -3778,7 +4654,7 @@ function buildArchiveText(rec, clean) {
     // The time is first on the line so the list reads as a play list: open the
     // room's audio file, jump to each one, done.
     checkBlock = 'CHECK THESE AGAINST THE AUDIO (' + rec.check.length + ')\n'
-      + 'Open the .m4a beside this file and play the times listed.\n\n'
+      + 'Open the audio file beside this one (' + (rec.audioPath || (archiveBaseName(rec) + '.' + audioExt(rec.type))) + ') and play the times listed.\n\n'
       + rec.check.map(c => '  ' + (c.clock ? '[' + c.clock + '] ' : '[ — ] ')
           + '"' + c.quote + '"' + (c.why ? ' — ' + c.why : '')).join('\n')
       + '\n\n' + '-'.repeat(40) + '\n\n';
@@ -3790,11 +4666,17 @@ function buildArchiveText(rec, clean) {
   const buckets = cleaned
     ? rec.sections.map(s => ({ subarea: s.name, text: s.text }))
     : (subs.length ? splitNotesBySubarea({ subsections: subs }, clean) : []);
+  const words = rec.words && rec.words.length ? rec.words : null;
+  const cursor = { idx: 0 };
+  const timed = t => (words ? timecodeSentences(t, words, cursor) : t);
   const body = buckets.length > 1
-    ? buckets.map(b => b.subarea.toUpperCase() + '\n' + b.text).join('\n\n')
-    : clean;
-  return header + '\n\n' + checkBlock + body + '\n\n' + '-'.repeat(40)
-    + '\nFull transcript, unsplit:\n' + (cleaned ? sectionsToNote(rec.sections) : clean) + '\n';
+    ? buckets.map(b => b.subarea.toUpperCase() + '\n' + timed(b.text)).join('\n\n')
+    : timed(clean);
+  const rule = '='.repeat(40);
+  return header + '\n\n' + checkBlock
+    + rule + '\nBY SUBAREA\n' + rule + '\n\n' + body + '\n\n'
+    + rule + '\nRAW TRANSCRIPT (exactly as the engine heard it)\n' + rule + '\n\n'
+    + (words ? timecodeRaw((rec.transcript || '').trim(), words) : (rec.transcript || '').trim()) + '\n';
 }
 
 // Upload one recording's audio and its text. Throws on failure so the caller can
@@ -3803,26 +4685,34 @@ async function archiveToDropbox(rec) {
   if (!cloudArchiveEnabled() || !rec || !rec.blob) return false;
   const folder = archiveFolderName(rec);
   const base = archiveBaseName(rec);
-  await archivePut(`${folder}/${base}.${audioExt(rec.type)}`, rec.blob, rec.type || 'application/octet-stream');
+  if (!rec.audioArchived) await archiveAudio(rec);   // usually already up — it goes first now
   const raw = (rec.transcript || '').trim();
   if (raw) {
     const clean = punctuateBySubarea({ subsections: rec.subsections || [] }, applyCorrections(applyScratch(raw)));
+    // One file: details, the subarea split, and the untouched engine output at
+    // the bottom so nothing the app changed is lost.
     await archivePut(`${folder}/${base}.txt`, buildArchiveText(rec, clean), 'text/plain; charset=utf-8');
-    // The untouched engine output beside it, so nothing the app changed is lost.
-    await archivePut(`${folder}/${base} - raw.txt`, raw, 'text/plain; charset=utf-8');
   } else {
     // Transcription failed or never ran. The audio still has to reach the typist,
     // and the file beside it has to say why there's no transcript.
     const rough = (rec.roughText || '').trim();
-    const body = 'NO ACCURATE TRANSCRIPT FOR THIS RECORDING — please type from the audio.\n\n'
+    const body = detailLines(rec.address, metaFor(rec)).join('\n')
+      + '\n\nRoom: ' + (rec.roomName || rec.roomId || '') + '\n\n'
+      + 'NO ACCURATE TRANSCRIPT FOR THIS RECORDING — please type from the audio.\n\n'
       + (rough ? 'Phone dictation only, mishears expected:\n' + rough + '\n' : '');
     await archivePut(`${folder}/${base} - transcription failed.txt`, body, 'text/plain; charset=utf-8');
   }
   return true;
 }
 // Retry pass: back up any transcribed-but-not-archived recording that still has audio.
+let archiveRunning = false;
 async function processArchiveQueue() {
   if (!cloudArchiveEnabled() || !navigator.onLine || !('indexedDB' in window)) return;
+  if (archiveRunning) return;
+  archiveRunning = true;
+  try { await archivePass(); await sweepOldJobs(); } finally { archiveRunning = false; }
+}
+async function archivePass() {
   let recs = [];
   try { recs = await dbAll(); } catch (e) { return; }
   for (const rec of recs) {
@@ -3830,13 +4720,29 @@ async function processArchiveQueue() {
     // the typist's whole safety net, and it used to have a hole exactly where it
     // was needed most: anything that failed transcription reached Dropbox never.
     const archivable = rec.status === 'done' || rec.status === 'failed' || rec.status === 'orphaned';
-    if (!archivable || rec.archived === true || !rec.blob) continue;
+    if (archivable && rec.archived !== true && !rec.blob && rec.noAudio) {
+      try {
+        const body = detailLines(rec.address, metaFor(rec)).join('\n')
+          + '\n\nRoom: ' + (rec.roomName || rec.roomId || '')
+          + (rec.createdAt ? '\nRecorded: ' + new Date(rec.createdAt).toLocaleString('en-AU') : '')
+          + '\n\nNO AUDIO WAS CAPTURED FOR THIS RECORDING.\n'
+          + 'The microphone stopped (usually after leaving the app) but the phone\'s own speech-to-text kept going.\n'
+          + 'Below is that phone text only — expect mishears, and check whether the room was re-recorded.\n\n'
+          + (rec.roughText || '').trim() + '\n';
+        await archivePut(`${archiveFolderName(rec)}/${archiveBaseName(rec)} - NO AUDIO.txt`, body, 'text/plain; charset=utf-8');
+        rec.archived = true;
+        await dbPut(rec);
+        updatePendingUI();
+      } catch (e) {}
+      continue;
+    }
+    if (!archivable || rec.archived === true || !rec.blob || rec.audioTooLarge) continue;
     try {
       await archiveToDropbox(rec);
       rec.archived = true;
       // Safely in Dropbox now. A transcribed recording from a finished job can go,
       // to reclaim phone storage. Anything that failed stays put so Retry still works.
-      if ((state.address || '') !== (rec.address || '') && rec.status === 'done') {
+      if (!sameJob(rec) && rec.status === 'done') {
         await dbDelete(rec.id);
       } else {
         await dbPut(rec);
@@ -3881,12 +4787,17 @@ async function onSerialPhoto(roomId, inputEl) {
   if (!file) return;
   const room = (state.rooms || []).find(r => r.id === roomId) || {};
   const rec = {
-    roomId, roomName: room.name || roomId, address: state.address || '',
+    roomId, roomName: room.name || roomId, address: state.address || '', jobId: state.jobId || '',
     client: state.client || '', createdAt: Date.now(),
     blob: file, type: file.type || 'image/jpeg', uploaded: false
   };
   let id = null;
-  try { id = await photoAdd(rec); } catch (e) { id = rec.createdAt; }
+  try { id = await photoAdd(rec); storageRecovered(); }
+  catch (e) {
+    // Not saved — so no marker. It used to show "backing up…" for ever.
+    reportStorageFailure('Serial photo NOT saved. Type the numbers in the box instead');
+    return;
+  }
   if (!state.serialPhotos[roomId]) state.serialPhotos[roomId] = [];
   state.serialPhotos[roomId].push({ id, ts: rec.createdAt, uploaded: false });
   saveState();
@@ -3915,10 +4826,14 @@ async function processPhotoQueue() {
       try {
         const folder = archiveFolderName(rec);
         const base = archiveBaseName(rec);
-        const rel = `${folder}/${base} - Serial plate ${rec.id}.${photoExt(rec.type)}`;
-        await archivePut(rel, rec.blob, rec.type || 'image/jpeg');
+        const rel = rec.kind === 'summary'
+          ? `${folder}/00 - Inspection details.txt`
+          : rec.kind === 'pcr'
+            ? `${folder}/${rec.fileName || 'PCR.docx'}`
+            : `${folder}/${base} - Serial plate ${rec.id}.${photoExt(rec.type)}`;
+        await archivePut(rel, rec.blob, rec.type || 'image/jpeg', 90000);
         rec.uploaded = true;
-        if ((state.address || '') !== (rec.address || '')) { await photoDelete(rec.id); }
+        if (!sameJob(rec)) { await photoDelete(rec.id); }
         else { await photoPut(rec); }
         markPhotoUploaded(rec.roomId, rec.id);
       } catch (e) { continue; } // don't let one bad photo block the rest of the pass
@@ -3951,7 +4866,7 @@ function applyTranscript(rec, transcript) {
   }
   if (!transcript) return;
   const roomId = rec.roomId;
-  if ((rec.address || '') !== (state.address || '')) {
+  if (!sameJob(rec)) {
     // Belongs to another property — usually the job that was just finished. It
     // must not be written into this inspection's notes, but it isn't lost: it's
     // on the record, it's in Dropbox, and Recordings can copy it out.
@@ -3962,11 +4877,17 @@ function applyTranscript(rec, transcript) {
   if (mismatch) {
     showToast(`⚠ You said "${mismatch.said}" — this is saved under ${mismatch.filedUnder}`);
   }
-  const current = (state.roomNotes[roomId] || '').trim();
+  let current = (state.roomNotes[roomId] || '').trim();
+  // A Retry that worked used to leave the "⚠ NOT TRANSCRIBED" block in the
+  // note beside the real text. The real transcript replaces it.
+  const fb = rec.fallbackText || ('⚠ NOT TRANSCRIBED — phone dictation only, check against the audio:\n' + (rec.roughText || '').trim());
+  if (fb && current.includes(fb.trim())) current = current.replace(fb.trim(), '').replace(/\n{2,}/g, '\n').trim();
   const next = current ? current + '\n' + transcript : transcript;
   state.roomNotes[roomId] = next;
   if (cleaned) {
     state.roomSections[roomId] = mergeSections(state.roomSections[roomId], rec.sections);
+    state.roomSectionParts = state.roomSectionParts || {};
+    (state.roomSectionParts[roomId] = state.roomSectionParts[roomId] || []).push(rec.sections.map(s => ({ name: s.name, text: s.text })));
     if (rec.check && rec.check.length) {
       state.roomChecks[roomId] = (state.roomChecks[roomId] || []).concat(rec.check);
     }
@@ -4000,12 +4921,20 @@ async function updatePendingUI() {
   // Per-room roll-up for the status chips on the room card.
   const rmap = {};
   recs.forEach(r => {
-    if ((r.address || '') !== (state.address || '')) return;
-    const m = rmap[r.roomId] = rmap[r.roomId] || { pending: 0, uploading: 0, failed: 0, done: 0, unarchived: 0 };
+    if (!sameJob(r)) return;
+    const m = rmap[r.roomId] = rmap[r.roomId] || { pending: 0, uploading: 0, failed: 0, done: 0, unarchived: 0,
+      withAudio: 0, audioUp: 0, noAudio: 0, attempts: 0, since: 0, lastError: '', audioError: '', nextTryAt: 0, autoRetryAt: 0 };
     if (r.status === 'pending' || r.status === 'recording') m.pending++;
-    else if (r.status === 'uploading') m.uploading++;
+    else if (r.status === 'uploading') { m.uploading++; m.since = Math.max(m.since, r.uploadStartedAt || 0); }
     else if (r.status === 'failed') m.failed++;
     else if (r.status === 'done') { m.done++; if (cloudArchiveEnabled() && r.archived !== true) m.unarchived++; }
+    if (r.blob || r.audioArchived) { m.withAudio++; if (r.audioArchived || r.archived === true) m.audioUp++; }
+    if (r.noAudio) m.noAudio++;
+    if (r.status !== 'done') { m.attempts = Math.max(m.attempts, r.attempts || 0); if (r.lastError) m.lastError = r.lastError; }
+    if (r.status === 'pending' && r.nextTryAt) m.nextTryAt = Math.max(m.nextTryAt, r.nextTryAt);
+    if (r.status === 'failed' && r.finalError) m.finalError = r.finalError;
+    if (r.status === 'failed' && r.autoRetryAt && (r.autoRetries || 0) < AUTO_RETRY_MAX) m.autoRetryAt = Math.max(m.autoRetryAt, r.autoRetryAt);
+    if (r.audioError && !r.audioArchived) m.audioError = r.audioError;
   });
   roomRecMap = rmap;
   const pending = recs.filter(r => r.status === 'pending').length;
@@ -4047,6 +4976,12 @@ async function updatePendingUI() {
     if (!cloudEnabled()) {
       msgs.push('⚠ Accurate transcription is off — no room audio is being recorded at all. Add the transcription link on the setup screen before inspecting.');
     }
+    if (inSafariTab()) {
+      msgs.push('⚠ You\'re in Safari, not the Home Screen app. Close this and open the PA icon on your Home Screen — Safari keeps its own copy of jobs and can wipe recordings after 7 days.');
+    }
+    if (storageProblem) {
+      msgs.push('⚠ The phone is failing to save — it may be out of storage. Recordings and photos are NOT safe until you free some space.');
+    }
     const noAudio = (state.rooms || []).filter(r => roomAudioFlags[r.id] === 'noaudio').map(r => r.name);
     if (noAudio.length) {
       msgs.push('⚠ No audio backup for: ' + noAudio.join(', ') + '. Re-record ' + (noAudio.length === 1 ? 'that room' : 'those rooms') + ' — the typist has nothing to check against.');
@@ -4056,6 +4991,8 @@ async function updatePendingUI() {
   }
   renderRoomStatus();
   renderFinishStatus();
+  const reviewScreen = document.getElementById('screenReview');
+  if (reviewScreen && reviewScreen.classList.contains('active')) renderAreaStatus();
   if (document.getElementById('roomNav')) scheduleRoomNav();
   // Live-refresh the Recordings screen if it's open.
   const recScreen = document.getElementById('screenRecordings');
@@ -4073,6 +5010,8 @@ function roomsStillWorking() {
   }).map(r => r.name);
 }
 function renderFinishStatus() {
+  // Superseded by renderFinishGate(), which reads the recordings directly.
+  if (typeof renderAreaStatus === 'function' && document.getElementById('areaStatus')) { renderAreaStatus(); return; }
   const box = document.getElementById('finishStatus');
   const btn = document.getElementById('btnFinish');
   if (!box) return;
@@ -4087,6 +5026,148 @@ function renderFinishStatus() {
     box.textContent = '✓ Every room is transcribed and backed up. Safe to finish.';
     if (btn) { btn.classList.remove('blocked'); btn.textContent = '✓ Finish & Clear This Inspection'; }
   }
+}
+
+// ─── AREA STATUS ──────────────────────────────────────────────────────────────
+// One line per room: has the transcript come back, and is it in Dropbox. Read
+// straight from the recordings on the phone, so it can't disagree with them.
+// Team Dropbox web address for the archive folder. Inspectors signed in to the
+// Property Assist Dropbox on their phone land straight in the property folder.
+const DROPBOX_WEB_BASE = 'https://www.dropbox.com/work/Property%20Assist/Property%20Assist%20Inspections/';
+function dropboxFolderUrl() {
+  if (!cloudArchiveEnabled() || !state.address) return '';
+  const folder = archiveFolderName({ address: state.address, meta: inspectionMeta(), createdAt: state.startedAt });
+  return DROPBOX_WEB_BASE + encodeURIComponent(folder).replace(/%2C/g, ',');
+}
+async function computeAreaStatus() {
+  let recs = [];
+  try { recs = (await dbAll()).filter(r => sameJob(r)); } catch (e) {}
+  const online = navigator.onLine;
+  const skipped = state.skippedRooms || {};
+  return (state.rooms || []).map(room => {
+    const mine = recs.filter(r => r.roomId === room.id);
+    const typed = !!(state.roomNotes[room.id] || '').trim();
+    let tx, dbx;
+    if (skipped[room.id] && !mine.some(r => r.blob)) {
+      return { id: room.id, name: room.name, skipped: true, ready: true,
+        tx: { label: '— Not here', cls: 'none' }, dbx: { label: '—', cls: 'none' },
+        text: 'marked not at this property', why: '' };
+    }
+    // Typed only, on purpose: the text goes to Dropbox in the inspection details
+    // file at Finish, so there's nothing to wait for. This used to need "Not
+    // here" (which then said the room wasn't at the property) or the override.
+    const typedOnly = (state.typedOnly || {})[room.id];
+    if (!mine.some(r => r.blob || r.audioArchived) && typed && typedOnly) {
+      return { id: room.id, name: room.name, typedOnly: true, ready: true,
+        tx: { label: '✎ Typed', cls: 'ok' }, dbx: { label: 'With details', cls: 'ok' },
+        text: 'typed only, no audio needed (text is in 00 - Inspection details.txt)', why: '' };
+    }
+    if (!mine.length) {
+      tx = typed ? { label: '✎ Typed', cls: 'ok' } : { label: '— None', cls: 'none' };
+      dbx = typed ? { label: 'No audio', cls: 'none' } : { label: '—', cls: 'none' };
+      return { id: room.id, name: room.name, tx, dbx, ready: false, canSkip: !typed, canTyped: typed,
+        text: typed ? 'typed only, no audio recorded' : 'NOT RECORDED',
+        why: typed ? 'typed but not recorded — record it, or tap "Typed only" if no audio is needed'
+                   : 'nothing recorded — record it, or tap "Not here" if the property doesn\'t have it' };
+    }
+    const has = st => mine.some(r => r.status === st);
+    if (has('uploading')) tx = { label: '⏳ Working', cls: 'wait' };
+    else if (has('pending') || has('recording')) tx = online ? { label: '⏳ Queued', cls: 'wait' } : { label: '● No signal', cls: 'wait' };
+    else if (mine.every(r => r.noAudio)) tx = { label: '⚠ No audio', cls: 'bad' };
+    else if (has('failed')) tx = { label: '⚠ Failed', cls: 'bad' };
+    else tx = { label: '✓ Done', cls: 'ok' };
+    if (!cloudArchiveEnabled()) dbx = { label: 'Off', cls: 'none' };
+    else {
+      const audioUp = mine.every(r => r.audioArchived || r.archived === true);
+      const allUp = mine.every(r => r.archived === true);
+      if (mine.every(r => r.noAudio)) dbx = allUp ? { label: 'Text only', cls: 'bad' } : { label: '⏳ Sending', cls: 'wait' };
+      else if (allUp) dbx = { label: '✓ Saved', cls: 'ok' };
+      else if (audioUp) dbx = { label: '✓ Audio', cls: 'ok' };
+      else dbx = online ? { label: '⏳ Sending', cls: 'wait' } : { label: '● On phone', cls: 'wait' };
+    }
+    const text = `transcript ${tx.label.replace(/^\W+\s*/, '').toLowerCase()}, Dropbox ${dbx.label.replace(/^\W+\s*/, '').toLowerCase()}`;
+    // Ready = real audio for this room is confirmed in Dropbox and nothing for
+    // it is still in flight. The transcript is not required: the typist can
+    // always work from the audio, but never from a recording left on a phone.
+    const inFlight = mine.some(r => r.status === 'recording' || r.status === 'pending' || r.status === 'uploading');
+    const withAudio = mine.filter(r => r.blob || r.audioArchived);
+    const audioSafe = !cloudArchiveEnabled()
+      ? mine.some(r => r.status === 'done')
+      : withAudio.length > 0 && withAudio.every(r => r.audioArchived || r.archived === true);
+    const ready = !inFlight && audioSafe;
+    let why = '';
+    if (!ready) {
+      if (!withAudio.length) why = 'no audio was captured — record it again';
+      else if (mine.some(r => r.audioTooLarge && !r.audioArchived)) why = 'recording too large to upload — use Send in Recordings to get it to the typist, then a manager can type FINISH';
+      else if (!online) why = 'saved on this phone, waiting for signal to upload';
+      else why = 'uploading to Dropbox now';
+    }
+    return { id: room.id, name: room.name, tx, dbx, text, ready, why, canSkip: !withAudio.length };
+  });
+}
+let areaStatusSeq = 0;
+async function renderAreaStatus() {
+  const box = document.getElementById('areaStatus');
+  if (!box) return;
+  const seq = ++areaStatusSeq;
+  const rows = await computeAreaStatus();
+  if (seq !== areaStatusSeq) return;   // a newer refresh has already started
+  const missing = rows.filter(r => r.tx.cls === 'none' && r.dbx.label === '—').length;
+  const working = rows.filter(r => r.tx.cls === 'wait' || r.dbx.cls === 'wait').length;
+  const failed = rows.filter(r => r.tx.cls === 'bad').length;
+  const summary = working ? `${working} still going` : failed ? `${failed} failed` : missing ? `${missing} not recorded` : 'All done';
+  box.innerHTML = '<div class="area-status-card">'
+    + `<div class="area-status-head">Area status <span>${escapeHtml(summary)}</span></div>`
+    + '<div class="area-row cols"><div>Area</div><div class="area-chip">Transcript</div><div class="area-chip">Dropbox</div></div>'
+    + rows.map(r => `<div class="area-row"><div class="area-name">${escapeHtml(r.name)}`
+      + (r.skipped ? ` <button class="area-skip" onclick="toggleSkipRoom('${escapeAttr(r.id)}')">Undo</button>`
+        : r.typedOnly ? ` <button class="area-skip" onclick="toggleTypedOnly('${escapeAttr(r.id)}')">Undo</button>`
+        : (r.canSkip ? ` <button class="area-skip" onclick="toggleSkipRoom('${escapeAttr(r.id)}')">Not here</button>` : '')
+          + (r.canTyped ? ` <button class="area-skip" onclick="toggleTypedOnly('${escapeAttr(r.id)}')">Typed only</button>` : ''))
+      + `</div>`
+      + `<div class="area-chip ${r.tx.cls}">${escapeHtml(r.tx.label)}</div>`
+      + `<div class="area-chip ${r.dbx.cls}">${escapeHtml(r.dbx.label)}</div></div>`).join('')
+    + '</div>';
+  renderFinishGate(rows);
+}
+
+// "Not at this property" — the only way a room with no recording counts as done.
+function toggleSkipRoom(roomId) {
+  state.skippedRooms = state.skippedRooms || {};
+  if (state.skippedRooms[roomId]) delete state.skippedRooms[roomId];
+  else state.skippedRooms[roomId] = true;
+  saveState();
+  renderAreaStatus();
+}
+
+function toggleTypedOnly(roomId) {
+  state.typedOnly = state.typedOnly || {};
+  if (state.typedOnly[roomId]) delete state.typedOnly[roomId];
+  else state.typedOnly[roomId] = true;
+  saveState();
+  renderAreaStatus();
+}
+
+// The lock on Finish & Clear. Says exactly which rooms are holding it and why.
+let finishGateOpen = false;
+function renderFinishGate(rows) {
+  const box = document.getElementById('finishStatus');
+  const btn = document.getElementById('btnFinish');
+  if (!box || !rows) return;
+  const blocking = rows.filter(r => !r.ready);
+  finishGateOpen = blocking.length === 0;
+  if (finishGateOpen) {
+    box.className = 'finish-status ready';
+    box.textContent = '✓ Every room is recorded and in Dropbox. Safe to finish.';
+    if (btn) { btn.classList.remove('blocked', 'locked'); btn.textContent = '✓ Finish & Clear This Inspection'; }
+    return;
+  }
+  const offline = !navigator.onLine;
+  box.className = 'finish-status waiting';
+  box.innerHTML = `<strong>🔒 ${blocking.length} room${blocking.length === 1 ? '' : 's'} not safe in Dropbox yet:</strong>`
+    + '<ul class="finish-list">' + blocking.map(r => `<li><b>${escapeHtml(r.name)}</b> — ${escapeHtml(r.why)}</li>`).join('') + '</ul>'
+    + (offline ? '<div>No signal here. Everything stays on this phone. Open the app again when you\'re back in signal and it finishes uploading by itself — then finish.</div>' : '');
+  if (btn) { btn.classList.add('blocked', 'locked'); btn.textContent = `🔒 Finish & Clear — ${blocking.length} room${blocking.length === 1 ? '' : 's'} to go`; }
 }
 
 // ─── NAVIGATION ──────────────────────────────────────────────────────────────
@@ -4118,8 +5199,15 @@ function showReview() {
   if (navigator.onLine) processQueue();
   showScreen('screenReview');
   renderFinishStatus();
+  renderAreaStatus();
+  const dbx = document.getElementById('btnDropbox');
+  if (dbx) {
+    const url = dropboxFolderUrl();
+    dbx.href = url || '#';
+    dbx.classList.toggle('disabled', !url);
+  }
   document.getElementById('reviewMeta').textContent =
-    `${state.address} · ${state.client} · ${state.stateCode}`;
+    [state.address, state.inspType, state.client, state.stateCode].filter(Boolean).join(' · ');
 
   const body = document.getElementById('reviewBody');
   body.innerHTML = '';
@@ -4127,7 +5215,7 @@ function showReview() {
 
   const hint = document.createElement('div');
   hint.className = 'review-hint';
-  hint.innerHTML = '📋 Each room shows its note, then the same text split by subsection. Tap <strong>Copy</strong> to grab a field, or use <strong>Download CSV</strong> / <strong>Send to VA</strong> below. The full note always travels with the split, so nothing depends on the split being perfect.';
+  hint.innerHTML = '📋 Every room is going to Dropbox by itself. Check the <strong>Area status</strong> list above is all green, open <strong>Check it in Dropbox</strong> if you want to see it, then finish.';
   body.appendChild(hint);
 
   // The note fills from the accurate transcript, so a room recorded out of range
@@ -4193,9 +5281,11 @@ function showReview() {
   `;
   body.appendChild(mandDiv);
 
+  // Rooms start folded: the area status above is what matters before leaving,
+  // and every room's note, split and check list used to make this page very long.
   state.rooms.forEach(room => {
-    const div = document.createElement('div');
-    div.className = 'review-room';
+    const div = document.createElement('details');
+    div.className = 'review-room fold';
     const note = state.roomNotes[room.id] || '';
     // Auto-computed sub-area split (read-only). The textarea stays the editable
     // source of truth — this recomputes every time the review screen opens.
@@ -4219,7 +5309,13 @@ function showReview() {
     const serialHtml = serial ? renderReviewItem('Serial / model', serial) : '';
     const inv = (state.inventory[room.id] || '').trim();
     const invHtml = inv ? renderReviewItem('Inventory', inv) : '';
-    div.innerHTML = `<div class="review-room-title">${escapeHtml(room.name)}</div>${renderReviewItem('Room notes', note)}${invHtml}${serialHtml}${splitHtml}${checkHtml}`;
+    const bits = [];
+    if (!note.trim()) bits.push('no notes');
+    else if (buckets.length) bits.push(buckets.length + ' subarea' + (buckets.length === 1 ? '' : 's'));
+    else bits.push('notes');
+    if (checks.length) bits.push(checks.length + ' to check');
+    if (findForbidden(note).length) bits.push('⚠ words to fix');
+    div.innerHTML = `<summary class="review-room-title">${escapeHtml(room.name)} <span class="review-room-sum">${escapeHtml(bits.join(' · '))}</span></summary>${renderReviewItem('Room notes', note)}${invHtml}${serialHtml}${splitHtml}${checkHtml}`;
     body.appendChild(div);
   });
 }
@@ -4231,8 +5327,7 @@ function renderReviewItem(name, val) {
   const cls = !val ? 'empty' : hasForbidden ? 'flagged' : '';
   const display = !val ? 'Not recorded' : escapeHtml(val);
   const flag = hasForbidden ? ' ⚠️' : '';
-  const copyBtn = (val && val.trim())
-    ? `<button class="review-item-copy" onclick="copyField(${idx})">Copy</button>` : '';
+  const copyBtn = '';   // removed in round 5 — everything is in Dropbox already
   return `<div class="review-item">
     <div class="review-item-name">${escapeHtml(name)}</div>
     <div class="review-item-value ${cls}">${display}${flag}</div>
@@ -4262,6 +5357,7 @@ function buildReportText() {
   report += `Property: ${state.address}\n`;
   report += `Client: ${state.client}\n`;
   report += `Inspector: ${state.inspector}\n`;
+  if (state.inspType) report += `Inspection type: ${state.inspType}\n`;
   report += `Beds/Baths: ${state.beds} bed / ${state.baths} bath\n`;
   report += `State: ${state.stateCode}\n`;
   report += `Date: ${new Date().toLocaleDateString('en-AU')}\n\n`;
@@ -4295,6 +5391,222 @@ function buildReportText() {
   }
 
   return report;
+}
+
+// Everything typed on the phone, plus where every area got to. Written once, at
+// Finish & Clear, into the property's Dropbox folder.
+function buildInspectionSummary(statusRows) {
+  const lines = [];
+  lines.push('INSPECTION DETAILS');
+  lines.push('='.repeat(40));
+  lines.push(...detailLines(state.address, inspectionMeta()));
+  lines.push('Finished on phone: ' + new Date().toLocaleString('en-AU'));
+  lines.push('');
+  lines.push('AREA STATUS AT FINISH');
+  lines.push('-'.repeat(40));
+  if (statusRows && statusRows.override) {
+    lines.push('⚠ FINISHED WITH ROOMS NOT YET IN DROPBOX (override typed on the phone):');
+    statusRows.filter(r => !r.ready).forEach(r => lines.push(`   ${r.name} — ${r.why}`));
+    lines.push('');
+  }
+  (statusRows || []).forEach(r => lines.push(`${r.name}: ${r.text}`));
+  lines.push('');
+  return lines.join('\n') + '\n' + buildReportText().replace(/^PROPERTY INSPECTION REPORT\n=+\n(?:.*\n)*?\n/, '');
+}
+// ─── PCR WORD FILE ────────────────────────────────────────────────────────────
+// Fills the PA master WA Property Condition Report (pcr-template-wa.docx, kept
+// beside index.html) with what the app has: each room's text goes into the
+// comments column of the matching line item, using the AI sort when it ran and
+// the keyword split when it didn't. Anything that doesn't match a line goes in
+// that room's "Additional" row. Every room in the template is kept, as the
+// typists asked; rooms not inspected stay blank. Clean / Undamaged / Working
+// ticks are left for the typist.
+const PCR_TEMPLATE_URL = 'pcr-template-wa.docx';
+const W_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+const PCR_COMMENT_COL = 4;   // Item | C | U | W | Comments (start of tenancy) | …
+// Room id → the template's heading for that room.
+const PCR_HEADINGS = {
+  front_gardens: 'FRONT GARDENS', garage: 'GARAGE/CARPORT', entry: 'ENTRY', lounge: 'LOUNGE',
+  passage: 'PASSAGE', staircase: 'STAIRCASE & LANDING', bedroom1: 'BEDROOM 1', ensuite: 'ENSUITE',
+  ensuite_toilet: 'ENSUITE TOILET', bedroom2: 'BEDROOM 2', bedroom3: 'BEDROOM 3', bedroom4: 'BEDROOM 4',
+  study: 'STUDY', bathroom2: 'BATHROOM 2', toilet: 'TOILET', kitchen: 'KITCHEN', dining: 'DINING',
+  family: 'FAMILY ROOM', theatre: 'THEATRE ROOM', powder_room: 'POWDER ROOM', laundry: 'LAUNDRY',
+  balcony: 'BALCONY', shed: 'SHED/STORE ROOM', rear_exterior: 'REAR EXTERIOR', _security: 'SECURITY/SAFETY'
+};
+function pcrNorm(s) { return String(s || '').toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9/&]/g, ''); }
+function wKids(node, local) { return Array.from(node.childNodes).filter(n => n.namespaceURI === W_NS && n.localName === local); }
+function wText(node) { return Array.from(node.getElementsByTagNameNS(W_NS, 't')).map(t => t.textContent).join('').trim(); }
+function wRun(doc, text, opts) {
+  const r = doc.createElementNS(W_NS, 'w:r');
+  const rPr = doc.createElementNS(W_NS, 'w:rPr');
+  const f = doc.createElementNS(W_NS, 'w:rFonts');
+  f.setAttributeNS(W_NS, 'w:ascii', 'Century Gothic'); f.setAttributeNS(W_NS, 'w:hAnsi', 'Century Gothic');
+  rPr.appendChild(f);
+  if (opts && opts.bold) rPr.appendChild(doc.createElementNS(W_NS, 'w:b'));
+  const sz = doc.createElementNS(W_NS, 'w:sz'); sz.setAttributeNS(W_NS, 'w:val', String((opts && opts.size) || 18));
+  rPr.appendChild(sz);
+  r.appendChild(rPr);
+  String(text).split('\n').forEach((line, i) => {
+    if (i) r.appendChild(doc.createElementNS(W_NS, 'w:br'));
+    const t = doc.createElementNS(W_NS, 'w:t');
+    t.setAttributeNS('http://www.w3.org/XML/1998/namespace', 'xml:space', 'preserve');
+    t.textContent = line;
+    r.appendChild(t);
+  });
+  return r;
+}
+function setCellText(doc, tc, text) {
+  const ps = wKids(tc, 'p');
+  let p = ps[0];
+  if (!p) { p = doc.createElementNS(W_NS, 'w:p'); tc.appendChild(p); }
+  ps.slice(1).forEach(x => tc.removeChild(x));
+  wKids(p, 'r').forEach(r => p.removeChild(r));
+  p.appendChild(wRun(doc, text));
+}
+// What goes where: { roomId: { items: {normName: text}, extra: [text] } }
+function pcrContent() {
+  const out = {};
+  const add = (rid, key, text) => {
+    text = String(text || '').trim(); if (!text) return;
+    const o = out[rid] = out[rid] || { items: {}, extra: [] };
+    if (key) o.items[key] = o.items[key] ? o.items[key] + ' ' + text : text;
+    else o.extra.push(text);
+  };
+  const skipped = state.skippedRooms || {};
+  (state.rooms || []).forEach(room => {
+    if (skipped[room.id]) return;
+    const note = (state.roomNotes[room.id] || '').trim();
+    const subs = (room.subsections || []).map(pcrNorm);
+    if (note) {
+      const buckets = subareasForRoom(room, note);
+      if (!buckets.length) add(room.id, null, note);
+      buckets.forEach(b => {
+        const k = pcrNorm(b.subarea);
+        if (k && subs.includes(k) && k !== 'additional') add(room.id, k, b.text);
+        else add(room.id, null, (b.subarea && k !== 'additional' ? b.subarea + ': ' : '') + b.text);
+      });
+    }
+    const inv = (state.inventory[room.id] || '').trim();
+    if (inv) add(room.id, null, 'Inventory: ' + inv);
+    const serial = (state.serialModels[room.id] || '').trim();
+    if (serial) add(room.id, null, 'Model / serial numbers (typed on the phone): ' + serial);
+  });
+  const m = state.mandatory || {};
+  if ((m.smokeAlarms || '').trim()) add('_security', 'smokealarms', m.smokeAlarms);
+  if ((m.rcdBox || '').trim()) add('_security', 'rcd/safetyswitch', m.rcdBox);
+  return out;
+}
+async function loadJSZip() {
+  if (window.JSZip) return window.JSZip;
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'jszip.min.js'; s.onload = resolve; s.onerror = () => reject(new Error('jszip not available'));
+    document.head.appendChild(s);
+  });
+  return window.JSZip;
+}
+async function buildPcrDocx() {
+  const JSZip = await loadJSZip();
+  const res = await fetch(PCR_TEMPLATE_URL);
+  if (!res.ok) throw new Error('template not found');
+  const zip = await JSZip.loadAsync(await res.arrayBuffer());
+  const xml = await zip.file('word/document.xml').async('string');
+  const doc = new DOMParser().parseFromString(xml, 'application/xml');
+  const body = doc.getElementsByTagNameNS(W_NS, 'body')[0];
+  const tbl = wKids(body, 'tbl')[0];
+  if (!tbl) throw new Error('template table missing');
+  const content = pcrContent();
+  const headingToId = {};
+  Object.keys(PCR_HEADINGS).forEach(id => { headingToId[pcrNorm(PCR_HEADINGS[id])] = id; });
+  // Walk the table once: heading rows start a room, the rows after are its items.
+  const rows = {};   // roomId -> { normItem: tr }
+  let cur = null;
+  wKids(tbl, 'tr').forEach(tr => {
+    const tcs = wKids(tr, 'tc');
+    if (!tcs.length) return;
+    const k = pcrNorm(wText(tcs[0]));
+    if (headingToId[k]) { cur = headingToId[k]; rows[cur] = {}; return; }
+    if (cur && k && !(k in rows[cur])) rows[cur][k] = tr;
+  });
+  let filled = 0;
+  const leftovers = [];
+  Object.keys(content).forEach(rid => {
+    const c = content[rid];
+    const r = rows[rid];
+    const room = (state.rooms || []).find(x => x.id === rid);
+    if (!r) {   // a custom room — not in the template
+      const all = Object.keys(c.items).map(k => c.items[k]).concat(c.extra);
+      if (all.length) leftovers.push({ title: room ? room.name : rid, text: all.join('\n') });
+      return;
+    }
+    Object.keys(c.items).forEach(k => {
+      const tr = r[k];
+      if (tr) { setCellText(doc, wKids(tr, 'tc')[PCR_COMMENT_COL], c.items[k]); filled++; }
+      else c.extra.push(c.items[k]);
+    });
+    if (c.extra.length) {
+      const tr = r['additional'];
+      if (tr) { setCellText(doc, wKids(tr, 'tc')[PCR_COMMENT_COL], c.extra.join('\n')); filled++; }
+      else leftovers.push({ title: room ? room.name : PCR_HEADINGS[rid], text: c.extra.join('\n') });
+    }
+  });
+  // Address on the cover page.
+  const addrT = Array.from(doc.getElementsByTagNameNS(W_NS, 't')).find(t => /^\s*ADDRESS:\s*$/.test(t.textContent));
+  if (addrT) {
+    const p = addrT.parentNode.parentNode;
+    const ts = Array.from(p.getElementsByTagNameNS(W_NS, 't'));
+    const last = ts[ts.length - 1];
+    if (last && last !== addrT) last.textContent = ' ' + state.address;
+    else p.appendChild(wRun(doc, ' ' + state.address, { bold: true, size: 20 }));
+  }
+  // Items with no row of their own (water meter, NBN, custom rooms) go in a
+  // short section straight after the table, so nothing is dropped.
+  const m = state.mandatory || {};
+  const extras = [];
+  const wm = [m.waterMeter, m.waterMeterLocation].filter(x => (x || '').trim()).join(' — ');
+  if (wm) extras.push({ title: 'Water meter', text: wm });
+  if ((m.nbnBox || '').trim()) extras.push({ title: 'NBN box', text: m.nbnBox });
+  extras.push(...leftovers);
+  if (extras.length) {
+    const mk = (text, bold) => { const p = doc.createElementNS(W_NS, 'w:p'); p.appendChild(wRun(doc, text, { bold, size: 20 })); return p; };
+    let after = tbl;
+    const ins = (p) => { body.insertBefore(p, after.nextSibling); after = p; };
+    ins(mk('OTHER ITEMS RECORDED ON THE APP', true));
+    extras.forEach(e => { ins(mk(e.title, true)); ins(mk(e.text, false)); });
+  }
+  zip.file('word/document.xml', new XMLSerializer().serializeToString(doc));
+  const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+  return { blob, filled };
+}
+async function queuePcrDocx() {
+  if (!cloudArchiveEnabled() || !state.address) return false;
+  try {
+    const { blob, filled } = await buildPcrDocx();
+    const type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    await photoAdd({
+      kind: 'pcr', roomId: '_pcr', roomName: 'PCR',
+      fileName: `PCR ${safeSeg(state.address)}${state.inspType ? ' (' + state.inspType + ')' : ''}.docx`,
+      address: state.address, jobId: state.jobId || '', meta: inspectionMeta(),
+      createdAt: state.startedAt || Date.now(), blob, type, uploaded: false, filled
+    });
+    return true;
+  } catch (e) {
+    showToast('⚠ The PCR Word file couldn\'t be made (' + ((e && e.message) || 'error') + '). The typist can still use the .txt files.');
+    return false;
+  }
+}
+
+async function queueInspectionSummary(statusRows) {
+  if (!cloudArchiveEnabled() || !state.address) return;
+  const text = buildInspectionSummary(statusRows);
+  const rec = {
+    kind: 'summary', roomId: '_summary', roomName: 'Inspection details',
+    address: state.address, jobId: state.jobId || '', client: state.client || '', meta: inspectionMeta(),
+    createdAt: state.startedAt || Date.now(),
+    blob: new Blob([text], { type: 'text/plain;charset=utf-8' }),
+    type: 'text/plain; charset=utf-8', uploaded: false
+  };
+  try { await photoAdd(rec); } catch (e) {}
 }
 
 function exportReport() {
@@ -4382,26 +5694,37 @@ function downloadCSV() {
 }
 
 async function finishAndClear() {
-  // Named rooms, before the generic warning. "3 recordings haven't finished" is
-  // easy to wave past; "Bedroom 2, Ensuite and Kitchen" is not.
-  const working = roomsStillWorking();
-  if (working.length) {
-    if (!confirm(
-      `Still finishing: ${working.join(', ')}.\n\n`
-      + 'Transcription lands a few seconds after you stop talking, and these rooms are still going through. '
-      + 'Wait until this line is green before you finish.\n\nFinish anyway?'
-    )) return;
+  // Push anything waiting before judging, so a room that's one upload away
+  // doesn't hold the button needlessly.
+  if (navigator.onLine) { try { await queueWatchdog(); processQueue(); processArchiveQueue(); } catch (e) {} }
+  const statusRows = await computeAreaStatus();
+  renderFinishGate(statusRows);
+  const blocking = statusRows.filter(r => !r.ready);
+  let override = false;
+  if (blocking.length) {
+    const list = blocking.map(r => `• ${r.name}: ${r.why}`).join('\n');
+    const typed = prompt(
+      `Not finished — these rooms are not safe in Dropbox yet:\n\n${list}\n\n`
+      + 'Record any missing room (or tap "Not here" if the property doesn\'t have it), and finish once you have signal.\n\n'
+      + 'Only if a manager has said so: type FINISH to clear anyway. Recordings still on the phone keep trying in the background.'
+    );
+    if (!typed || typed.trim().toUpperCase() !== 'FINISH') { showToast('Not finished — the inspection is still here'); return; }
+    override = true;
+  } else if (!confirm('Every room is recorded and in Dropbox. Finish and clear this inspection from the phone?')) {
+    return;
   }
-  if (!confirm('Finished with this inspection? This clears the saved data so you can start a fresh one. Make sure you have sent or copied the report first.')) return;
+  statusRows.override = override;
   stopListening();
+  await queueInspectionSummary(statusRows);
+  await queuePcrDocx();
   // Clean up this property's recordings so they can never bleed into the next
   // inspection. Anything not yet safe (not transcribed, or — when archiving is on —
   // not yet backed up to Dropbox) is kept and keeps trying in the background.
   try {
-    const recs = (await dbAll()).filter(r => (r.address || '') === (state.address || ''));
+    const recs = (await dbAll()).filter(r => sameJob(r));
     let unsentPhotos = 0;
     if (cloudArchiveEnabled()) {
-      try { unsentPhotos = (await photoAll()).filter(p => (p.address || '') === (state.address || '') && !p.uploaded).length; } catch (e) {}
+      try { unsentPhotos = (await photoAll()).filter(p => sameJob(p) && !p.uploaded && p.kind !== 'summary' && p.kind !== 'pcr').length; } catch (e) {}
     }
     const notSafe = recs.filter(r =>
       r.status === 'pending' || r.status === 'uploading' || r.status === 'recording' || r.status === 'failed' ||
@@ -4441,7 +5764,7 @@ async function finishAndClear() {
     // property. Any still unsent stay on the phone and keep retrying.
     try {
       if (cloudArchiveEnabled() && navigator.onLine) await processPhotoQueue();
-      const photos = (await photoAll()).filter(p => (p.address || '') === (state.address || ''));
+      const photos = (await photoAll()).filter(p => sameJob(p));
       for (const p of photos) {
         if (p.uploaded) { try { await photoDelete(p.id); } catch (e) {} }
       }
@@ -4450,10 +5773,11 @@ async function finishAndClear() {
   clearSaved();
   releaseSessionMic();   // let go of the microphone now the inspection is finished
   state.roomNotes = {}; state.serialModels = {}; state.serialPhotos = {}; state.checked = {}; state.rooms = [];
-  state.inventory = {}; state.roomSections = {}; state.roomChecks = {};
+  state.inventory = {}; state.roomSections = {}; state.roomSectionParts = {}; state.roomChecks = {}; state.skippedRooms = {}; state.typedOnly = {};
+  state.jobId = '';
   roughDrafts = {}; roomAudioFlags = {}; roomRecMap = {}; roomMismatches = {};
   state.currentRoomIdx = 0; state.startedAt = null; state.address = '';
-  state.client = ''; state.inspector = '';
+  state.client = ''; state.inspector = ''; state.inspType = '';
   state.mandatory = { waterMeter:'', waterMeterLocation:'', rcdBox:'', smokeAlarms:'', nbnBox:'' };
   document.getElementById('resumeBanner').style.display = 'none';
   document.getElementById('headerTitle').textContent = 'New Inspection';
@@ -4528,7 +5852,7 @@ function downloadOneRecording(rec) {
 async function shareAllRecordings() {
   let recs = [];
   try { recs = await dbAll(); } catch (e) {}
-  const mine = state.address ? recs.filter(r => (r.address || '') === state.address) : recs;
+  const mine = state.address ? recs.filter(r => sameJob(r)) : recs;
   const withAudio = mine.filter(r => r.blob);
   if (!withAudio.length) { showToast('No stored audio to send'); return; }
   const files = withAudio.map(r => new File([r.blob], recFilename(r), { type: r.type || 'audio/mp4' }));
@@ -4609,7 +5933,8 @@ async function renderRecordings() {
       btn.className = 'rec-retry-btn';
       btn.textContent = status === 'failed' ? 'Retry' : 'Try now';
       btn.onclick = async () => {
-        rec.attempts = 0;
+        rec.attempts = 0; rec.netFails = 0; rec.autoRetries = 0;
+        delete rec.nextTryAt; delete rec.autoRetryAt;
         rec.status = 'pending';
         try { await dbPut(rec); } catch (e) {}
         updatePendingUI();
@@ -4672,7 +5997,7 @@ const SPOKEN_ROOMS = {
   dining: ['dining', 'dining room', 'dining area', 'meals', 'meals area'],
   family: ['family room', 'family area', 'games room'],
   theatre: ['theatre', 'theatre room', 'theater', 'media room', 'cinema room'],
-  powder_room: ['powder room', 'powder'],
+  powder_room: ['powder room'],   // bare "powder" was matching "powder coated"
   laundry: ['laundry', 'laundry room'],
   balcony: ['balcony', 'deck', 'verandah'],
   shed: ['shed', 'store room', 'storeroom', 'storage room', 'workshop'],
@@ -4691,8 +6016,10 @@ function detectSpokenRoom(text) {
   let best = null;
   Object.keys(SPOKEN_ROOMS).forEach(id => {
     SPOKEN_ROOMS[id].forEach(phrase => {
-      const at = after.indexOf(phrase);
-      if (at === -1) return;
+      // Whole words only. "the floor" used to match "loo" (Toilet).
+      const m2 = new RegExp('(?:^|[^a-z0-9])' + phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![a-z0-9])').exec(after);
+      if (!m2) return;
+      const at = m2.index;
       // Earliest match wins; on a tie the longer phrase wins, so "master
       // bedroom" beats "master" and "ensuite toilet" beats "ensuite".
       if (!best || at < best.at || (at === best.at && phrase.length > best.len)) {
@@ -4889,12 +6216,17 @@ function punctuateBySubarea(room, text) {
 // still matches what it produced; edit the note by hand and the keyword split
 // takes over again, so what's on screen always describes the text that's there.
 function subareasForRoom(room, noteText) {
+  const norm = s => String(s || '').replace(/\s+/g, ' ').trim();
+  // A room recorded in two goes has a note that reads part 1 then part 2, while
+  // the merged sections are grouped by subarea, so the two never matched and the
+  // AI sort was dropped for the keyword split. Compare part by part instead.
+  const parts = state.roomSectionParts && state.roomSectionParts[room.id];
+  if (parts && parts.length && norm(parts.map(sectionsToNote).join(' ')) === norm(noteText)) {
+    return parts.reduce((acc, p) => mergeSections(acc, p), []).map(s => ({ subarea: s.name, text: s.text }));
+  }
   const secs = state.roomSections && state.roomSections[room.id];
-  if (secs && secs.length) {
-    const norm = s => String(s || '').replace(/\s+/g, ' ').trim();
-    if (norm(sectionsToNote(secs)) === norm(noteText)) {
-      return secs.map(s => ({ subarea: s.name, text: s.text }));
-    }
+  if (secs && secs.length && norm(sectionsToNote(secs)) === norm(noteText)) {
+    return secs.map(s => ({ subarea: s.name, text: s.text }));
   }
   return splitNotesBySubarea(room, noteText);
 }
@@ -5019,14 +6351,19 @@ function splitNotesBySubarea(room, noteText) {
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  document.body.classList.toggle('on-inspection', id === 'screenInspection');
   window.scrollTo(0, 0);
 }
 
+// One timer for the toast. Two toasts in a row used to share the first one's
+// timer, so the second vanished after a fraction of a second.
+let toastTimer = null;
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.classList.remove('show'); toastTimer = null; }, 2800);
 }
 
 function copyText(text, msg) {

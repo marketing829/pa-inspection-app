@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-AU">
+<html lang="en-AU" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +10,7 @@
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/png" href="icon-192.png">
 <style>
-  /* PA Typist Editor v1. Same tokens as the round 10 inspector app reskin:
+  /* PA Typist Editor v2. Same tokens as the round 10 inspector app reskin:
      still grey wash, glass cards, frosted floating bars, yellow kept for the
      main button, the play button, words to check and status dots. */
   :root {
@@ -321,6 +321,46 @@
   @keyframes sp { to { transform: rotate(360deg); } }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 
+  /* V2: steps, next thing to do, how-to, filters */
+  .steps { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 14px 0 2px; }
+  .step { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 6px 13px 6px 6px; font-size: 13.5px;
+    font-weight: 600; border: 1px solid var(--line-2); background: var(--tint); color: var(--ink-2); }
+  .step:hover { background: var(--tint-2); color: var(--ink); }
+  .no { width: 24px; height: 24px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 12px; font-weight: 700;
+    background: var(--tint-2); color: var(--ink-2); flex: none; }
+  .step small { font-weight: 500; opacity: 0.8; font-size: 12.5px; }
+  .step.now { border-color: var(--check-line); background: var(--check-bg); color: var(--ink); }
+  .step.now .no { background: var(--yellow-flat); color: var(--on-yellow); }
+  .step.ok { color: var(--ok); background: var(--ok-bg); border-color: transparent; }
+  .step.ok .no { background: var(--ok); color: #fff; }
+  :root[data-theme="dark"] .step.ok .no { color: #0F1012; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .step.ok .no { color: #0F1012; } }
+  .step-sep { color: var(--ink-3); font-size: 12px; }
+  .tip { font-size: 12.5px; color: var(--ink-2); margin-top: 8px; }
+  .room-nav { display: inline-flex; gap: 6px; }
+  .check-row.go { cursor: pointer; border-radius: 10px; }
+  .check-row.go:hover { background: var(--tint); }
+  .check-row.cur, .add.cur { outline: 2px solid var(--check-line); outline-offset: 2px; }
+  .add.cur { box-shadow: 0 0 0 6px rgba(255,222,0,0.28); }
+  .room-btn .st { display: block; font-size: 11.5px; font-weight: 500; opacity: 0.7; }
+  .room-btn .st.todo { color: var(--warn-ink); opacity: 1; }
+  .room-btn.active .st { color: inherit; opacity: 0.8; }
+  .next-btn { gap: 6px; }
+  .next-btn b { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--yellow-flat); color: var(--on-yellow);
+    font-size: 11px; display: inline-grid; place-items: center; }
+  .howto { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin: 0 0 22px; }
+  .howto > div { padding: 14px 16px; display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: start; align-content: start; }
+  .howto b { font-size: 14.5px; }
+  .howto span.muted { grid-column: 2; font-size: 13px; }
+  .resume { padding: 16px 18px; display: flex; align-items: center; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
+  .resume .grow { flex: 1; min-width: 200px; }
+  .resume b { display: block; font-size: 16px; }
+  .filters { display: flex; background: var(--tint); border: 1px solid var(--line); border-radius: 12px; padding: 2px; }
+  .filters button { font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 9px; color: var(--ink-2); }
+  .filters button.on { background: var(--sel); color: var(--sel-ink); }
+  .help-steps { display: grid; gap: 10px; margin: 6px 0 16px; }
+  .help-steps > div { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; font-size: 14px; }
+
   /* NARROW */
   @media (max-width: 960px) {
     .job { grid-template-columns: 1fr; padding-bottom: 190px; }
@@ -344,6 +384,7 @@
     .brand-text { display: none; }
     .dock .tools { flex-wrap: nowrap; }
     .speeds { overflow-x: auto; min-width: 0; flex: 1; }
+    .step-sep { display: none; }
   }
 </style>
 </head>
@@ -357,10 +398,10 @@
   <button class="pill pill-ghost timer" id="timerBtn" hidden title="Typing time for this job. Counts while you work, stops after 2 minutes idle. Click to pause.">
     <span class="dot"></span><span id="timerText">0:00</span>
   </button>
-  <button class="icon-btn" id="keysBtn" title="Keyboard shortcuts" aria-label="Keyboard shortcuts">
+  <button class="icon-btn" id="keysBtn" title="How to type a job, and keyboard shortcuts (?)" aria-label="Help and keyboard shortcuts">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>
   </button>
-  <button class="icon-btn" id="themeBtn" title="Theme: follows this computer" aria-label="Change theme">
+  <button class="icon-btn" id="themeBtn" title="Theme: light" aria-label="Change theme">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg>
   </button>
   <button class="pill pill-dark" id="queueBtn" hidden>Queue</button>
@@ -371,10 +412,19 @@
 <section class="screen active" id="screenQueue">
   <div class="wrap">
     <div class="hero">
-      <span class="eyebrow">Typist editor · v1</span>
+      <span class="eyebrow">Typist editor · v2</span>
       <h1 class="big"><span class="fade">Inspections</span> to type</h1>
-      <p class="lede">Open a job, play each room beside its text, fix what the app misheard, confirm the phrases the AI added, then copy the room into the report.</p>
+      <p class="lede">Each room shows its text beside its audio. The editor takes you to every word to check, one at a time.</p>
     </div>
+
+    <div class="howto" id="howto">
+      <div class="glass"><span class="no">1</span><b>Open a job</b><span class="muted">Newest first. Jobs you started show how far you got.</span></div>
+      <div class="glass"><span class="no">2</span><b>Check the yellow words</b><span class="muted">Press the yellow button or <kbd>Ctrl</kbd> + <kbd>]</kbd>. It plays the audio there. Fix the word, or press <kbd>Enter</kbd> if it's right.</span></div>
+      <div class="glass"><span class="no">3</span><b>Keep or remove added phrases</b><span class="muted">The AI added these when no damage was mentioned. Keep them only if the audio agrees.</span></div>
+      <div class="glass"><span class="no">4</span><b>Copy the room, mark it done</b><span class="muted">Paste it into the report. The editor moves you to the next room.</span></div>
+    </div>
+
+    <div class="resume glass" id="resume" hidden></div>
 
     <div class="sources">
       <div class="source glass" id="srcDropbox">
@@ -404,6 +454,7 @@
 
     <div class="list-head" id="listHead" hidden>
       <h2 id="listTitle">Jobs</h2>
+      <div class="filters" id="jobFilter"><button data-f="open">Not finished</button><button data-f="typed">Typed</button><button data-f="all">All</button></div>
       <input class="field" id="jobSearch" placeholder="Search address or date">
     </div>
     <div class="jobs" id="jobs"></div>
@@ -443,6 +494,7 @@
       <div class="side-actions">
         <button class="btn btn-ghost" id="copyAll">Copy all rooms</button>
         <button class="btn btn-ghost btn-sm" id="downloadJob">Download edited text (.txt)</button>
+        <button class="btn btn-ghost btn-sm" id="reloadJob" hidden title="Read this job again from Dropbox: new rooms, transcripts and the inspector's fixes">Check for updates</button>
       </div>
     </aside>
     <div id="roomPane"></div>
@@ -465,6 +517,7 @@
     <div class="track" id="track"><div class="rail"></div><div class="fill" id="fill"></div><div id="marks"></div><div class="knob" id="knob"></div></div>
   </div>
   <div class="tools">
+    <button class="pill pill-dark next-btn" id="nextItemBtn" title="Next thing to do (Ctrl + ])">Next</button>
     <div class="speeds" id="speeds"></div>
     <button class="pill pill-ghost toggle" id="followBtn" title="Highlight and scroll to the sentence being played">Follow</button>
     <button class="pill pill-ghost toggle" id="rawBtn" title="Raw transcript (Ctrl+R)">Raw</button>
@@ -484,7 +537,11 @@
 <div id="modalHost"></div>
 <script>
 'use strict';
-// ═══ PA Typist Editor v1 ═══════════════════════════════════════════════════
+// ═══ PA Typist Editor v2 ═══════════════════════════════════════════════════
+// v2 (8 Oct 2026): numbers from the room .json are forced to numbers before they
+// reach the page; a room re-reads when its transcript or the inspector's fixes
+// arrive, keeping the typist's edits; light by default; one "next thing to do"
+// (yellow button, dock button, Ctrl + ]) walks checks, added phrases, copy, done.
 // Reads one inspection job (the app's Dropbox folder for that job), shows each
 // room's text beside its audio, and lets the typist fix, confirm and copy it.
 // Rooms come from the round 10 room .json; older rooms fall back to the .txt.
@@ -503,6 +560,16 @@ const RESUME_REWIND_S = 1;        // typists lose the last word on pause; step b
 // ── small helpers ─────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// v2: anything that ends up in an attribute or a style as a time must be a real number.
+const num = v => { if (v == null || v === '' || typeof v === 'boolean') return null; const n = Number(v); return isFinite(n) ? n : null; };
+// Highlight the first match of word in text, escaping both sides (never the markup).
+function markHtml(text, word, open, close) {
+  const s = String(text || ''), w = String(word || '').trim();
+  const k = w ? s.toLowerCase().indexOf(w.toLowerCase()) : -1;
+  if (k < 0) return esc(s);
+  return esc(s.slice(0, k)) + open + esc(s.slice(k, k + w.length)) + close + esc(s.slice(k + w.length));
+}
+function hashStr(s) { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36) + '.' + s.length; }
 function clock(sec) {
   if (sec == null || isNaN(sec)) return '';
   const t = Math.max(0, Math.floor(sec)), h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
@@ -511,7 +578,7 @@ function clock(sec) {
 function parseClock(c) {
   if (!c) return null;
   const p = String(c).trim().split(':').map(Number);
-  if (p.some(isNaN) || p.length < 2) return null;
+  if (p.some(x => isNaN(x) || !isFinite(x)) || p.length < 2 || p.length > 3) return null;
   return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p[0] * 60 + p[1];
 }
 function hms(sec) {
@@ -576,7 +643,10 @@ function parseBase(base) {
   if (!m) return { name: base, hhmm: '', part: 1, rec: null, partial: false };
   let name = m[1];
   if (name.includes(' - ')) name = name.split(' - ').pop();   // "<address> - <room>" share names
-  return { name, hhmm: m[2], part: m[3] ? +m[3] : 1, rec: m[4] ? +m[4] : null, partial: !!m[5] };
+  // Round 12: the app puts the room's walk-order number first ("01 Front Gardens").
+  const no = name.match(/^(\d{2,3}) (.+)$/);
+  if (no) name = no[2];
+  return { name, no: no ? +no[1] : null, hhmm: m[2], part: m[3] ? +m[3] : 1, rec: m[4] ? +m[4] : null, partial: !!m[5] };
 }
 function parseJobFolder(name) {
   const m = String(name).match(/^(\d{4})-(\d{2})-(\d{2}) - (.*)$/);
@@ -592,20 +662,24 @@ function prettyDate(iso) {
 // ── reading a room ───────────────────────────────────────────────────────
 // Round 10 .json → the editor's room shape.
 function roomFromJson(j) {
-  const sections = (j.sections || []).map(s => ({
-    name: s.name || 'Notes', at: s.start != null ? s.start : null,
-    sents: (s.sentences || []).map(x => ({ text: String(x.text || ''), at: x.at != null ? x.at : null, check: !!x.check }))
+  const arr = v => Array.isArray(v) ? v : [];
+  const str = v => (v == null ? '' : String(v));
+  const sections = arr(j.sections).map(s => ({
+    name: str(s && s.name) || 'Notes', at: num(s && s.start),
+    sents: arr(s && s.sentences).map(x => ({ text: str(x && x.text), at: num(x && x.at), check: !!(x && x.check) }))
   }));
-  const words = Array.isArray(j.words) && j.words.length ? j.words.map(w => [String(w[0]).toLowerCase(), +w[1]]) : null;
+  const ws = arr(j.words).filter(w => Array.isArray(w) && num(w[1]) != null).map(w => [str(w[0]).toLowerCase(), num(w[1])]);
+  const words = ws.length ? ws : null;
   return {
     source: 'json', name: j.room || '', sections,
-    checks: (j.check || []).map(c => ({ quote: c.quote || '', heard: c.heard || '', why: c.why || '', at: c.at != null ? c.at : parseClock(c.clock),
-      resolved: c.resolved || null, fixedTo: c.fixedTo || null })),
-    fixes: j.fixes || [], raw: j.raw || '', words, rawStamped: false,
-    serial: j.serial || '', inventory: j.inventory || '',
+    checks: arr(j.check).filter(c => c && typeof c === 'object').map(c => ({ quote: str(c.quote), heard: str(c.heard), why: str(c.why),
+      at: num(c.at) != null ? num(c.at) : parseClock(str(c.clock)),
+      resolved: c.resolved === 'fixed' || c.resolved === 'kept' ? c.resolved : (c.resolved ? 'kept' : null), fixedTo: c.fixedTo ? str(c.fixedTo) : null })),
+    fixes: arr(j.fixes), raw: str(j.raw), words, rawStamped: false,
+    serial: str(j.serial), inventory: str(j.inventory),
     meta: { property: j.property, client: j.client, inspector: j.inspector, state: j.state, type: j.inspectionType,
       started: j.inspectionStarted, recordedAt: j.recordedAt },
-    transcribedBy: j.transcribedBy || '', sortedBy: j.sortedBy || '', audioName: j.audioFile ? String(j.audioFile).split('/').pop() : ''
+    transcribedBy: str(j.transcribedBy), sortedBy: str(j.sortedBy), audioName: j.audioFile ? str(j.audioFile).split('/').pop() : ''
   };
 }
 
@@ -757,7 +831,7 @@ const DBX = {
     Object.entries(params).forEach(([k, v]) => u.searchParams.set(k, v));
     u.searchParams.set('k', this.conf.key);
     let r;
-    try { r = await fetch(u.toString()); } catch (e) { throw new Error('Could not reach the Dropbox service. Check the address and your connection.'); }
+    try { r = await fetch(u.toString()); } catch (e) { throw new Error('Could not reach the Dropbox service. Check your internet connection and try again. If it keeps happening, check the service address and editor key with Marie.'); }
     if (!r.ok) {
       let msg = ''; try { msg = (await r.json()).error || ''; } catch (e) {}
       throw new Error(msg || ('The Dropbox service answered ' + r.status));
@@ -775,13 +849,21 @@ const DBX = {
   },
   async jobFiles(folder) {
     const entries = await this.list(folder);
-    return entries.filter(e => e.kind === 'file').map(e => ({
+    const mk = (dir, e) => ({
       name: e.name, size: e.size,
-      text: () => this.text(folder + '/' + e.name),
-      url: fresh => this.link(folder + '/' + e.name, fresh)
-    }));
+      text: () => this.text(dir + '/' + e.name),
+      url: fresh => this.link(dir + '/' + e.name, fresh)
+    });
+    const out = entries.filter(e => e.kind === 'file').map(e => mk(folder, e));
+    // Round 12: the app keeps audio in Audio/, room files in App data/, photos in Photos/.
+    for (const sub of entries.filter(e => e.kind === 'folder' && JOB_SUBDIRS.has(e.name))) {
+      const dir = folder + '/' + sub.name;
+      (await this.list(dir)).filter(e => e.kind === 'file').forEach(e => out.push(mk(dir, e)));
+    }
+    return out;
   }
 };
+const JOB_SUBDIRS = new Set(['Audio', 'App data', 'Photos']);
 function localFile(file) {
   let u = null;
   return { name: file.name, size: file.size, text: () => file.text(), url: () => (u = u || URL.createObjectURL(file)) };
@@ -805,10 +887,63 @@ function saveStore(now) {
   };
   if (now) go(); else saveTimer = setTimeout(go, 400);
 }
+// A check is remembered by its quote (v1 used its place in the list, which shifts
+// when the phone sends a new list).
+const ckKey = c => 'q:' + norm(c.quote).slice(0, 160);
+const isTypeRoom = room => room.source === 'failed' || room.source === 'noaudio' || room.source === 'audio';
+function freshSecs(room) {
+  return room.sections.map(s => ({ name: s.name, at: num(s.at),
+    sents: s.sents.map(x => ({ text: x.text, at: num(x.at), check: x.check, origCheck: x.check, orig: x.text })) }));
+}
+function srcSig(room) {
+  return hashStr(room.source + '|' + room.sections.map(s => s.name + ':' + s.sents.map(x => x.text + (x.check ? '!' : '')).join('|')).join('||'));
+}
 function roomState(room) {
   const rs = App.store.rooms[room.key] || (App.store.rooms[room.key] = { secs: null, checks: {}, done: false, time: 0, typed: '' });
-  if (!rs.secs) rs.secs = room.sections.map(s => ({ name: s.name, at: s.at, sents: s.sents.map(x => ({ text: x.text, at: x.at, check: x.check, orig: x.text })) }));
+  if (!rs.ck2) {
+    const old = rs.checks || {}; rs.checks = {};
+    Object.keys(old).forEach(i => { const c = room.checks[+i]; if (c) rs.checks[ckKey(c)] = old[i]; });
+    rs.ck2 = true;
+  }
+  const sig = srcSig(room);
+  if (!rs.secs) { rs.secs = freshSecs(room); rs.sig = sig; }
+  else if (rs.sig !== sig) {
+    // Saved by v1 (no signature): rebuild only when it was saved blank, before the transcript arrived.
+    if (!rs.sig && !(rs.secs.length === 0 && room.sections.length)) rs.sig = sig;
+    else { mergeSource(room, rs); rs.sig = sig; }
+  }
   return rs;
+}
+// The room's text changed since this computer last saw it (the transcript arrived,
+// or the inspector fixed a word on the phone). Start from the new text and carry
+// over what the typist did, matched by the original sentence.
+function mergeSource(room, rs) {
+  const fresh = freshSecs(room), flat = fresh.flatMap(s => s.sents), used = new Set(), lost = [];
+  let worked = false;
+  rs.secs.forEach(sec => sec.sents.forEach(x => {
+    if (!x.orig) {
+      if (!x.text) return;
+      worked = true;
+      const into = fresh.find(s => s.name.toLowerCase() === sec.name.toLowerCase()) || fresh[fresh.length - 1];
+      if (into) into.sents.push(Object.assign({}, x)); else lost.push(plainText(x.text));
+      return;
+    }
+    const resolved = x.origCheck && !x.check;
+    if (!(x.edited || x.removed || resolved)) return;
+    worked = true;
+    const hit = flat.find(y => !used.has(y) && y.orig === x.orig);
+    if (hit) { used.add(hit); hit.text = x.text; hit.edited = !!x.edited; hit.removed = !!x.removed; if (resolved || x.edited) hit.check = false; }
+    else if (x.edited || x.removed) lost.push(x.removed ? 'You deleted: ' + plainText(x.orig) : 'You changed it to: ' + plainText(x.text));
+  }));
+  // Checks already resolved here or by the inspector stay resolved.
+  room.checks.forEach(c => {
+    if (!c.resolved && !rs.checks[ckKey(c)]) return;
+    fresh.forEach(s => s.sents.forEach(y => { if (y.check && sentenceMatches(y.text, c.quote)) y.check = false; }));
+  });
+  if (Object.keys(rs.checks).length || (rs.typed || '').trim()) worked = true;
+  rs.secs = fresh;
+  rs.copiedSig = null;
+  if (worked) rs.changed = { at: Date.now(), lost, seen: false };
 }
 function logFix(entry) {
   const all = LS.get('pa-ed:fixes', []);
@@ -819,7 +954,7 @@ const curRoom = () => App.job ? App.job.rooms[App.idx] : null;
 
 // Open checks for a room: the app's list, minus what the inspector or the typist resolved.
 function openChecks(room, rs) {
-  return room.checks.map((c, i) => ({ c, i })).filter(({ c, i }) => !c.resolved && !rs.checks[i]);
+  return room.checks.map((c, i) => ({ c, i })).filter(({ c }) => !c.resolved && !rs.checks[ckKey(c)]);
 }
 function roomCounts(room) {
   const rs = roomState(room);
@@ -924,13 +1059,16 @@ function pendingNote(rooms) {
   if (added) bits.push(added + ' added phrase' + (added > 1 ? 's' : '') + ' kept by default');
   return bits.length ? ' (' + bits.join(', ') + ')' : '';
 }
+const copySig = room => hashStr(asText(groupedRooms([room])));
+const copiedFresh = room => { const rs = roomState(room); return !!rs.copiedSig && rs.copiedSig === copySig(room); };
 async function copyRoom() {
   const room = curRoom(); if (!room) return;
   commitEditor();
   const g = groupedRooms([room]);
   if (!g.length) return toast('Nothing to copy in this room yet');
   const ok = await copyOut(asText(g), asHtml(g));
-  toast(ok ? 'Copied ' + room.name + pendingNote([room]) : 'Copy failed: select the text and copy it by hand');
+  if (ok) { roomState(room).copiedSig = copySig(room); saveStore(); refresh(); }
+  toast(ok ? 'Copied ' + room.name + pendingNote([room]) + (roomState(room).done ? '' : '. Paste it in, then mark the room done.') : 'Copy failed: select the text and copy it by hand');
 }
 async function copyAll() {
   if (!App.job) return;
@@ -938,6 +1076,7 @@ async function copyAll() {
   const g = groupedRooms(App.job.rooms);
   if (!g.length) return toast('Nothing to copy yet');
   const ok = await copyOut(asText(g), asHtml(g));
+  if (ok) { App.job.rooms.forEach(r => { roomState(r).copiedSig = copySig(r); }); saveStore(); refresh(); }
   toast(ok ? 'Copied all ' + g.length + ' rooms' + pendingNote(App.job.rooms) : 'Copy failed');
 }
 async function copySection(i) {
@@ -968,9 +1107,13 @@ function jobStatus(id) {
   if (st.total && st.done >= st.total) return `<span class="chip ok"><span class="d"></span>Typed${time}</span>`;
   return `<span class="chip warn"><span class="d"></span>${st.total ? st.done + ' of ' + st.total + ' rooms' : 'Started'}${time}</span>`;
 }
+function jobTyped(id) { const st = LS.get(storeKey(id), null); return !!(st && st.total && st.done >= st.total); }
 function renderJobs() {
   const q = $('jobSearch').value.trim().toLowerCase();
-  const list = App.jobs.filter(j => !q || (j.id.toLowerCase().includes(q)));
+  const f = LS.get('pa-ed:filter', 'open');
+  $('jobFilter').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.f === f));
+  const list = App.jobs.filter(j => (!q || j.id.toLowerCase().includes(q)) && (f === 'all' || (f === 'typed') === jobTyped(j.id)));
+  renderResume();
   $('listHead').hidden = !App.jobs.length;
   $('listTitle').textContent = App.jobsFrom === 'dropbox' ? 'Jobs in Dropbox' : 'Jobs in this folder';
   $('jobs').innerHTML = list.length ? list.map((j, k) => {
@@ -981,8 +1124,23 @@ function renderJobs() {
       ${jobStatus(j.id)}
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.5"><path d="M9 6l6 6-6 6"/></svg>
     </button>`;
-  }).join('') : (App.jobs.length ? '<div class="empty">No job matches that search.</div>' : '');
+  }).join('') : (App.jobs.length ? '<div class="empty">' + (q ? 'No job matches that search.' : f === 'typed' ? 'No typed jobs yet.' : 'Every job here is typed. Pick “All” to see them.') + '</div>' : '');
   $('jobs').querySelectorAll('.job-row').forEach(b => b.onclick = () => openJob(App.jobs[+b.dataset.k]));
+}
+// "Pick up where you left off": the last job opened on this computer, if it isn't finished.
+function renderResume() {
+  const el = $('resume'), last = LS.get('pa-ed:last', null);
+  const st = last && LS.get(storeKey(last.id), null);
+  if (!last || !st || (st.total && st.done >= st.total) || App.job) { el.hidden = true; return; }
+  const canOpen = last.from === 'sample' || (last.from === 'dropbox' && DBX.conf) || (last.from === 'local' && App.jobs.some(j => j.id === last.id));
+  const f = parseJobFolder(last.id);
+  el.hidden = false;
+  el.innerHTML = `<span class="no" style="background:var(--yellow-flat);color:var(--on-yellow)">▶</span>
+    <div class="grow"><span class="label">Pick up where you left off</span><b>${esc(f.address)}</b>
+      <span class="small muted">${esc([prettyDate(f.date), st.total ? st.done + ' of ' + st.total + ' rooms done' : '', st.time ? 'typing time ' + hms(st.time) : ''].filter(Boolean).join(' · '))}</span></div>
+    ${canOpen ? '<button class="btn btn-main" id="resumeBtn">Continue</button>' : '<span class="small muted">Open its folder again to continue.</span>'}`;
+  const b = $('resumeBtn');
+  if (b) b.onclick = () => openJob(last.from === 'sample' ? sampleJob() : (App.jobs.find(j => j.id === last.id) || { id: last.id, from: last.from }));
 }
 function renderDbxCard() {
   const c = DBX.conf;
@@ -1027,14 +1185,16 @@ function filesFromPicker(fileList) {
 function openLocal(items) {
   items = items.filter(x => x.path.length >= 2 && !x.path.some(p => p.startsWith('.')));
   if (!items.length) return toast('That folder has no inspection files in it');
-  const top = items.filter(x => x.path.length === 2);
+  // Round 12: files one level down in Audio/, App data/ or Photos/ belong to the job too.
+  const inJob = (x, d) => x.path.length === d || (x.path.length === d + 1 && JOB_SUBDIRS.has(x.path[d - 1]));
+  const top = items.filter(x => inJob(x, 2));
   const roomish = top.some(x => /\.(json|txt|m4a|mp4|aac|webm|ogg|mp3|wav)$/i.test(x.file.name));
   if (roomish) {
     const id = items[0].path[0];
     return openJob({ id, from: 'local', files: top.map(x => localFile(x.file)) });
   }
   const jobs = new Map();
-  items.filter(x => x.path.length === 3).forEach(x => {
+  items.filter(x => inJob(x, 3)).forEach(x => {
     const id = x.path[1];
     if (!jobs.has(id)) jobs.set(id, []);
     jobs.get(id).push(localFile(x.file));
@@ -1067,7 +1227,7 @@ async function readDropped(dt) {
 
 
 // ── opening a job ───────────────────────────────────────────────────────
-async function openJob(j) {
+async function openJob(j, keepKey) {
   show('screenJob');
   $('jobView').hidden = true; $('jobLoading').hidden = false; $('dock').hidden = true;
   $('jobLoadingText').textContent = 'Opening ' + parseJobFolder(j.id).address + '…';
@@ -1075,11 +1235,14 @@ async function openJob(j) {
     const files = j.files || await DBX.jobFiles(j.id);
     const job = await buildJob(j.id, files, (n, of) => { $('jobLoadingText').textContent = 'Reading room ' + n + ' of ' + of + '…'; });
     if (!job.rooms.length) throw new Error('No rooms in this folder yet.');
-    App.job = job; App.store = loadStore(job.id); App.store.opened = Date.now();
+    App.job = job; App.jobRef = j; App.store = loadStore(job.id); App.store.opened = Date.now();
     const st = App.store;
-    App.idx = Math.min(st.last != null ? st.last : (job.rooms.findIndex(r => !roomState(r).done) + 1 || 1) - 1, job.rooms.length - 1);
+    const keep = keepKey ? job.rooms.findIndex(r => r.key === keepKey) : -1;
+    App.idx = keep >= 0 ? keep : Math.min(st.last != null ? st.last : (job.rooms.findIndex(r => !roomState(r).done) + 1 || 1) - 1, job.rooms.length - 1);
     if (App.idx < 0) App.idx = 0;
     saveStore(true);
+    LS.set('pa-ed:last', { id: j.id, from: j.from });
+    $('reloadJob').hidden = j.from !== 'dropbox';
     $('brandSub').textContent = job.address;
     $('jobLoading').hidden = true; $('jobView').hidden = false; $('dock').hidden = false;
     renderSide(); openRoom(App.idx, true);
@@ -1089,9 +1252,17 @@ async function openJob(j) {
     document.querySelector('#jobLoading .spin').hidden = true;
   }
 }
+async function reloadJob() {
+  if (!App.job || !App.jobRef) return;
+  const key = curRoom() ? curRoom().key : null, before = App.job.rooms.length;
+  commitEditor(); saveStore(true); pauseAudio();
+  const ref = App.jobRef.from === 'dropbox' ? { id: App.jobRef.id, from: 'dropbox' } : App.jobRef;
+  await openJob(ref, key);
+  if (App.job) toast(App.job.rooms.length > before ? (App.job.rooms.length - before) + ' new room' + (App.job.rooms.length - before > 1 ? 's' : '') + ' found' : 'Up to date');
+}
 function backToQueue() {
   commitEditor(); saveStore(true);
-  App.job = null; App.store = null;
+  App.job = null; App.store = null; App.pos = null; App.curAdd = null;
   document.querySelector('#jobLoading .spin').hidden = false;
   $('brandSub').textContent = 'Typist editor';
   show('screenQueue'); renderJobs(); renderFixCount();
@@ -1112,9 +1283,13 @@ function renderSide() {
     const sub = [r.hhmm ? r.hhmm.slice(0, 2) + ':' + r.hhmm.slice(2) : '', r.takes > 1 ? 'take ' + r.take : '', r.part > 1 ? 'part ' + r.part : ''].filter(Boolean).join(' · ');
     const badge = rs.done ? '<span class="b-done" title="Done">✓</span>'
       : (c.open ? `<span class="b-check" title="${c.open} to check">${c.open}</span>` : '')
-        + (r.source === 'failed' || r.source === 'noaudio' || r.source === 'audio' ? '<span class="b-warn">type</span>' : '');
+        + (isTypeRoom(r) ? '<span class="b-warn">type</span>' : '');
+    const status = rs.done ? 'Done'
+      : isTypeRoom(r) ? (r.source === 'audio' ? 'No transcript yet' : 'Type from the audio')
+        : (c.open || c.added) ? [c.open && c.open + ' to check', c.added && c.added + ' added'].filter(Boolean).join(' · ')
+          : copiedFresh(r) ? 'Copied, mark done' : 'Ready to copy';
     return `<button class="room-btn${k === App.idx ? ' active' : ''}" data-k="${k}"><span class="n">${k + 1}</span>
-      <span class="nm">${esc(r.name)}${sub ? `<small>${esc(sub)}</small>` : ''}</span><span class="badges">${badge}</span></button>`;
+      <span class="nm">${esc(r.name)}${sub ? `<small>${esc(sub)}</small>` : ''}<span class="st${rs.done ? '' : ' todo'}">${esc(status)}</span></span><span class="badges">${badge}</span></button>`;
   }).join('');
   $('rooms').querySelectorAll('.room-btn').forEach(b => b.onclick = () => openRoom(+b.dataset.k));
   const act = $('rooms').querySelector('.active'); act && act.scrollIntoView({ block: 'nearest', inline: 'nearest' });
@@ -1123,7 +1298,7 @@ function renderSide() {
 // ── a room ──────────────────────────────────────────────────────────────
 function openRoom(k, first) {
   commitEditor();
-  App.idx = k; App.store.last = k; saveStore();
+  App.idx = k; App.store.last = k; App.pos = null; App.curAdd = null; saveStore();
   const room = curRoom();
   renderSide(); renderRoom(); loadAudio(room); renderRaw();
   if (!first) window.scrollTo({ top: 0 });
@@ -1134,14 +1309,24 @@ function renderRoom() {
   const bits = [room.transcribedBy && 'Transcribed by ' + room.transcribedBy, room.sortedBy && 'sorted by ' + room.sortedBy].filter(Boolean).join(' · ');
   const eyebrow = ['Room ' + (App.idx + 1) + ' of ' + j.rooms.length, room.hhmm && 'recorded ' + room.hhmm.slice(0, 2) + ':' + room.hhmm.slice(2),
     room.takes > 1 && 'take ' + room.take + ' of ' + room.takes, room.part > 1 && 'part ' + room.part, room.rec != null && 'rec ' + room.rec].filter(Boolean).join(' · ');
+  const na = nextAction(room);
   let h = `<div class="room-head"><span class="eyebrow">${esc(eyebrow)}</span><h1 class="big">${fadeTitle(room.name)}</h1>
     <div class="meta">${esc(bits)}</div>
+    ${stepsHtml(room)}
     <div class="actions">
-      ${rs.done ? '<button class="btn btn-done" id="doneBtn">✓ Done · undo</button>' : '<button class="btn btn-main" id="doneBtn">✓ Room done</button>'}
+      <button class="btn btn-main" id="nextStepBtn" title="Next thing to do (Ctrl + ])">${esc(na.label)} <span aria-hidden="true">▸</span></button>
       <button class="btn btn-ghost" id="copyRoomBtn">Copy room</button>
-      <button class="btn btn-ghost" id="prevBtn" ${App.idx === 0 ? 'disabled' : ''}>← Prev</button>
-      <button class="btn btn-ghost" id="nextBtn" ${App.idx === j.rooms.length - 1 ? 'disabled' : ''}>Next →</button>
+      ${rs.done ? '<button class="btn btn-done" id="doneBtn">✓ Done · undo</button>' : '<button class="btn btn-ghost" id="doneBtn">✓ Room done</button>'}
+      <span class="room-nav"><button class="btn btn-ghost" id="prevBtn" title="Previous room (Alt + ↑)" ${App.idx === 0 ? 'disabled' : ''}>← Prev room</button>
+      <button class="btn btn-ghost" id="nextBtn" title="Next room (Alt + ↓)" ${App.idx === j.rooms.length - 1 ? 'disabled' : ''}>Next room →</button></span>
     </div></div>`;
+  const allDone = j.rooms.every(r => roomState(r).done);
+  if (allDone) h += `<div class="banner ok">Every room in this job is done. <button class="btn btn-sm btn-dark" data-act="copyall" style="margin-left:8px">Copy all rooms</button> <button class="btn btn-sm btn-ghost" data-act="download">Download edited text</button></div>`;
+  if (rs.changed && !rs.changed.seen) {
+    h += `<div class="banner">This room changed on the phone after you started it (its transcript arrived, or the inspector fixed a word). Your edits were kept.`
+      + (rs.changed.lost && rs.changed.lost.length ? `<br>These edits no longer match the new text. Check them again:<br>${rs.changed.lost.map(x => '· ' + esc(x)).join('<br>')}` : '')
+      + ` <button class="btn btn-sm btn-ghost" data-act="seen" style="margin-left:8px">OK</button></div>`;
+  }
 
   if (room.readError) h += `<div class="banner bad">${esc(room.readError)}</div>`;
   if (room.partial) h += `<div class="banner">This is a crash-recovery fragment. The full recording of this room is usually the next one in the list.</div>`;
@@ -1150,26 +1335,30 @@ function renderRoom() {
     const why = room.source === 'noaudio' ? 'No audio was captured for this recording. The phone\'s own dictation is below: expect mishears, and check whether the room was recorded again.'
       : room.source === 'failed' ? 'No accurate transcript for this recording. Type the room from the audio.'
         : 'No transcript has reached Dropbox for this recording yet. Type it from the audio, or check back later.';
-    h += `<div class="banner bad">${esc(why)}</div>`;
+    h += `<div class="banner bad">${esc(why)}${room.source === 'audio' && App.jobRef && App.jobRef.from === 'dropbox' ? ' <button class="btn btn-sm btn-ghost" data-act="reload" style="margin-left:8px">Check for updates</button>' : ''}</div>`;
     if (room.note) h += `<div class="card glass"><div class="card-title"><h3>From the phone</h3></div><div class="plain-box muted">${esc(room.note.split(/\n\n/).slice(-1)[0] || room.note)}</div></div>`;
     h += `<div class="card glass"><div class="card-title"><h3>Typed room</h3><span class="grow"></span><span class="small muted">Saved on this computer as you type</span></div>
       <textarea class="field typed" id="typedBox" placeholder="Type this room here: each subarea on its own line, then its description.">${esc(rs.typed || '')}</textarea></div>`;
   } else {
     // Check these
+    if ((rs.typed || '').trim()) {
+      h += `<div class="card glass"><div class="card-title"><h3>What you typed before the transcript arrived</h3></div><div class="plain-box">${esc(rs.typed)}</div></div>`;
+    }
     const checks = room.checks.map((c, i) => ({ c, i }));
     if (checks.length) {
-      const open = checks.filter(({ c, i }) => !c.resolved && !rs.checks[i]).length;
+      const open = checks.filter(({ c }) => !c.resolved && !rs.checks[ckKey(c)]).length;
       h += `<div class="card glass ${open ? 'checks' : ''}"><div class="card-title"><h3>${open ? 'Check these against the audio (' + open + ')' : 'Nothing left to check'}</h3></div>`
         + checks.map(({ c, i }) => {
+          const mine = rs.checks[ckKey(c)];
           const res = c.resolved ? (c.resolved === 'fixed' ? 'Inspector changed it to “' + esc(c.fixedTo || '') + '”' : 'Inspector checked: correct as is')
-            : rs.checks[i] ? (rs.checks[i] === 'edited' ? 'You edited this sentence' : 'You checked it') : '';
-          const q = c.heard && c.quote.toLowerCase().includes(c.heard.toLowerCase()) && c.heard.length < c.quote.length
-            ? esc(c.quote).replace(new RegExp(esc(c.heard).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), m => '<mark>' + m + '</mark>') : esc(c.quote);
-          return `<div class="check-row${res ? ' resolved' : ''}">
-            ${c.at != null ? `<button class="clock" data-play="${c.at}" title="Play from here">▶ ${clock(c.at)}</button>` : '<span class="clock">—</span>'}
+            : mine ? (mine === 'edited' ? 'You edited this sentence' : 'You checked it') : '';
+          const q = c.heard && c.heard.length < c.quote.length ? markHtml(c.quote, c.heard, '<mark>', '</mark>') : esc(c.quote);
+          const at = num(c.at);
+          return `<div class="check-row${res ? ' resolved' : ' go'}" data-ci="${i}"${res ? '' : ` data-goto="${i}" title="Play it and edit the sentence"`}>
+            ${at != null ? `<button class="clock" data-play="${at}" title="Play from here">▶ ${clock(at)}</button>` : '<span class="clock">—</span>'}
             <div><div class="q">“${q}”</div>
               <div class="why">${[c.heard && c.heard !== c.quote ? 'The app heard “' + esc(c.heard) + '”' : '', c.why ? esc(c.why) : '', res].filter(Boolean).join(' · ')}</div></div>
-            <div class="row-btns">${c.resolved ? '' : rs.checks[i]
+            <div class="row-btns">${c.resolved ? '' : mine
               ? `<button class="btn btn-ghost btn-sm" data-uncheck="${i}">Undo</button>`
               : `<button class="btn btn-ghost btn-sm" data-goto="${i}">Edit</button><button class="btn btn-dark btn-sm" data-check="${i}">✓ Checked</button>`}</div>
           </div>`;
@@ -1178,13 +1367,13 @@ function renderRoom() {
     if (c.added) {
       h += `<div class="card glass"><div class="card-title"><h3>${c.added} added phrase${c.added > 1 ? 's' : ''} to confirm</h3><span class="grow"></span>
         <button class="btn btn-ghost btn-sm" id="keepAll">Keep all</button><button class="btn btn-ghost btn-sm" id="dropAll">Remove all</button></div>
-        <p class="small muted">The AI added the house phrase because no damage was mentioned. Keep it only if the audio and photos agree. Undecided phrases are kept when you copy.</p></div>`;
+        <p class="small muted">The AI added the house phrase because no damage was mentioned. Keep it only if the audio and photos agree. Undecided phrases are kept when you copy. With one selected: <kbd>Enter</kbd> keeps it, <kbd>Delete</kbd> removes it.</p></div>`;
     }
     // Sections
     rs.secs.forEach((sec, i) => {
       const live = sec.sents.filter(x => !x.removed);
       h += `<div class="sec glass" data-sec="${i}"><div class="sec-head"><h3>${esc(sec.name)}</h3>
-        ${sec.at != null ? `<button class="clock" data-play="${sec.at}" title="Play this subarea">▶ ${clock(sec.at)}</button>` : ''}
+        ${num(sec.at) != null ? `<button class="clock" data-play="${num(sec.at)}" title="Play this subarea">▶ ${clock(sec.at)}</button>` : ''}
         <button class="icon-btn" data-copysec="${i}" title="Copy ${esc(sec.name)}" aria-label="Copy ${esc(sec.name)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></div>
         <div class="text">${sec.sents.map((s, jj) => sentHtml(room, s, i, jj)).join('')}${live.length ? '' : '<span class="muted small">Nothing in this subarea.</span>'}</div>
         <button class="add-sent" data-addsent="${i}">+ Add a sentence</button></div>`;
@@ -1195,10 +1384,128 @@ function renderRoom() {
         + (room.inventory ? `<div class="label" style="margin-top:10px">Inventory</div><div class="plain-box">${esc(room.inventory)}</div>` : '') + '</div>';
     }
   }
-  h += `<div class="actions" style="margin-top:6px">${rs.done ? '' : '<button class="btn btn-main" id="doneBtn2">✓ Room done, next room</button>'}
+  h += `<div class="actions" style="margin-top:6px">${rs.done ? '' : '<button class="btn btn-ghost" id="doneBtn2">✓ Room done, next room</button>'}
     <span class="small muted" style="align-self:center">Room typing time ${hms(rs.time)}</span></div>`;
   $('roomPane').innerHTML = h;
   wireRoom();
+  markCur(false);
+  updateNextUi();
+}
+
+// ── v2: the next thing to do ───────────────────────────────────────────
+// Everything left in this room: flagged sentences in reading order, any open check
+// whose sentence is no longer in the text, then the added phrases.
+function todoItems(room) {
+  const rs = roomState(room), out = [];
+  if (isTypeRoom(room) && !rs.secs.length) return out;
+  rs.secs.forEach((sec, i) => sec.sents.forEach((s, j) => {
+    if (s.removed) return;
+    if (s.check) out.push({ kind: 'check', i, j, at: num(s.at) });
+  }));
+  // Words to check come first (step 1), added phrases after (step 2).
+  rs.secs.forEach((sec, i) => sec.sents.forEach((s, j) => {
+    if (s.removed) return;
+    for (let k = 0, n = addedCount(s.text); k < n; k++) out.push({ kind: 'add', i, j, k, at: num(s.at) });
+  }));
+  openChecks(room, rs).forEach(({ c, i }) => {
+    const shown = rs.secs.some(sec => sec.sents.some(s => !s.removed && s.check && sentenceMatches(s.text, c.quote)));
+    if (!shown) out.push({ kind: 'loose', ci: i, at: num(c.at) });
+  });
+  return out.sort((a, b) => cmpPos(posOf(a), posOf(b)));
+}
+const posOf = it => [it.kind === 'add' ? 1 : 0, it.i != null ? it.i : 1e6, it.j != null ? it.j : (it.ci || 0), it.k != null ? it.k : -1];
+const cmpPos = (a, b) => (a[0] - b[0]) || (a[1] - b[1]) || (a[2] - b[2]) || (a[3] - b[3]);
+function nextRoomIndex() {
+  const rooms = App.job.rooms;
+  const nx = rooms.findIndex((r, k) => k > App.idx && !roomState(r).done);
+  return nx >= 0 ? nx : rooms.findIndex((r, k) => k !== App.idx && !roomState(r).done);
+}
+function nextAction(room) {
+  const rs = roomState(room), items = todoItems(room);
+  if (items.length) {
+    const checks = items.filter(x => x.kind !== 'add').length;
+    return { kind: 'item', label: checks ? 'Next word to check (' + checks + ')' : 'Next added phrase (' + items.length + ')', n: items.length };
+  }
+  if (isTypeRoom(room) && !rs.secs.length && !(rs.typed || '').trim()) return { kind: 'type', label: 'Type this room' };
+  if (!copiedFresh(room) && !rs.done) return { kind: 'copy', label: 'Copy room' };
+  if (!rs.done) return { kind: 'done', label: 'Room done, next room' };
+  const nx = nextRoomIndex();
+  return nx >= 0 ? { kind: 'room', label: 'Next room: ' + App.job.rooms[nx].name, to: nx } : { kind: 'all', label: 'Copy all rooms' };
+}
+function stepsHtml(room) {
+  const rs = roomState(room), items = todoItems(room);
+  const nChecks = items.filter(x => x.kind !== 'add').length, nAdds = items.length - nChecks;
+  const steps = isTypeRoom(room) && !rs.secs.length
+    ? [['type', 'Type the room', !!(rs.typed || '').trim(), ''], ['copy', 'Copy room', copiedFresh(room) || rs.done, ''], ['done', 'Room done', rs.done, '']]
+    : [['check', 'Check words', !nChecks, nChecks ? nChecks + ' left' : ''], ['add', 'Added phrases', !nAdds, nAdds ? nAdds + ' to confirm' : ''],
+       ['copy', 'Copy room', copiedFresh(room) || rs.done, ''], ['done', 'Room done', rs.done, '']];
+  const cur = steps.findIndex(s => !s[2]);
+  return '<div class="steps" role="list">' + steps.map(([id, label, ok, note], k) =>
+    (k ? '<span class="step-sep" aria-hidden="true">›</span>' : '')
+    + `<button class="step${ok ? ' ok' : k === cur ? ' now' : ''}" data-step="${id}" role="listitem"><span class="no">${ok ? '✓' : k + 1}</span>${esc(label)}${note ? ` <small>${esc(note)}</small>` : ''}</button>`).join('')
+    + '</div>' + (cur >= 0 && cur < 2 && !(isTypeRoom(room) && !rs.secs.length) ? '<div class="tip">Press the yellow button or <kbd>Ctrl</kbd> + <kbd>]</kbd> to go to the next thing to do. It plays the audio from there.</div>' : '');
+}
+function updateNextUi() {
+  const b = $('nextItemBtn'), room = curRoom();
+  if (!b || !room) return;
+  const n = todoItems(room).length;
+  b.innerHTML = n ? `Next <b>${n}</b>` : esc(nextAction(room).kind === 'done' ? 'Room done' : 'Next');
+}
+// One step forward (dir 1) or back (dir -1). only: 'check' or 'add' (from the steps bar).
+function goNext(dir, only) {
+  dir = dir || 1;
+  const room = curRoom(); if (!room) return;
+  if (App.editing) commitEditor();
+  clearCur();
+  let items = todoItems(room);
+  if (only) items = items.filter(x => only === 'add' ? x.kind === 'add' : x.kind !== 'add');
+  if (items.length) {
+    const p = App.pos;
+    let it = items[0];
+    if (p && dir > 0) it = items.find(x => cmpPos(posOf(x), p) > 0) || items[0];
+    else if (p && dir < 0) it = items.slice().reverse().find(x => cmpPos(posOf(x), p) < 0) || items[items.length - 1];
+    return focusItem(it);
+  }
+  if (dir < 0 || only) return toast(only === 'add' ? 'No added phrases left in this room' : 'Nothing left to check in this room');
+  const na = nextAction(room);
+  if (na.kind === 'type') { const tb = $('typedBox'); tb && tb.focus(); return toast('Type this room from the audio, then press Ctrl + ] again'); }
+  if (na.kind === 'copy') return copyRoom();
+  if (na.kind === 'done') return toggleDone(true);
+  if (na.kind === 'room') return openRoom(na.to);
+  return copyAll();
+}
+function focusItem(it) {
+  App.pos = posOf(it);
+  if (it.kind === 'check') {
+    startEdit(it.i, it.j, { flow: true });
+    if (App.editing) App.editing.ta.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  } else if (it.kind === 'add') {
+    App.curAdd = { i: it.i, j: it.j, k: it.k };
+    markCur(true);
+  } else {
+    const row = $('roomPane').querySelector(`.check-row[data-ci="${it.ci}"]`);
+    if (row) { row.classList.add('cur'); row.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+    toast('This sentence changed since it was flagged. Play it, then press ✓ Checked or Edit');
+  }
+  if (it.at != null) playFrom(it.at - 1);
+}
+function clearCur() {
+  App.curAdd = null;
+  $('roomPane').querySelectorAll('.cur').forEach(e => e.classList.remove('cur'));
+}
+function markCur(scroll) {
+  const a = App.curAdd; if (!a) return;
+  const el = $('roomPane').querySelector(`.sent[data-i="${a.i}"][data-j="${a.j}"] .add[data-k="${a.k}"]`);
+  if (!el) { App.curAdd = null; return; }
+  el.classList.add('cur');
+  if (scroll) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  const kb = el.querySelector('.k'); kb && kb.focus({ preventScroll: true });
+}
+// After a step done through the walk-through: on to the next, or say what's next.
+function afterFlow() {
+  const room = curRoom();
+  if (todoItems(room).length) return goNext(1);
+  toast('Nothing left to check in this room. Next: ' + nextAction(room).label + ' (Ctrl + ])');
 }
 function sentHtml(room, s, i, jj) {
   const cls = ['sent', s.check ? 'check' : '', s.edited ? 'edited' : '', s.removed ? 'removed' : ''].filter(Boolean).join(' ');
@@ -1207,26 +1514,24 @@ function sentHtml(room, s, i, jj) {
     const c = room.checks.find(c => c.heard && sentenceMatches(s.text, c.quote));
     heard = c ? c.heard : '';
   }
-  let k = 0;
+  let k = 0, done = false;
   const inner = String(s.text).split(/(\[added: [^\]]*\])/).map(part => {
     const m = part.match(/^\[added: ([^\]]*)\]$/);
     if (m) {
       const n = k++;
       return `<span class="add" data-k="${n}" title="Added by the AI: no damage was mentioned"><em>${esc(m[1])}</em><button class="k" data-keep="${n}" title="Keep" aria-label="Keep">✓</button><button class="r" data-drop="${n}" title="Remove" aria-label="Remove">✕</button></span>`;
     }
-    let e = esc(part);
-    if (heard) {
-      const re = new RegExp('(' + esc(heard).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'i');
-      e = e.replace(re, '<span class="hw">$1</span>');
-    }
-    return e;
+    if (heard && !done) { const out = markHtml(part, heard, '<span class="hw">', '</span>'); if (out !== esc(part)) done = true; return out; }
+    return esc(part);
   }).join('');
   const title = s.edited ? ' title="Edited. Original: ' + esc(plainText(s.orig)) + '"' : '';
-  return `<span class="${cls}" data-i="${i}" data-j="${jj}"${s.at != null ? ` data-at="${s.at}"` : ''}${title}>${s.at != null ? `<span class="t" data-play="${s.at}">${clock(s.at)}</span>` : ''}${inner}</span> `;
+  const at = num(s.at);
+  return `<span class="${cls}" data-i="${i}" data-j="${jj}"${at != null ? ` data-at="${at}"` : ''}${title}>${at != null ? `<span class="t" data-play="${at}">${clock(at)}</span>` : ''}${inner}</span> `;
 }
 function wireRoom() {
   const p = $('roomPane');
   $('doneBtn').onclick = () => toggleDone();
+  $('nextStepBtn').onclick = () => goNext(1);
   const d2 = $('doneBtn2'); if (d2) d2.onclick = () => toggleDone(true);
   $('copyRoomBtn').onclick = copyRoom;
   $('prevBtn').onclick = () => App.idx > 0 && openRoom(App.idx - 1);
@@ -1236,12 +1541,30 @@ function wireRoom() {
   const ka = $('keepAll'); if (ka) ka.onclick = () => decideAll(true);
   const da = $('dropAll'); if (da) da.onclick = () => decideAll(false);
   p.onclick = e => {
-    const t = e.target.closest('[data-play],[data-keep],[data-drop],[data-check],[data-uncheck],[data-goto],[data-copysec],[data-addsent],.sent');
+    const t = e.target.closest('[data-play],[data-keep],[data-drop],[data-check],[data-uncheck],[data-goto],[data-copysec],[data-addsent],[data-step],[data-act],.sent');
     if (!t || t.closest('.sent-edit')) return;
     if (t.dataset.play != null) { e.stopPropagation(); return playFrom(+t.dataset.play - 0.4); }
+    if (t.dataset.step != null) {
+      const s = t.dataset.step;
+      if (s === 'check' || s === 'add') return goNext(1, s);
+      if (s === 'copy') return copyRoom();
+      if (s === 'done') return roomState(curRoom()).done ? null : toggleDone(true);
+      if (s === 'type') { const tb = $('typedBox'); return tb && tb.focus(); }
+    }
+    if (t.dataset.act != null) {
+      const a = t.dataset.act;
+      if (a === 'copyall') return copyAll();
+      if (a === 'download') return downloadJob();
+      if (a === 'reload') return reloadJob();
+      if (a === 'seen') { const rs = roomState(curRoom()); if (rs.changed) rs.changed.seen = true; saveStore(); return refresh(); }
+    }
     if (t.dataset.keep != null || t.dataset.drop != null) {
       const sp = t.closest('.sent');
-      return decideAdded(+sp.dataset.i, +sp.dataset.j, +(t.dataset.keep != null ? t.dataset.keep : t.dataset.drop), t.dataset.keep != null);
+      const i = +sp.dataset.i, j = +sp.dataset.j, k = +(t.dataset.keep != null ? t.dataset.keep : t.dataset.drop);
+      const flow = !!(App.curAdd && App.curAdd.i === i && App.curAdd.j === j && App.curAdd.k === k);
+      decideAdded(i, j, k, t.dataset.keep != null);
+      if (flow) { App.pos = [1, i, j, k - 1]; afterFlow(); }
+      return;
     }
     if (t.dataset.check != null) return resolveCheck(+t.dataset.check, 'checked');
     if (t.dataset.uncheck != null) return unresolveCheck(+t.dataset.uncheck);
@@ -1257,8 +1580,9 @@ function wireRoom() {
 }
 
 // ── editing one sentence ───────────────────────────────────────────────
-function startEdit(i, j) {
+function startEdit(i, j, opts) {
   commitEditor();
+  clearCur();
   const rs = roomState(curRoom()), s = rs.secs[i] && rs.secs[i].sents[j];
   if (!s) return;
   const span = $('roomPane').querySelector(`.sent[data-i="${i}"][data-j="${j}"]`);
@@ -1266,8 +1590,8 @@ function startEdit(i, j) {
   const box = document.createElement('span');
   box.className = 'sent-edit'; box.dataset.i = i; box.dataset.j = j;
   box.innerHTML = `<textarea class="field" rows="1" spellcheck="true" lang="en-AU"></textarea>
-    <span class="hint"><span><kbd>Enter</kbd> save · <kbd>Tab</kbd> next · <kbd>Esc</kbd> cancel</span>
-      ${s.at != null ? `<button class="btn btn-ghost btn-sm" data-e="play">▶ ${clock(s.at)}</button>` : ''}
+    <span class="hint"><span>${s.check ? '<kbd>Enter</kbd> saves your fix, or keeps it as is if you changed nothing' : '<kbd>Enter</kbd> save'} · <kbd>Tab</kbd> next sentence · <kbd>Esc</kbd> cancel</span>
+      ${num(s.at) != null ? `<button class="btn btn-ghost btn-sm" data-e="play">▶ ${clock(s.at)}</button>` : ''}
       ${s.check ? '<button class="btn btn-dark btn-sm" data-e="ok">✓ Correct as is</button>' : ''}
       ${s.edited ? '<button class="btn btn-ghost btn-sm" data-e="revert">Back to original</button>' : ''}
       <button class="btn btn-ghost btn-sm" data-e="del">Delete sentence</button></span>
@@ -1278,22 +1602,35 @@ function startEdit(i, j) {
   const fit = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
   fit(); ta.oninput = fit;
   ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
-  App.editing = { i, j, ta, before: s.text };
+  App.editing = { i, j, ta, before: s.text, flow: !!(opts && opts.flow) };
+  App.pos = [0, i, j, -1];
   box.addEventListener('mousedown', e => { if (e.target.closest('[data-e]')) e.preventDefault(); });
   box.onclick = e => {
     const b = e.target.closest('[data-e]'); if (!b) return;
     const a = b.dataset.e;
-    if (a === 'play') return playFrom(s.at - 0.4);
-    if (a === 'ok') { App.editing = null; s.check = false; resolveMatching(s, 'checked'); logFix({ kind: 'check-ok', section: rs.secs[i].name, at: s.at, from: plainText(s.text), to: plainText(s.text) }); saveStore(); return refresh(); }
+    if (a === 'play') return playFrom(num(s.at) - 0.4);
+    if (a === 'ok') { const flow = App.editing && App.editing.flow; okSentence(i, j); if (flow) afterFlow(); return; }
     if (a === 'revert') { ta.value = s.orig; fit(); ta.focus(); return; }
     if (a === 'del') { ta.value = ''; return commitEditor(); }
   };
   ta.onkeydown = e => {
-    if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); commitEditor(); }
+    if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      const flow = App.editing && App.editing.flow;
+      if (s.check && tidy(ta.value.replace(/\s*\n\s*/g, ' ')) === s.text) okSentence(i, j); else commitEditor();
+      if (flow) afterFlow();
+    }
     else if (e.key === 'Escape') { e.preventDefault(); App.editing = null; refresh(); }
     else if (e.key === 'Tab') { e.preventDefault(); const nxt = neighbour(i, j, e.shiftKey ? -1 : 1); commitEditor(); if (nxt) startEdit(nxt[0], nxt[1]); }
   };
   ta.onblur = () => setTimeout(() => { if (App.editing && App.editing.ta === ta && document.activeElement !== ta) commitEditor(); }, 120);
+}
+// A flagged sentence the typist heard and found right.
+function okSentence(i, j) {
+  const rs = roomState(curRoom()), s = rs.secs[i].sents[j];
+  App.editing = null; s.check = false; resolveMatching(s, 'checked');
+  logFix({ kind: 'check-ok', section: rs.secs[i].name, at: s.at, from: plainText(s.text), to: plainText(s.text) });
+  saveStore(); refresh();
 }
 function neighbour(i, j, dir) {
   const secs = roomState(curRoom()).secs, flat = [];
@@ -1341,19 +1678,19 @@ function refresh() {
 // ── checks and added phrases ───────────────────────────────────────────
 function resolveMatching(s, how, fromText) {
   const room = curRoom(), rs = roomState(room);
-  room.checks.forEach((c, i) => { if (!c.resolved && !rs.checks[i] && sentenceMatches(fromText || s.text, c.quote)) rs.checks[i] = how; });
+  room.checks.forEach(c => { if (!c.resolved && !rs.checks[ckKey(c)] && sentenceMatches(fromText || s.text, c.quote)) rs.checks[ckKey(c)] = how; });
 }
 function resolveCheck(i, how) {
   commitEditor();
   const room = curRoom(), rs = roomState(room), c = room.checks[i];
-  rs.checks[i] = how;
+  rs.checks[ckKey(c)] = how;
   rs.secs.forEach(sec => sec.sents.forEach(s => { if (s.check && sentenceMatches(s.text, c.quote)) s.check = false; }));
   logFix({ kind: 'check-ok', at: c.at, heard: c.heard, from: c.quote, to: c.quote });
   saveStore(); refresh();
 }
 function unresolveCheck(i) {
   const room = curRoom(), rs = roomState(room), c = room.checks[i];
-  delete rs.checks[i];
+  delete rs.checks[ckKey(c)];
   rs.secs.forEach(sec => sec.sents.forEach(s => { if (!s.removed && sentenceMatches(s.text, c.quote)) s.check = true; }));
   saveStore(); refresh();
 }
@@ -1362,13 +1699,14 @@ function gotoCheck(i) {
   for (let a = 0; a < rs.secs.length; a++) for (let b = 0; b < rs.secs[a].sents.length; b++) {
     const s = rs.secs[a].sents[b];
     if (!s.removed && sentenceMatches(s.text, c.quote)) {
-      startEdit(a, b);
+      startEdit(a, b, { flow: true });
       App.editing && App.editing.ta.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      if (c.at != null) playFrom(c.at - 1);
+      if (num(c.at) != null) playFrom(num(c.at) - 1);
       return;
     }
   }
-  toast('That sentence is no longer in the text');
+  if (num(c.at) != null) playFrom(num(c.at) - 1);
+  toast('That sentence is no longer in the text. Play it, then press ✓ Checked');
 }
 function decideAdded(i, j, k, keep) {
   commitEditor();
@@ -1406,7 +1744,7 @@ async function toggleDone(andNext) {
   if (andNext || rs.done) {
     const nx = rooms.findIndex((r, k) => k > App.idx && !roomState(r).done);
     const any = nx >= 0 ? nx : rooms.findIndex(r => !roomState(r).done);
-    if (any >= 0) { toast(room.name + ' done'); return openRoom(any); }
+    if (any >= 0) { toast(room.name + ' done. On to ' + rooms[any].name); return openRoom(any); }
     toast('Every room is done. Copy all rooms into the report.');
   }
   refresh();
@@ -1415,7 +1753,7 @@ async function toggleDone(andNext) {
 
 // ── audio ───────────────────────────────────────────────────────────────
 const audio = () => $('audio');
-let audioRoomKey = null, pausedAt = 0, rafId = 0, linkRetried = false;
+let audioRoomKey = null, pausedAt = 0, rafId = 0, linkRetried = false, wantPlay = false;
 async function loadAudio(room) {
   const a = audio();
   pauseAudio();
@@ -1456,23 +1794,25 @@ function renderMarks() {
   const room = curRoom(); if (!room) return;
   const d = duration(), rs = roomState(room);
   let h = '';
-  rs.secs.forEach(s => { if (s.at != null) h += `<span class="tick" style="left:${100 * s.at / d}%" title="${esc(s.name)} ${clock(s.at)}"></span>`; });
-  room.checks.forEach((c, i) => { if (c.at != null && !c.resolved && !rs.checks[i]) h += `<span class="flag" style="left:${100 * c.at / d}%" title="Check ${clock(c.at)}"></span>`; });
+  rs.secs.forEach(s => { const at = num(s.at); if (at != null) h += `<span class="tick" style="left:${100 * at / d}%" title="${esc(s.name)} ${clock(at)}"></span>`; });
+  room.checks.forEach(c => { const at = num(c.at); if (at != null && !c.resolved && !rs.checks[ckKey(c)]) h += `<span class="flag" style="left:${100 * at / d}%" title="Check ${clock(at)}"></span>`; });
   $('marks').innerHTML = h;
 }
 function playFrom(t) {
   const a = audio(); if (!a.src) return;
-  a.currentTime = Math.max(0, t || 0);
+  wantPlay = true;
+  a.currentTime = Math.max(0, num(t) || 0);
   a.play().catch(() => {});
 }
 function togglePlay() {
   const a = audio(); if (!a.src) return;
   if (a.paused) {
     if (pausedAt && a.currentTime > RESUME_REWIND_S && Date.now() - pausedAt > 800) a.currentTime -= RESUME_REWIND_S;
+    wantPlay = true;
     a.play().catch(() => toast('The audio could not play'));
-  } else a.pause();
+  } else { wantPlay = false; a.pause(); }
 }
-function pauseAudio() { const a = audio(); if (a && !a.paused) a.pause(); }
+function pauseAudio() { wantPlay = false; const a = audio(); if (a && !a.paused) a.pause(); }
 function skip(s) { const a = audio(); if (!a.src) return; a.currentTime = Math.max(0, Math.min(duration(), a.currentTime + s)); tick(); }
 function tick() {
   const a = audio(), d = duration();
@@ -1521,7 +1861,15 @@ function wireAudio() {
     // A Dropbox link lasts 4 hours: ask for a fresh one once.
     if (!linkRetried) {
       linkRetried = true;
-      try { const u = await room.audio.url(true); if (u && u !== a.src) { const t = a.currentTime; a.src = u; a.load(); a.currentTime = t; return; } } catch (e) {}
+      try {
+        const u = await room.audio.url(true);
+        if (u && u !== a.src) {
+          const t = a.currentTime, resume = wantPlay;
+          a.src = u; a.load();
+          a.addEventListener('loadedmetadata', () => { a.currentTime = t; if (resume) a.play().catch(() => {}); }, { once: true });
+          return;
+        }
+      } catch (e) {}
     }
     $('nowSec').textContent = 'This audio file could not be played in this browser';
   });
@@ -1613,6 +1961,9 @@ const T = {
 
 // ── keyboard ───────────────────────────────────────────────────────────
 const KEYS = [
+  ['Ctrl + ]', 'Next thing to do: next word to check, added phrase, copy, done, next room'],
+  ['Ctrl + [', 'Back to the previous word to check'],
+  ['Enter', 'On a yellow sentence: saves your fix, or keeps it as is if you changed nothing'],
   ['Ctrl + Space', 'Play / pause (also Ctrl + K)'],
   ['Ctrl + ,  /  Ctrl + .', 'Back / forward 3 seconds'],
   ['Ctrl + Shift + ,  /  .', 'Slower / faster'],
@@ -1620,47 +1971,67 @@ const KEYS = [
   ['Ctrl + Enter', 'Room done, next room'],
   ['Alt + ↑  /  ↓', 'Previous / next room'],
   ['Click a sentence', 'Edit it. Enter saves, Tab goes to the next, Esc cancels'],
-  ['Click a time', 'Play from there. Resuming steps back 1 second']
+  ['Click a time', 'Play from there. Resuming steps back 1 second'],
+  ['?', 'This help']
 ];
 function keysHtml() { return KEYS.map(([k, v]) => `<span>${k.split('  /  ').map(x => '<kbd>' + esc(x) + '</kbd>').join(' / ')}</span><span class="muted">${esc(v)}</span>`).join(''); }
 function onKey(e) {
   T.activity();
   if ($('modalHost').innerHTML) return;
   const inJob = $('screenJob').classList.contains('active') && App.job;
-  if (!inJob) return;
+  if (!inJob) {
+    if (e.key === '?' && !/^(TEXTAREA|INPUT)$/.test(document.activeElement && document.activeElement.tagName)) { e.preventDefault(); showHelp(); }
+    return;
+  }
   const ctrl = e.ctrlKey || (e.metaKey && /Mac/.test(navigator.platform) && e.code === 'KeyK');
   if (ctrl && (e.code === 'Space' || e.code === 'KeyK')) { e.preventDefault(); return togglePlay(); }
   if (e.ctrlKey && e.code === 'Comma') { e.preventDefault(); return e.shiftKey ? stepSpeed(-1) : skip(-SKIP_S); }
   if (e.ctrlKey && e.code === 'Period') { e.preventDefault(); return e.shiftKey ? stepSpeed(1) : skip(SKIP_S); }
   if (e.ctrlKey && e.code === 'Slash') { e.preventDefault(); return toggleRaw(); }
   if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); return toggleDone(true); }
+  if (e.ctrlKey && !e.altKey && (e.code === 'BracketRight' || e.code === 'BracketLeft')) { e.preventDefault(); return goNext(e.code === 'BracketRight' ? 1 : -1); }
   const typing = /^(TEXTAREA|INPUT)$/.test(document.activeElement && document.activeElement.tagName);
+  if (!typing && e.key === '?') { e.preventDefault(); return showHelp(); }
+  if (!typing && App.curAdd && (e.key === 'Delete' || e.key === 'Backspace')) {
+    e.preventDefault();
+    const a = App.curAdd; decideAdded(a.i, a.j, a.k, false); App.pos = [1, a.i, a.j, a.k - 1]; return afterFlow();
+  }
   if (e.altKey && !typing && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
     e.preventDefault();
     const k = App.idx + (e.key === 'ArrowUp' ? -1 : 1);
     if (k >= 0 && k < App.job.rooms.length) openRoom(k);
   }
 }
+function showHelp() {
+  const steps = [['Open a job', 'Newest first. Jobs you started show how far you got, and the queue offers to pick up where you left off.'],
+    ['Check the yellow words', 'Press the yellow button or Ctrl + ]. The editor opens the sentence and plays the audio there. Fix the word and press Enter, or just press Enter if it was right.'],
+    ['Keep or remove added phrases', 'The AI added these because no damage was mentioned. Enter keeps the selected one, Delete removes it.'],
+    ['Copy the room, mark it done', 'Paste the room into the report, then mark it done. The editor opens the next room that still needs work.']];
+  modal('How to type a job', `<div class="help-steps">${steps.map(([a, b], k) => `<div><span class="no">${k + 1}</span><div><b>${esc(a)}</b><div class="muted small">${esc(b)}</div></div></div>`).join('')}</div>
+    <div class="label" style="margin-bottom:8px">Keyboard</div><div class="keys">${keysHtml()}</div>`);
+}
 function stepSpeed(dir) { const k = SPEEDS.indexOf(speed()); setSpeed(SPEEDS[Math.max(0, Math.min(SPEEDS.length - 1, (k < 0 ? 1 : k) + dir))]); toast('Speed ' + speed() + '×'); }
 
 // ── theme ──────────────────────────────────────────────────────────────
 function applyTheme() {
-  const t = LS.get('pa-ed:theme', 'auto');
+  let t = LS.get('pa-ed:theme', 'light');
+  if (!['light', 'dark', 'auto'].includes(t)) t = 'light';
   if (t === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', t);
-  $('themeBtn').title = 'Theme: ' + (t === 'auto' ? 'follows this computer' : t);
+  $('themeBtn').title = 'Theme: ' + (t === 'auto' ? 'match this computer' : t);
 }
 
 // ── fixes export ───────────────────────────────────────────────────────
 function renderFixCount() {
   const n = LS.get('pa-ed:fixes', []).length;
   $('fixesText').textContent = (n ? n + ' fix' + (n > 1 ? 'es' : '') + ' saved on this computer. ' : 'No fixes yet. ')
-    + 'Every word you change is kept here with what the app heard, for the team phrase list later.';
+    + 'Every word you change is kept here with what the app heard, for the team phrase list later.'
+    + (n > 4000 ? ' Download them soon: this computer keeps the latest 5,000.' : '');
 }
 function exportFixes() {
   const rows = LS.get('pa-ed:fixes', []);
   if (!rows.length) return toast('No fixes saved yet');
   const cols = ['when', 'job', 'room', 'section', 'at', 'kind', 'heard', 'fromSpan', 'toSpan', 'from', 'to', 'flagged'];
-  const cell = v => { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  const cell = v => { v = v == null ? '' : String(v); if (/^[=+\-@\t\r]/.test(v)) v = "'" + v; return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
   const csv = [cols.join(',')].concat(rows.map(r => cols.map(c => cell(c === 'at' && r.at != null ? clock(r.at) : r[c])).join(','))).join('\n');
   download('PA editor fixes ' + new Date().toISOString().slice(0, 10) + '.csv', '﻿' + csv, 'text/csv;charset=utf-8');
 }
@@ -1761,8 +2132,11 @@ function sampleJob() {
 // ── start ──────────────────────────────────────────────────────────────
 function init() {
   applyTheme();
-  $('themeBtn').onclick = () => { const order = ['auto', 'light', 'dark']; const t = LS.get('pa-ed:theme', 'auto'); LS.set('pa-ed:theme', order[(order.indexOf(t) + 1) % 3]); applyTheme(); toast($('themeBtn').title); };
-  $('keysBtn').onclick = () => modal('Keyboard shortcuts', `<div class="keys">${keysHtml()}</div>`);
+  $('themeBtn').onclick = () => { const order = ['light', 'dark', 'auto']; const t = LS.get('pa-ed:theme', 'light'); LS.set('pa-ed:theme', order[(order.indexOf(t) + 1) % 3]); applyTheme(); toast($('themeBtn').title); };
+  $('keysBtn').onclick = showHelp;
+  $('nextItemBtn').onclick = () => goNext(1);
+  $('reloadJob').onclick = reloadJob;
+  $('jobFilter').onclick = e => { const b = e.target.closest('[data-f]'); if (b) { LS.set('pa-ed:filter', b.dataset.f); renderJobs(); } };
   $('keysInline').innerHTML = keysHtml();
   $('brandBtn').onclick = () => App.job ? backToQueue() : null;
   $('queueBtn').onclick = backToQueue;
@@ -1789,6 +2163,13 @@ function init() {
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveStore(true); });
   setInterval(T.tick, 1000);
   wireAudio();
+  // Finished jobs not touched for 60 days are cleared from this browser (they're in the report by then).
+  const cut = Date.now() - 60 * 864e5;
+  LS.keys().filter(k => k.startsWith('pa-ed:job:')).forEach(k => {
+    const st = LS.get(k, null);
+    if (st && st.total && st.done >= st.total && (st.updated || 0) < cut) { try { localStorage.removeItem(k); } catch (e) {} }
+  });
+  renderResume();
   renderDbxCard(); renderFixCount();
   if (DBX.conf) connectDropbox();
 }

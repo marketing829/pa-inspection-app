@@ -452,8 +452,9 @@
   .help-steps { display: grid; gap: 10px; margin: 6px 0 16px; }
   .help-steps > div { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; font-size: 14px; }
 
-  /* NARROWER: left column stacks above; the audio card becomes a bar pinned to the bottom */
-  @media (max-width: 1100px) {
+  /* NARROWER: left column stacks above; the audio card becomes a bar pinned to the bottom.
+     v3.3: only below 900 px, so the editor still works in half a screen beside Word. */
+  @media (max-width: 900px) {
     .layout { grid-template-columns: 1fr; padding-bottom: 150px; }
     .left { position: static; height: auto; }
     .left .grow-card { min-height: 0; }
@@ -519,11 +520,11 @@
   @media (max-width: 1240px) { .brand-word, .timer .lab { display: none; } }
   @media (max-width: 1100px) { .saved span, #keysBtn { display: none; } .crumbs .here { max-width: 24vw; } }
   @media (max-width: 700px) { .topbar { gap: 6px; padding: 6px; } .timer { display: none !important; } #themeBtn { display: none; } .pill { padding: 8px 11px; } .crumbs { display: none; } }
-  @media (max-width: 1100px) { .room-btn { flex: none; } .room-btn .nm { overflow: visible; text-overflow: clip; } }
+  @media (max-width: 900px) { .room-btn { flex: none; } .room-btn .nm { overflow: visible; text-overflow: clip; } }
   .audio-card .speeds { justify-content: center; margin: 2px 0 8px; }
   .audio-card .speeds button { padding: 3px 8px; }
   .raw { top: 150px; }
-  @media (max-width: 1100px) { .audio-card .speeds { grid-column: 2; margin: 0; justify-content: flex-start; } }
+  @media (max-width: 900px) { .audio-card .speeds { grid-column: 2; margin: 0; justify-content: flex-start; } }
   .audio-card > * { min-width: 0; }
   @media (max-width: 700px) { .audio-card .speeds { display: none; } }
   /* v3.1: a calmer left column. Job card and audio card are compact, so the
@@ -558,7 +559,7 @@
   .menu .radios button { flex: 1; font-size: 12px; font-weight: 600; padding: 4px 6px; border-radius: 8px; color: var(--ink-2); }
   .menu .radios button.on { background: var(--sel); color: var(--sel-ink); }
   .menu .chk { justify-content: flex-start; }
-  @media (max-width: 1100px) {
+  @media (max-width: 900px) {
     .audio-card { display: block; }
     .audio-card .wave { height: 30px; }
     .a-row .now-sec { display: none; }
@@ -615,6 +616,71 @@
   .jump .eq i:nth-child(1) { height: 6px; } .jump .eq i:nth-child(2) { height: 12px; animation-delay: .2s; } .jump .eq i:nth-child(3) { height: 8px; animation-delay: .4s; }
   @keyframes eq { 50% { transform: scaleY(0.4); } }
   @media (max-width: 700px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .stat:nth-child(3) { border-left: 0; } .stat:nth-child(n+3) { border-top: 1px solid var(--paper-line); } }
+
+  /* ═══ v3.3 ═══ */
+  /* the page itself never scrolls on the job screen; only the panes do */
+  @media (min-width: 901px) { #screenJob .layout { padding-bottom: 12px; } }
+  /* the top bar's margin pushed the whole body 10 px down (margin collapse), so the page always scrolled a little */
+  body { padding-top: 10px; } .topbar { margin-top: 0; }
+  /* half a screen beside Word: a narrower left column, two columns kept */
+  @media (max-width: 1280px) and (min-width: 901px) {
+    .layout { grid-template-columns: 250px minmax(0, 1fr); gap: 12px; padding-left: 12px; padding-right: 12px; }
+    .left > .glass { padding: 13px; }
+    .sheet-head, .trow { grid-template-columns: minmax(120px, 28%) minmax(0, 1fr); }
+  }
+  @media (max-width: 1100px) and (min-width: 901px) { #spBtn, #rawBtn { padding-left: 8px; padding-right: 8px; } }
+  /* titles in plain ink (the faded first word read as a glitch) */
+  .fade { background: none; -webkit-background-clip: initial; background-clip: initial; color: inherit; }
+  /* a slimmer room header: more of the report on screen */
+  .room-head { padding-bottom: 12px; margin-bottom: 12px; }
+  .room-head h1.big { font-size: 30px; margin: 2px 0 10px; letter-spacing: -0.025em; }
+  .stats { display: flex; flex-wrap: wrap; gap: 6px; border: 0; border-radius: 0; overflow: visible; }
+  .stat { flex-direction: row; align-items: baseline; gap: 6px; padding: 5px 11px; border: 1px solid var(--paper-line); border-radius: 999px; }
+  .stat:first-child { border-left: 1px solid var(--paper-line); }
+  .stat b { font-size: 15px; }
+  .stat span { font-size: 12.5px; }
+  .stat.yel:not(.zero) { border-color: var(--check-line); }
+  @media (max-width: 700px) { .stat:nth-child(n+3) { border-top: 1px solid var(--paper-line); } .stat:nth-child(3) { border-left: 1px solid var(--paper-line); } }
+  /* empty template rows: one compact line of names, each clickable */
+  .trow.nmg .rv { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; padding-top: 6px; padding-bottom: 6px; }
+  .trow.nmg .rn b { color: var(--nm); font-weight: 600; font-size: 12.5px; }
+  .nm-chip { font-size: 13px; color: var(--ink-2); border: 1px dashed var(--line-2); border-radius: 999px; padding: 1px 9px; }
+  .nm-chip:hover { color: var(--ink); background: var(--tint); border-style: solid; }
+  .rows-toggle { font-size: 12px; font-weight: 600; color: var(--ink-2); border: 1px solid var(--line-2); border-radius: 999px; padding: 3px 11px; }
+  .rows-toggle:hover { background: var(--tint); color: var(--ink); }
+  /* save state */
+  .saved.bad { color: var(--bad); font-weight: 700; }
+  .saved.bad svg { display: none; }
+  @media (max-width: 1100px) { .saved.bad span { display: inline; } }
+  .stale-bar { position: fixed; left: 50%; top: 84px; transform: translateX(-50%); z-index: 90; max-width: min(720px, calc(100vw - 32px)); display: flex; gap: 12px; align-items: center;
+    padding: 12px 16px; border-radius: 16px; background: var(--bad-bg); color: var(--ink); border: 1px solid var(--bad); box-shadow: var(--glass-shadow); font-size: 13.5px; }
+  .stale-bar button { flex: none; }
+  /* edit box: the grey phrase note, and a sentence left half-edited */
+  .sent-edit .addnote { display: block; font-size: 12.5px; color: var(--ink-2); margin-top: 4px; }
+  .sent-edit .addnote em { color: var(--add-ink); }
+  .sent.drafted { outline: 2px dashed var(--check-line); outline-offset: 2px; border-radius: 4px; }
+  /* Claude's notes */
+  .spx.claude { text-decoration-color: #7C5CD6; text-decoration-style: dashed; text-decoration-thickness: 1.6px; }
+  :root[data-theme="dark"] .spx.claude { text-decoration-color: #B9A4FF; }
+  .fixcard .orb.claude { background: #7C5CD6; }
+  .key-row .sp4 { text-decoration: underline dashed #7C5CD6 1.6px; text-underline-offset: 3px; }
+  .sp-btn.off { color: var(--bad); border-color: var(--bad); }
+  .claude-btn { gap: 6px; }
+  .claude-btn .dotp { width: 8px; height: 8px; border-radius: 50%; background: #7C5CD6; display: inline-block; }
+  .claude-btn.busy .dotp { animation: sp 1s linear infinite; border-radius: 2px; }
+  /* typist name */
+  .who { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .who b { color: var(--ink); font-weight: 600; }
+  /* export check list */
+  .pre-list { display: grid; gap: 6px; margin: 4px 0 4px; font-size: 13.5px; }
+  .pre-list > div { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 7px 10px; border-radius: 10px; background: var(--paper-2); }
+  .pre-list .n { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .pre-list .ok { color: var(--ok); }
+  .job-who { display: block; font-size: 12px; color: var(--ink-3); font-weight: 400; margin-top: 1px; }
+  #jobPeople { margin-top: 2px; }
+  #jobPeople b { color: var(--ink); font-weight: 600; }
+  #jobPeople { display: flex; flex-wrap: wrap; gap: 0 10px; }
+  @media (max-width: 1100px) and (min-width: 901px) { #rawBtn .lbl-x, #spBtn:not(.off) #spLabel { display: none; } #spBtn, #rawBtn { gap: 4px; } }
 
 </style>
 </head>
@@ -679,6 +745,7 @@
           </div>
           <input type="file" id="folderInput" webkitdirectory directory multiple hidden>
         </div>
+        <div class="who" id="whoQ"></div>
       </div>
       <div class="glass grow-card phrase-card">
         <div class="card-head"><span class="label">Phrase list</span><button class="btn btn-plain btn-sm" data-manage>Manage</button></div>
@@ -720,6 +787,7 @@
           <button class="tb sm" id="factsBtn" title="Job details" aria-label="Job details" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg></button></div>
         <h2 id="jobAddr"></h2>
         <div class="jc-line" id="jobLine"></div>
+        <div class="jc-line" id="jobPeople"></div>
         <dl class="facts" id="jobFacts" hidden></dl>
       </div>
       <div class="glass audio-card" id="audioCard">
@@ -759,9 +827,10 @@
           <button class="arr" id="nextItem" title="Next (Ctrl + ])" aria-label="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
         </span>
         <span class="sp"></span>
-        <button class="btn btn-ghost btn-sm sp-btn" id="spBtn" title="Spelling and grammar (F7)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15l3.5-9 3.5 9M4.3 12h4.4"/><path d="M13 13.5l2.5 2.5L21 9.5"/></svg>Spelling <b id="spCount"></b></button>
+        <button class="btn btn-ghost btn-sm sp-btn" id="spBtn" title="Spelling and grammar (F7)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15l3.5-9 3.5 9M4.3 12h4.4"/><path d="M13 13.5l2.5 2.5L21 9.5"/></svg><span id="spLabel">Spelling</span> <b id="spCount"></b></button>
+        <button class="btn btn-ghost btn-sm claude-btn" id="clBtn" title="Claude final check"><span class="dotp"></span><span id="clLabel">Claude check</span></button>
         <button class="tb" id="findBtn" title="Find and replace (Ctrl+H)" aria-label="Find and replace"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
-        <button class="btn btn-ghost btn-sm" id="rawBtn" title="Raw transcript (Ctrl+/)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Raw transcript</button>
+        <button class="btn btn-ghost btn-sm" id="rawBtn" title="Raw transcript (Ctrl+/)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span class="lbl-x">Raw transcript</span></button>
       </div>
       <div class="doc-body" id="docBody"><div class="doc-inner" id="roomPane"></div></div>
       <button class="jump" id="jumpPill" hidden title="Go to the row being played"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span id="jumpText"></span></button>
@@ -784,7 +853,7 @@
 <div class="toast frost" id="toast"></div>
 <div id="modalHost"></div>
 <div id="menuHost"></div>
-<script>
+<script id="typoSrc">
 /* Typo.js 1.3.2, Copyright (c) 2011, Christopher Finke. Modified BSD License. https://github.com/cfinke/Typo.js */
 /* globals chrome: false */
 /* globals __dirname: false */
@@ -1642,6 +1711,11 @@ if (typeof module !== 'undefined') {
 <script>
 'use strict';
 // ═══ PA Typist Editor v3 ═══════════════════════════════════════════════════
+// v3.3 (8 Oct 2026): review fixes (undo per job, whole-word fixes, no markup in the
+// edit box, one tab saves at a time, "Not saved" when a save fails, spelling
+// suggestions off the main thread, audio reset per room); better spelling and
+// grammar for WA reports; the Word file is the clean final report with the
+// inspector and typist named; Claude final check (inspectionapp-proofread val).
 // v3 (8 Oct 2026): two columns (job, audio and rooms on the left; the room as a
 // document on the right); each room shown in the WA PCR template rows, like the
 // app's Word file; words to check open a fix card with the phrase list's
@@ -1716,7 +1790,21 @@ function sentenceMatches(sentence, quote) {
 }
 const ADDED_RE = /\[added: ([^\]]*)\]/g;
 const plainText = s => String(s || '').replace(/\s*\[added: [^\]]*\]/g, '').replace(/\s+/g, ' ').trim();
-const keptText = s => tidy(String(s || '').replace(ADDED_RE, (m, x) => x));
+// v3.3: a broken "[added: …" left by hand-editing never reaches the report.
+const keptText = s => tidy(String(s || '').replace(ADDED_RE, (m, x) => x).replace(/\[added:\s*/gi, ''));
+// v3.3: find a word or phrase as whole words, outside the grey [added: …] phrases.
+// Returns the index in text, or -1. "tap" never matches inside "Tapware".
+function findWord(text, needle) {
+  const t = String(text || ''), w = String(needle || '').trim();
+  if (!w) return -1;
+  const re = new RegExp((/^[A-Za-z0-9]/.test(w) ? '(?<![A-Za-z0-9])' : '') + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + (/[A-Za-z0-9]$/.test(w) ? '(?![A-Za-z0-9])' : ''), 'i');
+  let off = 0;
+  for (const part of t.split(/(\[added: [^\]]*\])/)) {
+    if (!/^\[added: /.test(part)) { const m = part.match(re); if (m) return off + m.index; }
+    off += part.length;
+  }
+  return -1;
+}
 function tidy(s) { return String(s).replace(/\s+([.,!?;:])/g, '$1').replace(/\s{2,}/g, ' ').trim(); }
 function addedCount(s) { return (String(s || '').match(ADDED_RE) || []).length; }
 function splitSentences(text) {
@@ -1985,16 +2073,33 @@ const App = { jobs: [], jobsFrom: '', localJobs: null, job: null, store: null, i
 const storeKey = id => 'pa-ed:job:' + id;
 function loadStore(id) { return LS.get(storeKey(id), { v: 1, rooms: {}, time: 0, total: 0, done: 0, opened: Date.now() }); }
 let saveTimer = null;
+// v3.3: every save carries a revision number. A tab holding an older copy of
+// the job (another tab saved since) never writes over the newer work.
 function saveStore(now) {
   if (!App.job || !App.store) return;
   clearTimeout(saveTimer);
   const go = () => {
-    const st = App.store;
+    if (!App.job || !App.store) return;
+    const st = App.store, key = storeKey(App.job.id);
+    const there = LS.get(key, null);
+    if (App.stale || (there && (there.rev || 0) > (st.rev || 0))) { App.stale = true; showStale(); markSaved('stale'); return; }
     st.total = App.job.rooms.length;
     st.done = App.job.rooms.filter(r => roomState(r).done).length;
     st.updated = Date.now();
-    st.meta = { address: App.job.address, client: App.job.facts.Client || '', inspector: App.job.facts.Inspector || '' };
-    if (!LS.set(storeKey(App.job.id), st)) toast('This browser is out of storage space. Export your work now.');
+    st.meta = { address: App.job.address, client: App.job.facts.Client || '', inspector: App.job.facts.Inspector || '', typist: st.typist || '' };
+    st.rev = (st.rev || 0) + 1;
+    let ok = LS.set(key, st);
+    if (!ok) {
+      // Out of space: the fix log is the biggest thing kept. Keep its newest 500 and try again.
+      const fx = LS.get('pa-ed:fixes', []);
+      if (fx.length > 500) { LS.set('pa-ed:fixes', fx.slice(-500)); ok = LS.set(key, st); }
+    }
+    if (!ok) {
+      st.rev--;
+      markSaved('fail');
+      toast('Not saved: this browser is out of storage space. Download the Word file now so nothing is lost.', { label: 'Download Word file', fn: () => downloadDocx(true) });
+      return;
+    }
     markSaved(false);
   };
   markSaved(true);
@@ -2057,6 +2162,7 @@ function mergeSource(room, rs) {
   if (Object.keys(rs.checks).length || (rs.typed || '').trim()) worked = true;
   rs.secs = fresh;
   rs.copiedSig = null;
+  if (typeof clearHist === 'function') clearHist(room);
   if (worked) rs.changed = { at: Date.now(), lost, seen: false };
 }
 function logFix(entry) {
@@ -2205,8 +2311,11 @@ function ctxWords(sentence, word) {
 }
 
 // ── undo / redo (per room, this session) ────────────────────────────────
+// v3.3: keyed by job and room, so undo never reaches into another job.
 const HIST = {};
-const histOf = room => HIST[room.key] || (HIST[room.key] = { u: [], r: [] });
+const histKey = room => (App.job ? App.job.id : '') + '|' + room.key;
+const histOf = room => HIST[histKey(room)] || (HIST[histKey(room)] = { u: [], r: [] });
+function clearHist(room) { if (room) delete HIST[histKey(room)]; else Object.keys(HIST).forEach(k => delete HIST[k]); }
 const snapOf = rs => JSON.stringify({ secs: rs.secs, checks: rs.checks, typed: rs.typed || '' });
 function pushUndo(room) {
   room = room || curRoom(); if (!room) return;
@@ -2221,8 +2330,19 @@ function undo(redo) {
   const rs = roomState(room);
   to.push(snapOf(rs));
   const s = JSON.parse(from.pop());
-  rs.secs = s.secs; rs.checks = s.checks; rs.typed = s.typed; rs.copiedSig = null;
+  rs.secs = s.secs; rs.checks = s.checks; rs.typed = s.typed;
   saveStore(); refresh(); toast(redo ? 'Redone' : 'Undone');
+}
+
+// Undo one step in several rooms at once (a find and replace across the job).
+function undoRooms(rooms) {
+  if (App.editing) commitEditor();
+  rooms.forEach(room => {
+    const h = histOf(room); if (!h.u.length) return;
+    const rs = roomState(room); h.r.push(snapOf(rs));
+    const s = JSON.parse(h.u.pop()); rs.secs = s.secs; rs.checks = s.checks; rs.typed = s.typed;
+  });
+  saveStore(); refresh(); toast('Undone in ' + rooms.length + ' room' + (rooms.length > 1 ? 's' : ''));
 }
 
 // ── UI helpers ──────────────────────────────────────────────────────────
@@ -2283,11 +2403,36 @@ function show(screen) {
   if (!inJob) { closeRaw(); pauseAudio(); closeFix(); closeMenu(); }
   window.scrollTo(0, 0);
 }
-function markSaved(pending) {
+// v3.3: "Saved" only after a save worked. A failed save stays red until one works.
+function markSaved(state) {
   const el = $('savedText'); if (!el) return;
-  el.textContent = pending ? 'Saving…' : 'Saved';
-  $('savedInd').title = pending ? '' : 'Saved on this computer at ' + new Date().toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' });
+  const ind = $('savedInd');
+  ind.classList.toggle('bad', state === 'fail' || state === 'stale');
+  el.textContent = state === 'fail' ? 'Not saved' : state === 'stale' ? 'Not saved: open in another tab' : state ? 'Saving…' : 'Saved';
+  ind.title = state === 'fail' ? 'This browser is out of storage space. Download the Word file so nothing is lost.'
+    : state === 'stale' ? 'This job was saved from another tab or window. Reload it here before typing more.'
+      : state ? '' : 'Saved on this computer at ' + new Date().toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' });
 }
+// Another tab saved this job after this tab loaded it.
+function showStale() {
+  if (!App.job || $('staleBar')) return;
+  const b = document.createElement('div');
+  b.id = 'staleBar'; b.className = 'stale-bar';
+  b.innerHTML = '<b>This job is open in another tab or window, and was saved there.</b> To keep both sets of work safe, this tab has stopped saving. <button class="btn btn-sm btn-main">Load the latest here</button>';
+  b.querySelector('button').onclick = () => { b.remove(); App.stale = false; reloadStoreFromDisk(); };
+  document.body.appendChild(b);
+}
+function reloadStoreFromDisk() {
+  if (!App.job) return;
+  App.editing = null; closeFix();
+  App.store = loadStore(App.job.id); clearHist();
+  markSaved(false); refresh(); toast('Loaded the latest saved copy');
+}
+// The storage event fires in this tab when another tab saves.
+window.addEventListener('storage', e => {
+  if (!App.job || !App.store || e.key !== storeKey(App.job.id) || !e.newValue) return;
+  try { const v = JSON.parse(e.newValue); if ((v.rev || 0) > (App.store.rev || 0)) { App.stale = true; showStale(); markSaved('stale'); } } catch (x) {}
+});
 
 // ── copy ────────────────────────────────────────────────────────────────
 function sectionText(sec) {
@@ -2386,13 +2531,14 @@ function downloadText() {
   commitEditor();
   const j = App.job, g = groupedRooms(j.rooms);
   const head = [j.address, j.date ? 'Inspection date: ' + j.date : '', ...Object.entries(j.facts).filter(([, v]) => v).map(([k, v]) => k + ': ' + v),
-    'Typed in the PA editor, ' + new Date().toLocaleString('en-AU') + ' · typing time ' + hms(App.store.time)].filter(Boolean).join('\n');
+    typistLine() ? 'Typed by: ' + typistLine() : ''].filter(Boolean).join('\n');
   download(j.id + ' - typed.txt', head + '\n\n' + '='.repeat(40) + '\n\n' + asText(g) + '\n');
 }
 function exportMenu() {
   menu($('exportBtn'), `
     <button class="btn btn-main" data-x="docx">Download Word file (.docx)</button>
-    <div class="small muted">The typed report in the same template as the app's Word file. Save it in the job's Dropbox folder for the records.</div>
+    <div class="small muted">The final report: the typed text in template rows, with the inspector and typist named. Save it in the job's Dropbox folder.</div>
+    <button class="btn btn-ghost" data-x="claude">Claude final check</button>
     <button class="btn btn-ghost" data-x="copyall">Copy all rooms</button>
     <button class="btn btn-plain" data-x="txt">Download text (.txt)</button>
     <label class="small"><span>Rows nothing was said about</span><select class="field" id="emptyRowsSel"><option value="skip">Leave out</option><option value="notstated">Write "Not stated"</option></select></label>`,
@@ -2400,13 +2546,13 @@ function exportMenu() {
     const sel = m.querySelector('#emptyRowsSel'); sel.value = LS.get('pa-ed:emptyRows', 'skip');
     sel.onchange = () => { LS.set('pa-ed:emptyRows', sel.value); toast(sel.value === 'notstated' ? 'Empty rows will say "Not stated"' : 'Empty rows are left out'); };
     m.onclick = e => { const b = e.target.closest('[data-x]'); if (!b) return; closeMenu(); const x = b.dataset.x;
-      if (x === 'docx') downloadDocx(); else if (x === 'copyall') copyAll(); else downloadText(); };
+      if (x === 'docx') downloadDocx(); else if (x === 'copyall') copyAll(); else if (x === 'claude') claudeCheck(); else downloadText(); };
   });
 }
 
 // ── the typed report as a Word file (same layout as the app's job Word file) ──
 const DX = { FONT: 'Arial', INK: '2B2B2B', MUTED: '6B6B6B', LINE: 'D9D9D9', HEAD: 'F2F2F2', NM: 'A6A6A6', NMBG: 'FAFAFA', ADD: '8A8A8A' };
-const xe = s => String(s == null ? '' : s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const xe = s => String(s == null ? '' : s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 function jR(text, o) {
   o = o || {};
   return '<w:r><w:rPr><w:rFonts w:ascii="' + DX.FONT + '" w:hAnsi="' + DX.FONT + '" w:cs="' + DX.FONT + '"/>' + (o.b ? '<w:b/>' : '') + (o.i ? '<w:i/>' : '')
@@ -2416,8 +2562,8 @@ function jR(text, o) {
 function jP(runs, o) {
   o = o || {};
   return '<w:p><w:pPr>' + (o.style ? '<w:pStyle w:val="' + o.style + '"/>' : '') + (o.keepNext ? '<w:keepNext/>' : '') + (o.pageBreak ? '<w:pageBreakBefore/>' : '')
-    + (o.box ? '<w:pBdr><w:left w:val="single" w:sz="18" w:space="6" w:color="E0B800"/></w:pBdr><w:shd w:val="clear" w:color="auto" w:fill="FFF8D6"/><w:ind w:left="120"/>' : '')
-    + '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after == null ? 60 : o.after) + '"/>' + (o.align ? '<w:jc w:val="' + o.align + '"/>' : '')
+    + (o.box ? '<w:pBdr><w:left w:val="single" w:sz="18" w:space="6" w:color="E0B800"/></w:pBdr><w:shd w:val="clear" w:color="auto" w:fill="FFF8D6"/>' : '')
+    + '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after == null ? 60 : o.after) + '"/>' + (o.box ? '<w:ind w:left="120"/>' : '') + (o.align ? '<w:jc w:val="' + o.align + '"/>' : '')
     + '</w:pPr>' + (runs || '') + '</w:p>';
 }
 function jCell(paras, width, fill) {
@@ -2435,79 +2581,32 @@ function jTable(widths, header, rows) {
 }
 const jH1 = (t, o) => jP(jR(t, { b: true, sz: 34 }), Object.assign({ keepNext: true, after: 80, style: 'Heading1' }, o || {}));
 const jH2 = t => jP(jR(t, { b: true, sz: 22 }), { keepNext: true, before: 260, after: 100, style: 'Heading2' });
-// One sentence: what is still to check highlighted, undecided added phrases grey italic.
-function jSent(room, s) {
-  const heard = s.check ? heardFor(room, s) : '';
-  const parts = String(s.text).split(/(\[added: [^\]]*\])/);
-  let out = '', hit = false;
-  parts.forEach(p => {
-    const m = p.match(/^\[added: ([^\]]*)\]$/);
-    if (m) { out += jR(m[1], { i: true, color: DX.ADD }); return; }
-    if (!p) return;
-    if (s.check && !heard) { out += jR(p, { hl: true }); return; }
-    const k = heard && !hit ? p.toLowerCase().indexOf(heard.toLowerCase()) : -1;
-    if (k < 0) { out += jR(p); return; }
-    hit = true;
-    out += jR(p.slice(0, k)) + jR(p.slice(k, k + heard.length), { b: true, hl: true }) + jR(p.slice(k + heard.length));
-  });
-  return out;
-}
+// v3.3: the Word file is the final report. Only the report text: no highlights,
+// grey phrases, timestamps, audio names or editor notes. Grey phrases still
+// undecided are kept (as in Copy room). Empty rows follow the Export menu setting.
+const DOC_COLS = ['Item', 'Comments'];
 function buildDocXml(j) {
   const out = [], f = j.facts, info = j.info || {};
-  let left = 0, grey = 0;
-  j.rooms.forEach(r => { const c = roomCounts(r); left += c.open; grey += c.added; });
-  out.push(jP(jR('PROPERTY ASSIST · TYPED INSPECTION NOTES', { sz: 16, b: true, color: DX.MUTED }), { after: 60 }));
+  const typist = typistLine();
+  out.push(jP(jR('PROPERTY ASSIST · INSPECTION REPORT', { sz: 16, b: true, color: DX.MUTED }), { after: 60 }));
   out.push(jH1(j.address || 'Inspection'));
-  out.push(jP(jR('Typed and checked in the PA typist editor, ' + new Date().toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' })
-    + ' · typing time ' + hms(App.store.time) + '. ', { sz: 18 })
-    + (left || grey ? jR([left && left + ' still to check (highlighted)', grey && grey + ' added phrase' + (grey > 1 ? 's' : '') + ' not decided (grey italic)'].filter(Boolean).join(' · ') + '.', { sz: 18, b: true })
-      : jR('Every word to check was checked.', { sz: 18 })), { box: true, after: 140 }));
   const lab = s => jP(jR(s, { color: DX.MUTED }), { after: 0 }), val = s => jP(jR(s || '—'), { after: 0 });
+  const started = String(f.Started || '').replace(/(\d+:\d{2}):\d{2}/, '$1');
   out.push(jTable([2000, 2953, 2000, 2953], null, [
-    { cells: [lab('Client'), val(f.Client), lab('State'), val(f.State)] },
-    { cells: [lab('Inspection type'), val(f.Type), lab('Date'), val(prettyDate(j.date))] },
-    { cells: [lab('Inspector'), val(f.Inspector), lab('Started'), val(f.Started)] }
+    { cells: [lab('Client'), val(f.Client), lab('Inspection type'), val(f.Type)] },
+    { cells: [lab('Inspector'), val(f.Inspector), lab('Inspection date'), val(prettyDate(j.date) || started)] },
+    { cells: [lab('Typed by'), val(typist), lab('State'), val(f.State)] }
   ]));
   const sm = info['smoke alarms'], rcd = info['rcd box'] || info['rcd/safety switch'];
-  if (sm || rcd) {
+  const safety = [['Smoke Alarms', sm], ['RCD/Safety Switch', rcd], ['Water Meter', info['water meter']], ['NBN Box', info['nbn box']]].filter(([, v]) => v);
+  const cell = (t, o) => jP(jR(t, o), { after: 0 });
+  if (safety.length) {
     out.push(jH2('Security/Safety'));
-    const sr = (k, v) => v ? { cells: [jP(jR(k, { b: true, sz: 19 }), { after: 0 }), val(v)] } : { fill: DX.NMBG, cells: [jP(jR(k, { b: true, sz: 19 }), { after: 0 }), jP(jR('Not recorded in the app', { color: DX.NM }), { after: 0 })] };
-    out.push(jTable([3300, 6606], ['Template row', 'Notes'], [sr('Smoke Alarms', sm), sr('RCD/Safety Switch', rcd), sr('Keys/Other Opening Devices', ''), sr('Entry Light Fittings', ''), sr('External Door Locks', '')]));
-    const also = [info['water meter'] && 'Water meter ' + info['water meter'], info['nbn box'] && 'NBN box ' + info['nbn box']].filter(Boolean);
-    if (also.length) out.push(jP(jR('Also recorded (no template row): ', { sz: 18, color: DX.MUTED }) + jR(also.join('   ·   '), { sz: 18 }), { before: 80 }));
+    out.push(jTable([3000, 6906], DOC_COLS, safety.map(([k, v]) => ({ cells: [cell(k, { b: true, sz: 19 }), cell(v)] }))));
   }
-  // Rooms in walk order; takes of the same room merged.
-  const groups = [];
-  j.rooms.forEach(r => { const g = groups.find(x => x.name.toLowerCase() === r.name.toLowerCase()); if (g) g.rooms.push(r); else groups.push({ name: r.name, rooms: [r] }); });
-  const ns = notStated();
-  groups.forEach((g, gi) => {
-    out.push(jH1((gi + 1) + '. ' + g.name, gi === 0 ? { pageBreak: true } : { before: 360 }));
-    const first = g.rooms[0], rows = [];
-    g.rooms.forEach(r => {
-      const rs = roomState(r);
-      sheetRows(r, rs).forEach(row => {
-        let hit = rows.find(x => rowKey(x.name) === rowKey(row.name));
-        if (!hit) { hit = { name: row.name, sents: [], at: null, room: r }; rows.push(hit); }
-        const sec = row.i != null ? rs.secs[row.i] : null;
-        liveSents(sec).forEach(s => hit.sents.push({ room: r, s }));
-        if (sec && num(sec.at) != null && hit.at == null) hit.at = (g.rooms.length > 1 ? 'take ' + r.take + ' · ' : '') + clock(sec.at);
-      });
-    });
-    const said = rows.filter(x => x.sents.length).length;
-    out.push(jP(jR(said + ' of ' + rows.length + ' rows with notes' + (first.audioName ? '   ·   Audio: ' + g.rooms.map(r => r.audioName).filter(Boolean).join(', ') : ''), { sz: 18, color: DX.MUTED }), { keepNext: true, after: 100 }));
-    const typedOnly = g.rooms.map(r => roomState(r)).filter(rs => !hasContent(rs) && (rs.typed || '').trim());
-    typedOnly.forEach(rs => out.push(jP(jR('Typed from the audio: ' + rs.typed.trim()), { box: true, after: 80 })));
-    if (rows.some(x => x.sents.length) || !typedOnly.length) {
-      out.push(jTable([3000, 6906], ['Template row', 'Notes'], rows.map(row => {
-        const name = jP(jR(row.name, { b: true, sz: 19, color: row.sents.length ? DX.INK : DX.NM }), { after: 0 }) + (row.at ? jP(jR(row.at, { sz: 16, color: DX.MUTED }), { after: 0 }) : '');
-        if (!row.sents.length) return { fill: ns ? null : DX.NMBG, cells: [name, jP(jR(ns && !/^additional$/i.test(row.name) ? 'Not stated' : 'Not mentioned', { color: ns ? DX.INK : DX.NM }), { after: 0 })] };
-        return { cells: [name, jP(row.sents.map(x => jSent(x.room, x.s)).join(jR(' ')), { after: 0 })] };
-      })));
-    }
-    g.rooms.forEach(r => {
-      if (r.serial) out.push(jP(jR('Serial / model: ', { b: true }) + jR(r.serial), { before: 80 }));
-      if (r.inventory) out.push(jP(jR('Inventory: ', { b: true }) + jR(r.inventory), { before: 40 }));
-    });
+  groupedRooms(j.rooms).forEach((g, gi) => {
+    out.push(jH1((gi + 1) + '. ' + g.name, { before: gi === 0 ? 300 : 360 }));
+    out.push(jTable([3000, 6906], DOC_COLS, g.blocks.map(b => ({ cells: [cell(b.name, { b: true, sz: 19 }), cell(b.text, b.text === 'Not stated' ? { color: DX.MUTED } : null)] }))));
   });
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>'
     + out.join('') + '<w:sectPr><w:headerReference w:type="default" r:id="rIdH"/><w:footerReference w:type="default" r:id="rIdF"/>'
@@ -2543,19 +2642,52 @@ function buildDocx(j) {
     { name: '[Content_Types].xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/><Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/></Types>' },
     { name: '_rels/.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="' + REL + '/officeDocument" Target="word/document.xml"/></Relationships>' },
     { name: 'word/_rels/document.xml.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdS" Type="' + REL + '/styles" Target="styles.xml"/><Relationship Id="rIdH" Type="' + REL + '/header" Target="header1.xml"/><Relationship Id="rIdF" Type="' + REL + '/footer" Target="footer1.xml"/></Relationships>' },
-    { name: 'word/styles.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ' + W + '><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:sz w:val="20"/><w:color w:val="2B2B2B"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="60"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style><w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:pPr><w:keepNext/><w:outlineLvl w:val="0"/></w:pPr></w:style><w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:pPr><w:keepNext/><w:outlineLvl w:val="1"/></w:pPr></w:style></w:styles>' },
-    { name: 'word/header1.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr ' + W + '>' + jP(jR([j.address, j.facts.Type, prettyDate(j.date), 'typed'].filter(Boolean).join('  ·  '), { sz: 16, color: DX.MUTED }), { align: 'right', after: 0 }) + '</w:hdr>' },
-    { name: 'word/footer1.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:ftr ' + W + '><w:p><w:pPr><w:jc w:val="right"/></w:pPr>' + jR('Page ', { sz: 16, color: DX.MUTED }) + fld('PAGE') + jR(' of ', { sz: 16, color: DX.MUTED }) + fld('NUMPAGES') + '</w:p></w:ftr>' },
+    { name: 'word/styles.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ' + W + '><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:color w:val="2B2B2B"/><w:sz w:val="20"/><w:lang w:val="en-AU" w:eastAsia="en-AU" w:bidi="en-AU"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="60"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style><w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:pPr><w:keepNext/><w:outlineLvl w:val="0"/></w:pPr></w:style><w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:pPr><w:keepNext/><w:outlineLvl w:val="1"/></w:pPr></w:style></w:styles>' },
+    { name: 'word/header1.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr ' + W + '>' + jP(jR([j.address, j.facts.Type, prettyDate(j.date)].filter(Boolean).join('  ·  '), { sz: 16, color: DX.MUTED }), { align: 'right', after: 0 }) + '</w:hdr>' },
+    { name: 'word/footer1.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:ftr ' + W + '><w:p><w:pPr><w:jc w:val="right"/></w:pPr>' + jR([j.facts.Inspector && 'Inspector: ' + j.facts.Inspector, typistLine() && 'Typed by: ' + typistLine()].filter(Boolean).join('   ·   ') + (j.facts.Inspector || typistLine() ? '   ·   ' : ''), { sz: 16, color: DX.MUTED }) + jR('Page ', { sz: 16, color: DX.MUTED }) + fld('PAGE') + jR(' of ', { sz: 16, color: DX.MUTED }) + fld('NUMPAGES') + '</w:p></w:ftr>' },
     { name: 'word/document.xml', data: buildDocXml(j) }
   ], 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
 }
-function downloadDocx() {
+// v3.3: the Word file is the final report, so first a check of anything still open.
+async function downloadDocx(force) {
   if (!App.job) return;
-  commitEditor();
+  commitEditor(); closeFix();
   const j = App.job;
+  if (!force) {
+    const p = preflight();
+    if (p.items.length) {
+      const html = `<p class="muted small" style="margin-bottom:10px">The Word file is the final report. These are still open:</p><div class="pre-list">`
+        + p.items.map(x => `<div><span>${esc(x.label)}</span><span class="n">${esc(String(x.n))}</span></div>`).join('') + '</div>'
+        + (p.grey ? '<p class="small muted" style="margin-top:10px">Grey phrases not decided are kept in the report as written.</p>' : '');
+      const go = await modal('Download the final report?', html, [{ label: 'Go back and fix', value: false }, { label: 'Download anyway', cls: 'btn-main', value: true }]);
+      if (!go) { if (p.first != null && p.first !== App.idx) openRoom(p.first); return; }
+    }
+  }
   download((j.address || j.id) + ' - Typed.docx', buildDocx(j));
   App.store.docAt = Date.now(); saveStore();
   toast('Word file downloaded. Save it in the job\'s Dropbox folder.');
+}
+// Everything still open across the job, for the export check.
+function preflight() {
+  const j = App.job, items = [];
+  let open = 0, grey = 0, notDone = 0, sp = 0, cl = 0, first = null;
+  j.rooms.forEach((r, k) => {
+    const c = roomCounts(r), rs = roomState(r);
+    const iss = roomIssues(r).list;
+    const nsp = iss.filter(x => x.kind !== 'claude').length, ncl = iss.length - nsp;
+    open += c.open; grey += c.added; sp += nsp; cl += ncl;
+    if (!rs.done) notDone++;
+    if (first == null && (c.open || !rs.done || nsp || ncl)) first = k;
+  });
+  if (open) items.push({ label: 'Words to check (yellow)', n: open });
+  if (sp) items.push({ label: 'Spelling, grammar and style notes', n: sp });
+  if (cl) items.push({ label: 'Claude suggestions not decided', n: cl });
+  if (notDone) items.push({ label: 'Rooms not marked done', n: notDone });
+  if (grey) items.push({ label: 'Grey phrases not decided', n: grey });
+  if (!SP.dict) items.push({ label: 'Spelling was not checked (the dictionary did not load)', n: '!' });
+  const cs = claudeStatus();
+  if (cs.url && cs.unchecked) items.push({ label: 'Sentences Claude hasn\'t checked (Claude check)', n: cs.unchecked });
+  return { items, grey, first };
 }
 
 // ── queue (home) ────────────────────────────────────────────────────────
@@ -2591,7 +2723,7 @@ function renderJobs() {
     + (list.length ? list.map(j => {
       const pf = parseJobFolder(j.id), info = jobInfo(j.id), st = info.st || {}, m = st.meta || {};
       return `<button class="job-row" data-k="${App.jobs.indexOf(j)}">
-        <span class="job-addr">${esc(m.address || pf.address)}</span>
+        <span class="job-addr">${esc(m.address || pf.address)}${m.inspector || m.typist ? `<small class="job-who">${esc([m.inspector && 'Inspector ' + m.inspector, m.typist && 'Typed by ' + m.typist].filter(Boolean).join(' · '))}</small>` : ''}</span>
         <span class="c">${esc(prettyDate(pf.date) || '—')}</span>
         <span class="c hs">${esc(m.client || '—')}</span>
         <span class="c hs">${st.time ? hms(st.time) : '—'}</span>
@@ -2688,6 +2820,8 @@ function openLocal(items) {
   const roomish = top.some(x => /\.(json|txt|m4a|mp4|aac|webm|ogg|mp3|wav)$/i.test(x.file.name));
   if (roomish) {
     const id = items[0].path[0];
+    // v3.3: the job's Audio or App data folder picked by mistake would give every such job one shared save.
+    if (JOB_SUBDIRS.has(id)) return toast('That is the job\'s “' + id + '” folder. Pick the job folder above it (named with the date and address).');
     const j = { id, from: 'local', files: top.map(x => localFile(x.file)) };
     if (!App.jobs.some(x => x.id === id)) { App.jobs.unshift(j); App.jobsFrom = App.jobsFrom || 'local'; }
     else App.jobs[App.jobs.findIndex(x => x.id === id)] = j;
@@ -2736,11 +2870,13 @@ async function openJob(j, keepKey) {
     const job = await buildJob(j.id, files, (n, of) => { $('jobLoadingText').textContent = 'Reading room ' + n + ' of ' + of + '…'; });
     if (!job.rooms.length) throw new Error('No rooms in this folder yet.');
     App.job = job; App.jobRef = j; App.store = loadStore(job.id); App.store.opened = Date.now();
+    App.stale = false; const sb = $('staleBar'); if (sb) sb.remove();
     const st = App.store;
     const keep = keepKey ? job.rooms.findIndex(r => r.key === keepKey) : -1;
     App.idx = keep >= 0 ? keep : Math.min(st.last != null ? st.last : (job.rooms.findIndex(r => !roomState(r).done) + 1 || 1) - 1, job.rooms.length - 1);
     if (App.idx < 0) App.idx = 0;
     PL.fromRooms(job);
+    noteTypist();
     SP.load().then(() => { if (App.job && !App.editing && !App.fix) refresh(); else updateSpBtn(); });
     saveStore(true);
     LS.set('pa-ed:last', { id: j.id, from: j.from });
@@ -2748,6 +2884,7 @@ async function openJob(j, keepKey) {
     $('jobLoading').hidden = true; $('jobView').hidden = false;
     show('screenJob');
     renderSide(); openRoom(App.idx, true);
+    if (!typistName()) setTimeout(() => askTypist('Before you start: what name should go on this report?'), 400);
   } catch (e) {
     $('jobLoadingText').innerHTML = esc(e.message || 'Could not open this job.') + '<br><br><button class="btn btn-dark" id="backQ">Back to jobs</button>';
     $('backQ').onclick = backToQueue;
@@ -2771,7 +2908,8 @@ function backToQueue() {
 // ── job: left column ────────────────────────────────────────────────────
 function roomStatus(r) {
   const rs = roomState(r), c = roomCounts(r);
-  if (rs.done) return ['done', 'Done'];
+  // v3.3: changed after it was copied into the report: copy it again.
+  if (rs.done) return rs.copiedSig && !copiedFresh(r) ? ['check', 'Done · copy again'] : ['done', 'Done'];
   if (isTypeRoom(r) && !hasContent(rs) && !(rs.typed || '').trim()) return ['type', r.source === 'audio' ? 'No transcript' : 'Type it'];
   if (c.open) return ['check', c.open + ' to check'];
   if (c.added) return ['check', c.added + ' grey'];
@@ -2785,8 +2923,12 @@ function renderSide() {
   $('jobTag').textContent = [f.Type, f.State].filter(Boolean).join(' · ') || 'Inspection';
   $('jobAddr').textContent = cut > 0 ? ad.slice(0, cut) : ad;
   const when = String(f.Started || prettyDate(j.date)).replace(/(\d+:\d{2}):\d{2}/, '$1');
-  $('jobLine').textContent = [cut > 0 ? ad.slice(cut + 1).trim() : '', f.Client, f.Inspector, when].filter(Boolean).join(' · ');
-  const facts = [['Client', f.Client], ['Inspector', f.Inspector], ['Inspected', String(f.Started || prettyDate(j.date)).replace(/(\d+:\d{2}):\d{2}/, '$1')], ['Rooms', String(j.rooms.length)]];
+  $('jobLine').textContent = [cut > 0 ? ad.slice(cut + 1).trim() : '', f.Client, when].filter(Boolean).join(' · ');
+  // v3.3: who inspected and who is typing, named on the card and in the report.
+  const ty = typistLine();
+  $('jobPeople').innerHTML = `<span>Inspector <b>${esc(f.Inspector || '—')}</b></span><span>Typist ${ty ? '<b>' + esc(ty) + '</b>' : '<button class="lnk" id="addTypist">add your name</button>'}</span>`;
+  const at = $('addTypist'); if (at) at.onclick = () => askTypist('');
+  const facts = [['Client', f.Client], ['Inspector', f.Inspector], ['Typed by', typistLine()], ['Inspected', String(f.Started || prettyDate(j.date)).replace(/(\d+:\d{2}):\d{2}/, '$1')], ['Rooms', String(j.rooms.length)]];
   if (j.photos.length) facts.push(['Photos', j.photos.length + ' in the folder']);
   $('jobFacts').innerHTML = facts.filter(([, v]) => v).map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('');
   const done = j.rooms.filter(r => roomState(r).done).length;
@@ -2817,7 +2959,7 @@ function openRoom(k, first) {
   else $('docBody').scrollTop = 0;
 }
 function heardFor(room, s) {
-  const c = room.checks.find(c => c.heard && sentenceMatches(s.text, c.quote) && plainText(s.text).toLowerCase().includes(c.heard.toLowerCase()));
+  const c = room.checks.find(c => c.heard && sentenceMatches(s.text, c.quote) && findWord(s.text, c.heard) >= 0);
   return c ? c.heard : '';
 }
 const checkFor = (room, s) => room.checks.find(c => sentenceMatches(s.text, c.quote)) || null;
@@ -2832,6 +2974,7 @@ function renderRoom() {
   const stat = (n, label, cls, act, title) => `<button class="stat ${cls || ''}${n ? '' : ' zero'}"${act ? ` data-act="${act}"` : ' disabled'} title="${esc(title || '')}"><b>${n}</b><span>${label}</span></button>`;
   let h = `<header class="room-head">
     <div class="rh-top"><span class="eyebrow">${esc(eyebrow)}</span><span style="flex:1"></span>
+      <button class="rows-toggle" data-act="allrows" title="Show every template row, or fold the empty ones into one line">${LS.get('pa-ed:allRows', false) ? 'Fold empty rows' : 'Show every row'}</button>
       <button class="key-btn" id="keyBtn" aria-haspopup="menu" title="What the colours mean, and where this text came from">Key</button></div>
     <h1 class="big">${fadeTitle(room.name)}</h1>
     <div class="stats">
@@ -2868,16 +3011,24 @@ function renderRoom() {
       <button class="btn btn-dark btn-sm" data-check="${i}">✓ Checked</button></div>`).join('') + '</div>';
   }
   // The sheet: template rows, like the Word file.
+  // v3.3: empty rows next to each other fold into one line of names (click one to type into it).
+  const allRows = LS.get('pa-ed:allRows', false);
+  const isShown = r => { const sec = r.i != null ? rs.secs[r.i] : null; return sec ? sec.sents.some(x => !x.removed && (x.text.trim() || !x.orig)) : false; };
+  let pend = [];
+  const flushNm = () => { if (!pend.length) return ''; const g = pend; pend = [];
+    return `<div class="trow nm nmg"><div class="rn"><b>Not mentioned</b></div><div class="rv">${g.map(({ r, idx }) => `<button class="nm-chip" data-addrow="${idx}" title="Type notes for ${esc(r.name)}">${esc(r.name)}</button>`).join('')}</div></div>`; };
   h += `<div class="sheet"><div class="sheet-head"><div>Template row</div><div>Notes</div></div>` + rows.map((r, idx) => {
     const sec = r.i != null ? rs.secs[r.i] : null;
-    const shown = sec ? sec.sents.some(x => !x.removed && (x.text.trim() || !x.orig)) : false;
-    if (!shown) return `<div class="trow nm${r.extra ? ' extra' : ''}"><div class="rn"><b>${esc(r.name)}</b></div><div class="rv"><button class="nm-btn" data-addrow="${idx}" title="Type notes for this row">Not mentioned</button></div></div>`;
+    const shown = isShown(r);
+    if (!shown && !allRows && !r.extra) { pend.push({ r, idx }); return idx === rows.length - 1 ? flushNm() : ''; }
+    const lead = flushNm();
+    if (!shown) return lead + `<div class="trow nm${r.extra ? ' extra' : ''}"><div class="rn"><b>${esc(r.name)}</b></div><div class="rv"><button class="nm-btn" data-addrow="${idx}" title="Type notes for this row">Not mentioned</button></div></div>`;
     const at = num(sec.at);
-    return `<div class="trow${r.extra ? ' extra' : ''}" data-sec="${r.i}"><div class="rn"><b>${esc(r.name)}</b>${at != null ? `<button class="clock" data-play="${at}" title="Play this row">▶ ${clock(at)}</button>` : ''}</div>
+    return lead + `<div class="trow${r.extra ? ' extra' : ''}" data-sec="${r.i}"><div class="rn"><b>${esc(r.name)}</b>${at != null ? `<button class="clock" data-play="${at}" title="Play this row">▶ ${clock(at)}</button>` : ''}</div>
       <div class="rv"><div class="text">${sec.sents.map((s, jj) => sentHtml(room, s, r.i, jj)).join('')}</div>
       <div class="row-tools"><button data-addsent="${r.i}" title="Add a sentence to this row" aria-label="Add a sentence"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
       <button data-copysec="${r.i}" title="Copy this row" aria-label="Copy this row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></div></div></div>`;
-  }).join('') + '</div>';
+  }).join('') + flushNm() + '</div>';
   if (room.serial || room.inventory) {
     h += `<div class="after"><div class="note-card"><h3>Typed by the inspector</h3>`
       + (room.serial ? `<div class="label" style="margin-top:4px">Serial / model</div><div class="plain-box">${esc(room.serial)}</div>` : '')
@@ -2917,12 +3068,12 @@ function sentHtml(room, s, i, jj) {
       return `<span class="add" data-k="${n}" title="Added by the AI: the inspector didn't say it"><em>${esc(m[1])}</em><span class="ab"><button class="k" data-keep="${n}" title="Keep (Enter)" aria-label="Keep">✓</button><button class="r" data-drop="${n}" title="Remove (Delete)" aria-label="Remove">✕</button></span></span>`;
     }
     let hr = null;
-    if (heard && !hit) { const q = part.toLowerCase().indexOf(heard.toLowerCase()); if (q >= 0) { hit = true; hr = [at0 + q, at0 + q + heard.length]; } }
+    if (heard && !hit) { const q = findWord(part, heard); if (q >= 0) { hit = true; hr = [at0 + q, at0 + q + heard.length]; } }
     return markedPart(part, at0, hr, issues, chip);
   }).join('');
   const whole = s.check && !hit;
-  const cls = ['sent', s.check ? 'check' : '', whole ? 'whole' : '', s.edited ? 'edited' : '', s.removed ? 'removed' : ''].filter(Boolean).join(' ');
-  const title = s.edited ? ' title="Edited. Original: ' + esc(plainText(s.orig)) + '"' : '';
+  const cls = ['sent', s.check ? 'check' : '', whole ? 'whole' : '', s.edited ? 'edited' : '', s.removed ? 'removed' : '', s.draft != null ? 'drafted' : ''].filter(Boolean).join(' ');
+  const title = s.draft != null ? ' title="You were editing this sentence when the editor closed. Click to finish."' : s.edited ? ' title="Edited. Original: ' + esc(keptText(s.orig)) + '"' : '';
   return `<span class="${cls}" data-i="${i}" data-j="${jj}"${at != null ? ` data-at="${at}"` : ''}${title}>${whole ? chip : ''}${inner}</span> `;
 }
 function keyMenu(room) {
@@ -2933,6 +3084,7 @@ function keyMenu(room) {
     <div class="key-row"><span class="sp1">red wavy</span><span>Spelling</span></div>
     <div class="key-row"><span class="sp2">blue wavy</span><span>Grammar</span></div>
     <div class="key-row"><span class="sp3">gold dotted</span><span>PA house style or a known mishear</span></div>
+    <div class="key-row"><span class="sp4">purple dashed</span><span>Claude's suggestion (Claude check)</span></div>
     <div class="label" style="margin-top:6px">Where this text came from</div>
     <div class="small muted">${esc(room.transcribedBy ? 'Transcribed by ' + room.transcribedBy + '.' : '')} ${esc(room.sortedBy && room.sortedBy !== 'keyword split' ? 'Sorted into rows and tidied by AI (' + room.sortedBy + ').' : room.sortedBy ? 'Sorted into rows by keywords (no AI).' : '')} The Raw transcript shows the words before the AI touched them.</div>`);
 }
@@ -2953,7 +3105,7 @@ function updateBar() {
   db.title = rs.done ? 'This room is done. Click to undo' : 'Mark this room done and open the next one (Ctrl+Enter)';
   const h = histOf(room);
   $('undoBtn').disabled = !h.u.length; $('redoBtn').disabled = !h.r.length;
-  updateSpBtn();
+  updateSpBtn(); updateClBtn();
 }
 
 // ── the next thing to do (Ctrl + ] / the arrows by "n to check") ────────
@@ -3119,7 +3271,8 @@ function fixApply(v) {
   const room = curRoom(), rs = roomState(room), sec = rs.secs[f.i], s = sec.sents[f.j];
   pushUndo(room);
   const from = plainText(s.text);
-  const k = s.text.toLowerCase().indexOf(f.heard.toLowerCase());
+  // v3.3: the highlighted word itself: whole words only, never inside a grey phrase.
+  const k = findWord(s.text, f.heard);
   if (k < 0) { closeFix(); return startEdit(f.i, f.j, { flow: f.flow }); }
   const orig = s.text.slice(k, k + f.heard.length);
   if (/^[A-Z]/.test(orig) && /^[a-z]/.test(v)) v = v[0].toUpperCase() + v.slice(1);
@@ -3145,6 +3298,7 @@ function wireRoom() {
     if (t.dataset.act != null) {
       const a = t.dataset.act;
       if (a === 'copyall') return copyAll();
+      if (a === 'allrows') { LS.set('pa-ed:allRows', !LS.get('pa-ed:allRows', false)); return refresh(); }
       if (a === 'gocheck' || a === 'goadd') { App.pos = null; return goNext(1, a === 'goadd' ? 'add' : 'check'); }
       if (a === 'gosp') { App.spCur = null; return nextIssue(); }
       if (a === 'docx') return downloadDocx();
@@ -3178,28 +3332,35 @@ function wireRoom() {
 const rowIndexOf = i => sheetRows(curRoom(), roomState(curRoom())).findIndex(r => r.i === i);
 
 // ── editing one sentence ───────────────────────────────────────────────
+// v3.3: the edit box shows the sentence as it will read in the report. Grey
+// phrases appear as plain words (no "[added: …]" markup to trip over): leave a
+// phrase in to keep it, delete it to remove it. Esc closes and saves (Undo is
+// one click away), so typed work is never thrown away.
 function startEdit(i, j, opts) {
   commitEditor(); closeFix(); clearCur();
   const rs = roomState(curRoom()), s = rs.secs[i] && rs.secs[i].sents[j];
   if (!s) return;
   const span = $('roomPane').querySelector(`.sent[data-i="${i}"][data-j="${j}"]`);
   if (!span) return;
+  const adds = [...String(s.text).matchAll(ADDED_RE)].map(m => m[1]);
   const box = document.createElement('span');
   box.className = 'sent-edit'; box.dataset.i = i; box.dataset.j = j;
   box.innerHTML = `<textarea class="field" rows="1" spellcheck="true" lang="en-AU"></textarea>
-    <span class="hint"><span>${s.check ? '<kbd>Enter</kbd> saves your fix, or keeps it as is if you changed nothing' : '<kbd>Enter</kbd> save'} · <kbd>Tab</kbd> next sentence · <kbd>Esc</kbd> cancel</span>
+    <span class="hint"><span>${s.check ? '<kbd>Enter</kbd> saves your fix, or keeps it as is if you changed nothing' : '<kbd>Enter</kbd> save'} · <kbd>Tab</kbd> next sentence · <kbd>Esc</kbd> close</span>
       ${num(s.at) != null ? `<button class="btn btn-ghost btn-sm" data-e="play">▶ ${clock(s.at)}</button>` : ''}
       ${s.check ? '<button class="btn btn-dark btn-sm" data-e="ok">✓ Correct as is</button>' : ''}
       ${s.edited ? '<button class="btn btn-ghost btn-sm" data-e="revert">Back to original</button>' : ''}
       ${s.text || s.orig ? '<button class="btn btn-plain btn-sm" data-e="del">Delete sentence</button>' : ''}</span>
-    ${s.edited ? `<span class="orig">Original: ${esc(plainText(s.orig))}</span>` : ''}`;
+    ${adds.length ? `<span class="addnote">Added by the AI: <em>${adds.map(esc).join('</em>, <em>')}</em>. Leave ${adds.length > 1 ? 'them' : 'it'} in to keep, or delete ${adds.length > 1 ? 'them' : 'it'} to remove.</span>` : ''}
+    ${s.edited ? `<span class="orig">Original: ${esc(keptText(s.orig))}</span>` : ''}`;
   span.replaceWith(box);
   const ta = box.querySelector('textarea');
-  ta.value = s.text;
+  const before = keptText(s.text);
+  ta.value = s.draft != null ? s.draft : before;
   const fit = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
   fit(); ta.oninput = fit;
   ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
-  App.editing = { i, j, ta, before: s.text, flow: !!(opts && opts.flow) };
+  App.editing = { i, j, ta, before, adds, flow: !!(opts && opts.flow) };
   if (!(opts && opts.flow) && num(s.at) != null && LS.get('pa-ed:playSentence', true) && audio().src) playSentence(s.at);
   App.pos = [0, rowIndexOf(i), j, -1];
   box.addEventListener('mousedown', e => { if (e.target.closest('[data-e]')) e.preventDefault(); });
@@ -3208,27 +3369,37 @@ function startEdit(i, j, opts) {
     const a = b.dataset.e;
     if (a === 'play') return playFrom(num(s.at) - 0.4);
     if (a === 'ok') { const flow = App.editing && App.editing.flow; okSentence(i, j); if (flow) afterFlow(); return; }
-    if (a === 'revert') { ta.value = s.orig; fit(); ta.focus(); return; }
+    if (a === 'revert') { ta.value = keptText(s.orig); fit(); ta.focus(); return; }
     if (a === 'del') { ta.value = ''; return commitEditor(); }
   };
   ta.onkeydown = e => {
     if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
       e.preventDefault();
       const flow = App.editing && App.editing.flow;
-      if (s.check && tidy(ta.value.replace(/\s*\n\s*/g, ' ')) === s.text) okSentence(i, j); else commitEditor();
+      if (s.check && cleanTyped(ta.value) === before) okSentence(i, j); else commitEditor();
       if (flow) afterFlow();
     }
-    else if (e.key === 'Escape') { e.preventDefault(); App.editing = null; dropBlank(i, j); refresh(); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); if (commitEditor()) toast('Saved', { label: 'Undo', fn: () => undo() }); }
     else if (e.key === 'Tab') { e.preventDefault(); const nxt = neighbour(i, j, e.shiftKey ? -1 : 1); commitEditor(); if (nxt) startEdit(nxt[0], nxt[1]); }
   };
   ta.onblur = () => setTimeout(() => { if (App.editing && App.editing.ta === ta && document.activeElement !== ta) commitEditor(); }, 120);
+}
+// What the typist typed, as report text (any hand-typed "[added:" markup dropped).
+const cleanTyped = v => tidy(String(v || '').replace(/\s*\n\s*/g, ' ').replace(/\[added:\s*([^\]]*)\]?/gi, '$1'));
+// Keep a half-typed sentence when the tab is hidden or the browser closes it.
+function saveDraft() {
+  const ed = App.editing; if (!ed || !App.store) return;
+  const s = roomState(curRoom()).secs[ed.i] && roomState(curRoom()).secs[ed.i].sents[ed.j];
+  if (!s) return;
+  if (cleanTyped(ed.ta.value) !== ed.before) s.draft = ed.ta.value; else delete s.draft;
+  saveStore(true);
 }
 function dropBlank(i, j) { const sec = roomState(curRoom()).secs[i]; const s = sec && sec.sents[j]; if (s && !s.orig && !s.text) sec.sents.splice(j, 1); }
 // A flagged sentence the typist heard and found right.
 function okSentence(i, j) {
   const room = curRoom(), rs = roomState(room), s = rs.secs[i].sents[j];
   pushUndo(room);
-  App.editing = null; s.check = false; resolveMatching(s, 'checked');
+  App.editing = null; s.check = false; delete s.draft; resolveMatching(s, 'checked');
   logFix({ kind: 'check-ok', section: rs.secs[i].name, at: s.at, from: plainText(s.text), to: plainText(s.text) });
   saveStore(); refresh();
 }
@@ -3238,32 +3409,42 @@ function neighbour(i, j, dir) {
   const k = flat.findIndex(p => p[0] === i && p[1] === j);
   return flat[k + dir] || null;
 }
+// Returns true when something changed.
 function commitEditor() {
-  const ed = App.editing; if (!ed) return;
+  const ed = App.editing; if (!ed) return false;
   App.editing = null;
   const room = curRoom(), rs = roomState(room), sec = rs.secs[ed.i], s = sec && sec.sents[ed.j];
-  if (!s) return refresh();
-  const next = tidy(ed.ta.value.replace(/\s*\n\s*/g, ' '));
-  if (next === s.text) { dropBlank(ed.i, ed.j); return refresh(); }
+  if (!s) { refresh(); return false; }
+  delete s.draft;
+  const next = cleanTyped(ed.ta.value);
+  if (next === ed.before) { dropBlank(ed.i, ed.j); saveStore(); refresh(); return false; }
   pushUndo(room);
   if (!next) {
-    if (!s.orig) { sec.sents.splice(ed.j, 1); saveStore(); return refresh(); }
+    if (!s.orig) { sec.sents.splice(ed.j, 1); saveStore(); refresh(); return true; }
     s.removed = true; s.check = false;
     logFix({ kind: 'delete', section: sec.name, at: s.at, from: plainText(s.text), to: '' });
     saveStore(); refresh();
-    return toast('Sentence deleted', { label: 'Undo', fn: () => undo() });
+    toast('Sentence deleted', { label: 'Undo', fn: () => undo() });
+    return true;
   }
-  const from = plainText(s.text), to = plainText(next);
+  const old = s.text, from = plainText(old), fromK = keptText(old);
   const wasCheck = s.check;
-  const heardC = wasCheck ? room.checks.find(c => sentenceMatches(s.text, c.quote)) : null;
-  s.text = next; s.edited = next !== s.orig;
+  const heardC = wasCheck ? room.checks.find(c => sentenceMatches(old, c.quote)) : null;
+  if (s.orig && next === keptText(s.orig)) { s.text = s.orig; s.edited = false; }   // back to the original, grey phrases and all
+  else {
+    s.text = next; s.edited = next !== s.orig;
+    // Grey phrases are decided by the edit: still in the text = kept, gone = removed.
+    ed.adds.forEach(ph => logFix({ kind: findWord(next, ph) >= 0 ? 'added-keep' : 'added-remove', section: sec.name, at: s.at, from: ph, to: findWord(next, ph) >= 0 ? ph : '' }));
+  }
   if (wasCheck) { s.check = false; resolveMatching(s, 'edited', from); }
-  if (from !== to && s.orig) {
-    const d = diffSpan(from, to);
-    logFix({ kind: 'edit', section: sec.name, at: s.at, heard: heardC ? heardC.heard : '', fromSpan: d.from, toSpan: d.to, from, to, flagged: !!wasCheck });
-    if (wasCheck) PL.add(d.from, d.to, ctxWords(from, d.from));
+  const to = keptText(s.text);
+  if (fromK !== to && s.orig) {
+    const d = diffSpan(fromK, to);
+    logFix({ kind: 'edit', section: sec.name, at: s.at, heard: heardC ? heardC.heard : '', fromSpan: d.from, toSpan: d.to, from: fromK, to, flagged: !!wasCheck });
+    if (wasCheck) PL.add(d.from, d.to, ctxWords(fromK, d.from));
   } else if (!s.orig) logFix({ kind: 'new', section: sec.name, from: '', to });
   saveStore(); refresh();
+  return true;
 }
 function addSentence(i) {
   commitEditor(); closeFix();
@@ -3340,7 +3521,8 @@ async function toggleDone(andNext) {
 function findReplace() {
   if (!App.job) return;
   commitEditor(); closeFix();
-  const reOf = (f, whole) => new RegExp((whole ? '\\b' : '') + f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + (whole ? '\\b' : ''), 'gi');
+  // v3.3: "whole words" only applies at an end that is a letter or number ("cupboard." still finds).
+  const reOf = (f, whole) => new RegExp((whole && /^[A-Za-z0-9]/.test(f) ? '(?<![A-Za-z0-9])' : '') + f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + (whole && /[A-Za-z0-9]$/.test(f) ? '(?![A-Za-z0-9])' : ''), 'gi');
   const scope = all => all ? App.job.rooms : [curRoom()];
   const count = (f, whole, all) => { if (!f.trim()) return 0; const re = reOf(f, whole); let n = 0;
     scope(all).forEach(r => roomState(r).secs.forEach(sec => sec.sents.forEach(s => { if (!s.removed) n += (plainText(s.text).match(re) || []).length; }))); return n; };
@@ -3364,6 +3546,7 @@ function findReplace() {
     if (!f.trim()) return;
     const re = reOf(f, whole);
     let n = 0, rooms = 0;
+    const touched = [];
     scope(all).forEach(r => {
       const rs = roomState(r);
       let hit = false;
@@ -3378,17 +3561,17 @@ function findReplace() {
         s.text = tidy(out); s.edited = s.text !== s.orig;
         logFix({ kind: 'replace', room: r.name, section: sec.name, at: s.at, fromSpan: f, toSpan: rp, from, to: plainText(s.text) });
       }));
-      if (hit) { rooms++; rs.copiedSig = null; }
+      if (hit) { rooms++; touched.push(r); }
     });
     if (n && body.querySelector('#frPl').checked) PL.add(f, rp, []);
     saveStore(); refresh();
-    toast(n ? 'Replaced ' + n + (rooms > 1 ? ' in ' + rooms + ' rooms' : '') : 'Nothing found');
+    toast(n ? 'Replaced ' + n + (rooms > 1 ? ' in ' + rooms + ' rooms' : '') : 'Nothing found', n ? { label: 'Undo', fn: () => undoRooms(touched) } : null);
   });
 }
 
 // ── audio ───────────────────────────────────────────────────────────────
 const audio = () => $('audio');
-let audioRoomKey = null, pausedAt = 0, rafId = 0, linkRetried = false, wantPlay = false, clipEnd = null, autoPaused = false, resumeT = 0;
+let audioRoomKey = null, pausedAt = 0, rafId = 0, linkRetried = false, wantPlay = false, clipEnd = null, autoPaused = false, resumeT = 0, clipT = 0;
 const skipS = () => LS.get('pa-ed:skip', 3);
 const rewindS = () => LS.get('pa-ed:rewind', 1);
 const typingPause = () => LS.get('pa-ed:typingPause', 'pause');
@@ -3396,14 +3579,18 @@ const Wave = { key: null, peaks: null, real: false };
 async function loadAudio(room) {
   const a = audio();
   pauseAudio();
+  // v3.3: drop the last room's audio first, so Play can never play the wrong room,
+  // and cancel any "resume after 2 s" left from that room.
+  clearTimeout(resumeT); autoPaused = false; clipEnd = null; clearTimeout(clipT);
+  a.removeAttribute('src'); try { a.load(); } catch (e) {}
   audioRoomKey = room.key; linkRetried = false;
   Wave.key = room.key; Wave.peaks = null; Wave.real = false;
   setTime(0, 0);
   const has = !!room.audio;
-  $('play').disabled = $('back').disabled = $('fwd').disabled = !has;
+  $('play').disabled = $('back').disabled = $('fwd').disabled = true;   // enabled once the audio has loaded
   $('nowSec').textContent = has ? 'Loading audio…' : 'No audio file';
   drawWave();
-  if (!has) { a.removeAttribute('src'); a.load(); return; }
+  if (!has) return;
   try {
     const url = await room.audio.url();
     if (audioRoomKey !== room.key) return;
@@ -3495,7 +3682,7 @@ function togglePlay() {
     a.play().catch(() => toast('The audio could not play'));
   } else { wantPlay = false; a.pause(); }
 }
-function pauseAudio() { wantPlay = false; const a = audio(); if (a && !a.paused) a.pause(); }
+function pauseAudio() { wantPlay = false; clearTimeout(resumeT); const a = audio(); if (a && !a.paused) a.pause(); }
 function skip(s) { const a = audio(); if (!a.src) return; clipEnd = null; a.currentTime = Math.max(0, Math.min(duration(), a.currentTime + s)); tick(); }
 function tick() {
   const a = audio(), d = duration();
@@ -3510,8 +3697,9 @@ function markPlaying(force) {
   const t = audio().currentTime || 0, rs = roomState(room);
   let best = null, bestAt = -1, secName = '', secAt = -1;
   rs.secs.forEach((sec, i) => {
-    if (sec.at != null && sec.at <= t + 0.2 && sec.at >= secAt) { secName = sec.name; secAt = sec.at; }
-    sec.sents.forEach((s, j) => { if (!s.removed && s.at != null && s.at <= t + 0.2 && s.at >= bestAt) { best = i + '.' + j; bestAt = s.at; } });
+    // v3.3: 0.5 s lead, because a sentence is played from 0.4 s before it starts
+    if (sec.at != null && sec.at <= t + 0.5 && sec.at >= secAt) { secName = sec.name; secAt = sec.at; }
+    sec.sents.forEach((s, j) => { if (!s.removed && s.at != null && s.at <= t + 0.5 && s.at >= bestAt) { best = i + '.' + j; bestAt = s.at; } });
   });
   const ns = $('nowSec');
   if (audio().src && (secName || audio().currentTime)) ns.textContent = secName;
@@ -3560,7 +3748,9 @@ function sentEnd(at) {
 function playSentence(at) { at = num(at); if (at == null) return; playFrom(at - 0.4); clipEnd = sentEnd(at); }
 function wireAudio() {
   const a = audio();
-  a.addEventListener('loadedmetadata', () => { $('nowSec').textContent = ''; tick(); });
+  a.addEventListener('loadedmetadata', () => { $('nowSec').textContent = ''; $('play').disabled = $('back').disabled = $('fwd').disabled = false; tick(); });
+  // v3.3: the clip stop also runs on timeupdate, which keeps firing when the window is hidden.
+  a.addEventListener('timeupdate', () => { if (clipEnd != null && a.currentTime >= clipEnd) { clipEnd = null; pauseAudio(); } });
   a.addEventListener('durationchange', drawWave);
   a.addEventListener('play', () => { $('playIcon').innerHTML = '<path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/>'; $('play').setAttribute('aria-label', 'Pause'); $('play').classList.add('on'); cancelAnimationFrame(rafId); loop(); T.activity(); });
   a.addEventListener('pause', () => { $('playIcon').innerHTML = '<path d="M8 5.5v13l11-6.5z"/>'; $('play').setAttribute('aria-label', 'Play'); $('play').classList.remove('on'); pausedAt = Date.now(); tick(); });
@@ -3587,7 +3777,7 @@ function wireAudio() {
   $('fwd').onclick = () => skip(skipS());
   const wv = $('wave');
   const seekAt = e => { const r = wv.getBoundingClientRect(); const x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); if (a.src) { clipEnd = null; a.currentTime = x * duration(); tick(); } };
-  wv.addEventListener('pointerdown', e => { seekAt(e); wv.setPointerCapture(e.pointerId); const mv = ev => seekAt(ev); wv.addEventListener('pointermove', mv); wv.addEventListener('pointerup', () => wv.removeEventListener('pointermove', mv), { once: true }); });
+  wv.addEventListener('pointerdown', e => { seekAt(e); wv.setPointerCapture(e.pointerId); const mv = ev => seekAt(ev); wv.addEventListener('pointermove', mv); const end = () => { wv.removeEventListener('pointermove', mv); wv.removeEventListener('pointerup', end); wv.removeEventListener('pointercancel', end); }; wv.addEventListener('pointerup', end); wv.addEventListener('pointercancel', end); });
   $('spdBadge').onclick = () => { const k = SPEED_LIST.indexOf(speed()); setSpeed(SPEED_LIST[(k + 1) % SPEED_LIST.length]); };
   $('audioSetBtn').onclick = audioSettings;
   window.addEventListener('resize', drawWave);
@@ -3622,6 +3812,7 @@ function onTypingInput(e) {
   const mode = typingPause(); if (mode === 'off') return;
   const a = audio();
   if (!a.paused) { pauseAudio(); autoPaused = true; }
+  else clearTimeout(resumeT);
   if (mode === 'resume' && autoPaused) {
     clearTimeout(resumeT);
     resumeT = setTimeout(() => { if (autoPaused && audio().paused) togglePlay(); }, 2000);
@@ -3752,16 +3943,17 @@ const KEYS = [
   ['Ctrl + ]', 'Next word to check (or grey phrase, then copy, done, next room)'],
   ['Ctrl + [', 'Previous word to check'],
   ['Enter', 'In the fix box: saves the fix, or keeps it as is if unchanged'],
-  ['Ctrl + Space  /  Alt + Space', IS_MAC ? 'Play / pause. On a Mac use ⌥ Option + Space (Ctrl + Space switches the keyboard language), or the ▶❙❙ key' : 'Play / pause (also Ctrl + K, or the keyboard\'s play key)'],
+  IS_MAC ? ['⌥ Option + Space', 'Play / pause (Ctrl + Space switches the keyboard language on a Mac), or the ▶❙❙ key']
+    : ['Ctrl + Space  /  Ctrl + K', 'Play / pause (or the keyboard\'s play key). Alt + Space opens the Windows window menu, so use Ctrl + Space'],
   ['Ctrl + ,  /  Ctrl + .', 'Back / forward a few seconds'],
   ['Ctrl + Shift + ,  /  .', 'Slower / faster'],
   ['Ctrl + Z  /  Ctrl + Shift + Z', 'Undo / redo (outside a text box)'],
-  ['Ctrl + H', 'Find and replace'],
-  ['F7', 'Next spelling, grammar or style note (or click the Spelling button)'],
+  ['Ctrl + H  /  Ctrl + Shift + F', 'Find and replace'],
+  ['F7  /  Ctrl + ;', 'Next spelling, grammar, style or Claude note (or click the Spelling button)'],
   ['Ctrl + /', 'Raw transcript'],
-  ['Ctrl + Enter', 'Room done, next room'],
+  ['Ctrl + Enter', 'Room done, next room (on a done room: just the next room)'],
   ['Alt + ↑  /  ↓', 'Previous / next room'],
-  ['Click a sentence', 'Edit it. Enter saves, Tab goes to the next, Esc cancels'],
+  ['Click a sentence', 'Edit it. Enter saves, Tab goes to the next, Esc closes (and saves; Undo is in the message)'],
   ['?', 'This help']
 ];
 function keysHtml() { return KEYS.map(([k, v]) => `<span>${k.split('  /  ').map(x => '<kbd>' + esc(x) + '</kbd>').join(' / ')}</span><span class="muted">${esc(v)}</span>`).join(''); }
@@ -3779,9 +3971,12 @@ function onKey(e) {
   if (e.ctrlKey && e.code === 'Comma') { e.preventDefault(); return e.shiftKey ? stepSpeed(-1) : skip(-skipS()); }
   if (e.ctrlKey && e.code === 'Period') { e.preventDefault(); return e.shiftKey ? stepSpeed(1) : skip(skipS()); }
   if (e.ctrlKey && e.code === 'Slash') { e.preventDefault(); return toggleRaw(); }
-  if (e.ctrlKey && e.code === 'KeyH') { e.preventDefault(); return findReplace(); }
-  if (e.key === 'F7') { e.preventDefault(); return nextIssue(); }
-  if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); return toggleDone(true); }
+  // v3.3: on a Mac, Ctrl+H inside a text box is backspace, so it's left alone there. Ctrl+Shift+F also works.
+  if (e.ctrlKey && e.code === 'KeyH' && !(IS_MAC && typing)) { e.preventDefault(); return findReplace(); }
+  if (e.ctrlKey && e.shiftKey && e.code === 'KeyF') { e.preventDefault(); return findReplace(); }
+  if (e.key === 'F7' || (e.ctrlKey && e.code === 'Semicolon')) { e.preventDefault(); return nextIssue(); }
+  // v3.3: on a room that's already done, Ctrl+Enter just moves on (it never un-marks it).
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); if (roomState(curRoom()).done) { commitEditor(); const nx = nextRoomIndex(); return nx >= 0 ? openRoom(nx) : toast('Every room is done. Export › Download Word file.'); } return toggleDone(true); }
   if (e.ctrlKey && !e.altKey && (e.code === 'BracketRight' || e.code === 'BracketLeft')) { e.preventDefault(); return goNext(e.code === 'BracketRight' ? 1 : -1); }
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ' && !typing) { e.preventDefault(); return undo(e.shiftKey); }
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyY' && !typing) { e.preventDefault(); return undo(true); }
@@ -3802,7 +3997,7 @@ function showHelp() {
     ['Check the yellow words', 'Press Ctrl + ] (or the arrow by "to check"). The fix box opens on the word and the audio plays there. Type the right word and press Enter, or press Enter if it was right. Play clip replays just that bit.'],
     ['Keep or remove grey phrases', 'The AI added these when no damage was mentioned. Enter keeps the selected one, Delete removes it.'],
     ['Copy the room, then Room done', 'Both are at the top. The yellow one is your next step. Rows that say Not mentioned can be clicked to type into them.'],
-    ['Export when the job is done', 'Export › Download Word file gives the typed report in the inspection template. Save it in the job\'s Dropbox folder.']];
+    ['Final check, then export', 'Claude check (top of the page) reads the whole job and suggests fixes: purple dashed underlines, F7 to go through them. Then Export › Download Word file: the final report, with the inspector and typist named. Save it in the job\'s Dropbox folder.']];
   modal('How to type a job', `<div class="help-steps">${steps.map(([a, b], k) => `<div><span class="no">${k + 1}</span><div><b>${esc(a)}</b><div class="muted small">${esc(b)}</div></div></div>`).join('')}</div>
     <div class="label" style="margin-bottom:8px">Keyboard</div><div class="keys">${keysHtml()}</div>
     <p class="small muted" style="margin-top:14px">Where the text comes from: AssemblyAI turns the audio into words (yellow = words it wasn't sure of). Claude then sorts the sentences into the template rows, tidies them and adds the grey phrases. The Raw transcript window shows the words before Claude touched them.</p>`);
@@ -3855,7 +4050,20 @@ const HOUSE_WORDS = new Set(('downpipe downpipes colorbond benchtop benchtops be
   + 'isolator isolators lintel lintels weephole weepholes pavers paved bitumen limestone mulched reticulated letterbox letterboxes carpeted '
   + 'flyscreened screendoor plantation shutters rangehoods glasswasher splitsystem reverse-cycle panelling panellings cladding weatherboard '
   + 'colorbond-style powdercoated powder-coated aluminium stainless chrome brushed mortar render rendered cornices skirting architraved '
-  + 'garage carport roller-door downlights pendant pendants batten battens fluoro fluoros halogen halogens dimmer dimmers').split(/\s+/));
+  + 'garage carport roller-door downlights pendant pendants batten battens fluoro fluoros halogen halogens dimmer dimmers '
+  // v3.3: WA and trade words the dictionary doesn't know
+  + 'ducted evap evaporative soakwell soakwells jarrah marri karri leadlight leadlights leadlit desilvering desilvered gutterguard gutterguards '
+  + 'spalling spalled lightswitch lightswitches powerpoints aircons splitsystems rangehood ensuites robe robes walk-in bifolds stackers stacker '
+  + 'screeding efflorescence weatherboards fibro hardiplank hardiflex scyon colorbond-style retic sprinklers solenoid solenoids cooktop '
+  + 'heatlamp heatlamps 3-in-1 exhaust-fan towelrail towelrails toiletroll grabrail grabrails splashback-tiles cornice-line skirtings '
+  + 'downpipe bollard bollards paving brickpaved brick-paved limestone-paved reticulated bore-water garden-bed sliding-door flyscreen-door '
+  + 'uPVC upvc pvc led leds lcd tv tvs ac acs rcd gpo nbn hws mm cm kw kwh').split(/\s+/));
+// Brand names: right in any position, any capitals.
+const BRANDS = new Set(('hebel rinnai daikin stratco insinkerator fujitsu mitsubishi panasonic samsung lg haier hisense actron actronair braemar coolair '
+  + 'breezair bonaire vulcan rheem dux bosch smeg miele electrolux westinghouse kelvinator chef omega technika ilve dishlex fisher paykel asko euromaid '
+  + 'blanco franke caroma reece methven dorf phoenix clark stoddart clipsal hpm legrand arlec brilliant mercator beacon hunter aiphone aeg nbn telstra '
+  + 'foxtel dulux taubmans wattyl colorbond gyprock boral james-hardie hardie crimsafe security-plus lockwood gainsborough schlage yale whirlpool '
+  + 'everdure weber stiebel eltron solahart edwards apricus vaillant hydrotherm aquamax hills ezyclean').split(/\s+/));
 // Words a correction may be drawn from: property words, plus every word in the WA template rows.
 const CONDITION_WORDS = ('crack cracks cracked cracking chip chips chipped scuff scuffs scuffed scuffing stain stains stained staining mark marks marked '
   + 'dent dents dented rust rusted rusting mould mouldy discolouration discoloured tarnish tarnished tarnishing peeling peeled flaking scratch '
@@ -3875,26 +4083,69 @@ function editDist(a, b) {
   }
   return d[m][n];
 }
-// Only close, likely corrections: the phrase list first, then property words,
-// then the dictionary's own guesses that are within two letters. Nothing far-fetched.
-function spellSuggest(word) {
+// Common typing slips with one right answer.
+const FIXED = { alot: 'a lot', dosent: "doesn't", doesnt: "doesn't", dont: "don't", isnt: "isn't", wasnt: "wasn't", arent: "aren't", werent: "weren't",
+  didnt: "didn't", couldnt: "couldn't", shouldnt: "shouldn't", wouldnt: "wouldn't", hasnt: "hasn't", havent: "haven't", theres: "there's",
+  thats: "that's", whats: "what's", recieved: 'received', seperate: 'separate', seperated: 'separated', accomodation: 'accommodation',
+  definately: 'definitely', occured: 'occurred', untill: 'until', wierd: 'weird', thier: 'their', infront: 'in front', aswell: 'as well' };
+// Only close, likely corrections: a fixed slip, the phrase list, then property words,
+// then the dictionary's own guesses within one or two letters. Nothing far-fetched.
+// guesses: the dictionary's list when it was worked out elsewhere (the background worker).
+function spellSuggest(word, guesses) {
   const lw = word.toLowerCase(), max = lw.length > 6 ? 2 : 1, maxDict = lw.length >= 9 ? 2 : 1, c = new Map();
   const put = (v, s) => { const k = v.toLowerCase(); if (k === lw) return; if (!c.has(k) || c.get(k).s > s) c.set(k, { v, s }); };
+  if (FIXED[lw]) put(FIXED[lw], -100);
   PL.all().forEach(x => { if (x.from === lw) put(x.to, -1 - x.n); });
   VOCAB.forEach(v => { const dd = editDist(lw, v); if (dd <= max) put(v, dd - 0.5); });
-  let guesses = [];
-  try { guesses = SP.dict ? SP.dict.suggest(word, 8) : []; } catch (e) {}
-  guesses.forEach(v => {
-    if (/'/.test(v) && !/'/.test(lw)) return;
+  if (guesses === undefined) { guesses = []; try { guesses = SP.dict ? SP.dict.suggest(word, 8) : []; } catch (e) {} }
+  (guesses || []).forEach(v => {
+    // "doesnt" → "doesn't" is fine; an apostrophe that changes the word isn't.
+    if (/'/.test(v) && !/'/.test(lw) && v.replace(/'/g, '').toLowerCase() !== lw) return;
     if (/^[A-Z]/.test(v) && !/^[A-Z]/.test(word)) return;
-    const dd = editDist(lw, v.toLowerCase()); if (dd > maxDict) return;
+    const dd = editDist(lw, v.toLowerCase().replace(/'/g, '')); if (dd > maxDict) return;
     put(v, dd + (v[0].toLowerCase() !== lw[0] ? 0.6 : 0) + (Math.abs(v.length - lw.length) > 1 ? 0.3 : 0));
   });
   const cap = /^[A-Z]/.test(word);
   return [...c.values()].sort((a, b) => a.s - b.s).slice(0, 3).map(x => cap ? x.v[0].toUpperCase() + x.v.slice(1) : x.v);
 }
+// v3.3: the dictionary's guesses are slow (2–3 s for a long word), so they run in a
+// background worker and the card shows the quick suggestions straight away.
+const SPW = {
+  w: null, n: 0, waits: new Map(), ready: false,
+  start(aff, dic) {
+    try {
+      const src = (document.getElementById('typoSrc') || {}).textContent;
+      if (!src || typeof Worker === 'undefined') return;
+      const code = src + `\nlet D=null;onmessage=e=>{const m=e.data;if(m.aff){try{D=new Typo('en_AU',m.aff,m.dic);postMessage({ready:1})}catch(x){postMessage({ready:0})}return}let g=[];try{g=D?D.suggest(m.word,8):[]}catch(x){}postMessage({id:m.id,g})}`;
+      this.w = new Worker(URL.createObjectURL(new Blob([code], { type: 'text/javascript' })));
+      this.w.onmessage = e => { const m = e.data; if ('ready' in m) { this.ready = !!m.ready; return; } const f = this.waits.get(m.id); if (f) { this.waits.delete(m.id); f(m.g); } };
+      this.w.onerror = () => { this.w = null; this.ready = false; };
+      this.w.postMessage({ aff, dic });
+    } catch (e) { this.w = null; }
+  },
+  guesses(word, ms) {
+    if (!this.w || !this.ready) return Promise.resolve(null);
+    const id = ++this.n;
+    return new Promise(res => { this.waits.set(id, res); this.w.postMessage({ id, word }); setTimeout(() => { if (this.waits.has(id)) { this.waits.delete(id); res(null); } }, ms || 6000); });
+  }
+};
 const AVOID = ['aged', 'appears', 'damages', 'dirt', 'dirty', 'grouting', 'intact', 'minor', 'showing signs', 'slightly', 'some', 'structural', 'unclean', 'untested',
   'untidy', 'washable marks', 'faded', 'wipeable marks', 'wearing'];
+// v3.3: a one-click replacement for the words-to-avoid ('' = remove it). Only where the swap is safe;
+// the rest still say "reword". Check these against the PA style guide.
+const AVOID_SUG = { minor: ['light', ''], slightly: [''], some: [''], intact: ['undamaged'], untested: ['not tested'], unclean: ['not clean'],
+  dirty: ['marked'], dirt: ['marks'], damages: ['damage'], appears: ['is'], wearing: ['wear'], grouting: ['grout'], untidy: ['not tidy'] };
+// v3.3: real mistakes the dictionary can't see, because each word is spelt right.
+const PHRASES = [
+  [/\bin tact\b/gi, ['undamaged', 'intact'], '“in tact” is one word, “intact”, which is on the words-to-avoid list. “undamaged” says the same.'],
+  [/\b(should|could|would|must) of\b/gi, m => [m.replace(/ of$/i, ' have')], 'Should be “have”, not “of”.'],
+  [/\b(wardrobe|robe|kitchen|vanity|bathroom|cupboard|bedside|desk|underbench|cabinet|linen) draws\b/gi, m => [m.replace(/draws$/i, 'drawers')], 'Furniture “drawers”, not “draws”.'],
+  [/\b[Tt]heir (is|are|was|were|has|have)\b/g, m => [m.replace(/^([Tt])heir/, (x, t) => t + 'here')], '“there is / there are”, not “their”.'],
+  [/\b[Tt]here (going|not|getting)\b/g, m => [m.replace(/^([Tt])here/, (x, t) => t + "hey're")], '“they’re” (they are), not “there”.'],
+  [/\b[Ii]ts (in|a|been|got|not|very|missing|broken|working|clean)\b/g, m => [m.replace(/^([Ii])ts/, (x, i) => i + "t's")], '“it’s” (it is), not “its”.'],
+  [/\bleafs\b/gi, ['leaves'], 'The plural is “leaves”.'],
+  [/\b(a|the|is|are|feels|looks) lose\b/gi, m => [m.replace(/lose$/i, 'loose')], '“loose” (not tight), not “lose”.']
+];
 const MISHEARS = [
   [/\bsimilar metal\b/gi, 'silver metal', 'Often a mishear of “silver metal”.'],
   [/\bsimilar\b/gi, 'silver metal', 'In these recordings “similar” is usually “silver metal”. Check the audio.'],
@@ -3909,33 +4160,48 @@ const SP = {
     if (this.dict || this.loading) return this.loading;
     if (typeof Typo === 'undefined') { this.failed = true; return Promise.resolve(null); }
     this.loading = (async () => {
+      // v3.3: each source gets 10 seconds, so a stalled connection can't leave it loading for ever.
+      const get = u => { const c = new AbortController(), t = setTimeout(() => c.abort(), 10000);
+        return fetch(u, { signal: c.signal }).then(r => { if (!r.ok) throw 0; return r.text(); }).finally(() => clearTimeout(t)); };
       for (const [aff, dic] of SPELL_SRC) {
         try {
-          const [a, d] = await Promise.all([fetch(aff).then(r => { if (!r.ok) throw 0; return r.text(); }), fetch(dic).then(r => { if (!r.ok) throw 0; return r.text(); })]);
+          const [a, d] = await Promise.all([get(aff), get(dic)]);
           if (!/SET|TRY|SFX/.test(a) || d.length < 1000) continue;
           await new Promise(r => setTimeout(r, 0));
           this.dict = new Typo('en_AU', a, d);
+          this.failed = false;
+          setTimeout(() => SPW.start(a, d), 300);
           return this.dict;
         } catch (e) {}
       }
-      this.failed = true; return null;
+      this.failed = true; this.loading = null; return null;
     })();
     return this.loading;
   },
+  // Try again (the Spelling button when the dictionary couldn't load).
+  retry() { this.failed = false; this.loading = null; updateSpBtn(); return this.load().then(() => { if (App.job && !App.editing && !App.fix) refresh(); else updateSpBtn(); toast(this.dict ? 'Spelling is on' : 'The dictionary still could not load. Check the internet connection.'); }); },
   mine() { return new Set(LS.get('pa-ed:dict', [])); },
   ignored() { return new Set((App.store && App.store.spIgnore) || []); },
   wordOk(w, mine, ign) {
     const lw = w.toLowerCase().replace(/[’]/g, "'");
     if (w.length < 2 || /\d/.test(w) || /^[A-Z][A-Z'-]+$/.test(w)) return true;
-    if (HOUSE_WORDS.has(lw) || mine.has(lw) || ign.has('w:' + lw)) return true;
+    // v3.3: plural acronyms (LEDs, ACs, TVs) and mixed case (uPVC, eBay)
+    if (/^[A-Z]{2,}s$/.test(w) || /[a-z][A-Z]/.test(w)) return true;
+    if (HOUSE_WORDS.has(lw) || BRANDS.has(lw) || mine.has(lw) || ign.has('w:' + lw)) return true;
     if (lw.includes('-')) return lw.split('-').every(p => !p || this.wordOk(p, mine, ign));
     const d = this.dict;
     return d.check(w) || d.check(lw) || d.check(w.replace(/[’]/g, "'")) || (lw.endsWith("'s") && d.check(lw.slice(0, -2)));
   }
 };
 // Issues in one sentence, as [start, end) offsets into s.text (never inside a grey [added: …] phrase).
-function sentIssues(s, ign, mine) {
+// names: words from the job's address, client and inspector (never flagged).
+const A_AN_SKIP = /^(one|once|uni|use|usa|usu|ute|uti|eu|ewe|ur[ai]|uv)/i;     // "a usable", "a unit", "a one-way"
+const AN_LETTER = /^[AEFHILMNORSX]/;                                         // acronyms said "an": an RCD, an NBN, an LED, an HWS
+const DUP_OK = new Set(['had', 'that', 'is', 'do', 'bora', 'walla', 'can']);
+const LITTLE = new Set(['or', 'and', 'as', 'at', 'in', 'on', 'is', 'if', 'of', 'to', 'up', 'an', 'a', 'it', 'by', 'be']);
+function sentIssues(s, ign, mine, names) {
   const out = [], text = String(s.text);
+  names = names || new Set();
   const parts = []; let pos = 0;
   text.split(/(\[added: [^\]]*\])/).forEach(p => { if (!/^\[added: /.test(p) && p) parts.push([pos, p]); pos += p.length; });
   const add = (a, b, kind, msg, sug, key) => {
@@ -3943,34 +4209,72 @@ function sentIssues(s, ign, mine) {
     if (out.some(x => a < x.end && b > x.start)) return;
     out.push({ start: a, end: b, word: text.slice(a, b), kind, msg, sug: sug || [], key });
   };
+  const sentStart = text.search(/\S/);
   let firstWord = true;
   parts.forEach(([off, p]) => {
-    // known mishears and house style first: they say why
-    MISHEARS.forEach(([re, to, why]) => { re.lastIndex = 0; let m; while ((m = re.exec(p))) add(off + m.index, off + m.index + m[0].length, 'style', why, [to], 'mis'); });
-    AVOID.forEach(w => { const re = new RegExp('\\b' + w + '\\b', 'gi'); let m; while ((m = re.exec(p))) add(off + m.index, off + m.index + m[0].length, 'style', '“' + w + '” is on the PA words-to-avoid list. Reword or remove it.', [], 'avoid'); });
     let m;
-    const dup = /\b([A-Za-z]+)\s+\1\b/gi; while ((m = dup.exec(p))) add(off + m.index, off + m.index + m[0].length, 'grammar', 'The same word twice.', [m[1]], 'dup');
+    // real-word mistakes, known mishears and house style first: they say why
+    PHRASES.forEach(([re, to, why]) => { re.lastIndex = 0; while ((m = re.exec(p))) { const sug = typeof to === 'function' ? to(m[0]) : to; add(off + m.index, off + m.index + m[0].length, 'grammar', why, sug, 'ph'); } });
+    MISHEARS.forEach(([re, to, why]) => { re.lastIndex = 0; while ((m = re.exec(p))) add(off + m.index, off + m.index + m[0].length, 'style', why, [to], 'mis'); });
+    AVOID.forEach(w => { const re = new RegExp('\\b' + w + '\\b', 'gi'); while ((m = re.exec(p))) {
+      const sug = (AVOID_SUG[w.toLowerCase()] || null) && AVOID_SUG[w.toLowerCase()].map(v => v && /^[A-Z]/.test(m[0]) ? v[0].toUpperCase() + v.slice(1) : v);
+      add(off + m.index, off + m.index + m[0].length, 'style', '“' + w + '” is on the PA words-to-avoid list. ' + (sug ? 'Pick a replacement, or reword it.' : 'Reword or remove it.'), sug || [], 'avoid'); } });
+    const dup = /\b([A-Za-z]+)\s+\1\b/gi;
+    while ((m = dup.exec(p))) { if (!DUP_OK.has(m[1].toLowerCase()) && !/^[A-Z]/.test(m[1])) add(off + m.index, off + m.index + m[0].length, 'grammar', 'The same word twice.', [m[1]], 'dup'); }
     const leftover = /\b(scratch that|um+|uh+|erm|full stop|new line)\b/gi; while ((m = leftover.exec(p))) add(off + m.index, off + m.index + m[0].length, 'grammar', 'Looks like dictation, not report text.', [''], 'dict');
-    const a1 = /\b([Aa]) ([aeiou][a-z]*)/g; while ((m = a1.exec(p))) { if (!/^(one|once|uni|use|usu|eu|ur|ut)/i.test(m[2])) add(off + m.index, off + m.index + m[0].length, 'grammar', 'Use “an” before a vowel sound.', [(m[1] === 'A' ? 'An ' : 'an ') + m[2]], 'an'); }
-    const a2 = /\b([Aa]n) ([b-df-hj-np-tv-z][a-z]*)/g; while ((m = a2.exec(p))) { if (!/^(hour|honest|honou|heir|herb)/i.test(m[2])) add(off + m.index, off + m.index + m[0].length, 'grammar', 'Use “a” before a consonant sound.', [(m[1] === 'An' ? 'A ' : 'a ') + m[2]], 'a'); }
-    // spelling
+    // a / an: "a" or "an" as a word (not "N/A", not "type A or B"), before a lowercase word or an acronym
+    const isStart = i => off + i === sentStart;
+    const aan = /(^|[\s(])([Aa]n?) ([A-Za-z][A-Za-z]*)/g;
+    while ((m = aan.exec(p))) {
+      const lead = m[1].length, at = m.index + lead, art = m[2], w = m[3];
+      if (/^A/.test(art) && !isStart(at)) continue;          // a capital A mid-sentence is a label
+      const an = art.toLowerCase() === 'an';
+      const start = off + at, end = start + art.length + 1 + w.length;
+      const swap = to => (art[0] === 'A' ? to[0].toUpperCase() + to.slice(1) : to) + ' ' + w;
+      if (/^[A-Z]{2,}s?$/.test(w)) {                         // acronym: by the sound of its first letter
+        const wantAn = AN_LETTER.test(w);
+        if (wantAn && !an) add(start, end, 'grammar', '“an” before ' + w + ' (it starts with a vowel sound).', [swap('an')], 'an');
+        if (!wantAn && an) add(start, end, 'grammar', '“a” before ' + w + '.', [swap('a')], 'a');
+        continue;
+      }
+      if (!/^[a-z]+$/.test(w) || LITTLE.has(w)) continue;
+      if (!an && /^[aeiou]/.test(w) && !A_AN_SKIP.test(w)) add(start, end, 'grammar', 'Use “an” before a vowel sound.', [swap('an')], 'an');
+      if (an && /^[b-df-hj-np-tv-z]/.test(w) && !/^(hour|honest|honou|heir|herb)/.test(w)) add(start, end, 'grammar', 'Use “a” before a consonant sound.', [swap('a')], 'a');
+    }
+    // spelling, and the capital at the start
     const wre = /[A-Za-z][A-Za-z'’-]*[A-Za-z]|[A-Za-z]/g;
     while ((m = wre.exec(p))) {
-      const w = m[0], a = off + m.index;
+      const w = m[0], a = off + m.index, after = text[a + w.length] || '';
       const isFirst = firstWord; firstWord = false;
-      if (isFirst && /^[a-z]/.test(w) && a === text.search(/\S/)) add(a, a + w.length, 'grammar', 'Start the sentence with a capital letter.', [w[0].toUpperCase() + w.slice(1)], 'cap');
+      // not for "x4", "uPVC", "e.g."
+      if (isFirst && /^[a-z]/.test(w) && a === sentStart && !/[A-Z]/.test(w) && !/[\d.]/.test(after)) add(a, a + w.length, 'grammar', 'Start the sentence with a capital letter.', [w[0].toUpperCase() + w.slice(1)], 'cap');
       if (!SP.dict) continue;
-      if (!isFirst && /^[A-Z][a-z]/.test(w)) continue;   // a name or brand mid-sentence
+      const lw = w.toLowerCase();
+      if (names.has(lw)) continue;
+      if (!isFirst && /^[A-Z][a-z]/.test(w)) {
+        // A capital mid-sentence is usually a name or brand. Flag it only when it's
+        // a near miss of a property word ("Front Dor", "Kitchen Bentchtop").
+        if (SP.wordOk(w, mine, ign) || SP.wordOk(lw, mine, ign)) continue;
+        const near = VOCAB.some(v => Math.abs(v.length - lw.length) <= 2 && editDist(lw, v) <= (lw.length > 6 ? 2 : 1));
+        if (near) add(a, a + w.length, 'spell', '“' + w + '” isn’t in the Australian English dictionary.', null, 'sp');
+        continue;
+      }
       if (!SP.wordOk(w, mine, ign)) add(a, a + w.length, 'spell', '“' + w + '” isn’t in the Australian English dictionary.', null, 'sp');
     }
   });
   return out.sort((x, y) => x.start - y.start);
 }
+function jobNames() {
+  const j = App.job; if (!j) return new Set();
+  return new Set([j.address, j.facts && j.facts.Client, j.facts && j.facts.Inspector, App.store && App.store.typist].join(' ').toLowerCase().match(/[a-z][a-z'-]+/g) || []);
+}
 function roomIssues(room) {
-  const rs = roomState(room), ign = SP.ignored(), mine = SP.mine(), map = new Map(), list = [];
+  const rs = roomState(room), ign = SP.ignored(), mine = SP.mine(), map = new Map(), list = [], names = jobNames();
   rs.secs.forEach((sec, i) => sec.sents.forEach((s, j) => {
     if (s.removed || !s.text.trim()) return;
-    const iss = sentIssues(s, ign, mine);
+    const loc = sentIssues(s, ign, mine, names);
+    // Claude's notes, where the checks on this computer haven't already marked that spot.
+    const iss = loc.concat(claudeIssues(s, ign).filter(c => !loc.some(x => c.start < x.end && c.end > x.start))).sort((x, y) => x.start - y.start);
     iss.forEach(x => { x.i = i; x.j = j; x.id = list.length; list.push(x); });
     if (iss.length) map.set(i + '.' + j, iss);
   }));
@@ -3995,11 +4299,15 @@ function updateSpBtn() {
   const n = App.sp.list.length;
   $('spCount').textContent = n || '';
   b.classList.toggle('has', !!n);
+  // v3.3: say plainly when spelling isn't being checked (offline), with a retry.
+  b.classList.toggle('off', SP.failed && !SP.dict);
+  $('spLabel').textContent = SP.failed && !SP.dict ? 'Spelling off · retry' : 'Spelling';
   b.title = (SP.dict ? '' : SP.failed ? 'The dictionary could not load (offline?), so only grammar and house-style checks run. ' : 'Loading the dictionary… ')
     + (n ? n + ' spelling, grammar or style note' + (n > 1 ? 's' : '') + ' in this room. Click (or F7) to go to the next one.' : 'No spelling, grammar or style notes in this room.');
 }
 function nextIssue() {
   if (!App.sp) return;
+  if (SP.failed && !SP.dict && !App.sp.list.length) return SP.retry();
   if (!App.sp.list.length) return toast(SP.dict ? 'No spelling or grammar notes in this room' : SP.failed ? 'Dictionary unavailable. No grammar notes in this room' : 'Loading the dictionary…');
   const cur = App.spCur != null ? App.spCur : -1;
   const it = App.sp.list.find(x => x.id > cur) || App.sp.list[0];
@@ -4015,7 +4323,7 @@ function openSp(id) {
   const sx = roomState(curRoom()).secs[x.i], sentAt = sx && sx.sents[x.j] ? sx.sents[x.j].at : null;
   const card = document.createElement('div');
   card.className = 'fixcard'; card.id = 'fixcard'; card.setAttribute('role', 'dialog');
-  const label = x.kind === 'spell' ? 'Spelling' : x.kind === 'style' ? 'House style' : 'Grammar';
+  const label = x.kind === 'spell' ? 'Spelling' : x.kind === 'style' ? 'House style' : x.kind === 'claude' ? 'Claude' : 'Grammar';
   const sugBtns = s => s.map((v, k) => `<button class="btn ${k ? 'btn-ghost' : 'btn-dark'} btn-sm" data-use="${esc(v)}">${v ? '“' + esc(v) + '”' : 'Remove it'}</button>`).join('');
   card.innerHTML = `<button class="tb x" data-f="close" aria-label="Close" title="Close (Esc)">✕</button>
     <div class="top"><span class="orb ${x.kind}"></span><div><div class="msg"><b>${label}.</b> ${esc(x.msg)}</div></div></div>
@@ -4023,7 +4331,7 @@ function openSp(id) {
     <div class="box"><input class="field" id="spInput" spellcheck="true" lang="en-AU" autocomplete="off" aria-label="Replace with"></div>
     <div class="btns">${num(sentAt) != null ? '<button class="btn btn-ghost btn-sm" data-f="play">▶ Play sentence</button>' : ''}<button class="btn btn-ghost btn-sm" data-f="apply">Replace</button><button class="btn btn-plain btn-sm" data-f="ignore">Ignore in this job</button>
       ${x.kind === 'spell' ? '<button class="btn btn-plain btn-sm" data-f="learn">Add to my dictionary</button>' : ''}<button class="btn btn-plain btn-sm" data-f="next">Next note</button></div>
-    <div class="src">Type a replacement and press Enter, or pick a suggestion. Checked on this computer; nothing is sent anywhere.</div>`;
+    <div class="src">${x.kind === 'claude' ? 'Suggested by Claude in the final check. Only a suggestion: listen if unsure.' : 'Type a replacement and press Enter, or pick a suggestion. Checked on this computer; nothing is sent anywhere.'}</div>`;
   $('docBody').appendChild(card);
   const inp = card.querySelector('#spInput'); inp.value = x.word;
   const body = $('docBody').getBoundingClientRect(), r = el.getBoundingClientRect(), w = Math.min(460, body.width - 24);
@@ -4031,12 +4339,21 @@ function openSp(id) {
   card.style.top = (r.bottom - body.top + $('docBody').scrollTop + 10) + 'px';
   card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   inp.focus(); inp.select();
-  if (x.kind === 'spell') setTimeout(() => {
-    let s = [];
-    s = spellSuggest(x.word);
-    const box = card.querySelector('.sugs'); if (!box) return;
-    box.innerHTML = s.length ? sugBtns(s) : '<span class="small muted">No close match in the dictionary. Play the sentence to hear what was said, then type it below, or Ignore if it\'s right.</span>';
-  }, 30);
+  if (x.kind === 'spell') {
+    // v3.3: quick suggestions first (phrase list, property words), then the dictionary's
+    // guesses from the background worker. The page never freezes.
+    const box = card.querySelector('.sugs');
+    const none = '<span class="small muted">No close match in the dictionary. Play the sentence to hear what was said, then type it below, or Ignore if it\'s right.</span>';
+    const quick = spellSuggest(x.word, []);
+    if (quick.length) box.innerHTML = sugBtns(quick);
+    SPW.guesses(x.word).then(g => {
+      if (!card.isConnected) return;
+      let list = quick;
+      if (g) list = spellSuggest(x.word, g);
+      else if (!SPW.w && x.word.length <= 8) list = spellSuggest(x.word);   // no worker: short words are quick enough here
+      box.innerHTML = list.length ? sugBtns(list) : none;
+    });
+  }
   card.addEventListener('mousedown', e => { if (e.target.closest('[data-f],[data-use]')) e.preventDefault(); });
   card.onclick = e => {
     const u = e.target.closest('[data-use]'); if (u) return spApply(x, u.dataset.use);
@@ -4048,6 +4365,7 @@ function openSp(id) {
     if (f === 'next') { closeFix(); return nextIssue(); }
     if (f === 'ignore') {
       App.store.spIgnore = (App.store.spIgnore || []).concat([x.kind === 'spell' ? 'w:' + x.word.toLowerCase() : 'r:' + x.key + ':' + x.word.toLowerCase()]);
+      if (x.kind === 'claude') claudeDismiss(x);
       App.spCur = x.id - 1; saveStore(); closeFix(); refresh(); return toast('Ignored in this job');
     }
     if (f === 'learn') { LS.set('pa-ed:dict', [...SP.mine(), x.word.toLowerCase()].slice(-2000)); App.spCur = x.id - 1; closeFix(); refresh(); return toast('“' + x.word + '” added to your dictionary'); }
@@ -4069,12 +4387,204 @@ function spApply(x, v) {
   if (v && /^[A-Z]/.test(x.word) && /^[a-z]/.test(v) && x.kind !== 'cap') v = v[0].toUpperCase() + v.slice(1);
   let t = s.text.slice(0, a) + v + s.text.slice(b);
   if (!v && a === s.text.search(/\S/)) t = t.replace(/^\s*([,.;:]\s*)?([a-z])/, (m0, p, c) => c.toUpperCase());
-  s.text = tidy(t); s.edited = s.text !== s.orig; rs.copiedSig = null;
+  s.text = tidy(t); s.edited = s.text !== s.orig;
   logFix({ kind: 'spelling', section: sec.name, at: s.at, fromSpan: x.word, toSpan: v, from, to: plainText(s.text), rule: x.key });
   if (x.kind === 'spell' && v && PL.ok(x.word, v)) PL.add(x.word, v, ctxWords(from, x.word));
+  if (x.kind === 'claude') claudeDismiss(x);
   App.spCur = x.id - 1;
   closeFix(); saveStore(); refresh();
   toast(v ? '“' + x.word + '” → “' + v + '”' : 'Removed “' + x.word + '”', { label: 'Undo', fn: () => undo() });
+}
+
+
+// ═══ v3.3 ══════════════════════════════════════════════════════════════
+// ── typist name ─────────────────────────────────────────────────────────
+// Asked once on each computer; every job remembers who typed it, for the
+// report's "Typed by" line. A job typed by two people lists both.
+const typistName = () => String(LS.get('pa-ed:typist', '') || '').trim();
+function typistLine() {
+  const st = App.store; if (!st) return typistName();
+  const list = Array.isArray(st.typists) ? st.typists : (st.typist ? [st.typist] : []);
+  return list.join(', ');
+}
+function noteTypist() {
+  const n = typistName(); if (!n || !App.store) return;
+  const st = App.store;
+  st.typists = Array.isArray(st.typists) ? st.typists : (st.typist ? [st.typist] : []);
+  if (!st.typists.some(x => x.toLowerCase() === n.toLowerCase())) st.typists.push(n);
+  st.typist = st.typists.join(', ');
+}
+async function askTypist(why) {
+  let val = typistName();
+  const v = await modal(why ? 'Your name' : 'Change your name', `<p class="small muted" style="margin-bottom:10px">${why ? esc(why) + ' ' : ''}It goes on the report as “Typed by”, and is kept on this computer.</p>
+    <input class="field" id="typistIn" placeholder="First and last name" autocomplete="name" value="${esc(val)}">`,
+    [{ label: why ? 'Later' : 'Cancel', value: null }, { label: 'Save', cls: 'btn-main', value: 'save' }], body => {
+      const inp = body.querySelector('#typistIn');
+      setTimeout(() => { inp.focus(); inp.select(); }, 30);
+      inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); val = inp.value; body.closest('.modal').querySelector('.btn-main').click(); } };
+      inp.oninput = () => { val = inp.value; };
+    });
+  if (v !== 'save') return;
+  val = String(val || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+  if (!val) return;
+  LS.set('pa-ed:typist', val);
+  if (App.job && App.store) { noteTypist(); saveStore(); renderSide(); }
+  renderWho();
+  toast('Saved: ' + val);
+}
+function renderWho() {
+  const el = $('whoQ'); if (!el) return;
+  const n = typistName();
+  el.innerHTML = n ? `<span style="flex:1">Typing as <b>${esc(n)}</b></span><button class="btn btn-plain btn-sm" id="whoChange">Change</button>`
+    : `<span style="flex:1">Add your name for the report</span><button class="btn btn-ghost btn-sm" id="whoChange">Add name</button>`;
+  $('whoChange').onclick = () => askTypist('');
+}
+
+// ── Claude final check ──────────────────────────────────────────────────
+// Sends the typed text (never audio) to the inspectionapp-proofread val, which
+// asks Claude for spelling, grammar, wrong-word and house-style fixes. Each
+// note is only a suggestion: it shows as a purple dashed underline and changes
+// nothing until the typist accepts it. Results are kept per sentence, so a
+// second run only sends sentences that changed: a job costs a few US cents once.
+const PA_KEY = 'ZfFSr6J42MtujG_F88NgF1go';       // the same shared key as the inspector app (index.html)
+const DEFAULT_PROOF_URL = '';                     // paste the inspectionapp-proofread val address here once it exists
+const proofUrl = () => String(LS.get('pa-ed:proofUrl', '') || DEFAULT_PROOF_URL).trim();
+const CL_PRICE = { 'claude-haiku-4-5': [1, 5], 'claude-sonnet-5-5': [2, 10], 'claude-opus-5-5': [4, 20] };   // US$ per million tokens in / out
+const clPrice = model => { const k = Object.keys(CL_PRICE).find(x => String(model || '').startsWith(x)); return CL_PRICE[k || 'claude-sonnet-5-5']; };
+const sentKey = s => hashStr(keptText(s.text));
+function clStore() { const st = App.store; if (!st.cl) st.cl = {}; return st.cl; }
+// Every sentence in the job as it will read in the report.
+function jobSentences() {
+  const out = [];
+  App.job.rooms.forEach((room, ri) => {
+    const rs = roomState(room);
+    sheetRows(room, rs).forEach(r => {
+      if (r.i == null) return;
+      rs.secs[r.i].sents.forEach((s, j) => { if (!s.removed && s.text.trim()) out.push({ room, ri, row: r.name, s, key: sentKey(s) }); });
+    });
+  });
+  return out;
+}
+function claudeStatus() {
+  if (!App.job || !App.store) return { url: proofUrl(), unchecked: 0, total: 0 };
+  const cl = App.store.cl || {}, all = jobSentences();
+  return { url: proofUrl(), total: all.length, unchecked: all.filter(x => !(x.key in cl)).length };
+}
+// Claude's notes for one sentence, as issues for the spelling card.
+function claudeIssues(s, ign) {
+  const cl = App.store && App.store.cl; if (!cl) return [];
+  const h = sentKey(s), notes = cl[h]; if (!notes || !notes.length) return [];
+  const out = [];
+  notes.forEach((n, k) => {
+    const find = String(n.find || '').trim(); if (!find) return;
+    let a = findWord(s.text, find);
+    if (a < 0) { const i = s.text.indexOf(find); if (i >= 0 && !/\[added: [^\]]*$/.test(s.text.slice(0, i))) a = i; }
+    if (a < 0) return;
+    const word = s.text.slice(a, a + find.length);
+    if (ign.has('r:cl:' + word.toLowerCase())) return;
+    const unclear = n.kind === 'unclear' || n.replace == null;
+    out.push({ start: a, end: a + find.length, word, kind: 'claude', key: 'cl', h, n: k,
+      msg: (n.why || (unclear ? 'This doesn’t read clearly.' : 'Suggested fix.')) + (unclear ? ' Play the sentence and check what was said.' : ''),
+      sug: unclear ? [] : [String(n.replace)] });
+  });
+  return out;
+}
+// A note was used or ignored: drop it, and carry the rest over to the sentence's new text.
+function claudeDismiss(x) {
+  const cl = clStore(), list = cl[x.h]; if (!list) return;
+  const rest = list.filter((_, k) => k !== x.n);
+  cl[x.h] = rest;
+  const s = roomState(curRoom()).secs[x.i] && roomState(curRoom()).secs[x.i].sents[x.j];
+  if (s) { const nh = sentKey(s); if (nh !== x.h && !(nh in cl)) cl[nh] = rest; }
+}
+async function setProofUrl() {
+  let val = proofUrl();
+  const v = await modal('Claude check address', `<p class="small muted" style="margin-bottom:10px">The address of the <b>inspectionapp-proofread</b> val in Val Town (ask Marie). It's kept on this computer.</p>
+    <input class="field" id="proofIn" placeholder="https://propertyassist--….web.val.run" value="${esc(val)}" autocomplete="off" spellcheck="false">`,
+    [{ label: 'Cancel', value: null }, { label: 'Save', cls: 'btn-main', value: 'save' }], body => {
+      const inp = body.querySelector('#proofIn'); inp.oninput = () => { val = inp.value; }; setTimeout(() => inp.focus(), 30);
+    });
+  if (v !== 'save') return false;
+  val = String(val || '').trim();
+  if (val && !/^https:\/\//.test(val)) { toast('The address should start with https://'); return false; }
+  LS.set('pa-ed:proofUrl', val);
+  return !!val;
+}
+let clBusy = false;
+async function claudeCheck() {
+  if (!App.job || clBusy) return;
+  commitEditor(); closeFix(); closeMenu();
+  if (!proofUrl() && !(await setProofUrl())) return;
+  const cl = clStore(), all = jobSentences();
+  const todo = all.filter(x => !(x.key in cl));
+  // one entry per distinct sentence text
+  const seen = new Set(), uniq = todo.filter(x => (seen.has(x.key) ? false : (seen.add(x.key), true)));
+  const est = estimate(uniq);
+  const rooms = new Set(uniq.map(x => x.ri)).size;
+  const go = await modal('Claude final check', uniq.length
+    ? `<p class="muted" style="margin-bottom:10px">Claude reads the typed text and suggests spelling, grammar, wrong-word and house-style fixes. Nothing changes until you accept a suggestion (purple dashed underline, or F7).</p>
+       <div class="pre-list"><div><span>Sentences to check</span><span class="n">${uniq.length}${all.length > uniq.length ? ' of ' + all.length : ''}</span></div>
+       <div><span>Rooms</span><span class="n">${rooms}</span></div><div><span>Estimated cost</span><span class="n">${esc(est)}</span></div></div>
+       <p class="small muted" style="margin-top:10px">Only the typed text is sent, not the audio. Sentences already checked and unchanged aren't sent again.</p>`
+    : '<p class="muted">Every sentence has already been checked by Claude, and nothing has changed since.</p>',
+    uniq.length ? [{ label: 'Change address', value: 'addr' }, { label: 'Cancel', value: null }, { label: 'Check ' + uniq.length + ' sentence' + (uniq.length > 1 ? 's' : ''), cls: 'btn-main', value: 'go' }] : null);
+  if (go === 'addr') { await setProofUrl(); return; }
+  if (go !== 'go') return;
+  clBusy = true; updateClBtn();
+  // Batches of about 9,000 characters: each answers well inside Val Town's 60 s.
+  const batches = []; let cur = [], size = 0;
+  uniq.forEach(x => { const t = keptText(x.s.text); if (size + t.length > 9000 && cur.length) { batches.push(cur); cur = []; size = 0; } cur.push(x); size += t.length + 40; });
+  if (cur.length) batches.push(cur);
+  let found = 0, done = 0, failed = 0, tin = 0, tout = 0, model = '', lastErr = '';
+  const jobId = App.job.id;
+  await pool(batches, 2, async b => {
+    const ids = new Map(b.map((x, k) => ['s' + k, x]));
+    const body = { address: App.job.address, rooms: [] };
+    b.forEach((x, k) => {
+      let room = body.rooms.find(r => r.name === x.room.name); if (!room) { room = { name: x.room.name, rows: [] }; body.rooms.push(room); }
+      let row = room.rows.find(r => r.row === x.row); if (!row) { row = { row: x.row, sents: [] }; room.rows.push(row); }
+      row.sents.push({ id: 's' + k, text: keptText(x.s.text) });
+    });
+    try {
+      const u = new URL(proofUrl()); u.searchParams.set('k', PA_KEY);
+      const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 75000);
+      const r = await fetch(u.toString(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: ctl.signal }).finally(() => clearTimeout(t));
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.ok) throw new Error(d.error || ('the check service answered ' + r.status));
+      if (!App.job || App.job.id !== jobId) return;
+      const got = {};
+      (d.notes || []).forEach(n => { if (ids.has(n.id)) (got[n.id] = got[n.id] || []).push({ find: n.find, replace: n.replace, kind: n.kind, why: n.why }); });
+      ids.forEach((x, id) => { clStore()[x.key] = got[id] || []; found += (got[id] || []).length; });
+      done += b.length; model = d.model || model;
+      if (d.usage) { tin += d.usage.input_tokens || 0; tout += d.usage.output_tokens || 0; }
+    } catch (e) { failed += b.length; lastErr = e.name === 'AbortError' ? 'it took too long' : (e.message || 'error'); }
+  });
+  clBusy = false;
+  if (!App.job || App.job.id !== jobId) return;
+  const [pi, po] = clPrice(model), cost = (tin * pi + tout * po) / 1e6;
+  App.store.clRuns = (App.store.clRuns || []).concat([{ at: Date.now(), sent: done, notes: found, model, tin, tout, usd: +cost.toFixed(4) }]).slice(-20);
+  saveStore(); refresh(); updateClBtn();
+  const money = tin ? ' · cost about ' + fmtUsd(cost) : '';
+  if (failed && !done) return toast('Claude check failed: ' + lastErr + '. Check the address with Marie, then try again.', { label: 'Address', fn: () => setProofUrl() });
+  toast((found ? 'Claude suggested ' + found + ' fix' + (found > 1 ? 'es' : '') + '. Press F7 to go through them' : 'Claude found nothing to fix') + money
+    + (failed ? '. ' + failed + ' sentences could not be checked (' + lastErr + '); run it again to retry them.' : ''));
+}
+function fmtUsd(v) { return v < 0.01 ? 'under 1 US cent' : v < 1 ? (v * 100).toFixed(1) + ' US cents' : 'US$' + v.toFixed(2); }
+// Rough cost before sending: ~4 characters a token, ~1,500 tokens of rules per batch,
+// suggestions about a fifth of the text.
+function estimate(list) {
+  const chars = list.reduce((a, x) => a + keptText(x.s.text).length + 30, 0), batches = Math.max(1, Math.ceil(chars / 9000));
+  const tin = chars / 4 + 1500 * batches, tout = chars / 4 * 0.2 + 150 * batches;
+  const [pi, po] = clPrice('claude-sonnet-5-5');
+  return 'about ' + fmtUsd((tin * pi + tout * po) / 1e6);
+}
+function updateClBtn() {
+  const b = $('clBtn'); if (!b) return;
+  b.classList.toggle('busy', clBusy);
+  const cs = claudeStatus();
+  $('clLabel').textContent = clBusy ? 'Checking…' : cs.total && !cs.unchecked ? 'Claude ✓' : 'Claude check';
+  b.title = clBusy ? 'Claude is reading the typed text…' : cs.total && !cs.unchecked ? 'Claude has checked every sentence. Its suggestions are underlined in purple (F7).'
+    : 'Final check: Claude suggests spelling, grammar and house-style fixes for the whole job. ' + (cs.unchecked ? cs.unchecked + ' sentences not checked yet.' : '');
 }
 
 // ── sample job (no Dropbox needed) ─────────────────────────────────────
@@ -4187,6 +4697,7 @@ function init() {
   $('cnavText').onclick = () => goNext(1);
   $('findBtn').onclick = findReplace;
   $('spBtn').onclick = nextIssue;
+  $('clBtn').onclick = claudeCheck;
   $('jumpPill').onclick = () => { const el = $('roomPane').querySelector('.sent.now'); if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); setTimeout(() => updateJump(), 600); };
   $('docBody').addEventListener('scroll', () => updateJump($('nowSec').textContent), { passive: true });
   $('reloadJob').onclick = reloadJob;
@@ -4216,7 +4727,7 @@ function init() {
   document.addEventListener('input', onTypingInput, true);
   ['mousedown', 'input', 'wheel', 'touchstart'].forEach(ev => document.addEventListener(ev, T.activity, { passive: true }));
   window.addEventListener('beforeunload', () => { commitEditor(); saveStore(true); });
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveStore(true); });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { if (App.editing) saveDraft(); else saveStore(true); } });
   setInterval(T.tick, 1000);
   wireAudio(); wireRaw();
   // Finished jobs not touched for 60 days are cleared from this browser (they're in the report by then).
@@ -4225,7 +4736,7 @@ function init() {
     const st = LS.get(k, null);
     if (st && st.total && st.done >= st.total && (st.updated || 0) < cut) { try { localStorage.removeItem(k); } catch (e) {} }
   });
-  renderDbxCard(); renderJobs(); renderPhrases();
+  renderDbxCard(); renderJobs(); renderPhrases(); renderWho();
   if (DBX.conf) connectDropbox();
 }
 init();

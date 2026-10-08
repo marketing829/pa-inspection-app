@@ -1993,6 +1993,44 @@
   .rec-retry-btn .ico, .rec-mini-btn .ico { width: 16px; height: 16px; }
   .recording-card audio { margin-top: 2px; height: 40px; }
   .fix-play .ico { width: 15px; height: 15px; }
+  /* ROUND 12 — recording signals */
+  .rec-topbar { display: none; position: fixed; top: 0; left: 0; right: 0; height: 4px; z-index: 9999;
+    background: #D93025; box-shadow: 0 0 10px rgba(217,48,37,0.6); animation: recBar 1.6s ease-in-out infinite; }
+  body.is-recording .rec-topbar { display: block; }
+  @keyframes recBar { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+  .fab-record.recording { background: #D93025 !important; color: #fff !important; border-color: rgba(217,48,37,0.45) !important; }
+  .fab-record.recording::after { border-color: #D93025 !important; }
+  .rec-status.show { display: flex; align-items: center; justify-content: center; gap: 8px; color: #D93025; font-variant-numeric: tabular-nums; }
+  .rec-dot { width: 10px; height: 10px; border-radius: 50%; background: #D93025; display: inline-block; animation: recDot 1s ease-in-out infinite; }
+  @keyframes recDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.8); } }
+  .mic-meter { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; margin-left: 2px; }
+  .mic-meter i { width: 3px; border-radius: 2px; background: currentColor; opacity: 0.22; transition: opacity 0.12s; }
+  .mic-meter i:nth-child(1) { height: 5px; } .mic-meter i:nth-child(2) { height: 7px; } .mic-meter i:nth-child(3) { height: 9px; }
+  .mic-meter i:nth-child(4) { height: 11px; } .mic-meter i:nth-child(5) { height: 13px; }
+  .mic-meter i.on { opacity: 1; }
+  .tx-wait { display: none; font-size: 13px; font-weight: 600; padding: 8px 12px; border-radius: 12px; margin: 0 0 8px; }
+  .tx-wait.show { display: block; }
+  .tx-wait.rec { color: #D93025; background: rgba(217,48,37,0.08); }
+  .tx-wait.wait { color: var(--warn-ink); background: var(--warn-bg); }
+  @media (prefers-reduced-motion: reduce) { .rec-topbar, .rec-dot { animation: none !important; } }
+  /* ROUND 12 — review: optional checks and the Next button */
+  .check-optional { font-size: 13px; color: var(--ink-2); margin: -2px 4px 10px; }
+  .next-check { display: none; position: fixed; left: 0; right: 0; margin: 0 auto; width: max-content; max-width: calc(100% - 32px); transform: none; z-index: 50; white-space: nowrap;
+    bottom: calc(16px + env(safe-area-inset-bottom)); align-items: center; gap: 8px; border: 0; cursor: pointer;
+    padding: 12px 16px; border-radius: 999px; font: inherit; font-size: 15px; font-weight: 700;
+    background: var(--yellow); color: var(--on-yellow); box-shadow: 0 10px 28px rgba(0,0,0,0.22); }
+  #screenReview.active .next-check.show { display: inline-flex; }
+  .next-check b { background: rgba(0,0,0,0.12); border-radius: 999px; padding: 1px 8px; font-size: 13px; }
+  .next-check .ico { width: 16px; height: 16px; }
+  .review-check-row.flash { animation: checkFlash 1.4s ease-out; }
+  @keyframes checkFlash { 0% { background: rgba(255,222,0,0.55); } 100% { background: transparent; } }
+  #screenReview .export-actions { padding-bottom: 76px; }
+  /* ROUND 12 — setup Check all / Uncheck all */
+  .rooms-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .rooms-head label { margin: 0; }
+  .rooms-all { display: inline-flex; gap: 6px; }
+  .rooms-all button { font: inherit; font-size: 13px; font-weight: 600; padding: 6px 10px; border-radius: 10px;
+    border: 1px solid var(--line-2); background: var(--tint); color: var(--ink); cursor: pointer; }
 </style>
 </head>
 <body>
@@ -2055,7 +2093,8 @@
     </div>
 
     <div class="field-group">
-      <label>Rooms Present at Property</label>
+      <div class="rooms-head"><label>Rooms Present at Property</label>
+        <span class="rooms-all"><button type="button" id="btnRoomsAll" onclick="setAllRooms(true)">Check all</button><button type="button" id="btnRoomsNone" onclick="setAllRooms(false)">Uncheck all</button></span></div>
       <div class="rooms-select" id="roomsSelect"></div>
       <span class="state-badge" onclick="addCustomSetupRoom()"><svg class="ico ico-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add custom room</span>
     </div>
@@ -2063,7 +2102,7 @@
     <!-- Service settings. Inspectors never need these, and a stray tap here
          used to be able to break uploads, so they're tucked away. -->
     <details class="admin-settings" id="adminSettings">
-      <summary>Admin settings <span class="app-ver">· app version 11</span></summary>
+      <summary>Admin settings <span class="app-ver">· app version 12</span></summary>
     <div class="field-group appearance-group">
       <label>Appearance</label>
       <div class="engine-select theme-select" id="themeSelect">
@@ -2112,6 +2151,7 @@
   <div class="room-content" id="roomContent"></div>
   <!-- One dock: Prev | record | Next. While a recording is open, Done takes
        Next's place on the right, so the old Done-then-Next habit still works. -->
+  <div class="rec-topbar" id="recTopbar" aria-hidden="true"></div>
   <div class="rec-dock">
     <div class="rec-dock-row">
       <div class="dock-side left">
@@ -2139,6 +2179,7 @@
   </div>
   <div class="area-status" id="areaStatus"></div>
   <div class="review-body" id="reviewBody"></div>
+  <button type="button" class="next-check" id="btnNextCheck" onclick="gotoNextCheck()"></button>
   <div class="export-actions">
     <div class="finish-status" id="finishStatus"></div>
     <a class="btn-export" id="btnDropbox" href="#" target="_blank" rel="noopener"><svg class="ico ico-folder" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.2c0-.9.7-1.7 1.7-1.7h3.9l2 2.2h7.7c.9 0 1.7.8 1.7 1.7v7.9c0 .9-.8 1.7-1.7 1.7H5.2c-1 0-1.7-.8-1.7-1.7z"/></svg><span>Check it in Dropbox</span></a>
@@ -2670,6 +2711,46 @@ const GENERIC_SUBSECTIONS = [
   'Ceiling Fan/Air Conditioner','Additional'
 ];
 
+// ROUND 12: a room the inspector adds and names ("Bathroom Laundry", "Entry
+// Lounge Dining") used to get the 11 general rows above, so a bathroom's basin,
+// mirror and shower all landed in Additional. It now takes the rows of the
+// template room its name matches; the general rows only when nothing matches.
+// Laundry rows are added to a bathroom/laundry or kitchen/laundry before Additional.
+const ROOM_NAME_RULES = [
+  [/\b(?:bath(?:room)?|ensuite|en-suite)\b/, 'bathroom2'],
+  [/\bpowder\b/, 'powder_room'],
+  [/\b(?:toilet|wc|w\.c\.)\b/, 'toilet'],
+  [/\bkitchen(?:ette)?\b/, 'kitchen'],
+  [/\blaundry\b/, 'laundry'],
+  [/\b(?:entry|entrance|foyer)\b/, 'entry'],
+  [/\b(?:bed(?:room)?|study|office|nursery)\b/, 'bedroom1'],
+  [/\b(?:stair|stairs|staircase|landing)\b/, 'staircase'],
+  [/\b(?:passage|hallway|hall|corridor)\b/, 'passage'],
+  [/\b(?:garage|carport)\b/, 'garage'],
+  [/\b(?:balcony|alfresco|deck|courtyard)\b/, 'balcony'],
+  [/\b(?:shed|store\s?room|storeroom|storage)\b/, 'shed'],
+  [/\b(?:rear|back\s?yard|backyard)\b/, 'rear_exterior'],
+  [/\b(?:front|garden|gardens)\b/, 'front_gardens'],
+  [/\b(?:lounge|living|sitting)\b/, 'lounge'],
+  [/\b(?:family|rumpus|activity|games)\b/, 'family'],
+  [/\b(?:theatre|theater|media)\b/, 'theatre'],
+  [/\b(?:dining|meals)\b/, 'dining'],
+];
+function templateRowsForName(name) {
+  const n = String(name || '').toLowerCase().replace(/[\/&+,_-]+/g, ' ');
+  const byId = id => (ALL_ROOMS.find(r => r.id === id) || {}).subsections;
+  const hit = ROOM_NAME_RULES.find(([re]) => re.test(n));
+  if (!hit) return [...GENERIC_SUBSECTIONS];
+  const rows = [...byId(hit[1])];
+  if (/\blaundry\b/.test(n) && hit[1] !== 'laundry') {
+    const have = new Set(rows.map(r => r.toLowerCase()));
+    const extra = ['Washing Machine Taps', 'Trough/Washing Tub', 'Trough Cabinet', 'Linen Cupboards'].filter(r => !have.has(r.toLowerCase()));
+    const at = rows.findIndex(r => /^additional$/i.test(r));
+    rows.splice(at < 0 ? rows.length : at, 0, ...extra);
+  }
+  return rows;
+}
+
 // Every room the setup screen can offer, presets plus any custom ones added at setup
 let ROOM_LIBRARY = ALL_ROOMS.map(r => ({ id: r.id, name: r.name, subsections: r.subsections }));
 
@@ -3123,6 +3204,7 @@ function initSetup() {
       else if (cloudArchiveEnabled() && recs.some(r => ((r.status === 'done' || r.status === 'failed') && r.archived !== true && r.blob && !(r.archNextAt > now))
         || (r.archived === true && r.jsonError && !r.jsonArchived && !(r.jsonNextAt > now)))) processArchiveQueue();
       if (cloudArchiveEnabled()) processPhotoQueue();
+      if (cloudArchiveEnabled() && !archiveRunning && jobDocsWaiting()) processArchiveQueue();
     } catch (e) {}
   }, 20000);
 
@@ -3143,10 +3225,15 @@ function initSetup() {
 // choose. Every file still says what it is.
 const INSPECTION_TYPE = 'Entry (PCR)';
 
+// ROUND 12: tick or untick every room on the setup screen in one tap.
+function setAllRooms(on) {
+  document.querySelectorAll('#roomsSelect .room-toggle').forEach(d => d.classList.toggle('selected', !!on));
+}
+
 function addCustomSetupRoom() {
   const name = prompt('Name of the custom room');
   if (!name || !name.trim()) return;
-  const room = { id: 'custom_' + Date.now(), name: name.trim(), subsections: [...GENERIC_SUBSECTIONS] };
+  const room = { id: 'custom_' + Date.now(), name: name.trim(), subsections: templateRowsForName(name) };
   ROOM_LIBRARY.push(room);
   const container = document.getElementById('roomsSelect');
   const div = document.createElement('div');
@@ -3337,6 +3424,7 @@ function renderRoomContent() {
     <div class="next-sub" id="nextSub"></div>
     <p class="field-note one-line">Say the subsection, pause, then describe it. “Scratch that” removes the last sentence.</p>
     <div class="live-preview" id="livePreview"></div>
+    <div class="tx-wait" id="txWait"></div>
     <textarea class="room-dictate ${flagged.length ? 'flagged' : ''}" id="roomta-${room.id}" rows="9"
       placeholder="The accurate transcript lands here after each recording. You can also type."
       oninput="onRoomEdit('${room.id}')">${escapeHtml(val)}</textarea>
@@ -3522,6 +3610,29 @@ function scheduleLivePreview(roomId, text, live) {
   });
 }
 
+// ROUND 12: the transcript box tells the inspector what's happening. While
+// recording: the words come after Done. After Done: transcribing, usually 10 to
+// 30 seconds, and they can move on. No signal or a failed try: the audio is
+// safe and the text follows. Shown as the box's placeholder when it's empty,
+// and as a line above it when there's already text from an earlier recording.
+const TX_PLACEHOLDER = 'The accurate transcript lands here after each recording. You can also type.';
+function paintTranscriptWait(roomId, m) {
+  const ta = document.getElementById('roomta-' + roomId);
+  const line = document.getElementById('txWait');
+  if (!ta) return;
+  let msg = '', kind = '';
+  if (listeningRoom === roomId && !recPaused) { msg = 'Recording… your words will appear here after you tap Done.'; kind = 'rec'; }
+  else if (listeningRoom === roomId) { msg = 'Paused. Tap the button to carry on, or Done to finish this room.'; kind = 'rec'; }
+  else if (m.uploading || (m.pending && navigator.onLine && !m.attempts)) { msg = 'Transcribing… usually 10–30 seconds. You can move to the next room.'; kind = 'wait'; }
+  else if (m.pending || (m.failed && !m.done && !m.noAudio)) { msg = 'Audio saved. The transcript will come through when there\'s signal.'; kind = 'wait'; }
+  ta.placeholder = msg || TX_PLACEHOLDER;
+  if (line) {
+    const show = !!msg && !!ta.value.trim();
+    line.className = 'tx-wait' + (show ? ' show ' + kind : '');
+    line.textContent = show ? msg.replace('your words will appear here', 'new words are added below') : '';
+  }
+}
+
 // An honest per-room state line. A room that produced text but no audio is the
 // worst case in the app: it looks finished, reads badly, and leaves the typist
 // nothing to check against — so it says so, and keeps saying so.
@@ -3559,6 +3670,7 @@ function renderRoomStatus() {
   if (roomAudioFlags[roomId] === 'noaudio') chips.push(['bad', 'No audio backup. Record again']);
   const mm = roomMismatches[roomId];
   if (mm) chips.push(['bad', `You said “${mm.said}”. Saved under ${mm.filedUnder}`]);
+  paintTranscriptWait(roomId, m);
   if (!chips.length) { box.classList.remove('show'); box.innerHTML = ''; return; }
   // Problems first, then what's happening, then what's done. Three at most.
   const rank = { bad: 0, live: 1, working: 2, ready: 3 };
@@ -3616,6 +3728,7 @@ function renameRoom() {
   const name = prompt('Rename this room', room.name);
   if (!name || !name.trim()) return;
   room.name = name.trim();
+  if (/^custom_/.test(room.id) && !roomRecMap[room.id] && !(state.roomNotes[room.id] || '').trim()) room.subsections = templateRowsForName(room.name);
   document.getElementById('headerTitle').textContent = state.address || 'Inspection';
   saveState();
   renderInspection();
@@ -3624,7 +3737,7 @@ function renameRoom() {
 function addRoom() {
   const name = prompt('Name of the new room', 'New Room');
   if (!name || !name.trim()) return;
-  const room = { id: 'custom_' + Date.now(), name: name.trim(), subsections: [...GENERIC_SUBSECTIONS] };
+  const room = { id: 'custom_' + Date.now(), name: name.trim(), subsections: templateRowsForName(name) };
   state.rooms.splice(state.currentRoomIdx + 1, 0, room);
   state.roomNotes[room.id] = '';
   state.checked[room.id] = {};
@@ -3690,9 +3803,35 @@ function toggleDictateCurrent(e) {
 }
 
 const REC_IDLE_TEXT = 'Tap to start recording';
+// ROUND 12: the recording clock. Counts while recording, holds while paused,
+// starts again at 0:00 for each new recording.
+let recClockMs = 0, recClockFrom = 0, recClockTimer = null;
+function recClockNow() { return recClockMs + (recClockFrom ? Date.now() - recClockFrom : 0); }
+function paintRecPill() {
+  const pill = document.getElementById('recStatus');
+  if (!pill || pill.classList.contains('mic-problem')) return;
+  const fab = document.getElementById('fabRecord');
+  const rec = fab && fab.classList.contains('recording');
+  const paused = fab && fab.classList.contains('paused');
+  if (!rec && !paused) return;
+  const t = formatClock(recClockNow() / 1000);
+  pill.innerHTML = rec
+    ? '<i class="rec-dot"></i><span>Recording ' + t + '</span><span class="mic-meter" id="micMeter"><i></i><i></i><i></i><i></i><i></i></span>'
+    : '<span>Paused ' + t + '</span>';
+}
+function setMicLevel(level) {
+  const m = document.getElementById('micMeter');
+  if (!m) return;
+  const bars = m.children;
+  for (let i = 0; i < bars.length; i++) bars[i].classList.toggle('on', level > (i + 0.5) / (bars.length + 0.5));
+}
 function setFabRecording(on) {
   const fab = document.getElementById('fabRecord');
   const pill = document.getElementById('recStatus');
+  if (on) { if (!recClockFrom) recClockFrom = Date.now(); }
+  else { recClockMs = 0; recClockFrom = 0; }
+  document.body.classList.toggle('is-recording', !!on);
+  clearInterval(recClockTimer); recClockTimer = on ? setInterval(paintRecPill, 1000) : null;
   if (fab) {
     fab.classList.toggle('recording', on);
     fab.classList.remove('paused');
@@ -3705,11 +3844,16 @@ function setFabRecording(on) {
     pill.classList.toggle('show', on);
     pill.classList.remove('paused');
   }
+  if (on) paintRecPill();
+  try { renderRoomStatus(); } catch (e) {}
 }
 
 function setFabPaused(on) {
   const fab = document.getElementById('fabRecord');
   const pill = document.getElementById('recStatus');
+  if (on && recClockFrom) { recClockMs += Date.now() - recClockFrom; recClockFrom = 0; }
+  document.body.classList.remove('is-recording');
+  clearInterval(recClockTimer); recClockTimer = null;
   if (fab) {
     fab.classList.toggle('paused', on);
     fab.classList.remove('recording');
@@ -3722,6 +3866,8 @@ function setFabPaused(on) {
     pill.classList.toggle('paused', on);
     pill.classList.remove('show');
   }
+  if (on) paintRecPill();
+  try { renderRoomStatus(); } catch (e) {}
 }
 
 function flashCaptured() {
@@ -4103,6 +4249,8 @@ function nextRoomFromDock() {
 function setFabError() {
   const fab = document.getElementById('fabRecord');
   const pill = document.getElementById('recStatus');
+  document.body.classList.remove('is-recording');
+  clearInterval(recClockTimer); recClockTimer = null; recClockMs = 0; recClockFrom = 0;
   if (pill) { pill.textContent = 'Mic unavailable. Nothing is being recorded'; pill.classList.remove('show', 'paused'); }
   if (!fab) return;
   fab.classList.remove('recording');
@@ -4439,8 +4587,13 @@ async function startAudioRecording(roomId, stillWanted) {
     startMicGuard(session, stream);
     // Which go at this room this is, for the file name.
     try {
-      const before = (await dbAll()).filter(r => r.roomId === roomId && sameJob(r) && !r.recovered).length;
+      const jobRecs = (await dbAll()).filter(r => sameJob(r) && r.kind !== 'summary');
+      const before = jobRecs.filter(r => r.roomId === roomId && !r.recovered).length;
       session.part = before + 1;
+      // ROUND 12: the room's number in the order the inspector walked it. A
+      // second go at a room keeps its number; a new room takes the next one.
+      const mine = jobRecs.find(r => r.roomId === roomId && r.roomNo);
+      session.roomNo = mine ? mine.roomNo : 1 + jobRecs.reduce((n, r) => Math.max(n, r.roomNo || 0), 0);
     } catch (e) { session.part = 1; }
     return true;
   } catch (e) {
@@ -4506,6 +4659,7 @@ function startMicGuard(session, stream) {
         for (let i = 0; i < buf.length; i++) { const d = Math.abs(buf[i] - 128); if (d > peak) peak = d; }
       }
       if (peak > 0) session.lastSoundAt = now;
+      setMicLevel(Math.min(1, (buf instanceof Float32Array ? peak : peak / 128) * 4));
     } else {
       session.lastSoundAt = now;   // can't measure on this phone — rely on the chunk check
     }
@@ -4542,7 +4696,7 @@ function showMicProblem(on) {
   if (pill) {
     pill.classList.toggle('mic-problem', on);
     if (on) pill.textContent = 'Mic not recording. Tap Done, then record again';
-    else if (fab && fab.classList.contains('recording')) pill.textContent = 'Recording';
+    else if (fab && fab.classList.contains('recording')) paintRecPill();
   }
 }
 
@@ -4641,7 +4795,7 @@ async function persistPartialRecording(session) {
       jobId: session.jobId || '',
       subsections: session.subsections || [],
       meta: session.meta || null,
-      part: session.part || 1,
+      part: session.part || 1, roomNo: session.roomNo || null,
       sessionBase: session.sessionBase,
       roughText: '',
       blob: new Blob(session.chunks, { type }),
@@ -4690,7 +4844,7 @@ async function stopAudioRecording(roomId, roughText, announce) {
     // the phone's text to the typist.
     const failedRec = {
       roomId: rid, roomName: session.roomName, address: session.address, jobId: session.jobId || '',
-      subsections: session.subsections || [], meta: session.meta || null, part: session.part || 1,
+      subsections: session.subsections || [], meta: session.meta || null, part: session.part || 1, roomNo: session.roomNo || null,
       sessionBase: session.sessionBase, roughText: rough, blob: null, noAudio: true,
       type: 'audio/mp4', status: 'failed', createdAt: session.createdAt, attempts: 0
     };
@@ -4715,7 +4869,7 @@ async function stopAudioRecording(roomId, roughText, announce) {
       jobId: session.jobId || '',
       subsections: session.subsections || [],
       meta: session.meta || null,
-      part: session.part || 1,
+      part: session.part || 1, roomNo: session.roomNo || null,
       sessionBase: session.sessionBase,
       roughText: roughText || '',
       blob, type, status: 'pending', createdAt: session.createdAt, attempts: 0
@@ -5172,19 +5326,27 @@ function findPhraseFrom(words, phrase, from) {
   if (!want || !want.length) return null;
   const probe = want.slice(0, 6);
   const need = Math.min(probe.length, Math.max(2, Math.ceil(probe.length / 2)));
-  const scan = (start, end) => {
-    let best = -1, bestScore = 0;
-    for (let i = start; i < end; i++) {
-      let hits = 0;
-      for (let j = 0; j < probe.length && i + j < words.length; j++) if (words[i + j].w === probe[j]) hits++;
-      if (hits > bestScore) { bestScore = hits; best = i; }
-      if (bestScore === probe.length) break;
+  const scoreAt = (i) => {
+    // Probe words found in order within a window a little longer than the
+    // probe (a mis-heard word can be one word or two: "silver metal" / "similar").
+    let hits = 0, k = i;
+    const end = Math.min(words.length, i + probe.length + 3);
+    for (let j = 0; j < probe.length && k < end; j++) {
+      let f = -1;
+      for (let x = k; x < Math.min(end, k + 3); x++) if (words[x].w === probe[j]) { f = x; break; }
+      if (f >= 0) { hits++; k = f + 1; }
     }
-    return bestScore >= need ? best : -1;
+    return { hits, score: hits + (words[i].w === probe[0] ? 1.5 : 0) };
   };
-  let i = scan(Math.max(0, from || 0), words.length);
-  if (i < 0) i = scan(0, words.length);
-  return i < 0 ? null : { at: words[i].s, idx: i };
+  const c = Math.max(0, from || 0);
+  let best = -1, bestScore = 0, bestDist = Infinity;
+  for (let i = 0; i < words.length; i++) {
+    const r = scoreAt(i);
+    if (r.hits < need) continue;
+    const dist = i >= c ? i - c : words.length + (c - i);   // after the cursor first
+    if (r.score > bestScore || (r.score === bestScore && dist < bestDist)) { best = i; bestScore = r.score; bestDist = dist; }
+  }
+  return best < 0 ? null : { at: words[best].s, idx: best };
 }
 
 // The cleanup val wraps a phrase it added in {+ … +}. Shown as [added: …] in
@@ -5314,14 +5476,18 @@ async function runCleanup(rec) {
     if (!res.ok) throw new Error('http ' + res.status);
     const out = await res.json();
     if (!out || out.ok !== true) throw new Error((out && out.error) || 'cleanup declined');
+    // ROUND 12: a stray brace the model left (Freshwater bathroom "…functional]}")
+    // is dropped, and so is a row that only repeats its own name or an added
+    // phrase (Freshwater kitchen part 2: "Ceiling [added: in clean condition]").
     const sections = (out.sections || [])
-      .map(s => ({ name: String((s && s.name) || '').trim(), text: markAdded(String((s && s.text) || '').trim()) }))
-      .filter(s => s.name && s.text);
+      .map(s => ({ name: String((s && s.name) || '').trim(), text: markAdded(String((s && s.text) || '').trim()).replace(/[{}]/g, '').replace(/\s+([.,])/g, '$1').trim() }))
+      .filter(s => s.name && s.text && !fillerOnly(s.name, s.text));
     if (!sections.length) throw new Error('no sections');
     rec.sections = sections;
     rec.check = (out.check || [])
       .map(c => ({
-        quote: String((c && c.quote) || '').replace(/\{\+|\+\}/g, '').trim(),
+        quote: String((c && c.quote) || '').replace(/\{\+|\+\}/g, '').replace(/[{}]/g, '').trim(),
+        words: String((c && c.words) || '').replace(/[{}]/g, '').trim(),
         heard: String((c && (c.heard || c.quote)) || '').replace(/\{\+|\+\}/g, '').trim(),
         why: String((c && c.why) || '').trim()
       }))
@@ -5336,6 +5502,14 @@ async function runCleanup(rec) {
   } finally {
     clearTimeout(timer);
   }
+}
+
+// True when a row says nothing the inspector said: only its own name and/or
+// phrases the AI added.
+function fillerOnly(name, text) {
+  const nameWords = new Set(String(name).toLowerCase().match(/[a-z]+/g) || []);
+  const said = String(text).replace(/\[added: [^\]]*\]/g, ' ').toLowerCase().match(/[a-z0-9]+/g) || [];
+  return said.every(w => nameWords.has(w) || nameWords.has(w.replace(/s$/, '')) || nameWords.has(w + 's'));
 }
 
 // Sections read back as a note: the same text, in order, as continuous prose.
@@ -5364,6 +5538,12 @@ function localDateStamp(d) {
   const p = n => (n < 10 ? '0' : '') + n;
   return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
 }
+// ROUND 12: inside each job folder there is one Word file for the VA, and two
+// folders: Audio/ (the recordings) and App data/ (the .txt and .json each room
+// sends for the typist editor, the inspection details, failure notes). Serial
+// plate photos go in Photos/.
+const AUDIO_DIR = 'Audio', DATA_DIR = 'App data', PHOTO_DIR = 'Photos';
+function jobDocName(address) { return (safeSeg(address) || 'Inspection') + ' - Inspection.docx'; }
 function archiveFolderName(rec) {
   // The inspection's start date when we have it, so every file of one job lands
   // in one folder even if it runs past midnight.
@@ -5406,7 +5586,10 @@ function archiveBaseName(rec) {
   // The record number makes every recording's name its own. Two recordings in
   // the same minute, or a re-send after a lost answer, used to make Dropbox
   // add "(1)", and the text file could then name the wrong audio.
-  const base = `${safeSeg(rec.roomName || rec.roomId) || 'Room'} - ${hhmm}` + ((rec.part || 1) > 1 ? ` - part ${rec.part}` : '')
+  // ROUND 12: the room's walk-order number goes first, so Audio/ and App data/
+  // list the rooms in the order they were inspected.
+  const no = rec.roomNo ? (rec.roomNo < 10 ? '0' : '') + rec.roomNo + ' ' : '';
+  const base = no + `${safeSeg(rec.roomName || rec.roomId) || 'Room'} - ${hhmm}` + ((rec.part || 1) > 1 ? ` - part ${rec.part}` : '')
     + (rec.id != null ? ` - rec ${rec.id}` : '');
   // A crash-recovered fragment shares its createdAt with the finished clip, so
   // both used to generate the same name and Dropbox quietly renamed one to
@@ -5458,7 +5641,7 @@ async function archiveAudio(rec) {
     return false;
   }
   const job = (async () => {
-    const res = await archivePut(`${archiveFolderName(rec)}/${archiveBaseName(rec)}.${audioExt(rec.type)}`,
+    const res = await archivePut(`${archiveFolderName(rec)}/${AUDIO_DIR}/${archiveBaseName(rec)}.${audioExt(rec.type)}`,
       rec.blob, rec.type || 'application/octet-stream');
     // Where it actually landed, if the val says. The text file names this.
     let path = '';
@@ -5556,7 +5739,7 @@ function buildRoomJson(rec, clean) {
   const plain = s => String(s).replace(/\s*\[added: [^\]]*\]/g, '').replace(/\s+/g, ' ').trim();
   const clockOf = at => (at != null ? formatClock(at) : null);
   return {
-    format: 'pa-room', version: 1, app: 'PA Inspect round 11',
+    format: 'pa-room', version: 1, app: 'PA Inspect round 12',
     property: rec.address || '', client: m.client || '', inspector: m.inspector || '',
     state: m.stateCode || '', inspectionType: m.inspType || '',
     inspectionStarted: m.startedAt ? new Date(m.startedAt).toISOString() : null,
@@ -5564,7 +5747,7 @@ function buildRoomJson(rec, clean) {
     recording: rec.id != null ? rec.id : null, part: rec.part || 1,
     recordedAt: rec.createdAt ? new Date(rec.createdAt).toISOString() : null,
     audioFile: rec.audioPath || (archiveBaseName(rec) + '.' + audioExt(rec.type)),
-    textFile: archiveBaseName(rec) + '.txt', wordFile: archiveBaseName(rec) + '.docx',
+    textFile: archiveBaseName(rec) + '.txt', wordFile: jobDocName(rec.address),
     transcribedBy: rec.engine ? engineLabel(rec.engine) : '',
     sortedBy: layout.cleaned ? (rec.cleanedBy || 'cleanup') : 'keyword split',
     timecodes: !!layout.words,
@@ -5601,12 +5784,12 @@ async function archiveToDropbox(rec) {
     const clean = punctuateBySubarea({ subsections: rec.subsections || [] }, applyCorrections(applyScratch(raw)));
     // One file: details, the subarea split, and the untouched engine output at
     // the bottom so nothing the app changed is lost.
-    await archivePut(`${folder}/${base}.txt`, buildArchiveText(rec, clean), 'text/plain; charset=utf-8');
+    await archivePut(`${folder}/${DATA_DIR}/${base}.txt`, buildArchiveText(rec, clean), 'text/plain; charset=utf-8');
     // Round 10: the same room as data, for the typist editor. Never holds the room.
-    try { await archivePut(`${folder}/${base}.json`, JSON.stringify(buildRoomJson(rec, clean), null, 1), 'application/json; charset=utf-8'); rec.jsonArchived = true; delete rec.jsonError; }
+    try { await archivePut(`${folder}/${DATA_DIR}/${base}.json`, JSON.stringify(buildRoomJson(rec, clean), null, 1), 'application/json; charset=utf-8'); rec.jsonArchived = true; delete rec.jsonError; }
     catch (e) { rec.jsonError = String((e && e.message) || 'failed').slice(0, 80); }
-    try { await archivePut(`${folder}/${base}.docx`, await buildRoomDocx(rec, clean), DOCX_TYPE, 90000); rec.docxArchived = true; }
-    catch (e) { rec.docxError = String((e && e.message) || 'failed').slice(0, 80); }
+    // ROUND 12: no Word file per room any more. The job's one Word file is
+    // rebuilt by jobDocPass() whenever a room lands.
   } else {
     // Transcription failed or never ran. The audio still has to reach the typist,
     // and the file beside it has to say why there's no transcript.
@@ -5615,7 +5798,7 @@ async function archiveToDropbox(rec) {
       + '\n\nRoom: ' + (rec.roomName || rec.roomId || '') + '\n\n'
       + 'NO ACCURATE TRANSCRIPT FOR THIS RECORDING — please type from the audio.\n\n'
       + (rough ? 'Phone dictation only, mishears expected:\n' + rough + '\n' : '');
-    await archivePut(`${folder}/${base} - transcription failed.txt`, body, 'text/plain; charset=utf-8');
+    await archivePut(`${folder}/${DATA_DIR}/${base} - transcription failed.txt`, body, 'text/plain; charset=utf-8');
   }
   return true;
 }
@@ -5638,7 +5821,7 @@ async function processArchiveQueue() {
   if (!cloudArchiveEnabled() || !navigator.onLine || !('indexedDB' in window)) return;
   if (archiveRunning) return;
   archiveRunning = true;
-  try { await archivePass(); await sweepOldJobs(); } finally { archiveRunning = false; }
+  try { await archivePass(); await jobDocPass(); await sweepOldJobs(); } finally { archiveRunning = false; }
 }
 async function archivePass() {
   let recs = [];
@@ -5652,7 +5835,7 @@ async function archivePass() {
         && (rec.transcript || '').trim() && !(rec.jsonNextAt > now)) {
       try {
         const clean = punctuateBySubarea({ subsections: rec.subsections || [] }, applyCorrections(applyScratch(rec.transcript.trim())));
-        await archivePut(`${archiveFolderName(rec)}/${archiveBaseName(rec)}.json`, JSON.stringify(buildRoomJson(rec, clean), null, 1), 'application/json; charset=utf-8');
+        await archivePut(`${archiveFolderName(rec)}/${DATA_DIR}/${archiveBaseName(rec)}.json`, JSON.stringify(buildRoomJson(rec, clean), null, 1), 'application/json; charset=utf-8');
         await dbUpdate(rec.id, r => { r.jsonArchived = true; delete r.jsonError; delete r.jsonNextAt; delete r.jsonFails; });
       } catch (e) {
         try { await dbUpdate(rec.id, r => { r.jsonFails = (r.jsonFails || 0) + 1; r.jsonNextAt = Date.now() + archiveDelay(r.jsonFails); }); } catch (e2) {}
@@ -5672,8 +5855,9 @@ async function archivePass() {
           + 'The microphone stopped (usually after leaving the app) but the phone\'s own speech-to-text kept going.\n'
           + 'Below is that phone text only — expect mishears, and check whether the room was re-recorded.\n\n'
           + (rec.roughText || '').trim() + '\n';
-        await archivePut(`${archiveFolderName(rec)}/${archiveBaseName(rec)} - NO AUDIO.txt`, body, 'text/plain; charset=utf-8');
+        await archivePut(`${archiveFolderName(rec)}/${DATA_DIR}/${archiveBaseName(rec)} - NO AUDIO.txt`, body, 'text/plain; charset=utf-8');
         rec.archived = true;
+        markJobDoc(archiveFolderName(rec), sameJob(rec) ? jobSnapshot() : null);
         await dbUpdate(rec.id, r => { r.archived = true; r.archivedAt = Date.now(); delete r.archFails; delete r.archNextAt; delete r.archError; });
         updatePendingUI();
       } catch (e) { await noteArchiveFail(rec, e); }
@@ -5699,6 +5883,7 @@ async function archivePass() {
       });
       // Round 10: nothing is deleted here any more. sweepOldJobs() clears a
       // finished job's audio 14 days after it reached Dropbox.
+      markJobDoc(archiveFolderName(rec), sameJob(rec) ? jobSnapshot() : null);
       updatePendingUI();
     } catch (e) { await noteArchiveFail(rec, e); continue; } // this file's turn will come round again; don't block the others
   }
@@ -5781,10 +5966,10 @@ async function processPhotoQueue() {
         const folder = archiveFolderName(rec);
         const base = archiveBaseName(rec);
         const rel = rec.kind === 'summary'
-          ? `${folder}/00 - Inspection details.txt`
+          ? `${folder}/${DATA_DIR}/00 - Inspection details.txt`
           : rec.kind === 'pcr'
             ? `${folder}/${rec.fileName || 'PCR.docx'}`
-            : `${folder}/${base} - Serial plate ${rec.id}.${photoExt(rec.type)}`;
+            : `${folder}/${PHOTO_DIR}/${base} - Serial plate ${rec.id}.${photoExt(rec.type)}`;
         await archivePut(rel, rec.blob, rec.type || 'image/jpeg', 90000);
         rec.uploaded = true;
         rec.uploadedAt = Date.now();
@@ -6100,7 +6285,7 @@ async function renderAreaStatus() {
   box.innerHTML = '<div class="stat-row">'
     + `<div class="stat"><span>Rooms</span><b>${live.length}</b></div>`
     + `<div class="stat"><span>In Dropbox</span><b>${inDbx}</b></div>`
-    + `<div class="stat${toCheck ? ' attn' : ''}"><span>To check</span><b>${toCheck}</b></div>`
+    + `<div class="stat${toCheck ? ' attn' : ''}"><span>Words to check</span><b>${toCheck}</b></div>`
     + '</div>';
   rows.forEach(paintReviewRow);
   renderFinishGate(rows);
@@ -6248,6 +6433,15 @@ function showReview() {
   label.className = 'list-label';
   label.textContent = 'Rooms';
   body.appendChild(label);
+  // ROUND 12: inspectors don't have to check words. The VA checks every
+  // highlighted word against the audio; fixing one here just saves them a step.
+  const totalOpen = Object.keys(state.roomChecks || {}).reduce((n, k) => n + (state.roomChecks[k] || []).filter(c => !c.resolved).length, 0);
+  if (totalOpen) {
+    const hint = document.createElement('div');
+    hint.className = 'check-optional';
+    hint.textContent = 'Fixing words is optional. The VA checks every highlighted word against the audio.';
+    body.appendChild(hint);
+  }
 
   // One grouped card, a hairline between rooms, rather than a pile of cards.
   const list = document.createElement('div');
@@ -6270,20 +6464,18 @@ function showReview() {
     if (inv) textHtml += `<div class="rr-sec"><div class="rr-sec-name">Inventory</div><div class="rr-sec-text">${escapeHtml(inv)}</div></div>`;
     if (serial) textHtml += `<div class="rr-sec"><div class="rr-sec-name">Serial / model</div><div class="rr-sec-text">${escapeHtml(serial)}</div></div>`;
     const checkHtml = checks.length
-      ? '<div class="review-check"><div class="review-check-title">' + (openCount ? 'Check ' + (openCount === 1 ? 'this' : 'these ' + openCount) + ' against the audio' : 'All checked') + '</div>'
+      ? '<div class="review-check"><div class="review-check-title">' + (openCount ? openCount + ' word' + (openCount === 1 ? '' : 's') + ' to check (optional)' : 'All checked') + '</div>'
         + checks.map((c, i) => `<div class="review-check-row${c.resolved ? ' resolved' : ''}"><div class="rc-text">`
           + (c.clock ? `<span class="rc-time">${escapeHtml(c.clock)}</span>` : '')
           + `<span class="rc-q">${escapeHtml(c.quote)}</span></div>`
           + (c.resolved
-            ? `<div class="rc-done">${ico('check')}<span>${c.resolved === 'fixed' ? 'Changed to “' + escapeHtml(c.fixedTo || '') + '”' : 'Correct as is'}</span></div>`
-            : `<button type="button" class="rc-fix" onclick="openFixSheet('${escapeAttr(room.id)}', ${i})">Fix a word</button>`)
+            ? `<div class="rc-done" data-done="1">${ico('check')}<span>${c.resolved === 'fixed' ? 'Changed to “' + escapeHtml(c.fixedTo || '') + '”' : 'Correct as is'}</span></div>`
+            : `<button type="button" class="rc-fix" data-open-check="1" onclick="openFixSheet('${escapeAttr(room.id)}', ${i})">Fix a word</button>`)
           + '</div>').join('')
         + '</div>'
       : '';
     div.innerHTML = `<summary><span class="rr-main"><span class="rr-name">${escapeHtml(room.name)}</span><span class="rr-sub" id="rrsub-${escapeAttr(room.id)}"></span></span><span class="rr-state" id="rrstate-${escapeAttr(room.id)}"></span></summary>`
       + `<div class="rr-body">${checkHtml}${textHtml}<div class="rr-actions" id="rract-${escapeAttr(room.id)}"></div></div>`;
-    // The first room with something to check opens by itself.
-    if (openCount && !opened) { div.open = true; opened = true; }
     list.appendChild(div);
   });
 
@@ -6300,6 +6492,34 @@ function showReview() {
     + '</div>';
   body.appendChild(mand);
   renderAreaStatus();
+  paintNextCheck();
+  if (advanceAfterReview) { advanceAfterReview = false; setTimeout(() => gotoNextCheck(true), 60); }
+}
+
+// ROUND 12: one button jumps to the next word to check: it opens that room,
+// scrolls the line into the middle of the screen and lights it up. After a fix
+// is saved the page moves on to the next one by itself.
+let advanceAfterReview = false;
+function openChecksLeft() {
+  return Object.keys(state.roomChecks || {}).reduce((n, k) => n + (state.roomChecks[k] || []).filter(c => !c.resolved).length, 0);
+}
+function paintNextCheck() {
+  const b = document.getElementById('btnNextCheck');
+  if (!b) return;
+  const n = openChecksLeft();
+  b.classList.toggle('show', n > 0);
+  b.innerHTML = n ? '<span>Next word to check</span><b>' + n + '</b>' + ico('chevD') : '';
+}
+function gotoNextCheck(quiet) {
+  const rows = [...document.querySelectorAll('#reviewBody .review-check-row:not(.resolved)')];
+  if (!rows.length) { paintNextCheck(); if (!quiet) showToast('Nothing left to check'); return; }
+  // The next one below what's on screen, else back to the first.
+  const mid = window.innerHeight * 0.35;
+  const row = rows.find(r => { const d = r.closest('details'); return !(d && d.open && r.getBoundingClientRect().top <= mid); }) || rows[0];
+  const det = row.closest('details');
+  if (det) det.open = true;
+  row.scrollIntoView({ behavior: quiet ? 'auto' : 'smooth', block: 'center' });
+  row.classList.remove('flash'); void row.offsetWidth; row.classList.add('flash');
 }
 
 // ─── FIX A WORD (review page) ─────────────────────────────────────────────────
@@ -6420,6 +6640,7 @@ async function saveFix(keep) {
     }
   } catch (e) {}
   closeFixSheet();
+  advanceAfterReview = true;
   showReview();
   showToast(keep ? 'Marked as checked' : 'Fix saved. The room\'s files in Dropbox update by themselves.');
 }
@@ -6491,7 +6712,7 @@ function buildReportText() {
     if (hits.length) flagged.push(`${room.name}: ${hits.join(', ')}`);
   });
   if (flagged.length) {
-    report += `\n\n⚠ WORDS TO FIX BEFORE SUBMITTING\n${'-'.repeat(30)}\n`;
+    report += `\n\n⚠ HOUSE-STYLE WORDS TO AVOID\n${'-'.repeat(30)}\n`;
     flagged.forEach(f => { report += `${f}\n`; });
   }
 
@@ -6599,6 +6820,399 @@ async function buildRoomDocx(rec, clean) {
   zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
   zip.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
   zip.file('word/document.xml', buildRoomDocxXml(rec, roomLayout(rec, clean)));
+  return zip.generateAsync({ type: 'blob', mimeType: DOCX_TYPE });
+}
+
+// ─── THE JOB'S WORD FILE (round 12) ───────────────────────────────────────────
+// One Word file per inspection, at the top of the job folder in Dropbox, for the
+// VA. Page 1: job details, Security/Safety, how many words to check per room,
+// and how to read the file. Then every room in the order it was walked, as the
+// WA PCR template's own rows in the template's order (rows nothing was said
+// about show "Not mentioned"), each row with where it starts in the audio.
+// Words the engine may have misheard are highlighted yellow; phrases the AI
+// added are grey italic. The raw transcript is at the back.
+// Rebuilt and sent again whenever a room lands in Dropbox, so it is always
+// the latest. A word stays highlighted even if the inspector tapped "correct
+// as is"; only an actual fix clears it.
+const JOBDOC_KEY = 'pa_jobdocs_v1';
+const JOBDOC_KEEP_MS = 20 * 24 * 3600 * 1000;
+function loadJobDocs() { try { return JSON.parse(localStorage.getItem(JOBDOC_KEY) || '{}') || {}; } catch (e) { return {}; } }
+function saveJobDocs(m) { try { localStorage.setItem(JOBDOC_KEY, JSON.stringify(m)); } catch (e) {} }
+// What only the open inspection knows: the room list, mandatory items, typed
+// rooms, serials. Kept with the job so the file can be rebuilt after Finish.
+function jobSnapshot() {
+  if (!state.address) return null;
+  const typed = {};
+  Object.keys(state.typedOnly || {}).forEach(id => { if (state.typedOnly[id]) typed[id] = (state.roomNotes[id] || '').trim(); });
+  return {
+    address: state.address, jobId: state.jobId || '', meta: inspectionMeta(),
+    mandatory: Object.assign({}, state.mandatory || {}),
+    rooms: (state.rooms || []).map(r => ({ id: r.id, name: r.name, subsections: (r.subsections || []).slice() })),
+    skipped: Object.assign({}, state.skippedRooms || {}), typed,
+    serials: Object.assign({}, state.serialModels || {}), inventory: Object.assign({}, state.inventory || {})
+  };
+}
+function markJobDoc(folder, snap) {
+  if (!folder) return;
+  const m = loadJobDocs();
+  const e = m[folder] || { rev: 0, sent: 0 };
+  e.rev = (e.rev || 0) + 1;
+  e.touched = Date.now();
+  delete e.nextAt; e.fails = 0;
+  if (snap) e.snap = Object.assign({}, e.snap || {}, snap);
+  m[folder] = e;
+  saveJobDocs(m);
+}
+let jobDocRunning = false;
+async function jobDocPass() {
+  if (!cloudArchiveEnabled() || !navigator.onLine || jobDocRunning) return;
+  jobDocRunning = true;
+  try {
+    const m = loadJobDocs();
+    const now = Date.now();
+    let changed = false;
+    for (const folder of Object.keys(m)) {
+      const e = m[folder];
+      if (now - (e.touched || 0) > JOBDOC_KEEP_MS) { delete m[folder]; changed = true; continue; }
+      if ((e.sent || 0) >= (e.rev || 0) || e.nextAt > now) continue;
+      const rev = e.rev;
+      try {
+        let recs = [];
+        try { recs = (await dbAll()).filter(r => r.kind !== 'summary' && archiveFolderName(r) === folder); } catch (er) {}
+        // The open job's live details beat the copy taken when the room landed.
+        const live = jobSnapshot();
+        const snap = (live && recs.some(r => sameJob(r))) ? Object.assign({}, e.snap || {}, live) : (e.snap || null);
+        if (!recs.length && !snap) { delete m[folder]; changed = true; continue; }
+        const address = (snap && snap.address) || (recs[0] && recs[0].address) || '';
+        const blob = await buildJobDocx(buildJobModel(recs, snap));
+        await archivePut(`${folder}/${jobDocName(address)}`, blob, DOCX_TYPE, 90000);
+        const fresh = loadJobDocs();
+        if (fresh[folder]) { fresh[folder].sent = Math.max(fresh[folder].sent || 0, rev); fresh[folder].sentAt = Date.now(); delete fresh[folder].nextAt; fresh[folder].fails = 0; delete fresh[folder].error; }
+        saveJobDocs(fresh);
+        Object.assign(m, fresh);
+      } catch (er) {
+        const fresh = loadJobDocs();
+        if (fresh[folder]) { fresh[folder].fails = (fresh[folder].fails || 0) + 1; fresh[folder].nextAt = Date.now() + archiveDelay(fresh[folder].fails); fresh[folder].error = describeError(er); }
+        saveJobDocs(fresh);
+        Object.assign(m, fresh);
+      }
+    }
+    if (changed) { const fresh = loadJobDocs(); Object.keys(fresh).forEach(k => { if (!(k in m)) delete fresh[k]; }); saveJobDocs(fresh); }
+  } finally { jobDocRunning = false; }
+}
+function jobDocsWaiting() {
+  const m = loadJobDocs(), now = Date.now();
+  return Object.keys(m).some(k => (m[k].sent || 0) < (m[k].rev || 0) && !(m[k].nextAt > now));
+}
+
+// Highlight spots in one sentence: the doubtful words when the AI named them,
+// else the whole sentence. Checks the inspector fixed are no longer doubtful.
+function highlightSpans(sentence, checks) {
+  const spans = [];
+  const plain = sentence;
+  const ns = checkNorm(sentence);
+  // Stricter than sentenceFlagged(): a short sentence ("Indicators present.")
+  // that happens to sit inside a flagged sentence isn't the flagged one.
+  const isThis = c => {
+    const q = checkNorm(c.quote);
+    if (!q || !ns) return false;
+    if (ns === q || ns.includes(q)) return true;
+    if (q.includes(ns) && ns.length >= q.length * 0.6) return true;
+    const head = q.split(' ').slice(0, 5).join(' ');
+    return head.split(' ').length >= 4 && ns.startsWith(head);
+  };
+  (checks || []).forEach(c => {
+    if (c.resolved === 'fixed') return;
+    if (!isThis(c)) return;
+    const w = String(c.words || '').trim();
+    let at = w ? plain.toLowerCase().indexOf(w.toLowerCase()) : -1;
+    if (at < 0 && w) {
+      // The words may have lost or gained punctuation; try them one by one.
+      const parts = w.split(/\s+/).filter(x => x.length > 2);
+      let found = false;
+      parts.forEach(x => { const i = plain.toLowerCase().indexOf(x.toLowerCase()); if (i >= 0) { spans.push([i, i + x.length]); found = true; } });
+      if (found) return;
+    }
+    if (at >= 0) spans.push([at, at + w.length]);
+    else {
+      const body = plain.replace(/\s*\[added: [^\]]*\]/g, '');
+      spans.push([0, Math.max(0, body.replace(/[.!?]+$/, '').length)]);
+    }
+  });
+  spans.sort((a, b) => a[0] - b[0]);
+  const merged = [];
+  spans.forEach(sp => { const l = merged[merged.length - 1]; if (l && sp[0] <= l[1]) l[1] = Math.max(l[1], sp[1]); else merged.push(sp.slice()); });
+  return merged;
+}
+
+// Everything the Word file shows, worked out from the recordings on the phone.
+function buildJobModel(recs, snap) {
+  snap = snap || {};
+  const live = recs.filter(r => !r.recovered || !recs.some(o => o !== r && o.roomId === r.roomId && !o.recovered));
+  const byRoom = new Map();
+  live.slice().sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)).forEach(r => {
+    if (!byRoom.has(r.roomId)) byRoom.set(r.roomId, []);
+    byRoom.get(r.roomId).push(r);
+  });
+  const snapRooms = snap.rooms || [];
+  const skipped = snap.skipped || {};
+  const typed = snap.typed || {};
+  // Walk order: rooms with recordings in the order they were first recorded,
+  // then typed-only rooms, then rooms still to do, in the room list's order.
+  const order = [...byRoom.keys()];
+  snapRooms.forEach(r => { if (!order.includes(r.id) && !skipped[r.id]) order.push(r.id); });
+  const meta = snap.meta || (live[0] && live[0].meta) || {};
+  const rooms = order.map((id, i) => {
+    const rs = byRoom.get(id) || [];
+    const sr = snapRooms.find(r => r.id === id) || {};
+    const name = (rs[0] && rs[0].roomName) || sr.name || id;
+    const rows = ((rs[0] && rs[0].subsections && rs[0].subsections.length) ? rs[0].subsections : (sr.subsections || [])).slice();
+    const multi = rs.filter(r => r.blob || r.audioArchived || r.audioPath).length > 1 || rs.length > 1;
+    const buckets = new Map();   // row name (lower) -> { name, start, label, sents: [] }
+    const notes = [];
+    const audio = [];
+    const raws = [];
+    let pending = false;
+    rs.forEach(r => {
+      const pt = multi ? 'pt ' + (r.part || (rs.indexOf(r) + 1)) + ' · ' : '';
+      const audioName = r.audioPath || (archiveBaseName(r) + '.' + audioExt(r.type));
+      if (!r.noAudio) audio.push({ name: audioName, part: r.part || (rs.indexOf(r) + 1) });
+      const raw = (r.transcript || '').trim();
+      if (r.noAudio) { notes.push('No audio was captured for this recording. Phone text only: ' + ((r.roughText || '').trim() || '(none)')); return; }
+      if (!raw) {
+        if (r.status === 'failed' || r.status === 'orphaned') notes.push('No transcript for ' + (multi ? 'part ' + (r.part || 1) : 'this room') + '. Type it from the audio (' + audioName + ').' + ((r.roughText || '').trim() ? ' Phone text, mishears expected: ' + r.roughText.trim() : ''));
+        else pending = true;
+        return;
+      }
+      const clean = punctuateBySubarea({ subsections: r.subsections || [] }, applyCorrections(applyScratch(raw)));
+      const layout = roomLayout(r, clean);
+      raws.push({ part: multi ? (r.part || 1) : 0, audio: audioName, text: layout.raw });
+      const checks = (r.check || []);
+      layout.buckets.forEach(b => {
+        const key = String(b.subarea || '').toLowerCase();
+        if (!buckets.has(key)) buckets.set(key, { name: b.subarea, start: null, label: '', sents: [] });
+        const bk = buckets.get(key);
+        b.sents.forEach(x => {
+          bk.sents.push({ text: x.sentence, at: x.at, spans: highlightSpans(x.sentence, checks) });
+          if (x.at != null && (bk.start == null || bk.firstPart > (r.part || 1) || (bk.firstPart === (r.part || 1) && x.at < bk.start))) {
+            bk.start = x.at; bk.firstPart = r.part || 1; bk.label = pt + formatClock(x.at);
+          }
+        });
+      });
+      const serial = (r.serialTyped || (snap.serials || {})[id] || '').trim();
+      if (serial && !notes.some(n => n.indexOf(serial) >= 0)) notes.push('Serial / model (typed on the phone): ' + serial);
+      const inv = (r.inventoryTyped || (snap.inventory || {})[id] || '').trim();
+      if (inv && !notes.some(n => n.indexOf(inv) >= 0)) notes.push('Inventory (typed on the phone): ' + inv);
+    });
+    if (!rs.length && typed[id]) notes.push('Typed on the phone (no audio): ' + typed[id]);
+    else if (!rs.length) notes.push('Not recorded.');
+    if (pending) notes.push('Transcript not in yet. This file updates by itself when it lands.');
+    // Template rows first, in template order; anything filed under another name after.
+    const rowNames = rows.length ? rows.slice() : [];
+    buckets.forEach(b => { if (!rowNames.some(n => n.toLowerCase() === b.name.toLowerCase())) rowNames.push(b.name); });
+    const tableRows = rowNames.map(n => {
+      const b = buckets.get(n.toLowerCase());
+      return b && b.sents.length ? { name: n, label: b.label, sents: b.sents } : { name: n, empty: true };
+    });
+    const said = tableRows.filter(r => !r.empty).length;
+    const toCheck = tableRows.reduce((k, r) => k + (r.sents || []).reduce((a, x) => a + x.spans.length, 0), 0);
+    // Model and serial numbers the AI wrote out, pulled into their own table.
+    const plates = [];
+    tableRows.forEach(r => (r.sents || []).forEach(x => {
+      const mm = x.text.match(/Model Numbers?:\s*([A-Za-z0-9\-\/. ]+?)(?=\s*Serial Numbers?:|$)/i);
+      const ss = x.text.match(/Serial Numbers?:\s*([A-Za-z0-9\-\/. ]+)/i);
+      if (mm || ss) plates.push({ row: r.name, model: mm ? mm[1].trim() : '', serial: ss ? ss[1].trim() : '' });
+    }));
+    return { no: i + 1, id, name, rows: tableRows, total: tableRows.length, said, toCheck, notes, audio, raws, plates, hasRec: rs.length > 0 };
+  });
+  const finished = snap.finishedAt || null;
+  return { address: snap.address || (live[0] && live[0].address) || '', meta, mandatory: snap.mandatory || null, rooms, finished,
+    built: Date.now() };
+}
+
+// ── WordprocessingML, by hand (JSZip is already here for the room files) ──
+const JD_FONT = 'Arial', JD_INK = '2B2B2B', JD_MUTED = '6B6B6B', JD_LINE = 'D9D9D9', JD_HEAD = 'F2F2F2', JD_NM = 'A6A6A6', JD_NMBG = 'FAFAFA', JD_ADD = '8A8A8A';
+function jR(text, o) {
+  o = o || {};
+  const pr = '<w:rFonts w:ascii="' + JD_FONT + '" w:hAnsi="' + JD_FONT + '" w:cs="' + JD_FONT + '"/>'
+    + (o.b ? '<w:b/>' : '') + (o.i ? '<w:i/>' : '')
+    + '<w:color w:val="' + (o.color || JD_INK) + '"/>'
+    + '<w:sz w:val="' + (o.sz || 20) + '"/>'
+    + (o.hl ? '<w:highlight w:val="yellow"/>' : '');
+  return '<w:r><w:rPr>' + pr + '</w:rPr><w:t xml:space="preserve">' + xmlEsc(String(text)) + '</w:t></w:r>';
+}
+function jP(runs, o) {
+  o = o || {};
+  return '<w:p><w:pPr>' + (o.style ? '<w:pStyle w:val="' + o.style + '"/>' : '') + (o.keepNext ? '<w:keepNext/>' : '')
+    + (o.pageBreak ? '<w:pageBreakBefore/>' : '')
+    + (o.box ? '<w:pBdr><w:left w:val="single" w:sz="18" w:space="6" w:color="E0B800"/></w:pBdr><w:shd w:val="clear" w:color="auto" w:fill="FFF8D6"/><w:ind w:left="120"/>' : '')
+    + (o.indent ? '<w:ind w:left="' + o.indent + '" w:hanging="' + o.indent + '"/>' : '')
+    + '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after == null ? 60 : o.after) + '"/>'
+    + (o.align ? '<w:jc w:val="' + o.align + '"/>' : '')
+    + '</w:pPr>' + (runs || '') + '</w:p>';
+}
+function jCell(paras, width, fill) {
+  return '<w:tc><w:tcPr><w:tcW w:w="' + width + '" w:type="dxa"/>'
+    + (fill ? '<w:shd w:val="clear" w:color="auto" w:fill="' + fill + '"/>' : '')
+    + '<w:tcMar><w:top w:w="60" w:type="dxa"/><w:left w:w="110" w:type="dxa"/><w:bottom w:w="60" w:type="dxa"/><w:right w:w="110" w:type="dxa"/></w:tcMar>'
+    + '</w:tcPr>' + (paras || jP('', { after: 0 })) + '</w:tc>';
+}
+function jTable(widths, header, rows) {
+  const b = '<w:tblBorders>' + ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(s => '<w:' + s + ' w:val="single" w:sz="4" w:space="0" w:color="' + JD_LINE + '"/>').join('') + '</w:tblBorders>';
+  const total = widths.reduce((a, c) => a + c, 0);
+  let x = '<w:tbl><w:tblPr><w:tblW w:w="' + total + '" w:type="dxa"/>' + b + '<w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>'
+    + widths.map(w => '<w:gridCol w:w="' + w + '"/>').join('') + '</w:tblGrid>';
+  if (header) x += '<w:tr><w:trPr><w:tblHeader/><w:cantSplit/></w:trPr>' + header.map((h, i) => jCell(jP(jR(h, { b: true, sz: 18, color: JD_MUTED }), { after: 0 }), widths[i], JD_HEAD)).join('') + '</w:tr>';
+  rows.forEach(r => { x += '<w:tr><w:trPr><w:cantSplit/></w:trPr>' + r.cells.map((c, i) => jCell(c, widths[i], r.fill)).join('') + '</w:tr>'; });
+  return x + '</w:tbl>';
+}
+function jH1(t, o) { return jP(jR(t, { b: true, sz: 34 }), Object.assign({ keepNext: true, after: 80, style: 'Heading1' }, o || {})); }
+function jH2(t) { return jP(jR(t, { b: true, sz: 22 }), { keepNext: true, before: 260, after: 100, style: 'Heading2' }); }
+// One sentence as runs: highlighted spans, [added: …] grey italic, the rest plain.
+function jSentence(x, sz) {
+  const t = x.text;
+  const cuts = [];
+  const addRe = /\[added: ([^\]]*)\]/g;
+  let m;
+  while ((m = addRe.exec(t))) cuts.push({ from: m.index, to: m.index + m[0].length, added: m[1] });
+  let out = '', pos = 0;
+  const plainRun = (from, to) => {
+    let p = from;
+    (x.spans || []).forEach(([a, b]) => {
+      const s0 = Math.max(a, from), e0 = Math.min(b, to);
+      if (e0 <= s0) return;
+      if (s0 > p) out += jR(t.slice(p, s0), { sz });
+      out += jR(t.slice(s0, e0), { sz, b: true, hl: true });
+      p = e0;
+    });
+    if (p < to) out += jR(t.slice(p, to), { sz });
+  };
+  cuts.forEach(c => { if (c.from > pos) plainRun(pos, c.from); out += jR(c.added, { sz, i: true, color: JD_ADD }); pos = c.to; });
+  if (pos < t.length) plainRun(pos, t.length);
+  return out;
+}
+function buildJobDocXml(j) {
+  const W = 9906;
+  const out = [];
+  const m = j.meta || {};
+  const date = m.startedAt ? new Date(m.startedAt) : null;
+  const tm = d => d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' });
+  out.push(jP(jR('PROPERTY ASSIST · INSPECTION NOTES FOR TYPING', { sz: 16, b: true, color: JD_MUTED }), { after: 60 }));
+  out.push(jH1(j.address || 'Inspection'));
+  out.push(jP(jR('AI transcribed and sorted. It may not be 100% accurate, so check everything against the audio, especially the ', { sz: 18 })
+    + jR('highlighted', { sz: 18, b: true, hl: true }) + jR(' words.', { sz: 18 }), { box: true, after: 140 }));
+  const lab = s => jP(jR(s, { color: JD_MUTED }), { after: 0 });
+  const val = s => jP(jR(s || '—'), { after: 0 });
+  out.push(jTable([2000, 2953, 2000, 2953], null, [
+    { cells: [lab('Client'), val(m.client), lab('State'), val(m.stateCode)] },
+    { cells: [lab('Inspection type'), val(m.inspType || INSPECTION_TYPE), lab('Date'), val(date ? date.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : '')] },
+    { cells: [lab('Inspector'), val(m.inspector), lab('Time on site'), val(date ? tm(date) + (j.finished ? ' – ' + tm(new Date(j.finished)) : '') : '')] }
+  ]));
+  // Security/Safety, the template's rows.
+  const md = j.mandatory || {};
+  out.push(jH2('Security/Safety'));
+  const secRow = (k, v) => v ? { cells: [jP(jR(k, { b: true, sz: 19 }), { after: 0 }), val(v)] }
+    : { fill: JD_NMBG, cells: [jP(jR(k, { b: true, sz: 19 }), { after: 0 }), jP(jR(j.mandatory ? 'Not recorded in the app' : 'See the inspection details', { color: JD_NM }), { after: 0 })] };
+  out.push(jTable([3300, 6606], ['Template row', 'Notes'], [
+    secRow('Smoke Alarms', md.smokeAlarms), secRow('RCD/Safety Switch', md.rcdBox),
+    secRow('Keys/Other Opening Devices', ''), secRow('Entry Light Fittings', ''), secRow('External Door Locks', '')
+  ]));
+  const also = [];
+  if (md.waterMeter || md.waterMeterLocation) also.push('Water meter ' + [md.waterMeter, md.waterMeterLocation].filter(Boolean).join(' — '));
+  if (md.nbnBox) also.push('NBN box ' + md.nbnBox);
+  if (also.length) out.push(jP(jR('Also recorded (no template row): ', { sz: 18, color: JD_MUTED }) + jR(also.join('   ·   '), { sz: 18 }), { before: 80 }));
+  // Words to check per room.
+  const total = j.rooms.reduce((n, r) => n + r.toCheck, 0);
+  out.push(jH2('Words to check per room (' + total + ')'));
+  const half = Math.ceil(j.rooms.length / 2);
+  const rc = r => r ? [jP(jR(r.no + '. ' + r.name, { sz: 19 }), { after: 0 }),
+    jP(r.toCheck ? jR(' ' + r.toCheck + ' ', { b: true, sz: 19, hl: true }) : jR(r.hasRec ? 'none' : '—', { sz: 18, color: JD_NM }), { after: 0, align: 'center' })]
+    : [jP('', { after: 0 }), jP('', { after: 0 })];
+  const pairs = [];
+  for (let k = 0; k < half; k++) pairs.push({ cells: rc(j.rooms[k]).concat(rc(j.rooms[k + half])) });
+  if (pairs.length) out.push(jTable([3453, 1500, 3453, 1500], ['Room', 'To check', 'Room', 'To check'], pairs));
+  // How to read this.
+  out.push(jH2('How to read this'));
+  const key = (sample, mean, todo) => ({ cells: [jP(sample, { after: 0 }), jP(jR(mean, { sz: 18 }), { after: 0 }), jP(jR(todo, { sz: 18, b: true }), { after: 0 })] });
+  out.push(jTable([2000, 4906, 3000], ['You’ll see', 'What it means', 'What to do'], [
+    key(jR('highlighted', { b: true, hl: true, sz: 18 }), 'The engine may have misheard this word', 'Listen and fix'),
+    key(jR('grey italic', { i: true, color: JD_ADD, sz: 18 }), 'Added by the AI, the inspector didn’t say it', 'Keep or delete'),
+    key(jR('Not mentioned', { color: JD_NM, sz: 18 }), 'Nothing said for this template row', 'Leave blank or check photos'),
+    key(jR('0:45', { b: true, sz: 18 }), 'Where this row starts in the room’s audio', 'Skip to it in the audio')
+  ]));
+  out.push(jP(jR('Rooms follow the WA PCR template rows in the same order, so you can paste row by row. Audio is in the Audio folder.', { sz: 18, color: JD_MUTED }), { before: 100 }));
+  // The rooms.
+  j.rooms.forEach((r, i) => {
+    out.push(jH1(r.no + '. ' + r.name, i === 0 ? { pageBreak: true } : { before: 360 }));
+    const aud = r.audio.length ? r.audio.map(a => 'Audio/' + a.name).join(', ') : 'none';
+    if (r.hasRec) out.push(jP(jR('Audio: ', { sz: 18, color: JD_MUTED }) + jR(aud, { sz: 18 }), { keepNext: true, after: 20 }));
+    if (r.hasRec) out.push(jP(jR(r.said + ' of ' + r.total + ' rows recorded   ·   ', { sz: 18, color: JD_MUTED })
+      + jR(r.toCheck ? r.toCheck + ' to check' : 'nothing to check', { sz: 18, b: !!r.toCheck, color: r.toCheck ? JD_INK : JD_MUTED }), { keepNext: true, after: 100 }));
+    r.notes.forEach(n => out.push(jP(jR(n, { sz: 18 }), { box: true, after: 80, keepNext: true })));
+    if (r.rows.length && r.hasRec) {
+      out.push(jTable([3000, 6906], ['Template row', 'Notes'], r.rows.map(row => {
+        const name = jP(jR(row.name, { b: true, sz: 19, color: row.empty ? JD_NM : JD_INK }), { after: 0 })
+          + (row.label ? jP(jR(row.label, { sz: 16, color: JD_MUTED }), { after: 0 }) : '');
+        if (row.empty) return { fill: JD_NMBG, cells: [name, jP(jR('Not mentioned', { color: JD_NM }), { after: 0 })] };
+        return { cells: [name, jP(row.sents.map(x => jSentence(x, 20)).join(jR(' ')), { after: 0 })] };
+      })));
+    }
+    if (r.plates.length) {
+      out.push(jH2('Model and serial numbers'));
+      out.push(jTable([4306, 2800, 2800], ['Row', 'Model', 'Serial'], r.plates.map(p => ({ cells: [val(p.row), val(p.model), val(p.serial)] }))));
+    }
+  });
+  // Raw transcript at the back.
+  const anyRaw = j.rooms.some(r => r.raws.length);
+  if (anyRaw) {
+    out.push(jH1('Raw transcript (as heard)', { pageBreak: true }));
+    out.push(jP(jR('Exactly what the engine heard, before tidying and sorting. Only needed if a sentence looks missing or in the wrong row.', { sz: 18, color: JD_MUTED }), { after: 160 }));
+    j.rooms.filter(r => r.raws.length).forEach(r => {
+      out.push(jH2(r.no + '. ' + r.name));
+      r.raws.forEach(rw => {
+        if (rw.part) out.push(jP(jR('Part ' + rw.part + ' — ' + rw.audio, { sz: 16, b: true, color: JD_MUTED }), { before: 60, after: 40 }));
+        String(rw.text || '').split('\n').filter(l => l.trim()).forEach(l => {
+          const mm = /^(\[\d+:\d+(?::\d+)?\])\s*(.*)$/.exec(l.trim());
+          out.push(jP(mm ? jR(mm[1] + '  ', { sz: 16, b: true, color: JD_MUTED }) + jR(mm[2], { sz: 16, color: '555555' }) : jR(l.trim(), { sz: 16, color: '555555' }), { after: 30, indent: 560 }));
+        });
+      });
+    });
+  }
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+    + '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>'
+    + out.join('')
+    + '<w:sectPr><w:headerReference w:type="default" r:id="rIdH"/><w:footerReference w:type="default" r:id="rIdF"/>'
+    + '<w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1000" w:right="1000" w:bottom="1000" w:left="1000" w:header="500" w:footer="500" w:gutter="0"/></w:sectPr>'
+    + '</w:body></w:document>';
+}
+async function buildJobDocx(j) {
+  const JSZip = await loadJSZip();
+  const zip = new JSZip();
+  const W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
+  const m = j.meta || {};
+  const date = m.startedAt ? new Date(m.startedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+  zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>'
+    + '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+    + '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>'
+    + '<Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/>'
+    + '<Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/></Types>');
+  zip.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+  zip.file('word/_rels/document.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+    + '<Relationship Id="rIdS" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
+    + '<Relationship Id="rIdH" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/>'
+    + '<Relationship Id="rIdF" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/></Relationships>');
+  zip.file('word/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ' + W + '>'
+    + '<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:sz w:val="20"/><w:color w:val="2B2B2B"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="60"/></w:pPr></w:pPrDefault></w:docDefaults>'
+    + '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>'
+    + '<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:pPr><w:keepNext/><w:outlineLvl w:val="0"/></w:pPr></w:style>'
+    + '<w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:pPr><w:keepNext/><w:outlineLvl w:val="1"/></w:pPr></w:style>'
+    + '</w:styles>');
+  zip.file('word/header1.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr ' + W + '>'
+    + jP(jR([j.address, m.inspType || INSPECTION_TYPE, date].filter(Boolean).join('  ·  '), { sz: 16, color: JD_MUTED }), { align: 'right', after: 0 }) + '</w:hdr>');
+  const fld = code => '<w:r><w:rPr><w:sz w:val="16"/><w:color w:val="' + JD_MUTED + '"/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:sz w:val="16"/><w:color w:val="' + JD_MUTED + '"/></w:rPr><w:instrText xml:space="preserve"> ' + code + ' </w:instrText></w:r><w:r><w:rPr><w:sz w:val="16"/><w:color w:val="' + JD_MUTED + '"/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:sz w:val="16"/><w:color w:val="' + JD_MUTED + '"/></w:rPr><w:t>1</w:t></w:r><w:r><w:rPr><w:sz w:val="16"/></w:rPr><w:fldChar w:fldCharType="end"/></w:r>';
+  zip.file('word/footer1.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:ftr ' + W + '><w:p><w:pPr><w:jc w:val="right"/></w:pPr>'
+    + jR('Page ', { sz: 16, color: JD_MUTED }) + fld('PAGE') + jR(' of ', { sz: 16, color: JD_MUTED }) + fld('NUMPAGES') + '</w:p></w:ftr>');
+  zip.file('word/document.xml', buildJobDocXml(j));
   return zip.generateAsync({ type: 'blob', mimeType: DOCX_TYPE });
 }
 
@@ -6772,6 +7386,13 @@ async function finishAndClear() {
     } catch (e) {}
   }
   try { if (cloudArchiveEnabled() && navigator.onLine) processPhotoQueue(); } catch (e) {}
+  // ROUND 12: the job's Word file is built once more with everything typed on
+  // the phone, and again by itself as any room still sending lands.
+  try {
+    const snap = jobSnapshot();
+    if (snap) { snap.finishedAt = Date.now(); markJobDoc(archiveFolderName({ address: state.address, meta: inspectionMeta(), createdAt: state.startedAt }), snap); }
+    if (cloudArchiveEnabled() && navigator.onLine) processArchiveQueue();
+  } catch (e) {}
   clearSaved();
   releaseSessionMic();   // let go of the microphone now the inspection is finished
   state.roomNotes = {}; state.serialModels = {}; state.serialPhotos = {}; state.checked = {}; state.rooms = [];

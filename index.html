@@ -5,9 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Property Assist — Inspection Report</title>
 <!-- Install-to-home-screen (PWA) -->
-<meta name="theme-color" content="#ECECEA" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0F1012" media="(prefers-color-scheme: dark)">
-<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#ECECEA" id="metaTheme">
+<meta name="color-scheme" content="light" id="metaScheme">
+<script>
+  // Light by default. Admin settings can choose Dark or Match phone (pa_theme).
+  // Set before the page draws, so it never flashes the wrong colours.
+  (function () {
+    var t = 'light';
+    try { t = localStorage.getItem('pa_theme') || 'light'; } catch (e) {}
+    if (t !== 'dark' && t !== 'auto') t = 'light';
+    document.documentElement.setAttribute('data-theme', t);
+    var dark = t === 'dark' || (t === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+    document.getElementById('metaTheme').setAttribute('content', dark ? '#0F1012' : '#ECECEA');
+    document.getElementById('metaScheme').setAttribute('content', dark ? 'dark' : 'light');
+  })();
+</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -1376,7 +1388,7 @@
      Blur only on floating things (top bar, record dock, toast, sheet); cards
      get the glass fill without blur so scrolling stays light. */
   :root {
-    color-scheme: light dark;
+    color-scheme: light;
     --bg: #ECECEA; --ink: #2B2D31; --ink-2: #55575B; --line: rgba(43,45,49,0.09); --line-2: rgba(43,45,49,0.16);
     --glass: linear-gradient(145deg, rgba(255,255,255,0.85), rgba(255,255,255,0.48));
     --glass-edge: rgba(255,255,255,0.95); --glass-hi: #FFFFFF;
@@ -1400,8 +1412,29 @@
     --green: var(--ok); --green-light: var(--ok-bg); --red: var(--bad); --red-light: var(--bad-bg);
     --radius: 22px; --radius-sm: 14px;
   }
+  /* Light is the default. Dark only when chosen in Admin settings:
+     Dark, or Match phone with the phone set to dark. */
+  :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #0F1012; --ink: #F3F3F1; --ink-2: #B4B6BA; --line: rgba(255,255,255,0.09); --line-2: rgba(255,255,255,0.16);
+      --glass: linear-gradient(145deg, rgba(255,255,255,0.11), rgba(255,255,255,0.03));
+      --glass-edge: rgba(255,255,255,0.13); --glass-hi: rgba(255,255,255,0.2);
+      --glass-shadow: 0 24px 48px rgba(0,0,0,0.45); --glass-shadow-sm: 0 8px 20px rgba(0,0,0,0.35);
+      --bar: rgba(30,31,34,0.62); --bar-solid: #1C1D20;
+      --field: rgba(0,0,0,0.3); --field-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+      --tint: rgba(255,255,255,0.06);
+      --sel: linear-gradient(180deg, #FFFFFF, #E2E2E0); --sel-ink: #141518;
+      --ok: #7BD4A0; --ok-bg: rgba(123,212,160,0.12);
+      --bad: #FF8A7A; --bad-bg: rgba(255,122,107,0.13);
+      --warn-ink: #FFE45C; --warn-bg: rgba(255,222,0,0.12);
+      --fade-from: rgba(243,243,241,0.3);
+      --wash: radial-gradient(120% 55% at 10% -5%, rgba(137,139,143,0.2), transparent 62%),
+              radial-gradient(90% 60% at 50% 110%, rgba(137,139,143,0.12), transparent 65%);
+      --white: rgba(255,255,255,0.05);
+  }
   @media (prefers-color-scheme: dark) {
-    :root {
+    :root[data-theme="auto"] {
+      color-scheme: dark;
       --bg: #0F1012; --ink: #F3F3F1; --ink-2: #B4B6BA; --line: rgba(255,255,255,0.09); --line-2: rgba(255,255,255,0.16);
       --glass: linear-gradient(145deg, rgba(255,255,255,0.11), rgba(255,255,255,0.03));
       --glass-edge: rgba(255,255,255,0.13); --glass-hi: rgba(255,255,255,0.2);
@@ -1771,6 +1804,8 @@
     .sheet, .sheet-backdrop, .progress-bar-fill, .toast { transition: none !important; }
   }
   /* ═══ ROUND 10 POLISH: line icons, more air, less text ═══ */
+  .theme-select { grid-template-columns: repeat(3, 1fr); margin-bottom: 4px; }
+  .appearance-group { margin: 14px 14px 4px; }
   .ico { width: 1.2em; height: 1.2em; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8;
     stroke-linecap: round; stroke-linejoin: round; vertical-align: -0.22em; }
   .ico.solid { fill: currentColor; stroke: none; }
@@ -2025,6 +2060,14 @@
          used to be able to break uploads, so they're tucked away. -->
     <details class="admin-settings" id="adminSettings">
       <summary>Admin settings</summary>
+    <div class="field-group appearance-group">
+      <label>Appearance</label>
+      <div class="engine-select theme-select" id="themeSelect">
+        <div class="engine-toggle" data-theme-choice="light" onclick="setTheme('light')">Light</div>
+        <div class="engine-toggle" data-theme-choice="dark" onclick="setTheme('dark')">Dark</div>
+        <div class="engine-toggle" data-theme-choice="auto" onclick="setTheme('auto')">Match phone</div>
+      </div>
+    </div>
       <p class="admin-warn">For Daphne / admin only. Changing these can stop recordings reaching Dropbox.</p>
     <div class="field-group">
       <label>Transcription engine</label>
@@ -7182,6 +7225,19 @@ function ico(name, extra) {
   if (!ICONS[name]) return '';
   return '<svg class="ico ico-' + name + (SOLID_ICONS.includes(name) ? ' solid' : '') + (extra ? ' ' + extra : '') + '" viewBox="0 0 24 24" aria-hidden="true">' + ICONS[name] + '</svg>';
 }
+// Appearance: light unless Admin settings says Dark or Match phone.
+function themeChoice() { let t = 'light'; try { t = localStorage.getItem('pa_theme') || 'light'; } catch (e) {} return (t === 'dark' || t === 'auto') ? t : 'light'; }
+function applyTheme() {
+  const t = themeChoice();
+  document.documentElement.setAttribute('data-theme', t);
+  const dark = t === 'dark' || (t === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+  const m = document.getElementById('metaTheme'); if (m) m.setAttribute('content', dark ? '#0F1012' : '#ECECEA');
+  const c = document.getElementById('metaScheme'); if (c) c.setAttribute('content', dark ? 'dark' : 'light');
+  document.querySelectorAll('#themeSelect [data-theme-choice]').forEach(b => b.classList.toggle('selected', b.dataset.themeChoice === t));
+}
+function setTheme(t) { try { localStorage.setItem('pa_theme', t); } catch (e) {} applyTheme(); }
+try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (themeChoice() === 'auto') applyTheme(); }); } catch (e) {}
+applyTheme();
 function plainText(s) {
   return String(s == null ? '' : s)
     .replace(/\s\u2192\s/g, ' > ')

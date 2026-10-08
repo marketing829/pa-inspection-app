@@ -1,0 +1,1799 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PA Typist Editor</title>
+<meta name="theme-color" content="#ECECEA" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1012" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>
+  /* PA Typist Editor v1. Same tokens as the round 10 inspector app reskin:
+     still grey wash, glass cards, frosted floating bars, yellow kept for the
+     main button, the play button, words to check and status dots. */
+  :root {
+    color-scheme: light dark;
+    --bg: #ECECEA; --ink: #2B2D31; --ink-2: #55575B; --ink-3: #7A7C80;
+    --line: rgba(43,45,49,0.09); --line-2: rgba(43,45,49,0.16);
+    --glass: linear-gradient(145deg, rgba(255,255,255,0.85), rgba(255,255,255,0.48));
+    --glass-edge: rgba(255,255,255,0.95); --glass-hi: #FFFFFF;
+    --glass-shadow: 0 18px 40px rgba(43,45,49,0.12); --glass-shadow-sm: 0 6px 18px rgba(43,45,49,0.08);
+    --bar: rgba(250,250,248,0.72); --bar-solid: #F7F7F5;
+    --field: rgba(255,255,255,0.7); --field-solid: #FFFFFF; --field-shadow: inset 0 1px 2px rgba(43,45,49,0.08);
+    --tint: rgba(43,45,49,0.05); --tint-2: rgba(43,45,49,0.09);
+    --sel: linear-gradient(180deg, #46484D, #2B2D31); --sel-ink: #FFFFFF;
+    --yellow: linear-gradient(180deg, #FFEB55 0%, #FFDE00 55%, #F0CF00 100%); --yellow-flat: #FFDE00; --on-yellow: #141518;
+    --check-bg: rgba(255,222,0,0.22); --check-line: #E0BE00;
+    --ok: #2D7A4F; --ok-bg: rgba(45,122,79,0.11);
+    --bad: #B83325; --bad-bg: rgba(192,57,43,0.09);
+    --warn-ink: #6B5600; --warn-bg: rgba(255,222,0,0.20);
+    --fade-from: rgba(43,45,49,0.28);
+    --wash: radial-gradient(120% 55% at 10% -5%, rgba(137,139,143,0.18), transparent 62%),
+            radial-gradient(80% 45% at 105% 0%, rgba(255,222,0,0.06), transparent 60%),
+            radial-gradient(90% 60% at 50% 110%, rgba(137,139,143,0.14), transparent 65%);
+    --radius: 22px; --radius-sm: 14px;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1012; --ink: #F3F3F1; --ink-2: #B4B6BA; --ink-3: #8A8C90;
+      --line: rgba(255,255,255,0.09); --line-2: rgba(255,255,255,0.16);
+      --glass: linear-gradient(145deg, rgba(255,255,255,0.11), rgba(255,255,255,0.03));
+      --glass-edge: rgba(255,255,255,0.13); --glass-hi: rgba(255,255,255,0.2);
+      --glass-shadow: 0 24px 48px rgba(0,0,0,0.45); --glass-shadow-sm: 0 8px 20px rgba(0,0,0,0.35);
+      --bar: rgba(30,31,34,0.62); --bar-solid: #1C1D20;
+      --field: rgba(0,0,0,0.3); --field-solid: #17181B; --field-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+      --tint: rgba(255,255,255,0.06); --tint-2: rgba(255,255,255,0.1);
+      --sel: linear-gradient(180deg, #FFFFFF, #E2E2E0); --sel-ink: #141518;
+      --check-bg: rgba(255,222,0,0.14); --check-line: #FFDE00;
+      --ok: #7BD4A0; --ok-bg: rgba(123,212,160,0.12);
+      --bad: #FF8A7A; --bad-bg: rgba(255,122,107,0.13);
+      --warn-ink: #FFE45C; --warn-bg: rgba(255,222,0,0.12);
+      --fade-from: rgba(243,243,241,0.3);
+      --wash: radial-gradient(120% 55% at 10% -5%, rgba(137,139,143,0.2), transparent 62%),
+              radial-gradient(90% 60% at 50% 110%, rgba(137,139,143,0.12), transparent 65%);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1012; --ink: #F3F3F1; --ink-2: #B4B6BA; --ink-3: #8A8C90;
+    --line: rgba(255,255,255,0.09); --line-2: rgba(255,255,255,0.16);
+    --glass: linear-gradient(145deg, rgba(255,255,255,0.11), rgba(255,255,255,0.03));
+    --glass-edge: rgba(255,255,255,0.13); --glass-hi: rgba(255,255,255,0.2);
+    --glass-shadow: 0 24px 48px rgba(0,0,0,0.45); --glass-shadow-sm: 0 8px 20px rgba(0,0,0,0.35);
+    --bar: rgba(30,31,34,0.62); --bar-solid: #1C1D20;
+    --field: rgba(0,0,0,0.3); --field-solid: #17181B; --field-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+    --tint: rgba(255,255,255,0.06); --tint-2: rgba(255,255,255,0.1);
+    --sel: linear-gradient(180deg, #FFFFFF, #E2E2E0); --sel-ink: #141518;
+    --check-bg: rgba(255,222,0,0.14); --check-line: #FFDE00;
+    --ok: #7BD4A0; --ok-bg: rgba(123,212,160,0.12);
+    --bad: #FF8A7A; --bad-bg: rgba(255,122,107,0.13);
+    --warn-ink: #FFE45C; --warn-bg: rgba(255,222,0,0.12);
+    --fade-from: rgba(243,243,241,0.3);
+    --wash: radial-gradient(120% 55% at 10% -5%, rgba(137,139,143,0.2), transparent 62%),
+            radial-gradient(90% 60% at 50% 110%, rgba(137,139,143,0.12), transparent 65%);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { background: var(--bg); }
+  body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased; min-height: 100vh; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; inset: 0; z-index: 0; background: var(--wash); pointer-events: none; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; border: 0; background: none; }
+  button:disabled { cursor: default; opacity: 0.45; }
+  :focus-visible { outline: 2px solid var(--check-line); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+
+  .glass { background: var(--glass); border: 1px solid var(--glass-edge); border-radius: var(--radius);
+    box-shadow: var(--glass-shadow-sm), inset 0 1px 0 var(--glass-hi); }
+  .frost { background: var(--bar); -webkit-backdrop-filter: blur(24px) saturate(170%); backdrop-filter: blur(24px) saturate(170%);
+    border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi); }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .frost { background: var(--bar-solid); } }
+
+  /* TOP BAR */
+  .topbar { position: sticky; top: 10px; z-index: 50; margin: 10px 16px 0; padding: 7px 8px 7px 8px; border-radius: 24px;
+    display: flex; align-items: center; gap: 10px; min-height: 52px; }
+  .brand { display: flex; align-items: center; gap: 10px; min-width: 0; text-align: left; border-radius: 12px; }
+  .brand img { height: 36px; width: 36px; border-radius: 10px; flex: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.18), inset 0 0 0 1px rgba(255,255,255,0.08); }
+  .brand-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+  .brand-word { font-size: 11px; font-weight: 600; letter-spacing: 0.22em; white-space: nowrap; }
+  .brand-sub { font-size: 12.5px; color: var(--ink-2); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .topbar .spacer { flex: 1; }
+  .pill { display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 8px 14px; min-height: 36px;
+    font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .pill-dark { background: linear-gradient(180deg, #3A3C41, #2B2D31); color: #FFFFFF; border: 1px solid rgba(255,255,255,0.10);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.12); }
+  .pill-ghost { border: 1px solid var(--line-2); color: var(--ink); background: var(--tint); }
+  .pill-ghost:hover { background: var(--tint-2); }
+  .timer { font-variant-numeric: tabular-nums; }
+  .timer .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); }
+  .timer.running .dot { background: var(--yellow-flat); box-shadow: 0 0 0 3px rgba(255,222,0,0.25); }
+  .icon-btn { width: 36px; height: 36px; border-radius: 50%; display: inline-grid; place-items: center; border: 1px solid var(--line-2);
+    background: var(--tint); color: var(--ink); flex: none; }
+  .icon-btn:hover { background: var(--tint-2); }
+  .icon-btn svg { width: 17px; height: 17px; }
+
+  main { position: relative; z-index: 1; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* HEADINGS */
+  .eyebrow { display: inline-block; font-size: 12px; font-weight: 500; color: var(--ink-2); border: 1px solid var(--line-2);
+    border-radius: 999px; padding: 4px 11px; margin-bottom: 12px; }
+  h1.big { font-size: 44px; font-weight: 600; letter-spacing: -0.035em; line-height: 1.05; margin-bottom: 10px; overflow-wrap: anywhere; }
+  .fade { background: linear-gradient(90deg, var(--fade-from), var(--ink) 92%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lede { color: var(--ink-2); font-size: 15px; max-width: 62ch; }
+  .label { font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); }
+  .muted { color: var(--ink-2); }
+  .small { font-size: 13px; }
+
+  /* BUTTONS */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 14px; padding: 10px 16px;
+    min-height: 42px; font-size: 14px; font-weight: 600; white-space: nowrap; }
+  .btn svg { width: 16px; height: 16px; flex: none; }
+  .btn-main { background: var(--yellow); color: var(--on-yellow); box-shadow: 0 6px 16px rgba(255,222,0,0.28), inset 0 1px 0 rgba(255,255,255,0.6); }
+  .btn-main:hover { filter: brightness(1.03); }
+  .btn-dark { background: var(--sel); color: var(--sel-ink); box-shadow: 0 4px 12px rgba(0,0,0,0.16); }
+  .btn-ghost { background: var(--tint); border: 1px solid var(--line-2); color: var(--ink); }
+  .btn-ghost:hover { background: var(--tint-2); }
+  .btn-sm { min-height: 32px; padding: 6px 12px; font-size: 13px; border-radius: 11px; }
+  .btn-done { background: var(--ok-bg); color: var(--ok); border: 1px solid transparent; }
+
+  input.field, textarea.field { width: 100%; background: var(--field); border: 1px solid var(--line-2); border-radius: 12px;
+    padding: 11px 13px; box-shadow: var(--field-shadow); outline: none; }
+  input.field:focus, textarea.field:focus { border-color: var(--check-line); box-shadow: 0 0 0 3px rgba(255,222,0,0.22); }
+
+  /* QUEUE */
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px 80px; }
+  .hero { padding: 30px 4px 18px; }
+  .sources { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin-bottom: 22px; }
+  .source { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+  .source h3 { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; display: flex; align-items: center; gap: 9px; }
+  .source p { color: var(--ink-2); font-size: 14px; }
+  .source .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; padding-top: 4px; }
+  .status-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ink-3); flex: none; }
+  .status-dot.on { background: var(--ok); }
+  .status-dot.warn { background: var(--yellow-flat); }
+  .drop { border: 1.5px dashed var(--line-2); border-radius: var(--radius-sm); padding: 12px; text-align: center; color: var(--ink-2); font-size: 13px; }
+  .drop.over { border-color: var(--check-line); background: var(--check-bg); color: var(--ink); }
+  .connect { display: grid; gap: 8px; }
+  .list-head { display: flex; align-items: center; gap: 12px; margin: 6px 4px 10px; flex-wrap: wrap; }
+  .list-head h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; flex: 1; }
+  .list-head input { max-width: 300px; }
+  .jobs { display: grid; gap: 8px; }
+  .job-row { display: grid; grid-template-columns: 112px 1fr auto auto; gap: 14px; align-items: center; padding: 14px 16px;
+    text-align: left; width: 100%; border-radius: 18px; }
+  .job-row:hover { border-color: var(--line-2); }
+  .job-date { font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .job-addr { font-weight: 600; font-size: 15.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 4px 10px;
+    background: var(--tint); color: var(--ink-2); white-space: nowrap; }
+  .chip.ok { background: var(--ok-bg); color: var(--ok); }
+  .chip.warn { background: var(--warn-bg); color: var(--warn-ink); }
+  .chip .d { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .empty { padding: 28px; text-align: center; color: var(--ink-2); }
+  .foot { margin-top: 26px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .foot .glass { padding: 18px 20px; }
+  .foot h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  kbd { font-family: var(--mono); font-size: 11.5px; border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 6px;
+    padding: 1px 6px; background: var(--tint); white-space: nowrap; }
+  .keys { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 13px; align-items: center; }
+
+  /* JOB */
+  .job { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 18px; max-width: 1360px; margin: 0 auto;
+    padding: 16px 16px 150px; align-items: start; }
+  .side { position: sticky; top: 80px; max-height: calc(100vh - 190px); overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .side h2 { font-size: 18px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.25; }
+  .facts { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 13px; }
+  .facts dt { color: var(--ink-2); }
+  .facts dd { font-weight: 500; overflow-wrap: anywhere; }
+  .rooms { display: grid; gap: 4px; }
+  .room-btn { display: grid; grid-template-columns: 22px 1fr auto; gap: 8px; align-items: center; text-align: left; width: 100%;
+    padding: 9px 10px; border-radius: 12px; font-size: 14px; }
+  .room-btn:hover { background: var(--tint); }
+  .room-btn.active { background: var(--sel); color: var(--sel-ink); }
+  .room-btn .n { font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; text-align: center; }
+  .room-btn.active .n { color: inherit; opacity: 0.7; }
+  .room-btn .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+  .room-btn .nm small { display: block; font-size: 11.5px; opacity: 0.65; font-weight: 400; }
+  .room-btn .badges { display: flex; gap: 4px; align-items: center; }
+  .b-check { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--yellow-flat); color: var(--on-yellow);
+    font-size: 11px; font-weight: 700; display: inline-grid; place-items: center; }
+  .b-done { width: 20px; height: 20px; border-radius: 50%; background: var(--ok); color: #fff; display: inline-grid; place-items: center; font-size: 12px; font-weight: 700; }
+  :root[data-theme="dark"] .b-done { color: #0F1012; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .b-done { color: #0F1012; } }
+  .b-warn { font-size: 11px; color: var(--bad); font-weight: 600; }
+  .side-actions { display: grid; gap: 8px; }
+  .progress { height: 6px; border-radius: 99px; background: var(--tint-2); overflow: hidden; }
+  .progress i { display: block; height: 100%; background: var(--yellow); width: 0; transition: width .3s; }
+
+  .room-head { padding: 14px 4px 6px; }
+  .room-head .meta { color: var(--ink-2); font-size: 13.5px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 18px; }
+  .card { padding: 18px 20px; margin-bottom: 14px; }
+  .card-title { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .card-title h3 { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+  .card-title .grow { flex: 1; }
+  .checks { border-color: var(--check-line); box-shadow: 0 0 0 1px var(--check-line) inset, var(--glass-shadow-sm); }
+  .check-row { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: start; padding: 10px 0; border-top: 1px solid var(--line); }
+  .check-row:first-of-type { border-top: 0; }
+  .check-row .q { font-weight: 500; }
+  .check-row .q mark { background: none; color: inherit; text-decoration: underline; text-decoration-color: var(--check-line); text-decoration-thickness: 3px; text-underline-offset: 3px; }
+  .check-row .why { font-size: 13px; color: var(--ink-2); }
+  .check-row.resolved { opacity: 0.62; }
+  .check-row.resolved .q { text-decoration: line-through; text-decoration-color: var(--ink-3); }
+  .clock { font-family: var(--mono); font-size: 12px; font-weight: 600; border-radius: 8px; padding: 3px 7px; background: var(--tint);
+    color: var(--ink-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  button.clock:hover { background: var(--tint-2); color: var(--ink); }
+  .row-btns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .banner { padding: 12px 16px; border-radius: var(--radius-sm); background: var(--warn-bg); color: var(--warn-ink); font-size: 14px; margin-bottom: 14px; }
+  .banner.bad { background: var(--bad-bg); color: var(--bad); }
+  .banner.ok { background: var(--ok-bg); color: var(--ok); }
+
+  /* SECTIONS + SENTENCES */
+  .sec { padding: 16px 20px 14px; margin-bottom: 12px; }
+  .sec-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .sec-head h3 { font-size: 16.5px; font-weight: 600; letter-spacing: -0.01em; flex: 1; min-width: 0; }
+  .text { font-size: 16.5px; line-height: 1.75; }
+  .sent { border-radius: 6px; padding: 1px 2px; cursor: text; transition: background .15s; }
+  .sent:hover { background: var(--tint); }
+  .sent .t { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); vertical-align: 2px; margin-right: 3px; cursor: pointer; border-radius: 4px; padding: 0 2px; }
+  .sent .t:hover { color: var(--ink); background: var(--tint-2); }
+  .sent.check { background: var(--check-bg); box-shadow: inset 0 -2px 0 var(--check-line); }
+  .sent.check .hw { text-decoration: underline; text-decoration-color: var(--check-line); text-decoration-thickness: 3px; text-underline-offset: 3px; font-weight: 600; }
+  .sent.edited { box-shadow: inset 0 -1.5px 0 var(--ink-3); }
+  .sent.edited.check { box-shadow: inset 0 -2px 0 var(--check-line); }
+  .sent.now { background: var(--tint-2); box-shadow: inset 3px 0 0 var(--yellow-flat); }
+  .sent.removed { display: none; }
+  .add { display: inline-flex; align-items: center; gap: 2px; border: 1.5px dashed var(--check-line); border-radius: 999px; padding: 0 3px 0 9px;
+    font-size: 14px; line-height: 1.6; background: var(--check-bg); vertical-align: 1px; margin: 0 2px; }
+  .add em { font-style: italic; }
+  .add button { width: 22px; height: 22px; border-radius: 50%; font-size: 12px; font-weight: 700; display: inline-grid; place-items: center; }
+  .add button:hover { background: var(--tint-2); }
+  .add .k { color: var(--ok); } .add .r { color: var(--bad); }
+  .sent-edit { display: block; margin: 6px 0; }
+  .sent-edit textarea { font-size: 16px; line-height: 1.55; resize: none; overflow: hidden; min-height: 46px; background: var(--field-solid); }
+  .sent-edit .hint { font-size: 12px; color: var(--ink-2); margin-top: 5px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .sent-edit .orig { font-size: 13px; color: var(--ink-2); margin-top: 4px; }
+  .add-sent { margin-top: 8px; font-size: 13px; color: var(--ink-2); padding: 4px 8px; border-radius: 8px; }
+  .add-sent:hover { background: var(--tint); color: var(--ink); }
+  .plain-box { white-space: pre-wrap; font-size: 15px; line-height: 1.6; }
+  .typed { min-height: 220px; font-size: 16px; line-height: 1.6; resize: vertical; }
+
+  /* AUDIO DOCK */
+  .dock { position: fixed; left: 50%; transform: translateX(-50%); bottom: 14px; z-index: 60; width: min(1100px, calc(100vw - 32px));
+    border-radius: 26px; padding: 10px 14px; display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; }
+  .transport { display: flex; align-items: center; gap: 6px; }
+  .play { width: 54px; height: 54px; border-radius: 50%; background: var(--yellow); color: var(--on-yellow); display: grid; place-items: center;
+    box-shadow: 0 6px 16px rgba(255,222,0,0.3), inset 0 1px 0 rgba(255,255,255,0.6), 0 0 0 4px rgba(255,222,0,0.18); }
+  .play svg { width: 22px; height: 22px; }
+  .skip { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700; position: relative; }
+  .skip:hover { background: var(--tint-2); }
+  .skip svg { width: 26px; height: 26px; position: absolute; }
+  .skip span { position: relative; top: 1px; }
+  .scrub { display: grid; gap: 4px; min-width: 0; }
+  .scrub-top { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--ink-2); gap: 10px; }
+  .scrub-top b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .scrub-top .now-sec { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .track { position: relative; height: 26px; cursor: pointer; touch-action: none; }
+  .track .rail { position: absolute; left: 0; right: 0; top: 11px; height: 4px; border-radius: 4px; background: var(--tint-2); }
+  .track .fill { position: absolute; left: 0; top: 11px; height: 4px; border-radius: 4px; background: var(--ink); width: 0; }
+  .track .knob { position: absolute; top: 6px; width: 14px; height: 14px; border-radius: 50%; background: var(--ink); margin-left: -7px; left: 0;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+  .track .tick { position: absolute; top: 7px; width: 2px; height: 12px; margin-left: -1px; background: var(--ink-3); border-radius: 2px; opacity: 0.7; }
+  .track .flag { position: absolute; top: 0; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: var(--yellow-flat);
+    border: 1.5px solid var(--on-yellow); }
+  .tools { display: flex; align-items: center; gap: 6px; }
+  .speeds { display: flex; background: var(--tint); border: 1px solid var(--line); border-radius: 12px; padding: 2px; }
+  .speeds button { font-size: 12.5px; font-weight: 600; padding: 5px 8px; border-radius: 9px; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+  .speeds button.on { background: var(--sel); color: var(--sel-ink); }
+  .toggle.on { background: var(--sel); color: var(--sel-ink); border-color: transparent; }
+  .no-audio { font-size: 14px; color: var(--ink-2); padding: 8px 4px; }
+
+  /* RAW PANEL */
+  .raw { position: fixed; top: 76px; right: 16px; bottom: 104px; width: min(420px, calc(100vw - 32px)); z-index: 55; border-radius: 22px;
+    display: flex; flex-direction: column; overflow: hidden; }
+  .raw-head { padding: 14px 16px 10px; display: flex; align-items: flex-start; gap: 10px; border-bottom: 1px solid var(--line); }
+  .raw-head h3 { font-size: 16px; font-weight: 600; }
+  .raw-head p { font-size: 12.5px; color: var(--ink-2); }
+  .raw-body { padding: 14px 16px 20px; overflow: auto; font-size: 15px; line-height: 1.7; }
+  .raw-body .w { border-radius: 4px; cursor: pointer; padding: 0 1px; }
+  .raw-body .w:hover { background: var(--tint-2); }
+  .raw-body .w.on { background: var(--yellow-flat); color: var(--on-yellow); }
+  .raw-body .st { font-family: var(--mono); font-size: 11px; color: var(--ink-3); cursor: pointer; display: inline-block; margin-right: 4px; }
+  .raw-body .st:hover { color: var(--ink); }
+  body.raw-open .job { padding-right: 452px; }
+
+  /* TOAST + MODAL */
+  .toast { position: fixed; left: 50%; bottom: 104px; transform: translateX(-50%) translateY(10px); opacity: 0; transition: .2s; z-index: 90;
+    padding: 11px 18px; border-radius: 999px; font-size: 14px; font-weight: 600; pointer-events: none; max-width: calc(100vw - 32px); text-align: center; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .scrim { position: fixed; inset: 0; z-index: 95; background: rgba(15,16,18,0.38); display: grid; place-items: center; padding: 16px; }
+  .modal { width: min(520px, 100%); padding: 22px; border-radius: 24px; max-height: calc(100vh - 32px); overflow: auto; }
+  .modal h3 { font-size: 20px; font-weight: 600; letter-spacing: -0.015em; margin-bottom: 8px; }
+  .modal .btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+  .loading { padding: 60px 16px; text-align: center; color: var(--ink-2); }
+  .spin { width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--tint-2); border-top-color: var(--yellow-flat); margin: 0 auto 12px; animation: sp 0.9s linear infinite; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+  /* NARROW */
+  @media (max-width: 960px) {
+    .job { grid-template-columns: 1fr; padding-bottom: 190px; }
+    .side { position: static; max-height: none; }
+    .rooms { grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; padding-bottom: 4px; }
+    .room-btn { grid-template-columns: auto auto auto; }
+    body.raw-open .job { padding-right: 16px; }
+    .raw { top: auto; height: 46vh; bottom: 170px; }
+    .dock { grid-template-columns: auto 1fr; }
+    .dock .tools { grid-column: 1 / -1; justify-content: space-between; flex-wrap: wrap; }
+    h1.big { font-size: 34px; }
+  }
+  @media (max-width: 600px) {
+    .topbar .hide-sm { display: none; }
+    .job-row { grid-template-columns: 1fr auto; }
+    .job-row .job-date { grid-column: 1 / -1; }
+    .check-row { grid-template-columns: 1fr; }
+    .row-btns { justify-content: flex-start; }
+    .dock { bottom: 8px; width: calc(100vw - 16px); padding: 8px 10px; gap: 8px; }
+    .speeds button { padding: 5px 6px; flex: none; }
+    .brand-text { display: none; }
+    .dock .tools { flex-wrap: nowrap; }
+    .speeds { overflow-x: auto; min-width: 0; flex: 1; }
+  }
+</style>
+</head>
+<body>
+<header class="topbar frost" id="topbar">
+  <button class="brand" id="brandBtn" title="Back to the queue">
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAAWfmNhQlgAABZ+anVtYgAAAB5qdW1kYzJwYQARABCAAACqADibcQNjMnBhAAAAFlhqdW1iAAAAR2p1bWRjMm1hABEAEIAAAKoAOJtxA3VybjpjMnBhOjk0M2FmZWNkLTBjNGEtNDE3Yi1hMDFhLWYyYTI1NjM2Mzk3ZQAAAAOTanVtYgAAAClqdW1kYzJhcwARABCAAACqADibcQNjMnBhLmFzc2VydGlvbnMAAAAAuGp1bWIAAABEanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5pbmdyZWRpZW50LnYzAAAAABhjMnNohbRyDZvTTK4IKYBMmKI9BQAAAGxjYm9yo2lkYzpmb3JtYXRpaW1hZ2UvcG5namluc3RhbmNlSUR4LHhtcDppaWQ6NTdhZDIyMjEtZjMwZi00ZTQxLWJmNjQtYWExOTRiZGMwYzkzbHJlbGF0aW9uc2hpcGhwYXJlbnRPZgAAAeJqdW1iAAAAQWp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuYWN0aW9ucy52MgAAAAAYYzJzaHGp+Q6vGJp9pd4+AtSjR4sAAAGZY2JvcqJnYWN0aW9uc4KiZmFjdGlvbmtjMnBhLm9wZW5lZGpwYXJhbWV0ZXJzoWtpbmdyZWRpZW50c4GiY3VybHgtc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5pbmdyZWRpZW50LnYzZGhhc2hYIKaHlb40EjRZJw7Ylankf01UMIDWaO1KsYjoWhY0upycpGZhY3Rpb254HWNvbS5hbnRocm9waWMuY2xhdWRlLnByb3ZpZGVkanBhcmFtZXRlcnOheB9jb20uYW50aHJvcGljLm9yaWdpbi1jb25maWRlbmNlZ3Vua25vd25rZGVzY3JpcHRpb254ZkNsYXVkZSBwcm92aWRlZCB0aGlzIGZpbGUgYXQgdGhlIHJlcXVlc3Qgb2YgYSB1c2VyIGFuZCBtYXkgaGF2ZSBjcmVhdGVkIG9yIG1vZGlmaWVkIHRoZSBmaWxlIGNvbnRlbnRzLm1zb2Z0d2FyZUFnZW50oWRuYW1lZkNsYXVkZXJhbGxBY3Rpb25zSW5jbHVkZWT1AAAAyGp1bWIAAABAanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5oYXNoLmRhdGEAAAAAGGMyc2iy9tsYYPaJKCBXLwOPrYbZAAAAgGNib3KlY2FsZ2ZzaGEyNTZjcGFkTQAAAAAAAAAAAAAAAABkaGFzaFggTggu2/Y0rzbFSO1ggWC+jP8Wl9dd5Hud1ay43SibPOZkbmFtZW5qdW1iZiBtYW5pZmVzdGpleGNsdXNpb25zgaJlc3RhcnQYIWZsZW5ndGgZFooAAAI+anVtYgAAACdqdW1kYzJjbAARABCAAACqADibcQNjMnBhLmNsYWltLnYyAAAAAg9jYm9ypWNhbGdmc2hhMjU2aXNpZ25hdHVyZXhNc2VsZiNqdW1iZj0vYzJwYS91cm46YzJwYTo5NDNhZmVjZC0wYzRhLTQxN2ItYTAxYS1mMmEyNTYzNjM5N2UvYzJwYS5zaWduYXR1cmVqaW5zdGFuY2VJRHgseG1wOmlpZDo4NmU1YzQyMy02NzA3LTQ0OGUtOTE0NC0yODQ0ZmI5ODkwZDlyY3JlYXRlZF9hc3NlcnRpb25zg6JjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggpoeVvjQSNFknDtiVqeR/TVQwgNZo7UqxiOhaFjS6nJyiY3VybHgqc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5hY3Rpb25zLnYyZGhhc2hYIF/zvdDcN3FtCIPe6v9im7kLocFTmvYdLGJ3OMFIJZOHomN1cmx4KXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaGFzaC5kYXRhZGhhc2hYIPYxNfo/93DSTlMEncNO1F5pMo+MdXJqnDhgcoB7mYa9dGNsYWltX2dlbmVyYXRvcl9pbmZvo2RuYW1lb0FudGhyb3BpYyBGaWxlc2d2ZXJzaW9uZTEuMC4wa3NwZWNWZXJzaW9uZTIuNC4wAAAQOGp1bWIAAAAoanVtZGMyY3MAEQAQgAAAqgA4m3EDYzJwYS5zaWduYXR1cmUAAAAQCGNib3LShFkCEqIBJhghWQIKMIICBjCCAY2gAwIBAgIUQOWgCu7COdC+uIP6BkIFPWdVEwAwCgYIKoZIzj0EAwMwSTEXMBUGA1UEChMOQW50aHJvcGljLCBQQkMxLjAsBgNVBAMTJUFudGhyb3BpYyBDb250ZW50IENyZWRlbnRpYWxzIFJvb3QgQ0EwHhcNMjYwODA3MTg0MzU2WhcNMjgwODA2MTk0MzU2WjBEMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEpMCcGA1UEAxMgQW50aHJvcGljIENsYXVkZSBDb250ZW50IFNpZ25pbmcwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAASYegpry1AYBRTVNL1CpTlbROnY3dey+UrsF9C3phYrATN3ZHf93Mo8RQN0KOUuOn19P4oWNFWe5n2/She9N7eTo1gwVjAOBgNVHQ8BAf8EBAMCB4AwFQYDVR0lBA4wDAYKKwYBBAGD6F4CATAMBgNVHRMBAf8EAjAAMB8GA1UdIwQYMBaAFM5R4gSBTmRbI/jjxM+aPpzB11zCMAoGCCqGSM49BAMDA2cAMGQCMDFzHRSeAXrSy1WOzkbhPZ6Km2wGTmZ/2gK18k8BQGXyqz88Rdrz6CTX9flAnYNVxgIwcF9c3fVhqmJKpi+UhasNUMko69cyX6STPfta3Q8EjyzDjzoyrol46FP6VFHhvUcJoWNwYWRZDZ4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA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" alt="">
+    <span class="brand-text"><span class="brand-word">PROPERTY ASSIST</span><span class="brand-sub" id="brandSub">Typist editor</span></span>
+  </button>
+  <span class="spacer"></span>
+  <button class="pill pill-ghost timer" id="timerBtn" hidden title="Typing time for this job. Counts while you work, stops after 2 minutes idle. Click to pause.">
+    <span class="dot"></span><span id="timerText">0:00</span>
+  </button>
+  <button class="icon-btn" id="keysBtn" title="Keyboard shortcuts" aria-label="Keyboard shortcuts">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>
+  </button>
+  <button class="icon-btn" id="themeBtn" title="Theme: follows this computer" aria-label="Change theme">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg>
+  </button>
+  <button class="pill pill-dark" id="queueBtn" hidden>Queue</button>
+</header>
+
+<main>
+<!-- QUEUE -->
+<section class="screen active" id="screenQueue">
+  <div class="wrap">
+    <div class="hero">
+      <span class="eyebrow">Typist editor · v1</span>
+      <h1 class="big"><span class="fade">Inspections</span> to type</h1>
+      <p class="lede">Open a job, play each room beside its text, fix what the app misheard, confirm the phrases the AI added, then copy the room into the report.</p>
+    </div>
+
+    <div class="sources">
+      <div class="source glass" id="srcDropbox">
+        <h3><span class="status-dot" id="dbxDot"></span> Dropbox</h3>
+        <p id="dbxText">Reads the Property Assist Inspections folder through the Dropbox service. Needs the editor key once on this computer.</p>
+        <div class="connect" id="dbxForm" hidden>
+          <input class="field" id="dbxUrl" placeholder="Dropbox service address" autocomplete="off" spellcheck="false">
+          <input class="field" id="dbxKey" type="password" placeholder="Editor key" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="row">
+          <button class="btn btn-dark" id="dbxConnect">Connect</button>
+          <button class="btn btn-ghost" id="dbxRefresh" hidden>Refresh</button>
+          <button class="btn btn-ghost" id="dbxEdit" hidden>Change key</button>
+        </div>
+      </div>
+      <div class="source glass" id="srcLocal">
+        <h3><span class="status-dot on"></span> This computer</h3>
+        <p>Pick a job folder from the Dropbox folder on this computer, or the whole Property Assist Inspections folder to see every job.</p>
+        <div class="drop" id="dropZone">or drop a job folder here</div>
+        <div class="row">
+          <button class="btn btn-dark" id="pickFolder">Open a folder</button>
+          <button class="btn btn-ghost" id="trySample">Try a sample job</button>
+        </div>
+        <input type="file" id="folderInput" webkitdirectory directory multiple hidden>
+      </div>
+    </div>
+
+    <div class="list-head" id="listHead" hidden>
+      <h2 id="listTitle">Jobs</h2>
+      <input class="field" id="jobSearch" placeholder="Search address or date">
+    </div>
+    <div class="jobs" id="jobs"></div>
+
+    <div class="foot">
+      <div class="glass">
+        <h3>Fixes saved on this computer</h3>
+        <p class="muted small" id="fixesText">Every word you change is kept here with what the app heard, for the team phrase list later.</p>
+        <div class="actions" style="margin:12px 0 0">
+          <button class="btn btn-ghost btn-sm" id="exportFixes">Download fixes (.csv)</button>
+          <button class="btn btn-ghost btn-sm" id="exportAll">Download all editor data (.json)</button>
+        </div>
+      </div>
+      <div class="glass">
+        <h3>Keyboard</h3>
+        <div class="keys" id="keysInline"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- JOB -->
+<section class="screen" id="screenJob">
+  <div class="loading" id="jobLoading" hidden><div class="spin"></div><div id="jobLoadingText">Opening the job…</div></div>
+  <div class="job" id="jobView" hidden>
+    <aside class="side glass" id="side">
+      <div>
+        <div class="label" id="jobDate"></div>
+        <h2 id="jobAddr"></h2>
+      </div>
+      <dl class="facts" id="jobFacts"></dl>
+      <div>
+        <div class="small muted" id="jobProgressText" style="margin-bottom:6px"></div>
+        <div class="progress"><i id="jobProgress"></i></div>
+      </div>
+      <div class="rooms" id="rooms"></div>
+      <div class="side-actions">
+        <button class="btn btn-ghost" id="copyAll">Copy all rooms</button>
+        <button class="btn btn-ghost btn-sm" id="downloadJob">Download edited text (.txt)</button>
+      </div>
+    </aside>
+    <div id="roomPane"></div>
+  </div>
+</section>
+</main>
+
+<!-- AUDIO DOCK -->
+<div class="dock frost" id="dock" hidden>
+  <div class="transport">
+    <button class="skip" id="back" title="Back 3 seconds (Ctrl+,)" aria-label="Back 3 seconds">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 12a8 8 0 1 0 2.3-5.6"/><path d="M4 4v4h4"/></svg><span>3</span></button>
+    <button class="play" id="play" title="Play / pause (Ctrl+Space)" aria-label="Play">
+      <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg></button>
+    <button class="skip" id="fwd" title="Forward 3 seconds (Ctrl+.)" aria-label="Forward 3 seconds">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4h-4"/></svg><span>3</span></button>
+  </div>
+  <div class="scrub" id="scrub">
+    <div class="scrub-top"><span class="now-sec" id="nowSec"></span><span><b id="tNow">0:00</b> / <span id="tDur">0:00</span></span></div>
+    <div class="track" id="track"><div class="rail"></div><div class="fill" id="fill"></div><div id="marks"></div><div class="knob" id="knob"></div></div>
+  </div>
+  <div class="tools">
+    <div class="speeds" id="speeds"></div>
+    <button class="pill pill-ghost toggle" id="followBtn" title="Highlight and scroll to the sentence being played">Follow</button>
+    <button class="pill pill-ghost toggle" id="rawBtn" title="Raw transcript (Ctrl+R)">Raw</button>
+  </div>
+  <audio id="audio" preload="metadata"></audio>
+</div>
+
+<aside class="raw frost" id="raw" hidden>
+  <div class="raw-head">
+    <div style="flex:1"><h3>Raw transcript</h3><p id="rawSub">Exactly as the engine heard it. Click a word to play from there.</p></div>
+    <button class="icon-btn" id="rawClose" aria-label="Close raw transcript">✕</button>
+  </div>
+  <div class="raw-body" id="rawBody"></div>
+</aside>
+
+<div class="toast frost" id="toast"></div>
+<div id="modalHost"></div>
+<script>
+'use strict';
+// ═══ PA Typist Editor v1 ═══════════════════════════════════════════════════
+// Reads one inspection job (the app's Dropbox folder for that job), shows each
+// room's text beside its audio, and lets the typist fix, confirm and copy it.
+// Rooms come from the round 10 room .json; older rooms fall back to the .txt.
+// Everything the typist does is saved in this browser (localStorage) until
+// Supabase: edits, checks, added-phrase decisions, done rooms, typing time,
+// and a log of every fix for the future phrase list.
+
+const DEFAULT_SERVICE = 'https://propertyassist--9ecaffe4859311f181ad1607ee4eb77e.web.val.run';
+const AUDIO_EXT = new Set(['m4a', 'mp4', 'aac', 'webm', 'ogg', 'mp3', 'wav', 'audio']);
+const IMG_EXT = new Set(['jpg', 'jpeg', 'png', 'heic', 'webp']);
+const SPEEDS = [0.75, 1, 1.25, 1.5, 1.75, 2];
+const IDLE_MS = 120000;           // typing timer stops after 2 minutes with no activity
+const SKIP_S = 3;
+const RESUME_REWIND_S = 1;        // typists lose the last word on pause; step back a second on resume
+
+// ── small helpers ─────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function clock(sec) {
+  if (sec == null || isNaN(sec)) return '';
+  const t = Math.max(0, Math.floor(sec)), h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
+  return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(s).padStart(2, '0');
+}
+function parseClock(c) {
+  if (!c) return null;
+  const p = String(c).trim().split(':').map(Number);
+  if (p.some(isNaN) || p.length < 2) return null;
+  return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p[0] * 60 + p[1];
+}
+function hms(sec) {
+  sec = Math.max(0, Math.floor(sec || 0));
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  return h ? h + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0') : m + ':' + String(s).padStart(2, '0');
+}
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+  keys() { try { return Object.keys(localStorage); } catch (e) { return []; } }
+};
+function titleCase(s) {
+  return String(s || '').toLowerCase().replace(/(^|[\s\/(&-])([a-z])/g, (m, a, b) => a + b.toUpperCase());
+}
+function norm(t) {
+  return String(t || '').toLowerCase().replace(/\[added: [^\]]*\]/g, ' ').replace(/\[\d+:\d+(?::\d+)?\]/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
+}
+// Same rule the app uses to decide a sentence is the one a check is about.
+function sentenceMatches(sentence, quote) {
+  const ns = norm(sentence), q = norm(quote);
+  if (!ns || !q) return false;
+  if (ns.includes(q) || (ns.length >= 12 && q.includes(ns))) return true;
+  const head = q.split(' ').slice(0, 5).join(' ');
+  return head.split(' ').length >= 4 && ns.includes(head);
+}
+const ADDED_RE = /\[added: ([^\]]*)\]/g;
+const plainText = s => String(s || '').replace(/\s*\[added: [^\]]*\]/g, '').replace(/\s+/g, ' ').trim();
+const keptText = s => tidy(String(s || '').replace(ADDED_RE, (m, x) => x));
+function tidy(s) { return String(s).replace(/\s+([.,!?;:])/g, '$1').replace(/\s{2,}/g, ' ').trim(); }
+function addedCount(s) { return (String(s || '').match(ADDED_RE) || []).length; }
+function splitSentences(text) {
+  return (String(text || '').match(/(?:\[added: [^\]]*\]|\[(?!added: )|[^.!?\[])+(?:\[added: [^\]]*\]|[.!?])*\s*/g) || [])
+    .map(s => s.trim()).filter(Boolean);
+}
+function diffSpan(a, b) {
+  const A = String(a).split(/\s+/).filter(Boolean), B = String(b).split(/\s+/).filter(Boolean);
+  let i = 0; while (i < A.length && i < B.length && A[i] === B[i]) i++;
+  let j = 0; while (j < A.length - i && j < B.length - i && A[A.length - 1 - j] === B[B.length - 1 - j]) j++;
+  return { from: A.slice(i, A.length - j).join(' '), to: B.slice(i, B.length - j).join(' ') };
+}
+async function pool(items, n, fn) {
+  const out = new Array(items.length); let next = 0;
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
+    while (next < items.length) { const k = next++; out[k] = await fn(items[k], k); }
+  }));
+  return out;
+}
+
+// ── file names (as the app writes them) ───────────────────────────────────
+function splitName(name) {
+  const dot = name.lastIndexOf('.');
+  return dot > 0 ? { stem: name.slice(0, dot), ext: name.slice(dot + 1).toLowerCase() } : { stem: name, ext: '' };
+}
+function roomBase(stem) {
+  const m = stem.match(/ - (transcription failed|NO AUDIO)$/);
+  return m ? { base: stem.slice(0, -m[0].length), flag: m[1] === 'NO AUDIO' ? 'noaudio' : 'failed' } : { base: stem, flag: null };
+}
+// "<Room> - HHMM[ - part N][ - rec N][ - partial (crash recovery)]"
+function parseBase(base) {
+  const m = base.match(/^(.*?) - (\d{4})(?: - part (\d+))?(?: - rec (\d+))?( - partial.*)?(?: \(\d+\))?$/);
+  if (!m) return { name: base, hhmm: '', part: 1, rec: null, partial: false };
+  let name = m[1];
+  if (name.includes(' - ')) name = name.split(' - ').pop();   // "<address> - <room>" share names
+  return { name, hhmm: m[2], part: m[3] ? +m[3] : 1, rec: m[4] ? +m[4] : null, partial: !!m[5] };
+}
+function parseJobFolder(name) {
+  const m = String(name).match(/^(\d{4})-(\d{2})-(\d{2}) - (.*)$/);
+  if (!m) return { date: '', address: name, sortKey: '0000' + name };
+  return { date: m[1] + '-' + m[2] + '-' + m[3], address: m[4], sortKey: m[1] + m[2] + m[3] + ' ' + m[4] };
+}
+function prettyDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso + 'T00:00:00');
+  return isNaN(d) ? iso : d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+// ── reading a room ───────────────────────────────────────────────────────
+// Round 10 .json → the editor's room shape.
+function roomFromJson(j) {
+  const sections = (j.sections || []).map(s => ({
+    name: s.name || 'Notes', at: s.start != null ? s.start : null,
+    sents: (s.sentences || []).map(x => ({ text: String(x.text || ''), at: x.at != null ? x.at : null, check: !!x.check }))
+  }));
+  const words = Array.isArray(j.words) && j.words.length ? j.words.map(w => [String(w[0]).toLowerCase(), +w[1]]) : null;
+  return {
+    source: 'json', name: j.room || '', sections,
+    checks: (j.check || []).map(c => ({ quote: c.quote || '', heard: c.heard || '', why: c.why || '', at: c.at != null ? c.at : parseClock(c.clock),
+      resolved: c.resolved || null, fixedTo: c.fixedTo || null })),
+    fixes: j.fixes || [], raw: j.raw || '', words, rawStamped: false,
+    serial: j.serial || '', inventory: j.inventory || '',
+    meta: { property: j.property, client: j.client, inspector: j.inspector, state: j.state, type: j.inspectionType,
+      started: j.inspectionStarted, recordedAt: j.recordedAt },
+    transcribedBy: j.transcribedBy || '', sortedBy: j.sortedBy || '', audioName: j.audioFile ? String(j.audioFile).split('/').pop() : ''
+  };
+}
+
+// Round 9/10 .txt → the same shape (older rooms, or a .json that didn't send).
+function roomFromTxt(txt) {
+  const lines = String(txt || '').replace(/\r/g, '').split('\n');
+  const isRule = l => /^[=]{10,}\s*$/.test(l);
+  const meta = {};
+  for (const l of lines) {
+    if (isRule(l) || /^CHECK THESE|^Nothing (left|flagged)|^ALREADY CHECKED/.test(l)) break;
+    const m = l.match(/^([A-Za-z][A-Za-z /()]{1,40}):\s+(.*)$/);
+    if (m) meta[m[1].trim().toLowerCase()] = m[2].trim();
+  }
+  const checks = [];
+  let mode = '';
+  for (const l of lines) {
+    if (/^CHECK THESE AGAINST THE AUDIO/.test(l)) { mode = 'open'; continue; }
+    if (/^ALREADY CHECKED BY THE INSPECTOR/.test(l)) { mode = 'done'; continue; }
+    if (isRule(l) || /^-{10,}$/.test(l)) { mode = ''; continue; }
+    if (!mode) continue;
+    if (mode === 'open') {
+      const m = l.match(/^\s*\[([^\]]*)\]\s+"(.*?)"(?:\s+—\s+(.*))?\s*$/);
+      if (m) checks.push({ quote: m[2], heard: '', why: m[3] || '', at: parseClock(m[1]), resolved: null, fixedTo: null });
+    } else {
+      const m = l.match(/^\s*\[([^\]]*)\]\s+"(.*?)"\s+(?:changed to "(.*)"|is correct as is)\s*$/);
+      if (m) checks.push({ quote: m[2], heard: '', why: '', at: parseClock(m[1]), resolved: m[3] != null ? 'fixed' : 'kept', fixedTo: m[3] || null });
+    }
+  }
+  const by = lines.findIndex(l => /^BY SUBAREA\s*$/.test(l));
+  const rawAt = lines.findIndex(l => /^RAW TRANSCRIPT/.test(l));
+  let raw = '';
+  if (rawAt >= 0) raw = lines.slice(rawAt + 1).filter(l => !isRule(l)).join('\n').trim();
+  const sections = [];
+  if (by >= 0) {
+    const body = lines.slice(by + 1, rawAt >= 0 ? rawAt : undefined).filter(l => !isRule(l)).join('\n');
+    const blocks = body.split(/\n\s*\n/).map(b => b.trim()).filter(Boolean).filter(b => !/^>>CHECK<< marks|^\[added: …\] is a phrase/.test(b));
+    for (const b of blocks) {
+      const ls = b.split('\n');
+      const h = ls[0].match(/^([^a-z\[]+?)(?:\s+\(starts (\d+:\d{2}(?::\d{2})?)\))?\s*$/);
+      if (h && ls.length > 1 && /[A-Z]/.test(h[1])) sections.push({ name: titleCase(h[1].trim()), at: parseClock(h[2]), sents: txtSentences(ls.slice(1).join(' ')) });
+      else sections.push({ name: meta.room || 'Notes', at: null, sents: txtSentences(ls.join(' ')) });
+    }
+  }
+  if (!sections.length) {
+    // No subarea block (an early-round file): show the text as one section.
+    const text = lines.filter(l => !isRule(l) && !/^[A-Za-z][A-Za-z /()]{1,40}:\s/.test(l)).join(' ').trim();
+    sections.push({ name: meta.room || 'Notes', at: null, sents: txtSentences(text) });
+  }
+  return {
+    source: 'txt', name: meta.room || '', sections, checks, fixes: [], raw, words: null, rawStamped: /\[\d+:\d{2}\]/.test(raw),
+    serial: meta['serial / model (typed)'] || '', inventory: meta['inventory (typed)'] || '',
+    meta: { property: meta.property, client: meta.client, inspector: meta.inspector, state: meta.state, type: meta['inspection type'],
+      started: meta['inspection started'] },
+    transcribedBy: meta['transcribed by'] || '', sortedBy: meta['sorted into subareas by'] || (by >= 0 ? 'keyword split' : ''),
+    audioName: (meta.audio || '').split('/').pop()
+  };
+}
+function txtSentences(text) {
+  const out = [];
+  String(text || '').split(/(?=>>CHECK<< )|(?<!>>CHECK<< )(?=\[\d+:\d{2}(?::\d{2})?\] )/).forEach(chunk => {
+    const m = chunk.match(/^(>>CHECK<< )?(?:\[(\d+:\d{2}(?::\d{2})?)\] )?([\s\S]*)$/);
+    const body = (m[3] || '').trim();
+    if (!body) return;
+    const parts = splitSentences(body);
+    parts.forEach((p, k) => out.push({ text: p, at: k === 0 ? parseClock(m[2]) : null, check: !!m[1] && k === 0 }));
+  });
+  return out;
+}
+function detailsFromTxt(txt) {
+  const out = {};
+  String(txt || '').replace(/\r/g, '').split('\n').forEach(l => {
+    const m = l.match(/^([A-Za-z][A-Za-z /()]{1,40}):\s+(.*)$/);
+    if (m && !(m[1].toLowerCase() in out)) out[m[1].trim().toLowerCase()] = m[2].trim();
+  });
+  return out;
+}
+
+// ── a job: one folder of files → rooms ──────────────────────────────────
+// files: [{ name, size, text(): Promise<string>, url(): Promise<string> }]
+async function buildJob(id, files, progress) {
+  const f = parseJobFolder(id);
+  const groups = new Map();
+  let details = null;
+  const photos = [];
+  for (const file of files) {
+    const { stem, ext } = splitName(file.name);
+    if (/^00 - /.test(file.name)) { if (ext === 'txt') details = file; continue; }
+    if (IMG_EXT.has(ext)) { photos.push(file); continue; }
+    let kind = AUDIO_EXT.has(ext) ? 'audio' : ext === 'json' ? 'json' : ext === 'txt' ? 'txt' : ext === 'docx' ? 'docx' : null;
+    if (!kind) continue;
+    const rb = roomBase(stem);
+    if (kind === 'txt' && rb.flag) kind = 'note';
+    const g = groups.get(rb.base) || { base: rb.base };
+    if (rb.flag) g.flag = rb.flag;
+    if (!g[kind]) g[kind] = file;
+    groups.set(rb.base, g);
+  }
+  const list = [...groups.values()].filter(g => g.audio || g.json || g.txt || g.note);
+  let done = 0;
+  const rooms = await pool(list, 4, async g => {
+    let room = null, err = '';
+    if (g.json) {
+      try { const j = JSON.parse(await g.json.text()); if (j && j.format === 'pa-room') room = roomFromJson(j); }
+      catch (e) { err = 'The room .json could not be read.'; }
+    }
+    if (!room && g.txt) { try { room = roomFromTxt(await g.txt.text()); } catch (e) { err = 'The room .txt could not be read.'; } }
+    if (!room) {
+      let note = '';
+      if (g.note) { try { note = await g.note.text(); } catch (e) {} }
+      room = { source: g.flag === 'noaudio' ? 'noaudio' : (g.flag === 'failed' ? 'failed' : 'audio'), name: '', sections: [], checks: [], fixes: [],
+        raw: '', words: null, note, serial: '', inventory: '', meta: {}, transcribedBy: '', sortedBy: '', audioName: '' };
+    }
+    const pb = parseBase(g.base);
+    room.key = g.base; room.base = g.base;
+    room.name = room.name || pb.name;
+    room.hhmm = pb.hhmm; room.part = pb.part; room.rec = pb.rec; room.partial = pb.partial;
+    room.audio = g.audio || null;
+    if (!room.audio && room.audioName) room.audio = files.find(x => x.name === room.audioName) || null;
+    room.docx = g.docx || null;
+    room.readError = err;
+    progress && progress(++done, list.length);
+    return room;
+  });
+  rooms.sort((a, b) => (a.hhmm || '9999').localeCompare(b.hhmm || '9999') || (a.rec || 0) - (b.rec || 0) || a.name.localeCompare(b.name));
+  // Same room recorded more than once: say which take it is.
+  const seen = {};
+  rooms.forEach(r => { const k = r.name.toLowerCase(); seen[k] = (seen[k] || 0) + 1; r.take = seen[k]; });
+  rooms.forEach(r => { r.takes = seen[r.name.toLowerCase()]; });
+  let info = {};
+  if (details) { try { info = detailsFromTxt(await details.text()); } catch (e) {} }
+  const m0 = (rooms.find(r => r.meta && r.meta.property) || {}).meta || {};
+  return {
+    id, date: f.date, address: info.property || m0.property || f.address, rooms, photos,
+    facts: {
+      Client: info.client || m0.client || '', Inspector: info.inspector || m0.inspector || '',
+      State: info.state || m0.state || '', Type: info['inspection type'] || m0.type || '',
+      Started: info['inspection started'] || (m0.started ? new Date(m0.started).toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' }) : '')
+    }
+  };
+}
+
+// ── sources ─────────────────────────────────────────────────────────────
+const DBX = {
+  conf: LS.get('pa-ed:dbx', null),
+  linkCache: new Map(),
+  async call(params) {
+    if (!this.conf) throw new Error('Not connected');
+    const u = new URL(this.conf.url);
+    Object.entries(params).forEach(([k, v]) => u.searchParams.set(k, v));
+    u.searchParams.set('k', this.conf.key);
+    let r;
+    try { r = await fetch(u.toString()); } catch (e) { throw new Error('Could not reach the Dropbox service. Check the address and your connection.'); }
+    if (!r.ok) {
+      let msg = ''; try { msg = (await r.json()).error || ''; } catch (e) {}
+      throw new Error(msg || ('The Dropbox service answered ' + r.status));
+    }
+    return r;
+  },
+  async list(path) { return (await (await this.call({ action: 'list', path })).json()).entries || []; },
+  async text(path) { return (await this.call({ action: 'get', path })).text(); },
+  async link(path, fresh) {
+    const c = this.linkCache.get(path);
+    if (!fresh && c && c.until > Date.now()) return c.link;
+    const d = await (await this.call({ action: 'link', path })).json();
+    this.linkCache.set(path, { link: d.link, until: Date.now() + 3.5 * 3600 * 1000 });
+    return d.link;
+  },
+  async jobFiles(folder) {
+    const entries = await this.list(folder);
+    return entries.filter(e => e.kind === 'file').map(e => ({
+      name: e.name, size: e.size,
+      text: () => this.text(folder + '/' + e.name),
+      url: fresh => this.link(folder + '/' + e.name, fresh)
+    }));
+  }
+};
+function localFile(file) {
+  let u = null;
+  return { name: file.name, size: file.size, text: () => file.text(), url: () => (u = u || URL.createObjectURL(file)) };
+}
+
+
+// ── state saved in this browser ─────────────────────────────────────────
+const App = { jobs: [], jobsFrom: '', localJobs: null, job: null, store: null, idx: 0, editing: null, follow: LS.get('pa-ed:follow', true) };
+const storeKey = id => 'pa-ed:job:' + id;
+function loadStore(id) { return LS.get(storeKey(id), { v: 1, rooms: {}, time: 0, total: 0, done: 0, opened: Date.now() }); }
+let saveTimer = null;
+function saveStore(now) {
+  if (!App.job || !App.store) return;
+  clearTimeout(saveTimer);
+  const go = () => {
+    const st = App.store;
+    st.total = App.job.rooms.length;
+    st.done = App.job.rooms.filter(r => roomState(r).done).length;
+    st.updated = Date.now();
+    if (!LS.set(storeKey(App.job.id), st)) toast('This browser is out of storage space. Copy your work out now.');
+  };
+  if (now) go(); else saveTimer = setTimeout(go, 400);
+}
+function roomState(room) {
+  const rs = App.store.rooms[room.key] || (App.store.rooms[room.key] = { secs: null, checks: {}, done: false, time: 0, typed: '' });
+  if (!rs.secs) rs.secs = room.sections.map(s => ({ name: s.name, at: s.at, sents: s.sents.map(x => ({ text: x.text, at: x.at, check: x.check, orig: x.text })) }));
+  return rs;
+}
+function logFix(entry) {
+  const all = LS.get('pa-ed:fixes', []);
+  all.push(Object.assign({ when: new Date().toISOString(), job: App.job ? App.job.id : '', room: curRoom() ? curRoom().name : '' }, entry));
+  LS.set('pa-ed:fixes', all.slice(-5000));
+}
+const curRoom = () => App.job ? App.job.rooms[App.idx] : null;
+
+// Open checks for a room: the app's list, minus what the inspector or the typist resolved.
+function openChecks(room, rs) {
+  return room.checks.map((c, i) => ({ c, i })).filter(({ c, i }) => !c.resolved && !rs.checks[i]);
+}
+function roomCounts(room) {
+  const rs = roomState(room);
+  let flagged = 0, added = 0;
+  rs.secs.forEach(s => s.sents.forEach(x => { if (!x.removed) { if (x.check) flagged++; added += addedCount(x.text); } }));
+  const open = openChecks(room, rs).length;
+  return { flagged, added, open: Math.max(open, flagged) };
+}
+
+// ── UI helpers ──────────────────────────────────────────────────────────
+let toastTimer = null;
+function toast(msg, action) {
+  const t = $('toast');
+  t.innerHTML = esc(msg) + (action ? ' <button class="btn btn-sm btn-dark" style="margin-left:8px;pointer-events:auto">' + esc(action.label) + '</button>' : '');
+  t.style.pointerEvents = action ? 'auto' : 'none';
+  if (action) t.querySelector('button').onclick = () => { action.fn(); t.classList.remove('show'); };
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), action ? 6000 : 2600);
+}
+function modal(title, html, buttons) {
+  return new Promise(resolve => {
+    const host = $('modalHost');
+    host.innerHTML = `<div class="scrim"><div class="modal frost" role="dialog" aria-modal="true"><h3>${esc(title)}</h3><div>${html}</div><div class="btns"></div></div></div>`;
+    const btns = host.querySelector('.btns');
+    const close = v => { host.innerHTML = ''; document.removeEventListener('keydown', onKey, true); resolve(v); };
+    (buttons || [{ label: 'Close', cls: 'btn-dark', value: null }]).forEach(b => {
+      const el = document.createElement('button'); el.className = 'btn ' + (b.cls || 'btn-ghost'); el.textContent = b.label;
+      el.onclick = () => close(b.value); btns.appendChild(el);
+    });
+    host.querySelector('.scrim').addEventListener('click', e => { if (e.target.classList.contains('scrim')) close(null); });
+    const onKey = e => { if (e.key === 'Escape') { e.stopPropagation(); close(null); } };
+    document.addEventListener('keydown', onKey, true);
+    const last = btns.lastElementChild; last && last.focus();
+  });
+}
+function fadeTitle(name) {
+  const m = String(name).match(/^(\S+?)([\s\/].*)?$/);
+  return m && m[2] ? `<span class="fade">${esc(m[1])}</span>${esc(m[2])}` : `<span class="fade">${esc(name)}</span>`;
+}
+function show(screen) {
+  ['screenQueue', 'screenJob'].forEach(s => $(s).classList.toggle('active', s === screen));
+  const inJob = screen === 'screenJob';
+  $('queueBtn').hidden = !inJob; $('timerBtn').hidden = !inJob; $('dock').hidden = !inJob || !App.job;
+  if (!inJob) { closeRaw(); pauseAudio(); }
+  window.scrollTo(0, 0);
+}
+
+// ── copy ────────────────────────────────────────────────────────────────
+function sectionText(sec) {
+  return tidy(sec.sents.filter(x => !x.removed && x.text.trim()).map(x => keptText(x.text)).join(' '));
+}
+function roomBlocks(room) {
+  const rs = roomState(room);
+  if (!rs.secs.length || !rs.secs.some(s => s.sents.some(x => !x.removed && x.text.trim()))) {
+    return rs.typed ? [{ name: room.name, text: rs.typed.trim() }] : [];
+  }
+  const out = rs.secs.map(s => ({ name: s.name, text: sectionText(s) })).filter(b => b.text);
+  if (room.serial) out.push({ name: 'Serial / model', text: room.serial });
+  if (room.inventory) out.push({ name: 'Inventory', text: room.inventory });
+  return out;
+}
+function mergeBlocks(into, blocks) {
+  blocks.forEach(b => {
+    const hit = into.find(x => x.name.toLowerCase() === b.name.toLowerCase());
+    if (hit) hit.text = tidy(hit.text + ' ' + b.text); else into.push({ name: b.name, text: b.text });
+  });
+}
+function asText(rooms) { return rooms.map(r => r.name.toUpperCase() + '\n\n' + r.blocks.map(b => b.name + '\n' + b.text).join('\n\n')).join('\n\n\n'); }
+function asHtml(rooms) {
+  return rooms.map(r => `<p><b>${esc(r.name.toUpperCase())}</b></p>` + r.blocks.map(b => `<p><b>${esc(b.name)}</b><br>${esc(b.text)}</p>`).join('')).join('<p></p>');
+}
+function groupedRooms(rooms) {
+  const out = [];
+  rooms.forEach(room => {
+    const blocks = roomBlocks(room);
+    if (!blocks.length) return;
+    const hit = out.find(o => o.name.toLowerCase() === room.name.toLowerCase());
+    if (hit) mergeBlocks(hit.blocks, blocks); else out.push({ name: room.name, blocks: blocks.map(b => ({ ...b })) });
+  });
+  return out;
+}
+async function copyOut(text, html) {
+  try {
+    if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+      await navigator.clipboard.write([new ClipboardItem({ 'text/plain': new Blob([text], { type: 'text/plain' }), 'text/html': new Blob([html || esc(text)], { type: 'text/html' }) })]);
+      return true;
+    }
+    await navigator.clipboard.writeText(text); return true;
+  } catch (e) {
+    const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch (e2) {}
+    ta.remove(); return ok;
+  }
+}
+function pendingNote(rooms) {
+  let added = 0, open = 0;
+  rooms.forEach(r => { const c = roomCounts(r); added += c.added; open += c.open; });
+  const bits = [];
+  if (open) bits.push(open + ' to check');
+  if (added) bits.push(added + ' added phrase' + (added > 1 ? 's' : '') + ' kept by default');
+  return bits.length ? ' (' + bits.join(', ') + ')' : '';
+}
+async function copyRoom() {
+  const room = curRoom(); if (!room) return;
+  commitEditor();
+  const g = groupedRooms([room]);
+  if (!g.length) return toast('Nothing to copy in this room yet');
+  const ok = await copyOut(asText(g), asHtml(g));
+  toast(ok ? 'Copied ' + room.name + pendingNote([room]) : 'Copy failed: select the text and copy it by hand');
+}
+async function copyAll() {
+  if (!App.job) return;
+  commitEditor();
+  const g = groupedRooms(App.job.rooms);
+  if (!g.length) return toast('Nothing to copy yet');
+  const ok = await copyOut(asText(g), asHtml(g));
+  toast(ok ? 'Copied all ' + g.length + ' rooms' + pendingNote(App.job.rooms) : 'Copy failed');
+}
+async function copySection(i) {
+  const sec = roomState(curRoom()).secs[i];
+  const t = sectionText(sec);
+  const ok = await copyOut(t, '<p>' + esc(t) + '</p>');
+  toast(ok ? 'Copied ' + sec.name : 'Copy failed');
+}
+function download(name, text, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: type || 'text/plain;charset=utf-8' }));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+function downloadJob() {
+  commitEditor();
+  const j = App.job, g = groupedRooms(j.rooms);
+  const head = [j.address, j.date ? 'Inspection date: ' + j.date : '', ...Object.entries(j.facts).filter(([, v]) => v).map(([k, v]) => k + ': ' + v),
+    'Typed in the PA editor, ' + new Date().toLocaleString('en-AU') + ' · typing time ' + hms(App.store.time)].filter(Boolean).join('\n');
+  download(j.id + ' - typed.txt', head + '\n\n' + '='.repeat(40) + '\n\n' + asText(g) + '\n');
+}
+
+// ── queue ───────────────────────────────────────────────────────────────
+function jobStatus(id) {
+  const st = LS.get(storeKey(id), null);
+  if (!st) return '<span class="chip">New</span>';
+  const time = st.time ? ' · ' + hms(st.time) : '';
+  if (st.total && st.done >= st.total) return `<span class="chip ok"><span class="d"></span>Typed${time}</span>`;
+  return `<span class="chip warn"><span class="d"></span>${st.total ? st.done + ' of ' + st.total + ' rooms' : 'Started'}${time}</span>`;
+}
+function renderJobs() {
+  const q = $('jobSearch').value.trim().toLowerCase();
+  const list = App.jobs.filter(j => !q || (j.id.toLowerCase().includes(q)));
+  $('listHead').hidden = !App.jobs.length;
+  $('listTitle').textContent = App.jobsFrom === 'dropbox' ? 'Jobs in Dropbox' : 'Jobs in this folder';
+  $('jobs').innerHTML = list.length ? list.map((j, k) => {
+    const f = parseJobFolder(j.id);
+    return `<button class="job-row glass" data-k="${App.jobs.indexOf(j)}">
+      <span class="job-date">${esc(prettyDate(f.date) || '—')}</span>
+      <span class="job-addr">${esc(f.address)}</span>
+      ${jobStatus(j.id)}
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.5"><path d="M9 6l6 6-6 6"/></svg>
+    </button>`;
+  }).join('') : (App.jobs.length ? '<div class="empty">No job matches that search.</div>' : '');
+  $('jobs').querySelectorAll('.job-row').forEach(b => b.onclick = () => openJob(App.jobs[+b.dataset.k]));
+}
+function renderDbxCard() {
+  const c = DBX.conf;
+  $('dbxDot').className = 'status-dot' + (c ? ' on' : '');
+  $('dbxForm').hidden = !!c && !App.dbxEditing;
+  $('dbxConnect').textContent = c && !App.dbxEditing ? 'Show jobs' : 'Connect';
+  $('dbxRefresh').hidden = !c || App.dbxEditing;
+  $('dbxEdit').hidden = !c || App.dbxEditing;
+  $('dbxUrl').value = (c && c.url) || DEFAULT_SERVICE;
+  if (c && !App.dbxEditing) $('dbxText').textContent = 'Connected on this computer. Jobs are read straight from the Property Assist Inspections folder.';
+}
+async function connectDropbox() {
+  if (!DBX.conf || App.dbxEditing) {
+    const url = $('dbxUrl').value.trim() || DEFAULT_SERVICE, key = $('dbxKey').value.trim();
+    if (!key) { $('dbxKey').focus(); return toast('Type the editor key first'); }
+    DBX.conf = { url, key };
+  }
+  $('dbxConnect').disabled = true; $('dbxText').textContent = 'Connecting…';
+  try {
+    const entries = await DBX.list('');
+    LS.set('pa-ed:dbx', DBX.conf); App.dbxEditing = false;
+    App.jobs = entries.filter(e => e.kind === 'folder').map(e => ({ id: e.name, from: 'dropbox' }))
+      .sort((a, b) => parseJobFolder(b.id).sortKey.localeCompare(parseJobFolder(a.id).sortKey));
+    App.jobsFrom = 'dropbox';
+    renderDbxCard(); renderJobs();
+    if (!App.jobs.length) $('jobs').innerHTML = '<div class="empty">No job folders in Dropbox yet.</div>';
+  } catch (e) {
+    const saved = LS.get('pa-ed:dbx', null);
+    if (!saved || App.dbxEditing) DBX.conf = saved;
+    $('dbxDot').className = 'status-dot warn';
+    $('dbxText').textContent = e.message + (/switched off|Unknown action|answered 405/.test(e.message)
+      ? ' The Dropbox service needs the round 11 update and an EDITOR_KEY before the editor can read it.' : '');
+    if (/Wrong editor key/.test(e.message)) { App.dbxEditing = true; $('dbxForm').hidden = false; $('dbxConnect').textContent = 'Connect'; }
+  } finally { $('dbxConnect').disabled = false; }
+}
+
+// Local folder: either one job folder, or the inspections folder with job folders inside.
+function filesFromPicker(fileList) {
+  const items = [...fileList].map(f => ({ file: f, path: (f.webkitRelativePath || f._path || f.name).split('/').filter(Boolean) }));
+  openLocal(items);
+}
+function openLocal(items) {
+  items = items.filter(x => x.path.length >= 2 && !x.path.some(p => p.startsWith('.')));
+  if (!items.length) return toast('That folder has no inspection files in it');
+  const top = items.filter(x => x.path.length === 2);
+  const roomish = top.some(x => /\.(json|txt|m4a|mp4|aac|webm|ogg|mp3|wav)$/i.test(x.file.name));
+  if (roomish) {
+    const id = items[0].path[0];
+    return openJob({ id, from: 'local', files: top.map(x => localFile(x.file)) });
+  }
+  const jobs = new Map();
+  items.filter(x => x.path.length === 3).forEach(x => {
+    const id = x.path[1];
+    if (!jobs.has(id)) jobs.set(id, []);
+    jobs.get(id).push(localFile(x.file));
+  });
+  App.jobs = [...jobs.entries()].map(([id, files]) => ({ id, from: 'local', files }))
+    .sort((a, b) => parseJobFolder(b.id).sortKey.localeCompare(parseJobFolder(a.id).sortKey));
+  App.jobsFrom = 'local';
+  renderJobs();
+  if (!App.jobs.length) toast('No job folders found in there');
+  else $('listHead').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+async function readDropped(dt) {
+  const out = [];
+  const walk = (entry, path) => new Promise(res => {
+    if (entry.isFile) entry.file(f => { out.push({ file: f, path: [...path, f.name] }); res(); }, () => res());
+    else if (entry.isDirectory) {
+      const r = entry.createReader(); const all = [];
+      const more = () => r.readEntries(async es => {
+        if (!es.length) { for (const e of all) await walk(e, [...path, entry.name]); res(); }
+        else { all.push(...es); more(); }
+      }, () => res());
+      more();
+    } else res();
+  });
+  const entries = [...dt.items].map(i => i.webkitGetAsEntry && i.webkitGetAsEntry()).filter(Boolean);
+  for (const e of entries) await walk(e, []);
+  if (entries.length === 1 && entries[0].isDirectory) openLocal(out);
+  else toast('Drop a folder, not single files');
+}
+
+
+// ── opening a job ───────────────────────────────────────────────────────
+async function openJob(j) {
+  show('screenJob');
+  $('jobView').hidden = true; $('jobLoading').hidden = false; $('dock').hidden = true;
+  $('jobLoadingText').textContent = 'Opening ' + parseJobFolder(j.id).address + '…';
+  try {
+    const files = j.files || await DBX.jobFiles(j.id);
+    const job = await buildJob(j.id, files, (n, of) => { $('jobLoadingText').textContent = 'Reading room ' + n + ' of ' + of + '…'; });
+    if (!job.rooms.length) throw new Error('No rooms in this folder yet.');
+    App.job = job; App.store = loadStore(job.id); App.store.opened = Date.now();
+    const st = App.store;
+    App.idx = Math.min(st.last != null ? st.last : (job.rooms.findIndex(r => !roomState(r).done) + 1 || 1) - 1, job.rooms.length - 1);
+    if (App.idx < 0) App.idx = 0;
+    saveStore(true);
+    $('brandSub').textContent = job.address;
+    $('jobLoading').hidden = true; $('jobView').hidden = false; $('dock').hidden = false;
+    renderSide(); openRoom(App.idx, true);
+  } catch (e) {
+    $('jobLoadingText').innerHTML = esc(e.message || 'Could not open this job.') + '<br><br><button class="btn btn-dark" id="backQ">Back to the queue</button>';
+    $('backQ').onclick = backToQueue;
+    document.querySelector('#jobLoading .spin').hidden = true;
+  }
+}
+function backToQueue() {
+  commitEditor(); saveStore(true);
+  App.job = null; App.store = null;
+  document.querySelector('#jobLoading .spin').hidden = false;
+  $('brandSub').textContent = 'Typist editor';
+  show('screenQueue'); renderJobs(); renderFixCount();
+}
+
+// ── job sidebar ─────────────────────────────────────────────────────────
+function renderSide() {
+  const j = App.job;
+  $('jobDate').textContent = prettyDate(j.date);
+  $('jobAddr').textContent = j.address;
+  $('jobFacts').innerHTML = Object.entries(j.facts).filter(([, v]) => v).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')
+    + (j.photos.length ? `<dt>Photos</dt><dd>${j.photos.length} in the folder</dd>` : '');
+  const done = j.rooms.filter(r => roomState(r).done).length;
+  $('jobProgressText').textContent = done + ' of ' + j.rooms.length + ' rooms done';
+  $('jobProgress').style.width = (100 * done / j.rooms.length) + '%';
+  $('rooms').innerHTML = j.rooms.map((r, k) => {
+    const rs = roomState(r), c = roomCounts(r);
+    const sub = [r.hhmm ? r.hhmm.slice(0, 2) + ':' + r.hhmm.slice(2) : '', r.takes > 1 ? 'take ' + r.take : '', r.part > 1 ? 'part ' + r.part : ''].filter(Boolean).join(' · ');
+    const badge = rs.done ? '<span class="b-done" title="Done">✓</span>'
+      : (c.open ? `<span class="b-check" title="${c.open} to check">${c.open}</span>` : '')
+        + (r.source === 'failed' || r.source === 'noaudio' || r.source === 'audio' ? '<span class="b-warn">type</span>' : '');
+    return `<button class="room-btn${k === App.idx ? ' active' : ''}" data-k="${k}"><span class="n">${k + 1}</span>
+      <span class="nm">${esc(r.name)}${sub ? `<small>${esc(sub)}</small>` : ''}</span><span class="badges">${badge}</span></button>`;
+  }).join('');
+  $('rooms').querySelectorAll('.room-btn').forEach(b => b.onclick = () => openRoom(+b.dataset.k));
+  const act = $('rooms').querySelector('.active'); act && act.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+}
+
+// ── a room ──────────────────────────────────────────────────────────────
+function openRoom(k, first) {
+  commitEditor();
+  App.idx = k; App.store.last = k; saveStore();
+  const room = curRoom();
+  renderSide(); renderRoom(); loadAudio(room); renderRaw();
+  if (!first) window.scrollTo({ top: 0 });
+}
+function renderRoom() {
+  const room = curRoom(), rs = roomState(room), j = App.job;
+  const c = roomCounts(room);
+  const bits = [room.transcribedBy && 'Transcribed by ' + room.transcribedBy, room.sortedBy && 'sorted by ' + room.sortedBy].filter(Boolean).join(' · ');
+  const eyebrow = ['Room ' + (App.idx + 1) + ' of ' + j.rooms.length, room.hhmm && 'recorded ' + room.hhmm.slice(0, 2) + ':' + room.hhmm.slice(2),
+    room.takes > 1 && 'take ' + room.take + ' of ' + room.takes, room.part > 1 && 'part ' + room.part, room.rec != null && 'rec ' + room.rec].filter(Boolean).join(' · ');
+  let h = `<div class="room-head"><span class="eyebrow">${esc(eyebrow)}</span><h1 class="big">${fadeTitle(room.name)}</h1>
+    <div class="meta">${esc(bits)}</div>
+    <div class="actions">
+      ${rs.done ? '<button class="btn btn-done" id="doneBtn">✓ Done · undo</button>' : '<button class="btn btn-main" id="doneBtn">✓ Room done</button>'}
+      <button class="btn btn-ghost" id="copyRoomBtn">Copy room</button>
+      <button class="btn btn-ghost" id="prevBtn" ${App.idx === 0 ? 'disabled' : ''}>← Prev</button>
+      <button class="btn btn-ghost" id="nextBtn" ${App.idx === j.rooms.length - 1 ? 'disabled' : ''}>Next →</button>
+    </div></div>`;
+
+  if (room.readError) h += `<div class="banner bad">${esc(room.readError)}</div>`;
+  if (room.partial) h += `<div class="banner">This is a crash-recovery fragment. The full recording of this room is usually the next one in the list.</div>`;
+  if (room.source === 'txt') h += `<div class="banner">Read from the room's .txt (no .json for this recording). Times and checks come from the text file; the raw transcript has times at each sentence only.</div>`;
+  if (room.source === 'failed' || room.source === 'noaudio' || room.source === 'audio') {
+    const why = room.source === 'noaudio' ? 'No audio was captured for this recording. The phone\'s own dictation is below: expect mishears, and check whether the room was recorded again.'
+      : room.source === 'failed' ? 'No accurate transcript for this recording. Type the room from the audio.'
+        : 'No transcript has reached Dropbox for this recording yet. Type it from the audio, or check back later.';
+    h += `<div class="banner bad">${esc(why)}</div>`;
+    if (room.note) h += `<div class="card glass"><div class="card-title"><h3>From the phone</h3></div><div class="plain-box muted">${esc(room.note.split(/\n\n/).slice(-1)[0] || room.note)}</div></div>`;
+    h += `<div class="card glass"><div class="card-title"><h3>Typed room</h3><span class="grow"></span><span class="small muted">Saved on this computer as you type</span></div>
+      <textarea class="field typed" id="typedBox" placeholder="Type this room here: each subarea on its own line, then its description.">${esc(rs.typed || '')}</textarea></div>`;
+  } else {
+    // Check these
+    const checks = room.checks.map((c, i) => ({ c, i }));
+    if (checks.length) {
+      const open = checks.filter(({ c, i }) => !c.resolved && !rs.checks[i]).length;
+      h += `<div class="card glass ${open ? 'checks' : ''}"><div class="card-title"><h3>${open ? 'Check these against the audio (' + open + ')' : 'Nothing left to check'}</h3></div>`
+        + checks.map(({ c, i }) => {
+          const res = c.resolved ? (c.resolved === 'fixed' ? 'Inspector changed it to “' + esc(c.fixedTo || '') + '”' : 'Inspector checked: correct as is')
+            : rs.checks[i] ? (rs.checks[i] === 'edited' ? 'You edited this sentence' : 'You checked it') : '';
+          const q = c.heard && c.quote.toLowerCase().includes(c.heard.toLowerCase()) && c.heard.length < c.quote.length
+            ? esc(c.quote).replace(new RegExp(esc(c.heard).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), m => '<mark>' + m + '</mark>') : esc(c.quote);
+          return `<div class="check-row${res ? ' resolved' : ''}">
+            ${c.at != null ? `<button class="clock" data-play="${c.at}" title="Play from here">▶ ${clock(c.at)}</button>` : '<span class="clock">—</span>'}
+            <div><div class="q">“${q}”</div>
+              <div class="why">${[c.heard && c.heard !== c.quote ? 'The app heard “' + esc(c.heard) + '”' : '', c.why ? esc(c.why) : '', res].filter(Boolean).join(' · ')}</div></div>
+            <div class="row-btns">${c.resolved ? '' : rs.checks[i]
+              ? `<button class="btn btn-ghost btn-sm" data-uncheck="${i}">Undo</button>`
+              : `<button class="btn btn-ghost btn-sm" data-goto="${i}">Edit</button><button class="btn btn-dark btn-sm" data-check="${i}">✓ Checked</button>`}</div>
+          </div>`;
+        }).join('') + '</div>';
+    }
+    if (c.added) {
+      h += `<div class="card glass"><div class="card-title"><h3>${c.added} added phrase${c.added > 1 ? 's' : ''} to confirm</h3><span class="grow"></span>
+        <button class="btn btn-ghost btn-sm" id="keepAll">Keep all</button><button class="btn btn-ghost btn-sm" id="dropAll">Remove all</button></div>
+        <p class="small muted">The AI added the house phrase because no damage was mentioned. Keep it only if the audio and photos agree. Undecided phrases are kept when you copy.</p></div>`;
+    }
+    // Sections
+    rs.secs.forEach((sec, i) => {
+      const live = sec.sents.filter(x => !x.removed);
+      h += `<div class="sec glass" data-sec="${i}"><div class="sec-head"><h3>${esc(sec.name)}</h3>
+        ${sec.at != null ? `<button class="clock" data-play="${sec.at}" title="Play this subarea">▶ ${clock(sec.at)}</button>` : ''}
+        <button class="icon-btn" data-copysec="${i}" title="Copy ${esc(sec.name)}" aria-label="Copy ${esc(sec.name)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></div>
+        <div class="text">${sec.sents.map((s, jj) => sentHtml(room, s, i, jj)).join('')}${live.length ? '' : '<span class="muted small">Nothing in this subarea.</span>'}</div>
+        <button class="add-sent" data-addsent="${i}">+ Add a sentence</button></div>`;
+    });
+    if (room.serial || room.inventory) {
+      h += `<div class="card glass"><div class="card-title"><h3>Typed by the inspector</h3></div>`
+        + (room.serial ? `<div class="label" style="margin-top:4px">Serial / model</div><div class="plain-box">${esc(room.serial)}</div>` : '')
+        + (room.inventory ? `<div class="label" style="margin-top:10px">Inventory</div><div class="plain-box">${esc(room.inventory)}</div>` : '') + '</div>';
+    }
+  }
+  h += `<div class="actions" style="margin-top:6px">${rs.done ? '' : '<button class="btn btn-main" id="doneBtn2">✓ Room done, next room</button>'}
+    <span class="small muted" style="align-self:center">Room typing time ${hms(rs.time)}</span></div>`;
+  $('roomPane').innerHTML = h;
+  wireRoom();
+}
+function sentHtml(room, s, i, jj) {
+  const cls = ['sent', s.check ? 'check' : '', s.edited ? 'edited' : '', s.removed ? 'removed' : ''].filter(Boolean).join(' ');
+  let heard = '';
+  if (s.check) {
+    const c = room.checks.find(c => c.heard && sentenceMatches(s.text, c.quote));
+    heard = c ? c.heard : '';
+  }
+  let k = 0;
+  const inner = String(s.text).split(/(\[added: [^\]]*\])/).map(part => {
+    const m = part.match(/^\[added: ([^\]]*)\]$/);
+    if (m) {
+      const n = k++;
+      return `<span class="add" data-k="${n}" title="Added by the AI: no damage was mentioned"><em>${esc(m[1])}</em><button class="k" data-keep="${n}" title="Keep" aria-label="Keep">✓</button><button class="r" data-drop="${n}" title="Remove" aria-label="Remove">✕</button></span>`;
+    }
+    let e = esc(part);
+    if (heard) {
+      const re = new RegExp('(' + esc(heard).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'i');
+      e = e.replace(re, '<span class="hw">$1</span>');
+    }
+    return e;
+  }).join('');
+  const title = s.edited ? ' title="Edited. Original: ' + esc(plainText(s.orig)) + '"' : '';
+  return `<span class="${cls}" data-i="${i}" data-j="${jj}"${s.at != null ? ` data-at="${s.at}"` : ''}${title}>${s.at != null ? `<span class="t" data-play="${s.at}">${clock(s.at)}</span>` : ''}${inner}</span> `;
+}
+function wireRoom() {
+  const p = $('roomPane');
+  $('doneBtn').onclick = () => toggleDone();
+  const d2 = $('doneBtn2'); if (d2) d2.onclick = () => toggleDone(true);
+  $('copyRoomBtn').onclick = copyRoom;
+  $('prevBtn').onclick = () => App.idx > 0 && openRoom(App.idx - 1);
+  $('nextBtn').onclick = () => App.idx < App.job.rooms.length - 1 && openRoom(App.idx + 1);
+  const tb = $('typedBox');
+  if (tb) tb.oninput = () => { roomState(curRoom()).typed = tb.value; saveStore(); };
+  const ka = $('keepAll'); if (ka) ka.onclick = () => decideAll(true);
+  const da = $('dropAll'); if (da) da.onclick = () => decideAll(false);
+  p.onclick = e => {
+    const t = e.target.closest('[data-play],[data-keep],[data-drop],[data-check],[data-uncheck],[data-goto],[data-copysec],[data-addsent],.sent');
+    if (!t || t.closest('.sent-edit')) return;
+    if (t.dataset.play != null) { e.stopPropagation(); return playFrom(+t.dataset.play - 0.4); }
+    if (t.dataset.keep != null || t.dataset.drop != null) {
+      const sp = t.closest('.sent');
+      return decideAdded(+sp.dataset.i, +sp.dataset.j, +(t.dataset.keep != null ? t.dataset.keep : t.dataset.drop), t.dataset.keep != null);
+    }
+    if (t.dataset.check != null) return resolveCheck(+t.dataset.check, 'checked');
+    if (t.dataset.uncheck != null) return unresolveCheck(+t.dataset.uncheck);
+    if (t.dataset.goto != null) return gotoCheck(+t.dataset.goto);
+    if (t.dataset.copysec != null) return copySection(+t.dataset.copysec);
+    if (t.dataset.addsent != null) return addSentence(+t.dataset.addsent);
+    if (t.classList.contains('sent')) {
+      if (window.getSelection && String(window.getSelection()).length > 2) return; // let them select text to copy
+      return startEdit(+t.dataset.i, +t.dataset.j);
+    }
+  };
+  markPlaying(true);
+}
+
+// ── editing one sentence ───────────────────────────────────────────────
+function startEdit(i, j) {
+  commitEditor();
+  const rs = roomState(curRoom()), s = rs.secs[i] && rs.secs[i].sents[j];
+  if (!s) return;
+  const span = $('roomPane').querySelector(`.sent[data-i="${i}"][data-j="${j}"]`);
+  if (!span) return;
+  const box = document.createElement('span');
+  box.className = 'sent-edit'; box.dataset.i = i; box.dataset.j = j;
+  box.innerHTML = `<textarea class="field" rows="1" spellcheck="true" lang="en-AU"></textarea>
+    <span class="hint"><span><kbd>Enter</kbd> save · <kbd>Tab</kbd> next · <kbd>Esc</kbd> cancel</span>
+      ${s.at != null ? `<button class="btn btn-ghost btn-sm" data-e="play">▶ ${clock(s.at)}</button>` : ''}
+      ${s.check ? '<button class="btn btn-dark btn-sm" data-e="ok">✓ Correct as is</button>' : ''}
+      ${s.edited ? '<button class="btn btn-ghost btn-sm" data-e="revert">Back to original</button>' : ''}
+      <button class="btn btn-ghost btn-sm" data-e="del">Delete sentence</button></span>
+    ${s.edited ? `<span class="orig">Original: ${esc(plainText(s.orig))}</span>` : ''}`;
+  span.replaceWith(box);
+  const ta = box.querySelector('textarea');
+  ta.value = s.text;
+  const fit = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
+  fit(); ta.oninput = fit;
+  ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+  App.editing = { i, j, ta, before: s.text };
+  box.addEventListener('mousedown', e => { if (e.target.closest('[data-e]')) e.preventDefault(); });
+  box.onclick = e => {
+    const b = e.target.closest('[data-e]'); if (!b) return;
+    const a = b.dataset.e;
+    if (a === 'play') return playFrom(s.at - 0.4);
+    if (a === 'ok') { App.editing = null; s.check = false; resolveMatching(s, 'checked'); logFix({ kind: 'check-ok', section: rs.secs[i].name, at: s.at, from: plainText(s.text), to: plainText(s.text) }); saveStore(); return refresh(); }
+    if (a === 'revert') { ta.value = s.orig; fit(); ta.focus(); return; }
+    if (a === 'del') { ta.value = ''; return commitEditor(); }
+  };
+  ta.onkeydown = e => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); commitEditor(); }
+    else if (e.key === 'Escape') { e.preventDefault(); App.editing = null; refresh(); }
+    else if (e.key === 'Tab') { e.preventDefault(); const nxt = neighbour(i, j, e.shiftKey ? -1 : 1); commitEditor(); if (nxt) startEdit(nxt[0], nxt[1]); }
+  };
+  ta.onblur = () => setTimeout(() => { if (App.editing && App.editing.ta === ta && document.activeElement !== ta) commitEditor(); }, 120);
+}
+function neighbour(i, j, dir) {
+  const secs = roomState(curRoom()).secs, flat = [];
+  secs.forEach((s, a) => s.sents.forEach((x, b) => { if (!x.removed) flat.push([a, b]); }));
+  const k = flat.findIndex(p => p[0] === i && p[1] === j);
+  return flat[k + dir] || null;
+}
+function commitEditor() {
+  const ed = App.editing; if (!ed) return;
+  App.editing = null;
+  const room = curRoom(), rs = roomState(room), sec = rs.secs[ed.i], s = sec && sec.sents[ed.j];
+  if (!s) return refresh();
+  const next = tidy(ed.ta.value.replace(/\s*\n\s*/g, ' '));
+  if (next === s.text) return refresh();
+  if (!next) {
+    if (!s.orig) { sec.sents.splice(ed.j, 1); saveStore(); return refresh(); }
+    s.removed = true; s.check = false;
+    logFix({ kind: 'delete', section: sec.name, at: s.at, from: plainText(s.text), to: '' });
+    saveStore(); refresh();
+    return toast('Sentence deleted', { label: 'Undo', fn: () => { s.removed = false; saveStore(); refresh(); } });
+  }
+  const from = plainText(s.text), to = plainText(next);
+  const wasCheck = s.check;
+  const heardC = wasCheck ? room.checks.find(c => sentenceMatches(s.text, c.quote)) : null;
+  s.text = next; s.edited = next !== s.orig;
+  if (wasCheck) { s.check = false; resolveMatching(s, 'edited', from); }
+  if (from !== to) {
+    const d = diffSpan(from, to);
+    logFix({ kind: s.orig ? 'edit' : 'new', section: sec.name, at: s.at, heard: heardC ? heardC.heard : '', fromSpan: d.from, toSpan: d.to, from, to, flagged: !!wasCheck });
+  }
+  saveStore(); refresh();
+}
+function addSentence(i) {
+  commitEditor();
+  const sec = roomState(curRoom()).secs[i];
+  sec.sents.push({ text: '', at: null, check: false, orig: '' });
+  refresh(); startEdit(i, sec.sents.length - 1);
+}
+function refresh() {
+  const y = window.scrollY;
+  renderRoom(); renderSide();
+  window.scrollTo(0, y);
+}
+
+// ── checks and added phrases ───────────────────────────────────────────
+function resolveMatching(s, how, fromText) {
+  const room = curRoom(), rs = roomState(room);
+  room.checks.forEach((c, i) => { if (!c.resolved && !rs.checks[i] && sentenceMatches(fromText || s.text, c.quote)) rs.checks[i] = how; });
+}
+function resolveCheck(i, how) {
+  commitEditor();
+  const room = curRoom(), rs = roomState(room), c = room.checks[i];
+  rs.checks[i] = how;
+  rs.secs.forEach(sec => sec.sents.forEach(s => { if (s.check && sentenceMatches(s.text, c.quote)) s.check = false; }));
+  logFix({ kind: 'check-ok', at: c.at, heard: c.heard, from: c.quote, to: c.quote });
+  saveStore(); refresh();
+}
+function unresolveCheck(i) {
+  const room = curRoom(), rs = roomState(room), c = room.checks[i];
+  delete rs.checks[i];
+  rs.secs.forEach(sec => sec.sents.forEach(s => { if (!s.removed && sentenceMatches(s.text, c.quote)) s.check = true; }));
+  saveStore(); refresh();
+}
+function gotoCheck(i) {
+  const room = curRoom(), rs = roomState(room), c = room.checks[i];
+  for (let a = 0; a < rs.secs.length; a++) for (let b = 0; b < rs.secs[a].sents.length; b++) {
+    const s = rs.secs[a].sents[b];
+    if (!s.removed && sentenceMatches(s.text, c.quote)) {
+      startEdit(a, b);
+      App.editing && App.editing.ta.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      if (c.at != null) playFrom(c.at - 1);
+      return;
+    }
+  }
+  toast('That sentence is no longer in the text');
+}
+function decideAdded(i, j, k, keep) {
+  commitEditor();
+  const s = roomState(curRoom()).secs[i].sents[j];
+  let n = 0, phrase = '';
+  s.text = tidy(s.text.replace(ADDED_RE, (m, x) => { if (n++ !== k) return m; phrase = x; return keep ? x : ''; }));
+  s.edited = s.text !== s.orig;
+  logFix({ kind: keep ? 'added-keep' : 'added-remove', section: roomState(curRoom()).secs[i].name, at: s.at, from: phrase, to: keep ? phrase : '' });
+  saveStore(); refresh();
+}
+function decideAll(keep) {
+  const rs = roomState(curRoom());
+  rs.secs.forEach(sec => sec.sents.forEach(s => {
+    if (!addedCount(s.text)) return;
+    s.text = tidy(s.text.replace(ADDED_RE, (m, x) => { logFix({ kind: keep ? 'added-keep' : 'added-remove', section: sec.name, at: s.at, from: x, to: keep ? x : '' }); return keep ? x : ''; }));
+    s.edited = s.text !== s.orig;
+  }));
+  saveStore(); refresh();
+}
+async function toggleDone(andNext) {
+  commitEditor();
+  const room = curRoom(), rs = roomState(room);
+  if (!rs.done) {
+    const c = roomCounts(room);
+    if (c.open || c.added) {
+      const bits = [c.open && c.open + ' sentence' + (c.open > 1 ? 's' : '') + ' still to check', c.added && c.added + ' added phrase' + (c.added > 1 ? 's' : '') + ' not confirmed'].filter(Boolean).join(' and ');
+      const ok = await modal('Mark ' + room.name + ' done?', `<p class="muted">${esc(bits)}.</p>`,
+        [{ label: 'Go back', value: false }, { label: 'Mark done anyway', cls: 'btn-main', value: true }]);
+      if (!ok) return;
+    }
+    rs.done = true; rs.doneAt = Date.now();
+  } else { rs.done = false; andNext = false; }
+  saveStore(true);
+  const rooms = App.job.rooms;
+  if (andNext || rs.done) {
+    const nx = rooms.findIndex((r, k) => k > App.idx && !roomState(r).done);
+    const any = nx >= 0 ? nx : rooms.findIndex(r => !roomState(r).done);
+    if (any >= 0) { toast(room.name + ' done'); return openRoom(any); }
+    toast('Every room is done. Copy all rooms into the report.');
+  }
+  refresh();
+}
+
+
+// ── audio ───────────────────────────────────────────────────────────────
+const audio = () => $('audio');
+let audioRoomKey = null, pausedAt = 0, rafId = 0, linkRetried = false;
+async function loadAudio(room) {
+  const a = audio();
+  pauseAudio();
+  audioRoomKey = room.key; linkRetried = false;
+  $('marks').innerHTML = ''; setTime(0, 0);
+  const has = !!room.audio;
+  $('play').disabled = $('back').disabled = $('fwd').disabled = !has;
+  $('nowSec').textContent = has ? 'Loading audio…' : 'No audio file for this recording';
+  if (!has) { a.removeAttribute('src'); a.load(); return; }
+  try {
+    const url = await room.audio.url();
+    if (audioRoomKey !== room.key) return;
+    a.src = url; a.playbackRate = speed(); a.load();
+  } catch (e) { $('nowSec').textContent = 'Audio could not be loaded: ' + (e.message || 'error'); }
+}
+function speed() { return LS.get('pa-ed:speed', 1); }
+function setSpeed(v) {
+  v = SPEEDS.includes(v) ? v : 1;
+  LS.set('pa-ed:speed', v); audio().playbackRate = v; renderSpeeds();
+}
+function renderSpeeds() {
+  const s = speed();
+  $('speeds').innerHTML = SPEEDS.map(v => `<button class="${v === s ? 'on' : ''}" data-s="${v}">${v}×</button>`).join('');
+  $('speeds').querySelectorAll('button').forEach(b => b.onclick = () => setSpeed(+b.dataset.s));
+}
+function duration() {
+  const a = audio(), room = curRoom();
+  if (a.duration && isFinite(a.duration)) return a.duration;
+  const last = room && room.words && room.words.length ? room.words[room.words.length - 1][1] + 2 : 0;
+  return Math.max(last, a.currentTime || 0, 1);
+}
+function setTime(t, d) {
+  $('tNow').textContent = clock(t); $('tDur').textContent = d ? clock(d) : '0:00';
+  const pct = d ? Math.min(100, 100 * t / d) : 0;
+  $('fill').style.width = pct + '%'; $('knob').style.left = pct + '%';
+}
+function renderMarks() {
+  const room = curRoom(); if (!room) return;
+  const d = duration(), rs = roomState(room);
+  let h = '';
+  rs.secs.forEach(s => { if (s.at != null) h += `<span class="tick" style="left:${100 * s.at / d}%" title="${esc(s.name)} ${clock(s.at)}"></span>`; });
+  room.checks.forEach((c, i) => { if (c.at != null && !c.resolved && !rs.checks[i]) h += `<span class="flag" style="left:${100 * c.at / d}%" title="Check ${clock(c.at)}"></span>`; });
+  $('marks').innerHTML = h;
+}
+function playFrom(t) {
+  const a = audio(); if (!a.src) return;
+  a.currentTime = Math.max(0, t || 0);
+  a.play().catch(() => {});
+}
+function togglePlay() {
+  const a = audio(); if (!a.src) return;
+  if (a.paused) {
+    if (pausedAt && a.currentTime > RESUME_REWIND_S && Date.now() - pausedAt > 800) a.currentTime -= RESUME_REWIND_S;
+    a.play().catch(() => toast('The audio could not play'));
+  } else a.pause();
+}
+function pauseAudio() { const a = audio(); if (a && !a.paused) a.pause(); }
+function skip(s) { const a = audio(); if (!a.src) return; a.currentTime = Math.max(0, Math.min(duration(), a.currentTime + s)); tick(); }
+function tick() {
+  const a = audio(), d = duration();
+  setTime(a.currentTime, d);
+  markPlaying();
+  markRaw();
+}
+function loop() { tick(); if (!audio().paused) rafId = requestAnimationFrame(loop); }
+
+// Which sentence is playing now: the last one that started before this moment.
+let lastNow = null;
+function markPlaying(force) {
+  const room = curRoom(); if (!room) return;
+  const t = audio().currentTime || 0, rs = roomState(room);
+  let best = null, bestAt = -1, secName = '';
+  rs.secs.forEach((sec, i) => {
+    if (sec.at != null && sec.at <= t + 0.2 && sec.at >= bestAt) secName = sec.name;
+    sec.sents.forEach((s, j) => { if (!s.removed && s.at != null && s.at <= t + 0.2 && s.at >= bestAt) { best = i + '.' + j; bestAt = s.at; } });
+  });
+  const ns = $('nowSec');
+  if (audio().src && ns.textContent !== secName && (secName || audio().currentTime)) ns.textContent = secName || room.name;
+  if (!App.follow) best = null;
+  if (best === lastNow && !force) return;
+  lastNow = best;
+  $('roomPane').querySelectorAll('.sent.now').forEach(e => e.classList.remove('now'));
+  if (!best) return;
+  const [i, j] = best.split('.');
+  const el = $('roomPane').querySelector(`.sent[data-i="${i}"][data-j="${j}"]`);
+  if (!el) return;
+  el.classList.add('now');
+  if (!audio().paused && !App.editing) {
+    const r = el.getBoundingClientRect();
+    if (r.top < 90 || r.bottom > window.innerHeight - 130) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+}
+function wireAudio() {
+  const a = audio();
+  a.addEventListener('loadedmetadata', () => { renderMarks(); tick(); $('nowSec').textContent = curRoom() ? curRoom().name : ''; });
+  a.addEventListener('durationchange', renderMarks);
+  a.addEventListener('play', () => { $('playIcon').innerHTML = '<path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/>'; $('play').setAttribute('aria-label', 'Pause'); cancelAnimationFrame(rafId); loop(); T.activity(); });
+  a.addEventListener('pause', () => { $('playIcon').innerHTML = '<path d="M8 5.5v13l11-6.5z"/>'; $('play').setAttribute('aria-label', 'Play'); pausedAt = Date.now(); tick(); });
+  a.addEventListener('seeked', tick);
+  a.addEventListener('error', async () => {
+    const room = curRoom();
+    if (!room || !room.audio || !a.getAttribute('src')) return;
+    // A Dropbox link lasts 4 hours: ask for a fresh one once.
+    if (!linkRetried) {
+      linkRetried = true;
+      try { const u = await room.audio.url(true); if (u && u !== a.src) { const t = a.currentTime; a.src = u; a.load(); a.currentTime = t; return; } } catch (e) {}
+    }
+    $('nowSec').textContent = 'This audio file could not be played in this browser';
+  });
+  $('play').onclick = togglePlay;
+  $('back').onclick = () => skip(-SKIP_S);
+  $('fwd').onclick = () => skip(SKIP_S);
+  const track = $('track');
+  const seekAt = e => { const r = track.getBoundingClientRect(); const x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); if (a.src) { a.currentTime = x * duration(); tick(); } };
+  track.addEventListener('pointerdown', e => { seekAt(e); track.setPointerCapture(e.pointerId); const mv = ev => seekAt(ev); track.addEventListener('pointermove', mv); track.addEventListener('pointerup', () => track.removeEventListener('pointermove', mv), { once: true }); });
+  $('followBtn').onclick = () => { App.follow = !App.follow; LS.set('pa-ed:follow', App.follow); $('followBtn').classList.toggle('on', App.follow); markPlaying(true); };
+  $('followBtn').classList.toggle('on', App.follow);
+  $('rawBtn').onclick = toggleRaw; $('rawClose').onclick = closeRaw;
+  renderSpeeds();
+}
+
+// ── raw transcript window ──────────────────────────────────────────────
+let rawWords = [];
+function renderRaw() {
+  const room = curRoom(), body = $('rawBody');
+  rawWords = [];
+  if (!room || !room.raw) { body.innerHTML = '<p class="muted">No raw transcript for this recording.</p>'; $('rawSub').textContent = 'Exactly as the engine heard it.'; return; }
+  if (room.words) {
+    // Walk the engine's word timings alongside the text, as the app does.
+    const toks = room.raw.split(/\s+/).filter(Boolean);
+    let wi = 0, sentenceStart = true, lastStamp = -999;
+    const out = [];
+    toks.forEach(tok => {
+      const n = tok.toLowerCase().replace(/[^a-z0-9']/g, '');
+      let at = null;
+      if (n) for (let k = wi; k < Math.min(room.words.length, wi + 6); k++) { if (room.words[k][0] === n) { at = room.words[k][1]; wi = k + 1; break; } }
+      if (at != null && (sentenceStart || at - lastStamp >= 15)) { out.push(`${out.length ? '<br>' : ''}<span class="st" data-t="${at}">${clock(at)}</span>`); lastStamp = at; }
+      out.push(at != null ? `<span class="w" data-t="${at}">${esc(tok)}</span>` : esc(tok));
+      if (n) sentenceStart = /[.!?]$/.test(tok);
+    });
+    body.innerHTML = out.join(' ');
+    $('rawSub').textContent = 'Exactly as the engine heard it. Click a word to play from there.';
+  } else {
+    body.innerHTML = esc(room.raw).replace(/\[(\d+:\d{2}(?::\d{2})?)\]/g, (m, c) => `<span class="st" data-t="${parseClock(c)}">${c}</span>`).replace(/\n/g, '<br>');
+    $('rawSub').textContent = room.rawStamped ? 'Exactly as the engine heard it. Click a time to play from there.' : 'Exactly as the engine heard it.';
+  }
+  rawWords = [...body.querySelectorAll('.w')].map(el => ({ t: +el.dataset.t, el }));
+  body.onclick = e => { const w = e.target.closest('[data-t]'); if (w) playFrom(+w.dataset.t - 0.15); };
+}
+let rawOn = null;
+function markRaw() {
+  if ($('raw').hidden || !rawWords.length) return;
+  const t = audio().currentTime || 0;
+  let lo = 0, hi = rawWords.length - 1, k = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (rawWords[m].t <= t + 0.05) { k = m; lo = m + 1; } else hi = m - 1; }
+  const el = k >= 0 ? rawWords[k].el : null;
+  if (el === rawOn) return;
+  rawOn && rawOn.classList.remove('on');
+  rawOn = el;
+  if (el) {
+    el.classList.add('on');
+    if (App.follow && !audio().paused) {
+      const box = $('rawBody'), r = el.getBoundingClientRect(), b = box.getBoundingClientRect();
+      if (r.top < b.top + 20 || r.bottom > b.bottom - 20) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  }
+}
+function toggleRaw() { $('raw').hidden ? openRaw() : closeRaw(); }
+function openRaw() { $('raw').hidden = false; document.body.classList.add('raw-open'); $('rawBtn').classList.add('on'); rawOn = null; markRaw(); }
+function closeRaw() { $('raw').hidden = true; document.body.classList.remove('raw-open'); $('rawBtn').classList.remove('on'); }
+
+// ── typing timer ───────────────────────────────────────────────────────
+// Counts a second when this tab is in front and the typist has done something
+// in the last two minutes (or the audio is playing). Per job and per room.
+const T = {
+  paused: false, last: 0,
+  activity() { T.last = Date.now(); },
+  tick() {
+    if (!App.job || !App.store || T.paused) return T.render();
+    if (document.visibilityState !== 'visible') return T.render();
+    const active = !audio().paused || Date.now() - T.last < IDLE_MS;
+    if (active) {
+      App.store.time = (App.store.time || 0) + 1;
+      const rs = roomState(curRoom()); rs.time = (rs.time || 0) + 1;
+      if (App.store.time % 10 === 0) saveStore();
+    }
+    T.render(active);
+  },
+  render(active) {
+    if (!App.store) return;
+    $('timerText').textContent = T.paused ? 'Paused · ' + hms(App.store.time) : hms(App.store.time);
+    $('timerBtn').classList.toggle('running', !!active && !T.paused);
+  }
+};
+
+// ── keyboard ───────────────────────────────────────────────────────────
+const KEYS = [
+  ['Ctrl + Space', 'Play / pause (also Ctrl + K)'],
+  ['Ctrl + ,  /  Ctrl + .', 'Back / forward 3 seconds'],
+  ['Ctrl + Shift + ,  /  .', 'Slower / faster'],
+  ['Ctrl + /', 'Raw transcript'],
+  ['Ctrl + Enter', 'Room done, next room'],
+  ['Alt + ↑  /  ↓', 'Previous / next room'],
+  ['Click a sentence', 'Edit it. Enter saves, Tab goes to the next, Esc cancels'],
+  ['Click a time', 'Play from there. Resuming steps back 1 second']
+];
+function keysHtml() { return KEYS.map(([k, v]) => `<span>${k.split('  /  ').map(x => '<kbd>' + esc(x) + '</kbd>').join(' / ')}</span><span class="muted">${esc(v)}</span>`).join(''); }
+function onKey(e) {
+  T.activity();
+  if ($('modalHost').innerHTML) return;
+  const inJob = $('screenJob').classList.contains('active') && App.job;
+  if (!inJob) return;
+  const ctrl = e.ctrlKey || (e.metaKey && /Mac/.test(navigator.platform) && e.code === 'KeyK');
+  if (ctrl && (e.code === 'Space' || e.code === 'KeyK')) { e.preventDefault(); return togglePlay(); }
+  if (e.ctrlKey && e.code === 'Comma') { e.preventDefault(); return e.shiftKey ? stepSpeed(-1) : skip(-SKIP_S); }
+  if (e.ctrlKey && e.code === 'Period') { e.preventDefault(); return e.shiftKey ? stepSpeed(1) : skip(SKIP_S); }
+  if (e.ctrlKey && e.code === 'Slash') { e.preventDefault(); return toggleRaw(); }
+  if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); return toggleDone(true); }
+  const typing = /^(TEXTAREA|INPUT)$/.test(document.activeElement && document.activeElement.tagName);
+  if (e.altKey && !typing && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+    e.preventDefault();
+    const k = App.idx + (e.key === 'ArrowUp' ? -1 : 1);
+    if (k >= 0 && k < App.job.rooms.length) openRoom(k);
+  }
+}
+function stepSpeed(dir) { const k = SPEEDS.indexOf(speed()); setSpeed(SPEEDS[Math.max(0, Math.min(SPEEDS.length - 1, (k < 0 ? 1 : k) + dir))]); toast('Speed ' + speed() + '×'); }
+
+// ── theme ──────────────────────────────────────────────────────────────
+function applyTheme() {
+  const t = LS.get('pa-ed:theme', 'auto');
+  if (t === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', t);
+  $('themeBtn').title = 'Theme: ' + (t === 'auto' ? 'follows this computer' : t);
+}
+
+// ── fixes export ───────────────────────────────────────────────────────
+function renderFixCount() {
+  const n = LS.get('pa-ed:fixes', []).length;
+  $('fixesText').textContent = (n ? n + ' fix' + (n > 1 ? 'es' : '') + ' saved on this computer. ' : 'No fixes yet. ')
+    + 'Every word you change is kept here with what the app heard, for the team phrase list later.';
+}
+function exportFixes() {
+  const rows = LS.get('pa-ed:fixes', []);
+  if (!rows.length) return toast('No fixes saved yet');
+  const cols = ['when', 'job', 'room', 'section', 'at', 'kind', 'heard', 'fromSpan', 'toSpan', 'from', 'to', 'flagged'];
+  const cell = v => { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  const csv = [cols.join(',')].concat(rows.map(r => cols.map(c => cell(c === 'at' && r.at != null ? clock(r.at) : r[c])).join(','))).join('\n');
+  download('PA editor fixes ' + new Date().toISOString().slice(0, 10) + '.csv', '﻿' + csv, 'text/csv;charset=utf-8');
+}
+function exportAll() {
+  const out = {};
+  LS.keys().filter(k => k.startsWith('pa-ed:') && k !== 'pa-ed:dbx').forEach(k => { out[k] = LS.get(k, null); });
+  download('PA editor data ' + new Date().toISOString().slice(0, 10) + '.json', JSON.stringify(out, null, 1), 'application/json');
+}
+
+
+// ── sample job (no Dropbox needed) ─────────────────────────────────────
+// Three rooms in the round 10 .json format, one in the round 9 .txt format and
+// one that failed transcription, so every path of the editor can be tried.
+// The audio is generated: a short tone where each sentence starts.
+function sampleJob() {
+  const id = '2026-10-08 - 14 Acacia Street, Subiaco WA 6008 (sample)';
+  const base = { format: 'pa-room', version: 1, app: 'PA Inspect round 10', property: '14 Acacia Street, Subiaco WA 6008', client: 'Ray White Subiaco',
+    inspector: 'Sample inspector', state: 'WA', inspectionType: 'Entry (PCR)', inspectionStarted: '2026-10-08T01:05:00.000Z', transcribedBy: 'AssemblyAI', sortedBy: 'claude-haiku-4-5' };
+  const rooms = [
+    { room: 'Front Gardens', hhmm: '0912', rec: 3, sections: [
+      ['Exterior Walls', ['Exterior walls are rendered and painted cream with minor dirt marks to lower sections.', 'One crack noted near the meter box.']],
+      ['Light Fittings', ['One black metal wall light beside the front door [added: secured and functional].']],
+      ['Garden Beds', ['Garden beds are mulched with established shrubs, some weeds present.']],
+      ['Reticulation', ['Reticulation controller is on the side wall, not tested.']],
+      ['Letterbox/Street Number', ['Brick letterbox with street number present, minor chips to the cap.']]
+    ], checks: [] },
+    { room: 'Kitchen', hhmm: '0931', rec: 7, sections: [
+      ['Door/Door Frames/Handles', ['Opening is painted white with minor scuff marks to the frame.']],
+      ['Ceiling/Cornice', ['Ceiling and cornice are painted white with a small crack near the rangehood.']],
+      ['Light Fittings', ['Four white metal downlights [added: secured and functional].', 'One pendant light over the island bench.']],
+      ['Benchtops/Cupboards', ['Stone benchtops with light scratches near the cooktop.', 'Melamine cupboards with one loose hinge to the corner cupboard.']],
+      ['Sink/Taps', ['Two submetal sinks with flick mixer tap present.', 'Silicone is discoloured along the back edge.']],
+      ['Oven/Cooktop/Rangehood', ['Westinghouse oven, four burner gas cooktop and rangehood present, not tested.', 'Rangehood filters are clean.']],
+      ['Flooring', ['Timber look laminate flooring [added: in clean condition].']]
+    ], checks: [
+      { quote: 'Two submetal sinks with flick mixer tap present.', heard: 'submetal', why: 'may be misheard, stainless steel?' },
+      { quote: 'Rangehood filters are clean.', heard: 'filters are clean', why: 'contradicts not tested', resolved: 'kept' }
+    ] },
+    { room: 'Ensuite', hhmm: '0944', rec: 9, sections: [
+      ['Ceiling', ['Ceiling is painted white with light mould spots above the shower.']],
+      ['Exhaust Fan', ['One white plastic exhaust fan, tested and working.']],
+      ['Shower', ['Ensuite grouse has light discolouration near the shower screen.', 'Glass shower screen with a chrome towel rail [added: in clean condition].']],
+      ['Vanity/Basin', ['White vanity with a single basin and mixer tap, minor chips to the basin edge.']],
+      ['Flooring', ['Tiled flooring with grout discoloured near the drain.']]
+    ], checks: [
+      { quote: 'Ensuite grouse has light discolouration near the shower screen.', heard: 'ensuite grouse', why: 'might be grout' }
+    ] }
+  ];
+  const files = [];
+  const mk = (name, text) => ({ name, size: text.length, text: async () => text, url: async () => URL.createObjectURL(new Blob([text])) });
+  const wav = (beeps, dur) => {
+    const rate = 8000, n = Math.ceil(dur * rate), buf = new Uint8Array(44 + n);
+    const dv = new DataView(buf.buffer), w = (o, s) => [...s].forEach((c, i) => buf[o + i] = c.charCodeAt(0));
+    w(0, 'RIFF'); dv.setUint32(4, 36 + n, true); w(8, 'WAVE'); w(12, 'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+    dv.setUint32(24, rate, true); dv.setUint32(28, rate, true); dv.setUint16(32, 1, true); dv.setUint16(34, 8, true); w(36, 'data'); dv.setUint32(40, n, true);
+    buf.fill(128, 44);
+    beeps.forEach(b => { const s0 = Math.floor(b * rate); for (let i = 0; i < rate * 0.12 && s0 + i < n; i++) buf[44 + s0 + i] = 128 + Math.round(18 * Math.sin(2 * Math.PI * 660 * i / rate) * Math.sin(Math.PI * i / (rate * 0.12))); });
+    return new Blob([buf], { type: 'audio/wav' });
+  };
+  rooms.forEach(r => {
+    let t = 2.0; const words = [], beeps = [];
+    const sections = r.sections.map(([name, sents]) => {
+      const ss = sents.map(text => {
+        const at = Math.round(t * 10) / 10; beeps.push(at);
+        const ws = plainText(text).toLowerCase().split(/\s+/).map(x => x.replace(/[^a-z0-9']/g, '')).filter(Boolean);
+        ws.forEach((x, k) => words.push([x, Math.round((t + k * 0.34) * 10) / 10]));
+        t += ws.length * 0.34 + 1.1;
+        const check = r.checks.some(c => !c.resolved && c.quote === text);
+        return { text, plain: plainText(text), added: (text.match(/\[added: ([^\]]*)\]/g) || []).map(x => x.slice(8, -1)), at, clock: clock(at), check };
+      });
+      return { name, start: ss[0].at, clock: ss[0].clock, sentences: ss };
+    });
+    const raw = sections.map(s => s.sentences.map(x => x.plain).join(' ')).join(' ');
+    const allSents = sections.flatMap(s => s.sentences);
+    const j = Object.assign({}, base, {
+      room: r.room, roomId: r.room.toLowerCase(), recording: r.rec, part: 1, recordedAt: '2026-10-08T0' + (+r.hhmm.slice(0, 2) - 8) + ':' + r.hhmm.slice(2) + ':00.000Z',
+      timecodes: true, sections,
+      check: r.checks.map(c => { const s = allSents.find(x => x.text === c.quote); return { quote: c.quote, heard: c.heard, why: c.why, at: s ? s.at : null, clock: s ? s.clock : null, resolved: c.resolved || null, fixedTo: null }; }),
+      fixes: [], serial: r.room === 'Kitchen' ? 'Oven: Model Numbers: WVE6515SD Serial Numbers: 51200437' : '', inventory: '', raw, words
+    });
+    const b = `${r.room} - ${r.hhmm} - rec ${r.rec}`;
+    files.push(mk(b + '.json', JSON.stringify(j)));
+    const blob = wav(beeps, t + 2);
+    files.push({ name: b + '.wav', size: blob.size, text: async () => '', url: async () => URL.createObjectURL(blob) });
+  });
+  // A round 9 style .txt room (no .json), to show the fallback.
+  const txt = `Property: 14 Acacia Street, Subiaco WA 6008\nClient: Ray White Subiaco\nInspection type: Entry (PCR)\nInspector: Sample inspector\nState: WA\n\nRoom: Laundry\nAudio: Laundry - 0951 - rec 10.wav\nTranscribed by: AssemblyAI\nSorted into subareas by: claude-haiku-4-5\nTimecodes: on — [m:ss] is where it was said in the audio\n\nCHECK THESE AGAINST THE AUDIO (1)\nOpen the audio file beside this one (Laundry - 0951 - rec 10.wav) and play the times listed.\n\n  [0:09] "Laundry trough is stainless with a cracked plug." — may be misheard\n\n----------------------------------------\n\n========================================\nBY SUBAREA\n========================================\n\n>>CHECK<< marks a sentence to check against the audio. [added: …] is a phrase the AI added because no damage was mentioned: confirm or delete. The Word file beside this one shows both in red.\n\nWALLS  (starts 0:02)\n[0:02] Walls are painted white with minor marks behind the door.\n\nLAUNDRY TROUGH  (starts 0:09)\n>>CHECK<< [0:09] Laundry trough is stainless with a cracked plug. [0:14] Cabinet below [added: in clean condition].\n\n========================================\nRAW TRANSCRIPT (exactly as the engine heard it)\n========================================\n\n[0:02] Walls are painted white with minor marks behind the door.\n[0:09] Laundry trough is stainless with a cracked plug. Cabinet below.\n`;
+  files.push(mk('Laundry - 0951 - rec 10.txt', txt));
+  const lb = wav([2, 9, 14], 18);
+  files.push({ name: 'Laundry - 0951 - rec 10.wav', size: lb.size, text: async () => '', url: async () => URL.createObjectURL(lb) });
+  files.push(mk('Rear Yard - 1003 - rec 11 - transcription failed.txt', 'Property: 14 Acacia Street, Subiaco WA 6008\n\nRoom: Rear Yard\n\nNO ACCURATE TRANSCRIPT FOR THIS RECORDING — please type from the audio.\n\nPhone dictation only, mishears expected:\nback yard lawn is patchy with a retic leak near the shed\n'));
+  const rb = wav([1, 6], 12);
+  files.push({ name: 'Rear Yard - 1003 - rec 11.wav', size: rb.size, text: async () => '', url: async () => URL.createObjectURL(rb) });
+  files.push(mk('00 - Inspection details.txt', 'Property: 14 Acacia Street, Subiaco WA 6008\nClient: Ray White Subiaco\nInspection type: Entry (PCR)\nInspector: Sample inspector\nState: WA\nInspection started: 8/10/2026, 9:05:00 am\n'));
+  return { id, from: 'sample', files };
+}
+
+// ── start ──────────────────────────────────────────────────────────────
+function init() {
+  applyTheme();
+  $('themeBtn').onclick = () => { const order = ['auto', 'light', 'dark']; const t = LS.get('pa-ed:theme', 'auto'); LS.set('pa-ed:theme', order[(order.indexOf(t) + 1) % 3]); applyTheme(); toast($('themeBtn').title); };
+  $('keysBtn').onclick = () => modal('Keyboard shortcuts', `<div class="keys">${keysHtml()}</div>`);
+  $('keysInline').innerHTML = keysHtml();
+  $('brandBtn').onclick = () => App.job ? backToQueue() : null;
+  $('queueBtn').onclick = backToQueue;
+  $('timerBtn').onclick = () => { T.paused = !T.paused; T.render(); toast(T.paused ? 'Typing timer paused' : 'Typing timer running'); };
+  $('copyAll').onclick = copyAll;
+  $('downloadJob').onclick = downloadJob;
+  $('dbxConnect').onclick = connectDropbox;
+  $('dbxRefresh').onclick = connectDropbox;
+  $('dbxEdit').onclick = () => { App.dbxEditing = true; renderDbxCard(); $('dbxKey').value = ''; $('dbxKey').focus(); };
+  $('dbxKey').onkeydown = e => { if (e.key === 'Enter') connectDropbox(); };
+  $('pickFolder').onclick = () => $('folderInput').click();
+  $('folderInput').onchange = e => { if (e.target.files.length) filesFromPicker(e.target.files); e.target.value = ''; };
+  $('trySample').onclick = () => openJob(sampleJob());
+  $('jobSearch').oninput = renderJobs;
+  $('exportFixes').onclick = exportFixes;
+  $('exportAll').onclick = exportAll;
+  const dz = $('dropZone');
+  ['dragenter', 'dragover'].forEach(ev => document.addEventListener(ev, e => { if ($('screenQueue').classList.contains('active')) { e.preventDefault(); dz.classList.add('over'); } }));
+  ['dragleave', 'drop'].forEach(ev => document.addEventListener(ev, e => { if (ev === 'dragleave' && e.relatedTarget) return; dz.classList.remove('over'); }));
+  document.addEventListener('drop', e => { if (!$('screenQueue').classList.contains('active')) return; e.preventDefault(); if (e.dataTransfer && e.dataTransfer.items) readDropped(e.dataTransfer); });
+  document.addEventListener('keydown', onKey);
+  ['mousedown', 'input', 'wheel', 'touchstart'].forEach(ev => document.addEventListener(ev, T.activity, { passive: true }));
+  window.addEventListener('beforeunload', () => { commitEditor(); saveStore(true); });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveStore(true); });
+  setInterval(T.tick, 1000);
+  wireAudio();
+  renderDbxCard(); renderFixCount();
+  if (DBX.conf) connectDropbox();
+}
+init();
+
+</script>
+</body>
+</html>

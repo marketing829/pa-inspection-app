@@ -1,4 +1,4 @@
-const CACHE = 'pa-inspect-v16';
+const CACHE = 'pa-inspect-v17';
 const ASSETS = ['./', './index.html', './manifest.webmanifest'];
 // JSZip builds each room's Word file, which may happen with poor signal. Cached separately so a missing file can never stop the app installing.
 const OPTIONAL = ['./jszip.min.js', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];

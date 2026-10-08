@@ -2014,21 +2014,51 @@
   .tx-wait.wait { color: var(--warn-ink); background: var(--warn-bg); }
   @media (prefers-reduced-motion: reduce) { .rec-topbar, .rec-dot { animation: none !important; } }
   /* ROUND 12 — review: optional checks and the Next button */
-  .check-optional { font-size: 13px; color: var(--ink-2); margin: -2px 4px 10px; }
+  .check-optional { font-size: 13px; color: var(--ink-2); margin: -2px 4px 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+  .fix-all-inline { border: 0; cursor: pointer; font: inherit; font-size: 14px; font-weight: 700; padding: 9px 14px; border-radius: 999px;
+    background: var(--yellow); color: var(--on-yellow); display: inline-flex; align-items: center; gap: 8px; }
+  .fix-all-inline b { background: rgba(0,0,0,0.12); border-radius: 999px; padding: 0 7px; font-size: 12px; }
   .next-check { display: none; position: fixed; left: 0; right: 0; margin: 0 auto; width: max-content; max-width: calc(100% - 32px); transform: none; z-index: 50; white-space: nowrap;
     bottom: calc(16px + env(safe-area-inset-bottom)); align-items: center; gap: 8px; border: 0; cursor: pointer;
     padding: 12px 16px; border-radius: 999px; font: inherit; font-size: 15px; font-weight: 700;
     background: var(--yellow); color: var(--on-yellow); box-shadow: 0 10px 28px rgba(0,0,0,0.22); }
   #screenReview.active .next-check.show { display: inline-flex; }
+  #screenReview.active .next-check.show.tucked { display: none; }
   .next-check b { background: rgba(0,0,0,0.12); border-radius: 999px; padding: 1px 8px; font-size: 13px; }
   .next-check .ico { width: 16px; height: 16px; }
   .review-check-row.flash { animation: checkFlash 1.4s ease-out; }
   @keyframes checkFlash { 0% { background: rgba(255,222,0,0.55); } 100% { background: transparent; } }
   #screenReview .export-actions { padding-bottom: 76px; }
-  /* ROUND 12 — setup Check all / Uncheck all */
-  .rooms-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
-  .rooms-head label { margin: 0; }
-  .rooms-all { display: inline-flex; gap: 6px; }
+  /* ROUND 13 — room header and guide bar */
+  .room-header { flex-wrap: nowrap !important; align-items: flex-start !important; gap: 12px !important; }
+  .room-title { font-size: clamp(26px, 8vw, 36px) !important; line-height: 1.1; padding-top: 2px; }
+  .room-edit-btn.icon-only { width: 40px; height: 40px; padding: 0 !important; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; margin-top: 2px; }
+  .room-edit-btn.icon-only .ico { width: 18px; height: 18px; }
+  .next-sub.show { display: flex !important; align-items: center; gap: 8px; padding: 8px 8px 8px 14px !important; margin-bottom: 12px !important; }
+  .next-sub .ns-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+  .next-sub .ns-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
+  .next-sub strong { font-size: 15px; overflow-wrap: anywhere; }
+  .next-sub-btn { width: 40px; height: 40px; padding: 0 !important; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .next-sub-btn .ico { width: 18px; height: 18px; }
+  .next-sub-more { width: 40px; height: 40px; border-radius: 999px; border: 1px solid var(--line); background: var(--tint); color: var(--ink);
+    display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; cursor: pointer; }
+  .next-sub-more .ico { width: 18px; height: 18px; transition: transform 0.2s; }
+  .next-sub-more.up .ico { transform: rotate(180deg); }
+  .checklist { margin-bottom: 0; }
+  .checklist.open { margin-bottom: 12px; }
+  .checklist-tip { width: 100%; margin: 6px 2px 2px; font-size: 13px; color: var(--ink-2); line-height: 1.45; }
+  .rec-time { font-variant-numeric: tabular-nums; font-weight: 700; }
+  /* ROUND 13 — review: inspector's notes */
+  .property-notes { margin: 16px 0 0; padding: 16px; border-radius: 22px; background: var(--glass); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow-sm); }
+  .property-notes textarea { width: 100%; box-sizing: border-box; margin-top: 8px; padding: 12px 14px; border-radius: 14px; font: inherit; font-size: 16px;
+    background: var(--field); border: 1px solid var(--line); box-shadow: var(--field-shadow); color: var(--ink); resize: vertical; }
+  .pn-hint { font-size: 12px; color: var(--ink-2); margin-top: 6px; }
+  /* ROUND 13 — setup Check all / Uncheck all: own row, nothing overlaps */
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  .rooms-head { display: block; position: relative; }
+  .rooms-head label { display: block; margin: 0 0 8px; line-height: 1.4; }
+  .rooms-all { display: flex; gap: 8px; margin-bottom: 4px; }
+  .rooms-all button { flex: 1 1 0; min-height: 36px; }
   .rooms-all button { font: inherit; font-size: 13px; font-weight: 600; padding: 6px 10px; border-radius: 10px;
     border: 1px solid var(--line-2); background: var(--tint); color: var(--ink); cursor: pointer; }
 </style>
@@ -2045,7 +2075,7 @@
 <div class="screen active" id="screenSetup">
   <div class="setup-hero">
     <div class="eyebrow">Entry condition report</div>
-    <h1><span class="fade">Start</span> PCR</h1>
+    <h1><span class="fade">Start</span> Inspection</h1>
     <p>Fill in the property details, pick the rooms, then talk through each room in one go.</p>
   </div>
 
@@ -2102,7 +2132,7 @@
     <!-- Service settings. Inspectors never need these, and a stray tap here
          used to be able to break uploads, so they're tucked away. -->
     <details class="admin-settings" id="adminSettings">
-      <summary>Admin settings <span class="app-ver">· app version 12</span></summary>
+      <summary>Admin settings <span class="app-ver">· app version 13</span></summary>
     <div class="field-group appearance-group">
       <label>Appearance</label>
       <div class="engine-select theme-select" id="themeSelect">
@@ -2179,7 +2209,7 @@
   </div>
   <div class="area-status" id="areaStatus"></div>
   <div class="review-body" id="reviewBody"></div>
-  <button type="button" class="next-check" id="btnNextCheck" onclick="gotoNextCheck()"></button>
+  <button type="button" class="next-check" id="btnNextCheck" onclick="startFixAll()"></button>
   <div class="export-actions">
     <div class="finish-status" id="finishStatus"></div>
     <a class="btn-export" id="btnDropbox" href="#" target="_blank" rel="noopener"><svg class="ico ico-folder" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.2c0-.9.7-1.7 1.7-1.7h3.9l2 2.2h7.7c.9 0 1.7.8 1.7 1.7v7.9c0 .9-.8 1.7-1.7 1.7H5.2c-1 0-1.7-.8-1.7-1.7z"/></svg><span>Check it in Dropbox</span></a>
@@ -2948,7 +2978,7 @@ function saveStateNow() {
       inventory: state.inventory, roughDrafts: roughDrafts, roomAudioFlags: roomAudioFlags,
       roomMismatches: roomMismatches,
       roomSections: state.roomSections, roomSectionParts: state.roomSectionParts, roomChecks: state.roomChecks, skippedRooms: state.skippedRooms, typedOnly: state.typedOnly,
-      mandatory: state.mandatory, startedAt: state.startedAt
+      mandatory: state.mandatory, startedAt: state.startedAt, propertyNotes: state.propertyNotes || ''
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
     if (stateSaveFailed) { stateSaveFailed = false; storageRecovered(); }
@@ -3012,6 +3042,7 @@ function resumeSaved() {
   roomAudioFlags = saved.roomAudioFlags || {};
   roomMismatches = saved.roomMismatches || {};
   state.mandatory = saved.mandatory || state.mandatory;
+  state.propertyNotes = saved.propertyNotes || '';
   state.startedAt = saved.startedAt || Date.now();
   // New saves carry the full editable room list; older ones only stored selected IDs.
   if (saved.rooms && saved.rooms.length) {
@@ -3273,6 +3304,7 @@ function startInspection() {
   // Every Dropbox file carries the inspector's name, so it can't be left blank.
   if (!state.inspector) { showToast('Please enter your name'); document.getElementById('propInspector').focus(); return; }
   try { localStorage.setItem('pa_inspector_name', state.inspector); } catch (e) {}
+  state.propertyNotes = '';   // ROUND 13: a new job starts with no notes
 
   const selected = [...document.querySelectorAll('#roomsSelect .room-toggle.selected')].map(d => d.dataset.id);
   if (!selected.length) { showToast('Select at least one room'); return; }
@@ -3371,7 +3403,7 @@ function renderRoomContent() {
   header.innerHTML = `
     <div class="room-title">${escapeHtml(room.name)}</div>
     <div class="room-header-actions">
-      <button class="room-edit-btn" onclick="toggleRoomTools()">${ico('pencil')}<span>Edit</span></button>
+      <button class="room-edit-btn icon-only" onclick="toggleRoomTools()" aria-label="Edit room">${ico('pencil')}</button>
     </div>
   `;
   content.appendChild(header);
@@ -3419,10 +3451,8 @@ function renderRoomContent() {
   const flagged = findForbidden(val);
 
   block.innerHTML = `
-    <button type="button" class="checklist-toggle" id="checklistToggle" onclick="toggleChecklist()"><span>${checklistOpen ? 'Hide checklist' : 'Show checklist'}</span>${ico('chevD', checklistOpen ? 'up' : '')}</button>
-    <div class="checklist ${checklistOpen ? 'open' : ''}" id="checklistBox">${chips}</div>
     <div class="next-sub" id="nextSub"></div>
-    <p class="field-note one-line">Say the subsection, pause, then describe it. “Scratch that” removes the last sentence.</p>
+    <div class="checklist ${checklistOpen ? 'open' : ''}" id="checklistBox">${chips}<p class="checklist-tip">Say the row name, pause, then describe it. “Scratch that” removes the last sentence.</p></div>
     <div class="live-preview" id="livePreview"></div>
     <div class="tx-wait" id="txWait"></div>
     <textarea class="room-dictate ${flagged.length ? 'flagged' : ''}" id="roomta-${room.id}" rows="9"
@@ -3553,10 +3583,12 @@ function renderNextSub() {
   const room = state.rooms[state.currentRoomIdx];
   if (!box || !room) return;
   const sub = nextSubsection(room);
-  if (!sub) { box.classList.remove('show'); box.innerHTML = ''; return; }
   box.classList.add('show');
-  box.innerHTML = `Next: <strong>${escapeHtml(sub)}</strong>`
-    + `<button type="button" class="next-sub-btn" onclick="tickAndAdvance()">Done, next</button>`;
+  box.innerHTML = (sub
+      ? `<span class="ns-text"><span class="ns-label">Next</span><strong>${escapeHtml(sub)}</strong></span>`
+        + `<button type="button" class="next-sub-btn" onclick="tickAndAdvance()" aria-label="Done, next row">${ico('check')}</button>`
+      : `<span class="ns-text"><span class="ns-label">All rows</span><strong>covered</strong></span>`)
+    + `<button type="button" class="next-sub-more${checklistOpen ? ' up' : ''}" id="checklistToggle" onclick="toggleChecklist()" aria-label="${checklistOpen ? 'Hide' : 'Show'} all rows">${ico('chevD')}</button>`;
 }
 function tickAndAdvance() {
   const room = state.rooms[state.currentRoomIdx];
@@ -3713,7 +3745,7 @@ function toggleChecklist() {
   const box = document.getElementById('checklistBox');
   const btn = document.getElementById('checklistToggle');
   if (box) box.classList.toggle('open', checklistOpen);
-  if (btn) btn.innerHTML = '<span>' + (checklistOpen ? 'Hide checklist' : 'Show checklist') + '</span>' + ico('chevD', checklistOpen ? 'up' : '');
+  if (btn) { btn.classList.toggle('up', checklistOpen); btn.setAttribute('aria-label', (checklistOpen ? 'Hide' : 'Show') + ' all rows'); }
 }
 
 function toggleRoomTools() {
@@ -3816,7 +3848,7 @@ function paintRecPill() {
   if (!rec && !paused) return;
   const t = formatClock(recClockNow() / 1000);
   pill.innerHTML = rec
-    ? '<i class="rec-dot"></i><span>Recording ' + t + '</span><span class="mic-meter" id="micMeter"><i></i><i></i><i></i><i></i><i></i></span>'
+    ? '<i class="rec-dot"></i><span class="rec-time">' + t + '</span><span class="mic-meter" id="micMeter"><i></i><i></i><i></i><i></i><i></i></span>'
     : '<span>Paused ' + t + '</span>';
 }
 function setMicLevel(level) {
@@ -5739,7 +5771,7 @@ function buildRoomJson(rec, clean) {
   const plain = s => String(s).replace(/\s*\[added: [^\]]*\]/g, '').replace(/\s+/g, ' ').trim();
   const clockOf = at => (at != null ? formatClock(at) : null);
   return {
-    format: 'pa-room', version: 1, app: 'PA Inspect round 12',
+    format: 'pa-room', version: 1, app: 'PA Inspect round 13',
     property: rec.address || '', client: m.client || '', inspector: m.inspector || '',
     state: m.stateCode || '', inspectionType: m.inspType || '',
     inspectionStarted: m.startedAt ? new Date(m.startedAt).toISOString() : null,
@@ -6285,7 +6317,7 @@ async function renderAreaStatus() {
   box.innerHTML = '<div class="stat-row">'
     + `<div class="stat"><span>Rooms</span><b>${live.length}</b></div>`
     + `<div class="stat"><span>In Dropbox</span><b>${inDbx}</b></div>`
-    + `<div class="stat${toCheck ? ' attn' : ''}"><span>Words to check</span><b>${toCheck}</b></div>`
+    + `<div class="stat${toCheck ? ' attn' : ''}"><span>To check</span><b>${toCheck}</b></div>`
     + '</div>';
   rows.forEach(paintReviewRow);
   renderFinishGate(rows);
@@ -6439,7 +6471,8 @@ function showReview() {
   if (totalOpen) {
     const hint = document.createElement('div');
     hint.className = 'check-optional';
-    hint.textContent = 'Fixing words is optional. The VA checks every highlighted word against the audio.';
+    hint.innerHTML = '<span>Fixing words is optional. The VA checks every highlighted word against the audio.</span>'
+      + '<button type="button" class="fix-all-inline" onclick="startFixAll()">Fix all words <b>' + totalOpen + '</b></button>';
     body.appendChild(hint);
   }
 
@@ -6491,6 +6524,13 @@ function showReview() {
     + renderReviewItem('NBN box', state.mandatory.nbnBox)
     + '</div>';
   body.appendChild(mand);
+  const notesCard = document.createElement('div');
+  notesCard.className = 'property-notes';
+  notesCard.innerHTML = '<label class="fix-label" for="propertyNotes">Notes about the property</label>'
+    + '<textarea id="propertyNotes" rows="4" placeholder="Anything the VA or property manager should know: access, keys, tenant items, things not inspected…" oninput="state.propertyNotes=this.value; saveState();"></textarea>'
+    + '<div class="pn-hint">Goes on the first page of the Word file in Dropbox.</div>';
+  notesCard.querySelector('textarea').value = state.propertyNotes || '';
+  body.appendChild(notesCard);
   renderAreaStatus();
   paintNextCheck();
   if (advanceAfterReview) { advanceAfterReview = false; setTimeout(() => gotoNextCheck(true), 60); }
@@ -6508,7 +6548,25 @@ function paintNextCheck() {
   if (!b) return;
   const n = openChecksLeft();
   b.classList.toggle('show', n > 0);
-  b.innerHTML = n ? '<span>Next word to check</span><b>' + n + '</b>' + ico('chevD') : '';
+  b.innerHTML = n ? '<span>Fix all words</span><b>' + n + '</b>' : '';
+}
+let fixAllMode = false;
+function openCheckList() {
+  const out = [];
+  (state.rooms || []).forEach(room => ((state.roomChecks || {})[room.id] || []).forEach((c, i) => { if (!c.resolved) out.push({ roomId: room.id, idx: i }); }));
+  return out;
+}
+// The floating Fix all button steps aside when the Finish buttons come into view.
+window.addEventListener('scroll', () => {
+  const b = document.getElementById('btnNextCheck'), f = document.getElementById('finishStatus');
+  if (!b || !f) return;
+  b.classList.toggle('tucked', f.getBoundingClientRect().top < window.innerHeight - 90);
+}, { passive: true });
+function startFixAll() {
+  const list = openCheckList();
+  if (!list.length) { paintNextCheck(); showToast('Nothing left to check'); return; }
+  fixAllMode = { total: list.length, done: 0 };
+  openFixSheet(list[0].roomId, list[0].idx);
 }
 function gotoNextCheck(quiet) {
   const rows = [...document.querySelectorAll('#reviewBody .review-check-row:not(.resolved)')];
@@ -6535,7 +6593,9 @@ function openFixSheet(roomId, idx) {
   if (!c) return;
   fixTarget = { roomId, idx };
   const room = (state.rooms || []).find(r => r.id === roomId);
-  document.getElementById('fixSub').textContent = [room ? room.name : '', c.clock || ''].filter(Boolean).join(' · ');
+  const step = fixAllMode ? 'Word ' + (fixAllMode.done + 1) + ' of ' + fixAllMode.total : '';
+  document.getElementById('fixSub').textContent = [step, room ? room.name : '', c.clock || ''].filter(Boolean).join(' · ');
+  document.getElementById('fixSheet').classList.toggle('fix-all', !!fixAllMode);
   document.getElementById('fixQuote').textContent = c.quote;
   const heard = (c.heard || '').trim();
   const showHeard = heard && checkNorm(heard) !== checkNorm(c.quote);
@@ -6557,9 +6617,10 @@ function stopFixAudio() {
   fixAudio = null;
   if (fixAudioUrl) { try { URL.revokeObjectURL(fixAudioUrl); } catch (e) {} fixAudioUrl = null; }
 }
-function closeFixSheet() {
+function closeFixSheet(keepGoing) {
   stopFixAudio();
   fixTarget = null;
+  if (!keepGoing) fixAllMode = false;
   document.body.classList.remove('sheet-open');
   document.getElementById('fixSheet').classList.remove('open');
   document.getElementById('fixBackdrop').classList.remove('open');
@@ -6639,7 +6700,19 @@ async function saveFix(keep) {
       if (cloudArchiveEnabled() && navigator.onLine) processArchiveQueue();
     }
   } catch (e) {}
-  closeFixSheet();
+  const going = fixAllMode;
+  closeFixSheet(true);
+  if (going) {
+    // Fix all: straight on to the next word, until there are none.
+    going.done++;
+    const next = openCheckList()[0];
+    fixAllMode = next ? going : false;
+    showReview();
+    if (next) { openFixSheet(next.roomId, next.idx); showToast(keep ? 'Kept. Next word' : 'Fixed. Next word'); }
+    else showToast('All words checked');
+    return;
+  }
+  fixAllMode = false;
   advanceAfterReview = true;
   showReview();
   showToast(keep ? 'Marked as checked' : 'Fix saved. The room\'s files in Dropbox update by themselves.');
@@ -6693,6 +6766,7 @@ function buildReportText() {
   report += `RCD Box: ${state.mandatory.rcdBox}\n`;
   report += `Smoke Alarms: ${state.mandatory.smokeAlarms}\n`;
   report += `NBN Box: ${state.mandatory.nbnBox}\n`;
+  if ((state.propertyNotes || '').trim()) report += `\nNOTES ABOUT THE PROPERTY\n${'-'.repeat(30)}\n${state.propertyNotes.trim()}\n`;
 
   state.rooms.forEach(room => {
     const val = state.roomNotes[room.id];
@@ -6847,6 +6921,7 @@ function jobSnapshot() {
   return {
     address: state.address, jobId: state.jobId || '', meta: inspectionMeta(),
     mandatory: Object.assign({}, state.mandatory || {}),
+    notes: (state.propertyNotes || '').trim(),
     rooms: (state.rooms || []).map(r => ({ id: r.id, name: r.name, subsections: (r.subsections || []).slice() })),
     skipped: Object.assign({}, state.skippedRooms || {}), typed,
     serials: Object.assign({}, state.serialModels || {}), inventory: Object.assign({}, state.inventory || {})
@@ -7026,7 +7101,7 @@ function buildJobModel(recs, snap) {
     return { no: i + 1, id, name, rows: tableRows, total: tableRows.length, said, toCheck, notes, audio, raws, plates, hasRec: rs.length > 0 };
   });
   const finished = snap.finishedAt || null;
-  return { address: snap.address || (live[0] && live[0].address) || '', meta, mandatory: snap.mandatory || null, rooms, finished,
+  return { address: snap.address || (live[0] && live[0].address) || '', meta, mandatory: snap.mandatory || null, notes: snap.notes || '', rooms, finished,
     built: Date.now() };
 }
 
@@ -7108,6 +7183,11 @@ function buildJobDocXml(j) {
     { cells: [lab('Inspection type'), val(m.inspType || INSPECTION_TYPE), lab('Date'), val(date ? date.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : '')] },
     { cells: [lab('Inspector'), val(m.inspector), lab('Time on site'), val(date ? tm(date) + (j.finished ? ' – ' + tm(new Date(j.finished)) : '') : '')] }
   ]));
+  // ROUND 13: the inspector's notes about the property, straight under the details.
+  if (j.notes) {
+    out.push(jH2('Inspector’s notes about the property'));
+    String(j.notes).split(/\n+/).filter(l => l.trim()).forEach(l => out.push(jP(jR(l.trim()), { after: 40 })));
+  }
   // Security/Safety, the template's rows.
   const md = j.mandatory || {};
   out.push(jH2('Security/Safety'));
@@ -7402,6 +7482,7 @@ async function finishAndClear() {
   state.currentRoomIdx = 0; state.startedAt = null; state.address = '';
   state.client = ''; state.inspector = ''; state.inspType = '';
   state.mandatory = { waterMeter:'', waterMeterLocation:'', rcdBox:'', smokeAlarms:'', nbnBox:'' };
+  state.propertyNotes = '';
   document.getElementById('resumeBanner').style.display = 'none';
   document.getElementById('headerTitle').textContent = '';
   showScreen('screenSetup');

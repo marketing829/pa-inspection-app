@@ -5,13 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Property Assist — Inspection Report</title>
 <!-- Install-to-home-screen (PWA) -->
-<meta name="theme-color" content="#898B8F">
+<meta name="theme-color" content="#ECECEA" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1012" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="PA Inspect">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <style>
   :root {
@@ -55,13 +57,8 @@
     align-items: center;
     justify-content: space-between;
   }
-  .header-logo {
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--gold);
-  }
+  .header-logo { line-height: 0; }
+  .header-logo img { display: block; height: 22px; width: auto; max-width: 62vw; }
   .header { flex-wrap: wrap; row-gap: 6px; }
   /* The address gets its own full-width line under the logo and Recordings,
      so "14/37 Engler Street, Mount Lawley" isn't cut to "14/37 Engler Street, …". */
@@ -94,7 +91,7 @@
   .setup-hero h1 span { color: var(--gold); }
   .setup-hero p {
     font-size: 14px;
-    color: rgba(255,255,255,0.55);
+    color: rgba(255,255,255,0.92);
     line-height: 1.5;
   }
 
@@ -188,12 +185,22 @@
     user-select: none;
     line-height: 1.3;
   }
-  .room-toggle.selected,
   .engine-toggle.selected {
     background: var(--surface);
     color: var(--white);
     font-weight: 600;
   }
+  /* Rooms: selected reads at a glance in sunlight — brand yellow and a tick.
+     Unselected stays plain, struck through lightly so it reads as "not in". */
+  .room-toggle { border: 1.5px solid transparent; }
+  .room-toggle.selected {
+    background: var(--gold);
+    color: var(--black);
+    font-weight: 700;
+    border-color: var(--gold-dark);
+  }
+  .room-toggle.selected::before { content: '✓ '; }
+  .room-toggle:not(.selected) { color: #6A6A6A; }
 
   .btn-primary {
     background: var(--gold);
@@ -221,7 +228,7 @@
     padding: 6px 12px;
     font-size: 12px;
     font-weight: 600;
-    color: var(--gold-dark);
+    color: #7A6300;   /* was the light brand yellow: unreadable on white in sunlight */
     cursor: pointer;
     margin-top: 4px;
   }
@@ -961,7 +968,7 @@
   }
   /* On the room screen the bottom of the screen belongs to the record dock
      (61px nav bar + ~130px dock). The toast goes above it, never over it. */
-  body.on-inspection .toast { bottom: calc(61px + 142px + env(safe-area-inset-bottom)); }
+  body.on-inspection .toast { bottom: calc(128px + env(safe-area-inset-bottom)); }
   .toast.show {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
@@ -1362,24 +1369,617 @@
     font-weight: 700;
     color: var(--black);
   }
+  /* ═══ ROUND 10 SKIN ══════════════════════════════════════════════════════
+     The approved "PA Inspect reskin": frosted glass on a still grey wash,
+     yellow kept for the main button, the record button, progress, words to
+     check and status dots. Follows the phone: light and dark both designed.
+     Blur only on floating things (top bar, record dock, toast, sheet); cards
+     get the glass fill without blur so scrolling stays light. */
+  :root {
+    color-scheme: light dark;
+    --bg: #ECECEA; --ink: #2B2D31; --ink-2: #55575B; --line: rgba(43,45,49,0.09); --line-2: rgba(43,45,49,0.16);
+    --glass: linear-gradient(145deg, rgba(255,255,255,0.85), rgba(255,255,255,0.48));
+    --glass-edge: rgba(255,255,255,0.95); --glass-hi: #FFFFFF;
+    --glass-shadow: 0 18px 40px rgba(43,45,49,0.12); --glass-shadow-sm: 0 6px 18px rgba(43,45,49,0.08);
+    --bar: rgba(250,250,248,0.72); --bar-solid: #F7F7F5;
+    --field: rgba(255,255,255,0.7); --field-shadow: inset 0 1px 2px rgba(43,45,49,0.08);
+    --tint: rgba(43,45,49,0.05);
+    --sel: linear-gradient(180deg, #46484D, #2B2D31); --sel-ink: #FFFFFF;
+    --yellow: linear-gradient(180deg, #FFEB55 0%, #FFDE00 55%, #F0CF00 100%); --on-yellow: #141518;
+    --check-bg: rgba(255,222,0,0.16);
+    --ok: #2D7A4F; --ok-bg: rgba(45,122,79,0.11);
+    --bad: #B83325; --bad-bg: rgba(192,57,43,0.09);
+    --warn-ink: #6B5600; --warn-bg: rgba(255,222,0,0.20);
+    --fade-from: rgba(43,45,49,0.28);
+    --wash: radial-gradient(120% 55% at 10% -5%, rgba(137,139,143,0.18), transparent 62%),
+            radial-gradient(80% 45% at 105% 0%, rgba(255,222,0,0.06), transparent 60%),
+            radial-gradient(90% 60% at 50% 110%, rgba(137,139,143,0.14), transparent 65%);
+    /* the round 1 to 9 names, mapped onto the new tokens */
+    --white: rgba(255,255,255,0.78); --light: var(--tint); --black: var(--ink); --dark: var(--ink); --mid: var(--ink-2);
+    --border: var(--line-2); --surface: #2B2D31; --surface-dark: #1E1F22;
+    --green: var(--ok); --green-light: var(--ok-bg); --red: var(--bad); --red-light: var(--bad-bg);
+    --radius: 22px; --radius-sm: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0F1012; --ink: #F3F3F1; --ink-2: #B4B6BA; --line: rgba(255,255,255,0.09); --line-2: rgba(255,255,255,0.16);
+      --glass: linear-gradient(145deg, rgba(255,255,255,0.11), rgba(255,255,255,0.03));
+      --glass-edge: rgba(255,255,255,0.13); --glass-hi: rgba(255,255,255,0.2);
+      --glass-shadow: 0 24px 48px rgba(0,0,0,0.45); --glass-shadow-sm: 0 8px 20px rgba(0,0,0,0.35);
+      --bar: rgba(30,31,34,0.62); --bar-solid: #1C1D20;
+      --field: rgba(0,0,0,0.3); --field-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+      --tint: rgba(255,255,255,0.06);
+      --sel: linear-gradient(180deg, #FFFFFF, #E2E2E0); --sel-ink: #141518;
+      --ok: #7BD4A0; --ok-bg: rgba(123,212,160,0.12);
+      --bad: #FF8A7A; --bad-bg: rgba(255,122,107,0.13);
+      --warn-ink: #FFE45C; --warn-bg: rgba(255,222,0,0.12);
+      --fade-from: rgba(243,243,241,0.3);
+      --wash: radial-gradient(120% 55% at 10% -5%, rgba(137,139,143,0.2), transparent 62%),
+              radial-gradient(90% 60% at 50% 110%, rgba(137,139,143,0.12), transparent 65%);
+      --white: rgba(255,255,255,0.05);
+    }
+  }
+
+  html { background: var(--bg); }
+  body { background: transparent; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  body::before { content: ''; position: fixed; inset: 0; z-index: -1; background: var(--wash); pointer-events: none; }
+  /* The strip under the iPhone status bar, so text never scrolls up behind the clock. */
+  body::after { content: ''; position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top); background: var(--bg); z-index: 150; pointer-events: none; }
+
+  /* shared glass recipes */
+  .sync-card, .setup-form, .admin-settings, .area-status-card, details.review-room.fold, .recording-card,
+  .mandatory-section, .nsw-note, .checklist, .resume-banner {
+    background: var(--glass); border: 1px solid var(--glass-edge);
+    box-shadow: var(--glass-shadow-sm), inset 0 1px 0 var(--glass-hi);
+  }
+  .header, .rec-dock, .toast, .sheet {
+    background: var(--bar);
+    -webkit-backdrop-filter: blur(24px) saturate(170%); backdrop-filter: blur(24px) saturate(170%);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .header, .rec-dock, .toast, .sheet { background: var(--bar-solid); }
+  }
+
+  /* TOP BAR: a floating pill */
+  .header {
+    position: sticky; top: calc(8px + env(safe-area-inset-top)); z-index: 160;
+    margin: calc(8px + env(safe-area-inset-top)) 12px 0; padding: 7px 7px 7px 7px;
+    border-radius: 24px; row-gap: 2px;
+  }
+  .header-logo { display: flex; align-items: center; gap: 10px; line-height: 1; }
+  .header-logo img { height: 34px; width: 34px; border-radius: 10px; max-width: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.18), inset 0 0 0 1px rgba(255,255,255,0.08); }
+  .brand-word { font-size: 11px; font-weight: 600; letter-spacing: 0.22em; color: var(--ink); white-space: nowrap; }
+  .recordings-link {
+    background: linear-gradient(180deg, #3A3C41, #2B2D31); color: #FFFFFF;
+    border: 1px solid rgba(255,255,255,0.10); border-radius: 999px;
+    padding: 9px 14px; font-size: 13px; font-weight: 600; min-height: 36px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.12);
+  }
+  .rec-badge { background: #FFDE00; color: var(--on-yellow); }
+  .header-title { color: var(--ink-2); font-size: 13px; font-weight: 600; padding: 2px 8px 3px; }
+  .header-title:empty { display: none; }
+
+  /* headings: big, tight, first word fades in */
+  .setup-hero { background: none; color: var(--ink); padding: 22px 20px 6px; }
+  .eyebrow, .tag {
+    display: inline-block; font-size: 12px; font-weight: 500; color: var(--ink-2);
+    border: 1px solid var(--line-2); border-radius: 999px; padding: 4px 11px; margin-bottom: 12px;
+  }
+  .setup-hero h1, .review-header h2, .room-title {
+    font-size: 40px; font-weight: 600; letter-spacing: -0.035em; line-height: 1.05; color: var(--ink); margin-bottom: 10px;
+  }
+  .setup-hero h1 span { color: inherit; }
+  .fade {
+    background: linear-gradient(90deg, var(--fade-from), var(--ink) 92%);
+    -webkit-background-clip: text; background-clip: text; color: transparent !important;
+  }
+  .setup-hero p { color: var(--ink-2); font-size: 15px; line-height: 1.5; }
+  .review-header { background: none; color: var(--ink); padding: 22px 20px 4px; }
+  .review-header p { color: var(--ink-2); font-size: 14px; }
+
+  /* Start screen */
+  .sync-card {
+    display: flex; align-items: center; gap: 12px; width: calc(100% - 32px); margin: 14px 16px 0;
+    padding: 14px 14px 14px 16px; border-radius: 22px; text-align: left; font: inherit; color: var(--ink); cursor: pointer;
+  }
+  .sync-dot { width: 9px; height: 9px; border-radius: 50%; background: #FFDE00; flex: 0 0 auto;
+    box-shadow: 0 0 0 4px rgba(255,222,0,0.18); }
+  .sync-words { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .sync-words b { font-size: 15px; font-weight: 600; }
+  .sync-words span { font-size: 13px; color: var(--ink-2); line-height: 1.4; }
+  .sync-go { font-size: 22px; color: var(--ink-2); }
+  .safari-banner { margin: 14px 16px 0; border-radius: 16px; border: none; background: var(--bad-bg); color: var(--bad); }
+  .resume-banner { margin: 14px 16px 0; border-radius: 22px; padding: 16px; }
+  .resume-banner .rb-title { color: var(--ink); font-size: 15px; font-weight: 600; }
+  .resume-banner .rb-meta { color: var(--ink-2); }
+  .rb-btn { border-radius: 999px; padding: 12px; font-size: 14px; }
+  .rb-btn.resume { background: var(--sel); color: var(--sel-ink); }
+  .rb-btn.discard { border: 1px solid var(--line-2); color: var(--ink); background: transparent; }
+
+  .setup-form { margin: 16px; padding: 18px 16px; border-radius: 26px; gap: 18px; }
+  .field-group label, .checklist-title, .review-room-title, .review-split-title, .mandatory-title, .fix-label {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2);
+  }
+  .field-group input, .field-group select, .mandatory-field input, .inventory-field textarea, .serial-field textarea,
+  textarea.transcription, #fixText {
+    background: var(--field); border: 1px solid var(--line); box-shadow: var(--field-shadow);
+    border-radius: 14px; color: var(--ink); font-size: 16px;
+  }
+  .field-group select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23898B8F' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
+  }
+  .field-group input::placeholder, textarea::placeholder { color: var(--ink-2); opacity: 0.7; }
+  .field-group input:focus, .field-group select:focus, textarea:focus, .mandatory-field input:focus {
+    border-color: var(--line-2); box-shadow: var(--field-shadow), 0 0 0 3px rgba(255,222,0,0.35); outline: none;
+  }
+
+  /* rooms: glossy checkboxes. Selected is charcoal (light) or white (dark), never yellow. */
+  .rooms-select { background: none; border: none; padding: 0; gap: 8px; }
+  .room-toggle {
+    display: flex; align-items: center; gap: 10px; text-align: left;
+    padding: 11px 12px; border-radius: 14px; font-size: 14px; font-weight: 500;
+    background: var(--tint); border: 1px solid var(--line); color: var(--ink-2);
+  }
+  .room-toggle:not(.selected) { color: var(--ink-2); }
+  .room-toggle::before {
+    content: ''; flex: 0 0 auto; width: 22px; height: 22px; border-radius: 7px;
+    background: var(--field); border: 1px solid var(--line-2); box-shadow: var(--field-shadow);
+    display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; line-height: 1;
+  }
+  .room-toggle.selected { background: var(--tint); color: var(--ink); font-weight: 600; border-color: var(--line); }
+  .room-toggle.selected::before {
+    content: '✓'; background: var(--sel); color: var(--sel-ink); border-color: transparent;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.25);
+  }
+  .state-badge { background: transparent; border: 1px dashed var(--line-2); color: var(--ink); border-radius: 999px; padding: 8px 14px; font-weight: 500; }
+  #nswBadge { border-style: solid; color: var(--warn-ink); background: var(--warn-bg); border-color: transparent; }
+
+  /* admin: FAQ card with a round + */
+  .admin-settings { border-radius: 18px; }
+  .admin-settings > summary { display: flex; align-items: center; justify-content: space-between; color: var(--ink); font-size: 14px; padding: 12px 12px 12px 16px; }
+  .admin-settings > summary::before { content: none; }
+  .admin-settings > summary::after {
+    content: '+'; width: 28px; height: 28px; border-radius: 50%; background: var(--sel); color: var(--sel-ink);
+    display: inline-flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 500; line-height: 1;
+  }
+  .admin-settings[open] > summary::after { content: '−'; }
+  .admin-settings[open] > summary { border-bottom-color: var(--line); }
+  .engine-select { background: var(--tint); border: 1px solid var(--line); border-radius: 14px; }
+  .engine-toggle { border-radius: 10px; color: var(--ink-2); }
+  .engine-toggle.selected { background: var(--sel); color: var(--sel-ink); }
+
+  /* the main button on each screen */
+  .btn-primary, .btn-export, .rec-retry-btn {
+    background: var(--yellow); color: var(--on-yellow); border: none; border-radius: 999px; font-weight: 600;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.55);
+  }
+  .btn-primary:active, .btn-export:active, .rec-retry-btn:active { background: #F0CF00; transform: scale(0.99); }
+  .btn-primary:disabled { background: var(--tint); color: var(--ink-2); box-shadow: none; }
+  .btn-export.secondary, .fix-keep {
+    background: var(--glass); color: var(--ink); border: 1px solid var(--glass-edge); font-weight: 600;
+    box-shadow: var(--glass-shadow-sm), inset 0 1px 0 var(--glass-hi);
+  }
+  .btn-export.locked { background: var(--tint); color: var(--ink-2); box-shadow: none; }
+  .btn-link { color: var(--ink-2); }
+  .export-note { color: var(--ink-2); }
+
+  /* INSPECTION */
+  .progress-bar-wrap { margin: 12px 18px 0; height: 3px; border-radius: 3px; background: var(--line-2); overflow: hidden; }
+  .progress-bar-fill { background: #FFDE00; height: 3px; border-radius: 3px; }
+  .cloud-status, .warn-banner, .back-banner { margin: 10px 16px 0; border-radius: 14px; border: none; }
+  .cloud-status { background: var(--tint); color: var(--ink-2); }
+  .cloud-status.offline { background: var(--tint); color: var(--ink-2); }
+  .warn-banner { background: var(--bad-bg); color: var(--bad); }
+  .back-banner { background: var(--ok-bg); color: var(--ok); }
+  .back-banner button { color: var(--ok); }
+  .room-nav { background: none; border: none; padding: 12px 16px 2px; gap: 8px; }
+  .room-tab {
+    padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    background: var(--tint); color: var(--ink-2); font-size: 13px; font-weight: 600;
+  }
+  .room-tab.complete { color: var(--ink); }
+  .room-tab.active { background: var(--sel); color: var(--sel-ink); border-color: transparent; }
+  .room-header { padding: 18px 20px 0; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+  .room-title {
+    margin-bottom: 0; overflow-wrap: break-word; min-width: 0; flex: 1 1 auto; font-size: clamp(30px, 9.5vw, 40px);
+    background: linear-gradient(90deg, var(--fade-from), var(--ink) 60%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .room-move-btn, .room-edit-btn, .checklist-toggle, .btn-clear, .area-skip, .rec-mini-btn, .room-tools button, .serial-photo-btn {
+    background: var(--tint); border: 1px solid var(--line); color: var(--ink); border-radius: 999px; font-weight: 600;
+  }
+  .room-move-btn { width: 34px; height: 34px; }
+  .room-edit-btn { padding: 8px 13px; }
+  .room-tools button.danger { color: var(--bad); border-color: var(--line); }
+  .room-state-chip { border-radius: 999px; border: none; background: var(--tint); color: var(--ink-2); padding: 5px 11px; }
+  .room-state-chip.working { background: var(--tint); color: var(--ink); }
+  .room-state-chip.ready { background: var(--ok-bg); color: var(--ok); }
+  .room-state-chip.bad { background: var(--bad-bg); color: var(--bad); }
+  .room-block { padding: 14px 16px; }
+  .checklist { border-radius: 18px; padding: 8px; }
+  .checklist-item { background: var(--tint); border: 1px solid var(--line); color: var(--ink); border-radius: 10px; }
+  .checklist-item.done { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
+  .field-note { color: var(--ink-2); }
+  textarea.room-dictate {
+    background: var(--glass); border: 1px solid var(--glass-edge); border-radius: 22px; padding: 16px;
+    box-shadow: var(--glass-shadow-sm), inset 0 1px 0 var(--glass-hi); color: var(--ink); font-size: 16px; line-height: 1.6;
+  }
+  textarea.room-dictate.flagged { border-color: var(--bad); }
+  .live-preview { background: var(--tint); border: 1px dashed var(--line-2); border-radius: 16px; color: var(--ink-2); }
+  .live-preview-label { color: var(--ink-2); letter-spacing: 0.08em; text-transform: uppercase; font-size: 11px; }
+  .next-sub { background: var(--tint); border: 1px solid var(--line); border-radius: 16px; color: var(--ink); }
+  .next-sub-btn { background: var(--sel); color: var(--sel-ink); border-radius: 999px; }
+  .forbidden-warning { background: var(--bad-bg); color: var(--bad); border: none; border-radius: 12px; }
+  .inventory-field label, .serial-field label, .room-field-label { color: var(--ink); }
+  .inventory-field label span, .serial-field label span, .serial-photo-status { color: var(--ink-2); }
+  .mandatory-section { margin: 14px 16px 6px; border-radius: 22px; border-left: 1px solid var(--glass-edge); }
+  .mandatory-title::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #FFDE00; margin-right: 8px; vertical-align: 1px; }
+  .mandatory-field label { color: var(--ink); }
+  .nsw-note { margin: 12px 16px 6px; border-radius: 16px; border-left: 1px solid var(--glass-edge); color: var(--ink); }
+
+  /* RECORD DOCK: a floating glass dock, glossy tiles either side of the record button */
+  .rec-dock {
+    left: 10px; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom));
+    border-radius: 30px; padding: 10px 12px 9px;
+  }
+  .dock-nav, .rec-dock .btn-nav {
+    background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02)), var(--tint);
+    border: 1px solid var(--line-2); color: var(--ink); border-radius: 18px; font-weight: 600; min-height: 50px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.10), inset 0 1px 0 var(--glass-hi);
+  }
+  .rec-dock .btn-nav.primary, .fab-done {
+    background: var(--sel); color: var(--sel-ink); border: 1px solid transparent; border-radius: 18px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.18);
+  }
+  .fab-done { min-height: 50px; justify-content: center; align-items: center; }
+  /* Record: charcoal/white with a yellow ring when idle, solid yellow while
+     recording with a slow breathing ring. Under it the words say which. */
+  .fab-record {
+    background: var(--sel); color: var(--sel-ink); border: 4px solid #FFDE00;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.25);
+  }
+  .fab-record.recording { background: var(--yellow); color: var(--on-yellow); border-color: rgba(255,222,0,0.45); }
+  .fab-record.recording::after { border: 3px solid #FFDE00; animation: recBreathe 2.8s cubic-bezier(.45,0,.55,1) infinite; }
+  @keyframes recBreathe {
+    0%   { transform: scale(1);    opacity: 0.65; }
+    50%  { transform: scale(1.22); opacity: 0; }
+    100% { transform: scale(1);    opacity: 0; }
+  }
+  .fab-record.paused { background: var(--sel); color: var(--sel-ink); border-color: rgba(255,222,0,0.55); }
+  .fab-record.captured { background: var(--ok); color: #fff; border-color: transparent; }
+  .fab-record.error { background: var(--bad); color: #fff; border-color: transparent; }
+  .rec-status { color: var(--ink-2); font-weight: 600; margin-top: 4px; }
+  .rec-status.show { color: var(--bad); }
+  .rec-status.paused { color: var(--warn-ink); }
+  .rec-status.mic-problem { color: #fff; background: var(--bad); }
+  .room-content { padding-bottom: 170px; }
+  .toast {
+    color: var(--ink); border-radius: 999px; padding: 11px 18px; font-weight: 600;
+    bottom: calc(24px + env(safe-area-inset-bottom));
+  }
+  body.on-inspection .toast { bottom: calc(146px + env(safe-area-inset-bottom)); }
+
+  /* REVIEW */
+  .area-status { margin: 14px 16px 0; }
+  .area-status-card { border-radius: 22px; }
+  .area-status-head { color: var(--ink); border-bottom-color: var(--line); padding: 14px 16px; font-size: 15px; font-weight: 600; }
+  .area-status-head span { color: var(--ink-2); }
+  .area-row { border-bottom-color: var(--line); padding: 10px 16px; }
+  .area-name { color: var(--ink); }
+  .area-chip { border-radius: 999px; }
+  .area-chip.ok { background: var(--ok-bg); color: var(--ok); }
+  .area-chip.wait { background: var(--tint); color: var(--ink); }
+  .area-chip.bad { background: var(--bad-bg); color: var(--bad); }
+  .area-chip.none { background: var(--tint); color: var(--ink-2); }
+  .area-row.cols .area-chip { background: none; color: var(--ink-2); }
+  .review-body { padding: 16px; }
+  .review-hint { background: var(--tint); border: none; border-radius: 16px; color: var(--ink-2); padding: 12px 14px; }
+  .warning-banner { background: var(--bad-bg); color: var(--bad); border: none; border-radius: 16px; }
+  .review-room-title { border-bottom-color: var(--line); }
+  details.review-room.fold { border-radius: 20px; padding: 0 14px; margin-bottom: 10px; }
+  details.review-room.fold > summary { align-items: center; color: var(--ink); font-size: 14px; letter-spacing: 0; text-transform: none; font-weight: 600; }
+  details.review-room.fold > summary::after {
+    content: '+'; flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%; background: var(--tint); color: var(--ink);
+    display: inline-flex; align-items: center; justify-content: center; font-size: 17px; line-height: 1; border: 1px solid var(--line);
+  }
+  details.review-room.fold[open] > summary::after { content: '−'; background: var(--sel); color: var(--sel-ink); border-color: transparent; }
+  details.review-room.fold[open] > summary { border-bottom-color: var(--line); }
+  .review-room-sum { color: var(--ink-2); }
+  .review-item { border-bottom-color: var(--line); }
+  .review-item-name { color: var(--ink-2); }
+  .review-item-value { color: var(--ink); }
+  .review-item-value.empty { color: var(--ink-2); opacity: 0.6; }
+  .review-item-value.flagged { color: var(--bad); }
+  .review-split { background: var(--tint); border: none; border-radius: 14px; }
+  .review-split-row, .review-split-row .review-split-name { color: var(--ink); }
+  .review-check { background: var(--tint); border: 1px solid rgba(255,222,0,0.45); border-radius: 16px; padding: 12px; }
+  .review-check-title { color: var(--warn-ink); }
+  .review-check-row { color: var(--ink); display: flex; flex-direction: column; gap: 8px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .review-check-title + .review-check-row { border-top: none; }
+  .review-check-row span { color: inherit; }
+  .review-check-row .rc-why { color: var(--ink-2); display: block; font-size: 12px; margin-top: 3px; }
+  .rc-text b { color: var(--ink-2); font-weight: 600; margin-right: 2px; }
+  .review-check-row:not(.resolved) .rc-q {
+    background: var(--check-bg); text-decoration: underline; text-decoration-color: #FFDE00;
+    text-decoration-thickness: 2px; text-underline-offset: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  }
+  .rc-fix {
+    align-self: flex-start; background: var(--sel); color: var(--sel-ink); border: none; border-radius: 999px;
+    padding: 9px 16px; font-size: 13px; font-weight: 600; cursor: pointer; min-height: 36px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.16);
+  }
+  .rc-done { color: var(--ok); font-size: 13px; font-weight: 600; }
+  .review-check-row.resolved .rc-text { color: var(--ink-2); }
+  .export-actions { padding: 4px 16px 36px; gap: 12px; }
+  .finish-status { border-radius: 16px; padding: 12px 14px; }
+  .finish-status.waiting { background: var(--bad-bg); color: var(--bad); border: none; }
+  .finish-status.sending { background: var(--tint); color: var(--ink); border: none; font-weight: 600; font-size: 13px; line-height: 1.45; }
+  .finish-status.sending > strong::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #FFDE00; margin-right: 8px; vertical-align: 1px; box-shadow: 0 0 0 3px rgba(255,222,0,0.2); }
+  .finish-status.sending div { color: var(--ink-2); }
+  .finish-status.sending div { font-weight: 500; margin-top: 4px; }
+  .finish-status.ready { background: var(--ok-bg); color: var(--ok); }
+
+  /* RECORDINGS */
+  .recording-card { border-radius: 20px; }
+  .rec-card-room { color: var(--ink); }
+  .rec-card-meta, .rec-transcript summary { color: var(--ink-2); }
+  .status-chip { border-radius: 999px; border: none; background: var(--tint); color: var(--ink-2); }
+  .status-chip.status-done { background: var(--ok-bg); color: var(--ok); }
+  .status-chip.status-pending, .status-chip.status-uploading { background: var(--tint); color: var(--ink); }
+  .status-chip.status-recording, .status-chip.status-failed { background: var(--bad-bg); color: var(--bad); }
+  .rec-transcript { background: var(--tint); border: none; border-radius: 12px; color: var(--ink); }
+  .rec-backup.ok { color: var(--ok); }
+  .rec-backup.pending { color: var(--ink-2); }
+
+  /* FIX A WORD: bottom sheet */
+  .sheet-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.35); opacity: 0; pointer-events: none; z-index: 290; transition: opacity 0.4s ease; }
+  .sheet-backdrop.open { opacity: 1; pointer-events: auto; }
+  .sheet {
+    position: fixed; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 300;
+    border-radius: 28px; padding: 8px 16px 14px; max-height: 86vh; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 10px;
+    transform: translateY(calc(100% + 40px)); transition: transform 0.55s cubic-bezier(.16,1,.3,1); visibility: hidden;
+  }
+  .sheet.open { transform: translateY(0); visibility: visible; }
+  .sheet-grab { width: 38px; height: 5px; border-radius: 3px; background: var(--line-2); margin: 2px auto 2px; }
+  .sheet-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .sheet-title { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; color: var(--ink); }
+  .sheet-sub { font-size: 13px; color: var(--ink-2); margin-top: 2px; }
+  .sheet-close { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--tint); color: var(--ink); font-size: 20px; line-height: 1; cursor: pointer; }
+  .fix-quote { background: var(--tint); border-radius: 16px; padding: 14px; font-size: 16px; line-height: 1.5; color: var(--ink);
+    text-decoration: underline; text-decoration-color: #FFDE00; text-decoration-thickness: 2px; text-underline-offset: 4px; }
+  .fix-heard { font-size: 13px; color: var(--ink-2); line-height: 1.4; }
+  .fix-play { align-self: flex-start; background: var(--tint); border: 1px solid var(--line); color: var(--ink); border-radius: 999px; padding: 10px 16px; font-size: 14px; font-weight: 600; cursor: pointer; min-height: 44px; }
+  .fix-play:disabled { opacity: 0.6; }
+  .fix-label { margin-top: 4px; }
+  #fixText { width: 100%; padding: 12px 14px; font-family: inherit; line-height: 1.5; resize: vertical; }
+  .sheet .btn-primary, .sheet .btn-export { padding: 15px; font-size: 16px; width: 100%; cursor: pointer; }
+  body.sheet-open { overflow: hidden; }
+
+  /* Movement: slow and smooth, and none at all with Reduce Motion on. */
+  /* Only the blocks inside a screen rise. A transform on the screen itself
+     would carry the fixed record dock along with it while it moved. */
+  .screen.active > *:not(.rec-dock) { animation: screenRise 0.6s cubic-bezier(.16,1,.3,1) both; }
+  @keyframes screenRise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  .progress-bar-fill { transition: width 0.6s cubic-bezier(.45,0,.55,1); }
+  @media (prefers-reduced-motion: reduce) {
+    .screen.active > *, .fab-record.recording::after { animation: none !important; }
+    .sheet, .sheet-backdrop, .progress-bar-fill, .toast { transition: none !important; }
+  }
+  /* ═══ ROUND 10 POLISH: line icons, more air, less text ═══ */
+  .ico { width: 1.2em; height: 1.2em; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8;
+    stroke-linecap: round; stroke-linejoin: round; vertical-align: -0.22em; }
+  .ico.solid { fill: currentColor; stroke: none; }
+  .ico-chevD { transition: transform 0.3s cubic-bezier(.16,1,.3,1); }
+  .ico-chevD.up, details[open] > summary .ico-chevD { transform: rotate(180deg); }
+  .btn-primary, .btn-export, .btn-nav, .dock-nav, .fab-done, .rec-retry-btn, .rec-mini-btn, .room-edit-btn, .room-tools button,
+  .checklist-toggle, .serial-photo-btn, .state-badge, .fix-play, .btn-link, .pill-back, .safari-banner, .nsw-note, .rc-done, .rec-backup {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-primary, .btn-export { width: 100%; min-height: 54px; font-size: 16px; }
+  .fab-icon { display: flex; }
+  .fab-record .ico { width: 30px; height: 30px; stroke-width: 1.9; }
+  .fab-record.recording .ico, .fab-record.paused .ico { width: 26px; height: 26px; }
+  .header-title:empty { display: none; }
+  body:has(#screenSetup.active) .header-title, body:has(#screenReview.active) .header-title,
+  body:has(#screenRecordings.active) .header-title { display: none; }
+
+  /* toast: a quiet pill with a small icon */
+  .toast { display: flex; align-items: center; gap: 8px; text-align: left; }
+  .toast .ico { width: 18px; height: 18px; }
+  .toast-check .ico { color: var(--ok); }
+  .toast-alert .ico { color: var(--bad); }
+
+  /* Start */
+  .setup-hero { padding: 26px 22px 8px; }
+  .setup-hero p { max-width: 32ch; }
+  .setup-form { margin: 18px 16px 24px; padding: 22px 18px; gap: 22px; }
+  .safari-banner { gap: 10px; align-items: flex-start; justify-content: flex-start; padding: 14px 16px; line-height: 1.45; }
+  .safari-banner .ico { margin-top: 1px; }
+  .state-badge .ico { width: 16px; height: 16px; }
+
+  /* Room screen: more air between blocks, fewer things at once */
+  .room-header { padding: 22px 22px 0; }
+  .room-header-actions { gap: 8px; }
+  .room-edit-btn { padding: 9px 14px; font-size: 13px; }
+  .room-edit-btn .ico { width: 16px; height: 16px; }
+  .room-state-top { padding: 12px 22px 0; gap: 8px; }
+  .room-state-chip { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 12px; padding: 6px 11px; }
+  .room-state-chip .ico { width: 14px; height: 14px; stroke-width: 2.2; }
+  .chip-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #FFDE00; flex: 0 0 auto; box-shadow: 0 0 0 3px rgba(255,222,0,0.18); }
+  .room-state-chip.live .chip-dot { background: var(--bad); box-shadow: 0 0 0 3px var(--bad-bg); }
+  .room-state-chip.live { color: var(--bad); background: var(--bad-bg); }
+  .room-tools { padding: 14px 22px 0; gap: 8px; }
+  .room-tools button { padding: 9px 13px; font-size: 13px; }
+  .room-tools button .ico { width: 16px; height: 16px; }
+  .room-tools button:disabled { opacity: 0.35; }
+  .room-block { padding: 18px 18px 0; }
+  .checklist-toggle { padding: 8px 14px; font-size: 13px; margin-bottom: 12px; }
+  .checklist-toggle .ico { width: 16px; height: 16px; }
+  .next-sub { padding: 12px 14px; margin-bottom: 14px; display: none; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; }
+  .next-sub.show { display: flex; }
+  .next-sub-btn { padding: 8px 14px; font-size: 13px; flex: 0 0 auto; }
+  .field-note.one-line { font-size: 13px; line-height: 1.45; padding: 0 2px 12px; }
+  textarea.room-dictate { min-height: 230px; }
+  .more-details { margin-top: 18px; border-radius: 18px; background: var(--tint); border: 1px solid var(--line); }
+  .more-details > summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px; font-size: 14px; font-weight: 600; color: var(--ink); }
+  .more-details > summary::-webkit-details-marker { display: none; }
+  .more-details > summary .ico { width: 18px; height: 18px; color: var(--ink-2); }
+  .more-details .inventory-field, .more-details .serial-field { margin: 0; padding: 0 16px 16px; }
+  .more-details .inventory-field label span, .more-details .serial-field label span { display: block; font-size: 12px; font-weight: 500; margin-top: 2px; }
+  .serial-photo-btn { padding: 9px 14px; font-size: 13px; }
+  .serial-photo-btn .ico { width: 17px; height: 17px; }
+  .mandatory-section { padding: 18px; }
+  .mandatory-field { margin-bottom: 14px; }
+  .nsw-note { justify-content: flex-start; align-items: flex-start; gap: 10px; padding: 14px 16px; line-height: 1.45; font-size: 13px; }
+  .nsw-note .ico { color: var(--warn-ink); margin-top: 1px; }
+  .cloud-status { display: none; align-items: center; gap: 8px; padding: 9px 14px; font-size: 13px; font-weight: 600; }
+  .cloud-status.show { display: flex; }
+  .cloud-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #FFDE00; flex: 0 0 auto; }
+  .cloud-status.offline::before { background: var(--ink-2); }
+  .warn-banner { padding: 10px 14px; font-weight: 600; }
+  .warn-line { display: flex; gap: 8px; align-items: flex-start; line-height: 1.4; }
+  .warn-line + .warn-line { margin-top: 6px; }
+  .warn-line .ico { width: 16px; height: 16px; margin-top: 1px; }
+  .back-banner { padding: 12px 44px 12px 16px; font-weight: 600; }
+  .room-tab { display: inline-flex; align-items: center; gap: 6px; }
+  .tab-mark { display: inline-flex; }
+  .tab-mark .ico { width: 14px; height: 14px; stroke-width: 2.4; }
+  .tab-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-2); opacity: 0.6; }
+  .tab-dot.wait { background: #FFDE00; opacity: 1; }
+  .tab-dot.bad { background: var(--bad); opacity: 1; }
+  .room-tab.active .tab-dot { box-shadow: 0 0 0 2px rgba(0,0,0,0.12); }
+  .dock-nav .ico, .fab-done .ico { width: 18px; height: 18px; }
+  .dock-nav { gap: 4px; }
+
+  /* REVIEW: numbers, one card if needed, one row per room */
+  .review-header { padding: 18px 22px 6px; }
+  .pill-back { background: var(--tint); border: 1px solid var(--line); color: var(--ink); border-radius: 999px;
+    padding: 7px 14px 7px 9px; font-size: 13px; font-weight: 600; margin: 0 0 16px; cursor: pointer; gap: 4px; }
+  .pill-back .ico { width: 17px; height: 17px; }
+  .review-header .eyebrow { display: table; }
+  .review-header h2 { margin-bottom: 6px; }
+  .review-header p { font-size: 15px; }
+  .area-status { margin: 18px 16px 0; }
+  .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .stat { background: var(--glass); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow-sm), inset 0 1px 0 var(--glass-hi);
+    border-radius: 20px; padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .stat span { font-size: 12px; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
+  .stat b { font-size: 30px; font-weight: 600; letter-spacing: -0.03em; line-height: 1; color: var(--ink); }
+  .stat.attn span::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #FFDE00; margin-right: 6px; vertical-align: 1px; }
+  .review-body { padding: 22px 16px 8px; }
+  .attn-card { background: var(--bad-bg); border-radius: 20px; padding: 16px; margin-bottom: 26px; }
+  .attn-title { font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 10px; }
+  .attn-row { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.45; color: var(--ink); }
+  .attn-row + .attn-row { margin-top: 8px; }
+  .attn-row .ico { color: var(--bad); width: 17px; height: 17px; margin-top: 1px; }
+  .list-label { font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2); margin: 0 6px 10px; }
+  details.review-room.fold, details.review-extra.fold { border-radius: 20px; padding: 0; margin-bottom: 10px; }
+  .room-list { background: var(--glass); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow-sm), inset 0 1px 0 var(--glass-hi);
+    border-radius: 22px; overflow: hidden; }
+  .room-list details.review-room.fold { background: none; border: none; box-shadow: none; border-radius: 0; margin: 0; }
+  .room-list details.review-room.fold + details.review-room.fold { border-top: 1px solid var(--line); }
+  .room-list details.review-room.fold[open] { background: var(--tint); }
+  details.review-extra.fold { background: var(--glass); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow-sm), inset 0 1px 0 var(--glass-hi); margin-top: 18px; }
+  details.review-room.fold > summary, details.review-extra.fold > summary {
+    list-style: none; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 15px 16px; margin: 0; border: none;
+  }
+  details.review-room.fold > summary::after, details.review-extra.fold > summary::after { content: none; display: none; }
+  details.review-room.fold[open] > summary, details.review-extra.fold[open] > summary { border-bottom: 1px solid var(--line); margin: 0; }
+  details.review-extra.fold > summary::-webkit-details-marker { display: none; }
+  .rr-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .rr-name { font-size: 16px; font-weight: 600; color: var(--ink); letter-spacing: -0.01em; }
+  .rr-sub { font-size: 13px; color: var(--ink-2); font-weight: 500; }
+  .rr-sub:empty { display: none; }
+  .rr-state { flex: 0 0 auto; display: flex; }
+  .rr-ic { width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
+  .rr-ic .ico { width: 16px; height: 16px; stroke-width: 2.3; }
+  .rr-ic.ok { background: var(--sel); color: var(--sel-ink); }
+  .rr-ic.bad { background: var(--bad-bg); color: var(--bad); }
+  .rr-ic.attn { background: var(--check-bg); position: relative; }
+  .rr-ic.attn::after { content: ''; width: 9px; height: 9px; border-radius: 50%; background: #FFDE00; }
+  .rr-ic.wait { border: 2px solid var(--line-2); position: relative; }
+  .rr-ic.wait::after { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #FFDE00; }
+  .rr-ic.none { border: 1.5px dashed var(--line-2); }
+  .rr-body { padding: 6px 16px 16px; }
+  .rr-sec { padding: 12px 0 0; }
+  .rr-sec-name { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); margin-bottom: 4px; }
+  .rr-sec-text { font-size: 15px; line-height: 1.55; color: var(--ink); }
+  .rr-empty { font-size: 14px; color: var(--ink-2); padding: 12px 0 0; }
+  .rr-actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 14px; }
+  .rr-actions:empty { display: none; }
+  .area-skip { margin: 0; padding: 9px 14px; font-size: 13px; }
+  .review-check { margin: 10px 0 4px; padding: 14px; border-radius: 16px; background: var(--tint); border: none; }
+  .review-check-title { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); margin-bottom: 4px; }
+  .review-check-row { padding: 12px 0 2px; gap: 10px; }
+  .rc-text { font-size: 15px; line-height: 1.55; color: var(--ink); }
+  .rc-time { display: inline-block; font-size: 12px; font-weight: 600; color: var(--ink-2); background: var(--tint); border-radius: 6px;
+    padding: 1px 6px; margin-right: 6px; font-variant-numeric: tabular-nums; vertical-align: 1px; }
+  .rc-done { justify-content: flex-start; gap: 6px; }
+  .rc-done .ico { width: 15px; height: 15px; stroke-width: 2.3; }
+  .review-check-row.resolved .rc-q { color: var(--ink-2); }
+  .review-item { padding: 10px 0; }
+  .review-item-name { width: 110px; font-size: 13px; }
+  .review-item-value { font-size: 14px; }
+  .export-actions { padding: 18px 16px 40px; gap: 12px; }
+  .finish-status { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; font-weight: 500; line-height: 1.45; padding: 14px 16px; margin: 0 0 2px; }
+  .finish-status:empty { display: none; }
+  .finish-status b { font-weight: 600; }
+  .finish-status .ico { width: 18px; height: 18px; margin-top: 1px; }
+  .finish-status .chip-dot { margin-top: 6px; }
+  .finish-status.sending { color: var(--ink); font-size: 14px; font-weight: 500; }
+  .finish-status.sending > strong::before { content: none; }
+  .btn-link { gap: 8px; text-decoration: none; font-size: 14px; padding: 12px; }
+  .btn-link span { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line-2); }
+  .btn-link .ico { width: 17px; height: 17px; }
+
+  /* Recordings */
+  .review-body#recordingsBody { padding-top: 18px; }
+  .recording-card { padding: 16px; margin-bottom: 12px; }
+  .rec-card-top { margin-bottom: 10px; }
+  .rec-card-room { font-size: 16px; }
+  .rec-card-meta { font-size: 13px; }
+  .status-chip { text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 600; padding: 5px 11px; }
+  .rec-backup { justify-content: flex-start; gap: 6px; font-size: 13px; margin-top: 10px; }
+  .rec-backup .ico { width: 15px; height: 15px; stroke-width: 2.3; }
+  .rec-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .rec-retry-btn { margin-top: 0; padding: 9px 15px; font-size: 13px; background: var(--sel); color: var(--sel-ink);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.16); }
+  .rec-mini-btn { padding: 9px 14px; font-size: 13px; }
+  .rec-retry-btn .ico, .rec-mini-btn .ico { width: 16px; height: 16px; }
+  .recording-card audio { margin-top: 2px; height: 40px; }
+  .fix-play .ico { width: 15px; height: 15px; }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <div class="header-logo">Property Assist</div>
-  <button class="recordings-link" onclick="showRecordings()" aria-label="Recordings">☁︎ Recordings<span class="rec-badge" id="recBadge" style="display:none">0</span></button>
-  <div class="header-title" id="headerTitle">New Inspection</div>
+  <div class="header-logo"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAAWfmNhQlgAABZ+anVtYgAAAB5qdW1kYzJwYQARABCAAACqADibcQNjMnBhAAAAFlhqdW1iAAAAR2p1bWRjMm1hABEAEIAAAKoAOJtxA3VybjpjMnBhOjk0M2FmZWNkLTBjNGEtNDE3Yi1hMDFhLWYyYTI1NjM2Mzk3ZQAAAAOTanVtYgAAAClqdW1kYzJhcwARABCAAACqADibcQNjMnBhLmFzc2VydGlvbnMAAAAAuGp1bWIAAABEanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5pbmdyZWRpZW50LnYzAAAAABhjMnNohbRyDZvTTK4IKYBMmKI9BQAAAGxjYm9yo2lkYzpmb3JtYXRpaW1hZ2UvcG5namluc3RhbmNlSUR4LHhtcDppaWQ6NTdhZDIyMjEtZjMwZi00ZTQxLWJmNjQtYWExOTRiZGMwYzkzbHJlbGF0aW9uc2hpcGhwYXJlbnRPZgAAAeJqdW1iAAAAQWp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuYWN0aW9ucy52MgAAAAAYYzJzaHGp+Q6vGJp9pd4+AtSjR4sAAAGZY2JvcqJnYWN0aW9uc4KiZmFjdGlvbmtjMnBhLm9wZW5lZGpwYXJhbWV0ZXJzoWtpbmdyZWRpZW50c4GiY3VybHgtc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5pbmdyZWRpZW50LnYzZGhhc2hYIKaHlb40EjRZJw7Ylankf01UMIDWaO1KsYjoWhY0upycpGZhY3Rpb254HWNvbS5hbnRocm9waWMuY2xhdWRlLnByb3ZpZGVkanBhcmFtZXRlcnOheB9jb20uYW50aHJvcGljLm9yaWdpbi1jb25maWRlbmNlZ3Vua25vd25rZGVzY3JpcHRpb254ZkNsYXVkZSBwcm92aWRlZCB0aGlzIGZpbGUgYXQgdGhlIHJlcXVlc3Qgb2YgYSB1c2VyIGFuZCBtYXkgaGF2ZSBjcmVhdGVkIG9yIG1vZGlmaWVkIHRoZSBmaWxlIGNvbnRlbnRzLm1zb2Z0d2FyZUFnZW50oWRuYW1lZkNsYXVkZXJhbGxBY3Rpb25zSW5jbHVkZWT1AAAAyGp1bWIAAABAanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5oYXNoLmRhdGEAAAAAGGMyc2iy9tsYYPaJKCBXLwOPrYbZAAAAgGNib3KlY2FsZ2ZzaGEyNTZjcGFkTQAAAAAAAAAAAAAAAABkaGFzaFggTggu2/Y0rzbFSO1ggWC+jP8Wl9dd5Hud1ay43SibPOZkbmFtZW5qdW1iZiBtYW5pZmVzdGpleGNsdXNpb25zgaJlc3RhcnQYIWZsZW5ndGgZFooAAAI+anVtYgAAACdqdW1kYzJjbAARABCAAACqADibcQNjMnBhLmNsYWltLnYyAAAAAg9jYm9ypWNhbGdmc2hhMjU2aXNpZ25hdHVyZXhNc2VsZiNqdW1iZj0vYzJwYS91cm46YzJwYTo5NDNhZmVjZC0wYzRhLTQxN2ItYTAxYS1mMmEyNTYzNjM5N2UvYzJwYS5zaWduYXR1cmVqaW5zdGFuY2VJRHgseG1wOmlpZDo4NmU1YzQyMy02NzA3LTQ0OGUtOTE0NC0yODQ0ZmI5ODkwZDlyY3JlYXRlZF9hc3NlcnRpb25zg6JjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggpoeVvjQSNFknDtiVqeR/TVQwgNZo7UqxiOhaFjS6nJyiY3VybHgqc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5hY3Rpb25zLnYyZGhhc2hYIF/zvdDcN3FtCIPe6v9im7kLocFTmvYdLGJ3OMFIJZOHomN1cmx4KXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaGFzaC5kYXRhZGhhc2hYIPYxNfo/93DSTlMEncNO1F5pMo+MdXJqnDhgcoB7mYa9dGNsYWltX2dlbmVyYXRvcl9pbmZvo2RuYW1lb0FudGhyb3BpYyBGaWxlc2d2ZXJzaW9uZTEuMC4wa3NwZWNWZXJzaW9uZTIuNC4wAAAQOGp1bWIAAAAoanVtZGMyY3MAEQAQgAAAqgA4m3EDYzJwYS5zaWduYXR1cmUAAAAQCGNib3LShFkCEqIBJhghWQIKMIICBjCCAY2gAwIBAgIUQOWgCu7COdC+uIP6BkIFPWdVEwAwCgYIKoZIzj0EAwMwSTEXMBUGA1UEChMOQW50aHJvcGljLCBQQkMxLjAsBgNVBAMTJUFudGhyb3BpYyBDb250ZW50IENyZWRlbnRpYWxzIFJvb3QgQ0EwHhcNMjYwODA3MTg0MzU2WhcNMjgwODA2MTk0MzU2WjBEMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEpMCcGA1UEAxMgQW50aHJvcGljIENsYXVkZSBDb250ZW50IFNpZ25pbmcwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAASYegpry1AYBRTVNL1CpTlbROnY3dey+UrsF9C3phYrATN3ZHf93Mo8RQN0KOUuOn19P4oWNFWe5n2/She9N7eTo1gwVjAOBgNVHQ8BAf8EBAMCB4AwFQYDVR0lBA4wDAYKKwYBBAGD6F4CATAMBgNVHRMBAf8EAjAAMB8GA1UdIwQYMBaAFM5R4gSBTmRbI/jjxM+aPpzB11zCMAoGCCqGSM49BAMDA2cAMGQCMDFzHRSeAXrSy1WOzkbhPZ6Km2wGTmZ/2gK18k8BQGXyqz88Rdrz6CTX9flAnYNVxgIwcF9c3fVhqmJKpi+UhasNUMko69cyX6STPfta3Q8EjyzDjzoyrol46FP6VFHhvUcJoWNwYWRZDZ4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2WECkyUKE0LcGwIjd8QPNytOyGWA6H9bRllhxbGGPuwVaQ1XmsHeZk/VcMvSL0Z++XxFl8gYOtk2DkDz77+glvpHipU7FGAAAEk9JREFUeNrtnXt0VdWdx7+/vc99J/fmhgQIT0kIjrJAgqBWLNo6gtSOnenqsjNjHanTjrVSq66KVau4pK0ian1UbIeu1dZ59DEPW9sR0dVBbX1MhQFFECqQB/JKws29Se7Nzb1n79/8cZKIiiREGO/j9/kva+Vxcs7n7t/37PM7e9PMWU0QhNGi5BQIIpAgAgkikCACCYIIJIhAgggkiECCIAIJIpAgAgkikCCIQIIIJIhAgggkCCKQIAIJIpAgAgkikCCIQIIIJIhAgggkCCKQIAIJIpAgAgmCCCSIQIIIJIhAgiACCSKQIAIJIpAgAgmCCHRCIILWDKBxavbx77/1x2dfe/z7b51a3wdAKSaSM/Re9NhxdXIWBj5MCgCspcUXdN3/7Zb6hqwvx3VTcp/6ZFcq5Wz7U9jTiFk8EoHefyIUW0uaePm1+2/6xr4QWZsBKdgsgkG+4OJUw4Tsxs2VmazWmgFxSAQ68ixoNpYmjss9dHfzkku77GGCgdKwlpQGG3CaGudkF3882dwSbH076A1XzHLmyl4gpUAEa+kTH0s9umpPw4ys6STtMABmqEogD2YoDdNLsWrz6SVdQR+/uqXCWNJayll5C6QUW0vMuO6qA7d/c2/IZ20PaT9bA+UHhfDaq5Hx4/MUhMmSdtjmwS7mnpf+2JyerdsinV0+pcq9nJWvQFqztTS2Ov/AXS1/ddlhmwJcKAcmT7oS/Xl1932T7np48vY/hc9s6q0cb0yaFEEpmF6qm5r7zKJEKuW8sTNS5sm6HAUiglKwlj42t2fN6t2nzeoznaQdALCGdC037wouu7l+w8sxpbh5b3Dds/HJtbmG2VnKwRrSPrZ95Pfx+Yu6GyaWe7IuO4G80YIZX7780He+1VoRtrZ7oGyRgqrBut/Er7u1/u2DAW+IUorTGf30hniqwzlrfq+vkk2atMNsYNPUeEZ28cJkS0uwpVyTdXkJ5DkRj7qrbm/5mys6bQ94qGxFYInu+97E+x6bmMsrLx4BYCYiKOLXd0ReeDE2c0Zm3PS8zXi/DSY9kKxDjn11S2UZJutyEYhoIDLPndm7ZvWeOfPTppO0BhGMS3oM72vzf/3W+nXPxb1c/B4JGKQ1dyR8T64bE1S2aV6aFEz/YLLOY+7H0+fO6Xl9e7gzUV7JuiwEGixb9IXPdtx7Z2tV3DUp0j62FgzoGmx4JrbslobdbUFviDrqL2EmpeAaeunV6Lbt4XlHTdaLE93J8krWpS+Q50RFyKy8pe2qL7VTBpyD9sHmSYVAfjzyaN3KByf39b9Ttj4I5oGHZc17g089G580Njd9dpbysO5gsnb4/EXdDZOym7ZUZvrKIlmXskBDZev0xsyae/ecfV6v6SQiKA3jkq7m9oO+G2+b9sT6Md5TsBEOGMykFKf79NMb4skOZ/689yXr2dmLFyZbW8siWZesQN5lY6bPXXL4gZUttWPzpou0jzFYtl7+feW1yxve3B0+Rtk6hkNHJuvTGzPjG9+VrKNV5pIlXSGf3Vjqybo0BfKcCPjtihv2XnPtQSfPNgvtg3VJhUBhrF077lv3TO3t08OWrWNpNJSsnx4TpKMl6/PS587p2VrSybrUBPIyijE0fWr20VV7Fl7UbQ4TeQ+z8qSruSvhfHPFKT/7de3QU7AP8+feSdYbo9u2hc+ck47WHZGse6julNylixM9KWfrjtJM1iUl0FBDz6cv7Hrwu80TJ+fMYdIOg8GWdC3/7x8rrl1ev2V7xBuiTkg0GUjWipvfDj71bHxSbW76Ge9N1gsXdU+flN1Yism6dATyGnoczTcv23fj9fv9zDZD2sfWkPKDKvHPP61dvvKUZI+jFRt7gi/hkcm6q8M562jJesnCZEtbsGVvSSXrEhHIa+iZMqH/4bv3LLokaRMEO1i2Ytyb1revnPrjX44DyHsKdjKOYShZb90Ref7F2MyjJuuLu8J+++rm0knWRS/QUNn68wXJR1Y1T2vof0/Z2v5a+KvLG/5nS6V3wU72534oWf/6A5J103npBU3dW7dHSiNZF7dA3j0UAdd/ef+ty98Oamt7Bxt6fKAq/PvPx9y4YlpHl+9klK1jJ2tj6KWN0Te2Rd6frMdPzX9mUaK7uxSSdREL5AXh8TW5B7/dfOnnEjZJ7zT0RNGfUyvvnvzY43XGnsSyNUyy1tyyN/hfz1S/P1n7HF54UXfj5OymzRXpYk7WRSmQIpCCtXTevO5H791z6sw+0zHQh+o19OzaEVx2c/0Lf4wNPhn9aI7TS9aZPr1+QzzR7nt/sp4+O3vx+cmW1iJO1sUnkFJsmZjxlSsO3nVbWyT07oaeMfjtr+LXf6t+X3tgFFPMJytZK966I/Lci7HTpx99zjocsK9uqTSm+JJ1kQnkOVEdc1evaLns8nc39FTAgFY9MOl7/zgx5ypFH709R2qkNXd63SBestZHJOscmhakz2vq3ro90pHwKWIUzyuMRSPQ0JPRebN716zePfvMzEBDD2Bc0jXc1hy47pb6Z16oOmpDTyE4pBSMHUjWc884erLu6dHFlayLQ6Chhp6ll7Xfc0drLGqGGnoAqBr87umqr91a3/J2sBDK1kiS9VPPVk+syTUeLVnPmJzduKVoknURCOQ5URkxd9/a9ndXtaP3XQ09cPDQIxO++/Ck7AgaegpmKOJMn17/XDxxyDd/fq+/kk3mXcl6yfldra2B5mJI1gUt0FDZmnVqZs3qPfPOfW9Dz8ED/htvm/bks9VebiiW+Hlksn7+D7HTpvfVNeaOTNaVVeaSJV2RoN24udI1VMjlrHAFUjRQtj7/F533rWyuqXFNkrTDzGCGrsUfnosuW16/szlUyGVrRMn66eoA7NyjJuu53Vu3RToTPhmBRnOvHgrYO29qu/qaQzqLdxp6gqAQfvCD8XfcOyWd1UVRtoZN1i9vir7xRmTu++asx03NX7oo0dIS3NMWLNAqMXNWU2EeWeMpfffc0Xrq7D7TQUoxqYGGnsRB5457pjz3SmzwKRiKHa+cGUPVMfe2G/cu/lQS3eA8yIHNk4pwd6c+97OzZQQ6Di44J/XY6t11k/Lm8FAfKumxvPHliq/e3LB154ls6CmgZJ3VzzwXP3zIN39erz/A7EJpcA7BEK95vFCTRmEe1spvtEUqrE2R9jMbUAAqyj/90dirrp++75BfKzam1NpDrR1I1r94smbptY29GQ0NtiANNoV72E5hHla8yuU0lMPsgoLo7tV33Tn56efj3mvtxpZmgzozAFKKd+wJp5OqYrKxWRBASgQ63lNpQBpsAQe9aX3lssa3Wgbutkog9Aw7FIVDljRQDAW6QN32PnNMID/SSbW7LTi0lk85YG1x2IMiWKWVQRrBQBHfq5c2xbDML6Pky5YIJIhAgiACCXIbf5Lv7+jDtvsxAwxZI7rsBCIC0QmbC/C2zmCmMg/4TvnY4632EgzY2pq8Hl3pZuRdSvepVLczNK3gecmWWAQqbXsqI+aapQcvOj9ZG8vr0ZYgYymTVZ1J3+69wU2vV7yysXJXS9Dr9lLEtvxWiy59gbyW0Jox+bWrdzU2ZZEC3A9xvjRHgyZaY+pPz160JGlStHFrxb/9Zsz6DXHLNLSGsAhUUjDjrhvaGudkc/vJ5zATYAk0qscFBBhGDkgTM7TDZ5/Tc/a5PVdubn/4RxNe3ljpKVs+wajEBfLeDps5I7Pw/G7bTn4/g0E+wDfaUYIBF5yDZZACW3CKwJg1K7P2oV3/+ova+x6bmMtT+ZSzEheIFGDQNDPNAXAv2IJ8SHXp9g4/FGPkz9fUgHABH1fF3Gjc6AgjD+4BAOWw7QEIf3tlx8wZmRvumNae8JWJQ2VRwiJhQ4OrwOgo/2TtuLU/Gze6QqMURyvN5LrcmWf0Xrgg2TQnTT62KSJiUnAP0Rnz0z955K0v3zB9X7u/HGpZWcxEvyfVGuPdmo2millLyZSzdUf4J78Ye8V1M5Z+rfHFP0RVnMmBNXD8bA7TlIb+H96/Kx51mQeWLxKBSu2u/sP8rNcVqTUTYeNrFVff1HDHnVMyeaUisC5pP5sEnfJn/fff3kwEoMS36pVnYcc9mDHDWhhDzFDESvF/rhuzdFnjwYN+VcHWhfaz20FnXdj7lcsPWEtU0lOMItCHwjJ5K3tu3xX+++umd7T7VBjWQDtsD9PVXzzUOK2PmVTpOiQCnQBcQ47m1gOBr98yLZ8naPLu9nWEv/Gl/cxA6ZYxEejEOeTw6zsjD62ZoGLMlpTDNokFC7vnnJ62FkqxCCQcC2NIKX78ibE7N4Wokq0ltoQALv/LDslAwojyNQHWYs0/1ZEDMJRi9GLh2al4zPXeGxSBhGNmaktEeP6VaOubARVhBmyOIuPtOU09AEoySotAJ3QQApRi19Azv69CCGyJGUzwBIKMQMJIChmAlzdFkQUpJgXK47TGPm98EoGEYQUiALtag5lOpXwAGHnUjc1VhAxzCd7Oi0AnoYwByW6nvcsHHwCCi2jExGIGEIGEEfhDBGvR3evAWyCBoQMcCZuS/H9FoBOPN8zk8+SlZrYAwZGJROG4cnTAb2EBr6nNIu+SCCSMaPhhhtZcFTMwAAEK+X7q7dMikDACgQAANdVubXUeeQAMjWSP05V0gBLcQF4EOuEGMRFOre8LVFubJzDBj30H/Nl+pUgEEkYwAjFj4VkpOAPdZ+zDGzvDAKgUc7Qjl/zEBiDLFAraCxekkAFphgW5eGlztCTrl4xAJ/psKmbGpz+ZqG3I2wwRQwWReNvZ9HoFBiepRSDhg++/LEJB+w9fOMRpwNuDoQLrX4inM0orlhFIOBZas2W6/ov76xpz3EdKgRw2SfrZr2sAMGQeSDhGlnTYdWnxx5OXX9FhE6QcNi6pOH67Lr5nYI3iEv3H5dp/+MqlNbsunTOn57srWm0fCMwWFODeg/qhn04gAiBN9cIHqMMM16XFC5OPrt4T0JbyIAVjSUWx6pGJ7Z0+Ii7hF5xlBBpQ4bi+05sRtJaMoUjYXnPlgaVfaEc/bA7KgdtPTh3/6l+qn1g/Ris2Jb1EenEIpJT3kjkP25juzd0dLyP/kcHvJADRSnPxJ7qWfr59yox+2wViKAU3R854fuV3lXc+NMXbNq/Ew18RHCMj06eGLtvJoCJs/AHmEdwpBfy2Ou5On5qdP6dnwfye2ql5ZGE7STnMDOOSM55f2VD5tdvrvQ2pSn61soIWiAC4qIq5P1q1y/IwS4pZQyrG634Tf2L9mJHvg+mVmJuu3nfxpV0mSXq4pw0+h/0RRhgAkIFNEIi9ey7tZx3jJ39ZveK+KXmXymSdskLd7smCFIgAC3+Az1nYM/zg4AJR7NoWwvF3joaCNhK13i6Tww6H3A/OEnvPthSzIRDrGu7t1A/eNeHnT9ZgsCmxLOYvCnTs0WAXpAeumU0Nb4Rr4PjQnx1NmTOWbA7GkB55xWGAoQJAhG0PPfWr+KM/Hr93f8Bb07N81tksUIGSKadqvGt7CN7LeCN4JY+IRj3f63NYhaD6GMN2fRGgAQfQQD8O7ff99xNV//HUmB1vhQAU9RbSJSXQivun3PnNtniNO9DUN5I7NZcRgm9Uq2cmUk77Pt9IMlDeUHev3t/h37k7tPmNite3R9IZ5akDpjLc1KxABfrdS7HNV5xWPy3rxeaRXBZmkA8H9vtwPK/weZM0q3848YG1E3i4P8SAMeS+u7tZKQaobPfDK1CBlEIi5SS2VIwygx/nMJTPU37ExY8AGtgow9sro6y3UixQgawd2IPi+N0he/w/dFxPq5jBsv9m4c8DeZ/v/6e/Bcj+TaOsFXIKBBFIEIEEEUgQgQRBBBJEIEEEEkQgQRCBBBFIEIEEEUgQRCBBBBJEIKFkKMd342lw8+UC3Hhg4N17EoEKGGOJeWDb5ULDOyTvtWgRqCBhBP02ErLa4QK8TgRmUMBvi2UQKi+BtMNI4YuXHfrrSzuogOMfEWKVLvJQJAIVxKBDR34RrrThWMG/ue6+0+fPVgT6aP9JxUe+r875Ykj6gwOktVA+EegjzaRbtkfIwgmw96I0Fc/cBRuoOHZuDhVuKhg7rq6kBSKlsHd/AFmcPivjKIYtmptktmA/3nwzfOvdpySShbqOysxZTRCE0SIz0YIIJIhAgggkiECCIAIJIpAgAgkikCCIQIIIJIhAgggkCCKQIAIJIpAgAgmCCCSIQIIIJIhAgggkCCKQIAIJIpAgAgmCCCSIQIIIJIhAgiACCSKQIAIJIpAgiECCCCQUAv8HSRRWmt2VOG4AAAAASUVORK5CYII=" alt="Property Assist" width="34" height="34"><span class="brand-word" aria-hidden="true">PROPERTY ASSIST</span></div>
+  <button class="recordings-link" onclick="showRecordings()" aria-label="Recordings">Recordings<span class="rec-badge" id="recBadge" style="display:none">0</span></button>
+  <div class="header-title" id="headerTitle"></div>
 </div>
 
 <!-- SETUP SCREEN -->
 <div class="screen active" id="screenSetup">
   <div class="setup-hero">
-    <h1>Start <span>Inspection</span></h1>
-    <p>Fill in the property details, select the rooms present, then talk through each room in one go.</p>
+    <div class="eyebrow">Entry condition report</div>
+    <h1><span class="fade">Start</span> PCR</h1>
+    <p>Fill in the property details, pick the rooms, then talk through each room in one go.</p>
   </div>
 
-  <div class="safari-banner" id="safariBanner" style="display:none">⚠ <b>You're in Safari.</b> Please use the <b>PA icon on your Home Screen</b> instead. Safari keeps a separate copy of jobs and can delete recordings after 7 days. No icon yet? Tap Share → Add to Home Screen.</div>
+  <!-- Round 10: what's still on its way to Dropbox, from any job. -->
+  <button type="button" class="sync-card" id="syncCard" style="display:none" onclick="showRecordings()">
+    <span class="sync-dot" aria-hidden="true"></span>
+    <span class="sync-words"><b id="syncCardTitle"></b><span id="syncCardText"></span></span>
+    <span class="sync-go" aria-hidden="true">›</span>
+  </button>
+
+  <div class="safari-banner" id="safariBanner" style="display:none"><svg class="ico ico-alert" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 4.6L2.9 17.5A2 2 0 0 0 4.6 20.5h14.8a2 2 0 0 0 1.7-3L13.7 4.6a2 2 0 0 0-3.4 0z"/><path d="M12 9.5v4.2M12 17h.01"/></svg><span><b>Open the PA icon on your Home Screen.</b> Safari keeps its own copy and can delete recordings after 7 days.</span></div>
 
   <div class="resume-banner" id="resumeBanner" style="display:none">
     <div class="rb-title">Resume in-progress inspection?</div>
@@ -1404,14 +2004,6 @@
       <input type="text" id="propInspector" placeholder="Your name">
     </div>
     <div class="field-group">
-      <label>Inspection type</label>
-      <div class="engine-select insp-type" id="inspTypeSelect">
-        <div class="engine-toggle" data-type="Entry" onclick="selectInspType('Entry')">Entry</div>
-        <div class="engine-toggle" data-type="Routine" onclick="selectInspType('Routine')">Routine</div>
-        <div class="engine-toggle" data-type="Exit" onclick="selectInspType('Exit')">Exit</div>
-      </div>
-    </div>
-    <div class="field-group">
       <label>State</label>
       <select id="propState">
         <option value="WA">WA</option>
@@ -1420,13 +2012,13 @@
         <option value="VIC">VIC</option>
         <option value="SA">SA</option>
       </select>
-      <span class="state-badge" id="nswBadge" style="display:none">⚠️ NSW special reporting applies</span>
+      <span class="state-badge" id="nswBadge" style="display:none">NSW special reporting applies</span>
     </div>
 
     <div class="field-group">
       <label>Rooms Present at Property</label>
       <div class="rooms-select" id="roomsSelect"></div>
-      <span class="state-badge" onclick="addCustomSetupRoom()">＋ Add custom room</span>
+      <span class="state-badge" onclick="addCustomSetupRoom()"><svg class="ico ico-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add custom room</span>
     </div>
 
     <!-- Service settings. Inspectors never need these, and a stray tap here
@@ -1456,7 +2048,7 @@
     </details>
 
     <button class="btn-primary" id="btnStartInspection" onclick="startInspection()">
-      Start Inspection →
+      <span>Start inspection</span><svg class="ico ico-arrowR" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13.5 6.5L19 12l-5.5 5.5"/></svg>
     </button>
   </div>
 </div>
@@ -1476,14 +2068,14 @@
   <div class="rec-dock">
     <div class="rec-dock-row">
       <div class="dock-side left">
-        <button class="btn-nav dock-nav" id="btnPrevRoom" onclick="prevRoom()">← Prev</button>
+        <button class="btn-nav dock-nav" id="btnPrevRoom" onclick="prevRoom()"><svg class="ico ico-chevL" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg><span>Prev</span></button>
       </div>
       <button class="fab-record" id="fabRecord" onclick="toggleDictateCurrent(event)" aria-label="Start recording this room">
-        <span class="fab-icon">🎤</span>
+        <span class="fab-icon"><svg class="ico ico-mic" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg></span>
       </button>
       <div class="dock-side right">
-        <button class="btn-nav primary dock-nav" id="btnNextRoom" onclick="nextRoomFromDock()">Next room →</button>
-        <button class="fab-done" id="fabDone" onclick="finishSegment(event)" style="display:none" aria-label="Save this recording">✓ Done</button>
+        <button class="btn-nav primary dock-nav" id="btnNextRoom" onclick="nextRoomFromDock()"><span>Next room</span><svg class="ico ico-chevR" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg></button>
+        <button class="fab-done" id="fabDone" onclick="finishSegment(event)" style="display:none" aria-label="Save this recording"><svg class="ico ico-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>Done</span></button>
       </div>
     </div>
     <div class="rec-status" id="recStatus">Tap to start recording</div>
@@ -1493,32 +2085,50 @@
 <!-- REVIEW SCREEN -->
 <div class="screen" id="screenReview">
   <div class="review-header">
-    <h2>Review Report</h2>
-    <p id="reviewMeta">Check all entries before exporting</p>
+    <button type="button" class="pill-back" onclick="showScreen('screenInspection')"><svg class="ico ico-chevL" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg><span>Back to edit</span></button>
+    <div class="eyebrow" id="reviewTag">Entry (PCR)</div>
+    <h2><span class="fade">Review</span> report</h2>
+    <p id="reviewMeta"></p>
   </div>
   <div class="area-status" id="areaStatus"></div>
   <div class="review-body" id="reviewBody"></div>
   <div class="export-actions">
-    <a class="btn-export" id="btnDropbox" href="#" target="_blank" rel="noopener">📂 Check it in Dropbox</a>
-    <button class="btn-export secondary" onclick="showScreen('screenInspection')">← Back to edit</button>
     <div class="finish-status" id="finishStatus"></div>
-    <button class="btn-export secondary" id="btnFinish" onclick="finishAndClear()">✓ Finish & Clear This Inspection</button>
-    <button class="btn-link" onclick="shareReport()">💾 Save a backup to this phone</button>
+    <a class="btn-export" id="btnDropbox" href="#" target="_blank" rel="noopener"><svg class="ico ico-folder" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.2c0-.9.7-1.7 1.7-1.7h3.9l2 2.2h7.7c.9 0 1.7.8 1.7 1.7v7.9c0 .9-.8 1.7-1.7 1.7H5.2c-1 0-1.7-.8-1.7-1.7z"/></svg><span>Check it in Dropbox</span></a>
+    <button class="btn-export secondary" id="btnFinish" onclick="finishAndClear()"><svg class="ico ico-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>Finish inspection</span></button>
+    <button class="btn-link" onclick="saveAudioBackup()"><svg class="ico ico-download" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14"/></svg><span>Save the audio to this phone</span></button>
   </div>
 </div>
 
 <!-- RECORDINGS SCREEN -->
 <div class="screen" id="screenRecordings">
   <div class="review-header">
-    <h2>Recordings</h2>
-    <p>Every room recording saved on this phone</p>
+    <h2><span class="fade">Rec</span>ordings</h2>
+    <p>Saved on this phone. Kept 14 days after it reaches Dropbox.</p>
   </div>
   <div class="review-body" id="recordingsBody"></div>
   <div class="export-actions">
-    <button class="btn-export" onclick="shareAllRecordings()">📤 Send all voice recordings to VA</button>
-    <button class="btn-export secondary" onclick="closeRecordings()">← Back</button>
-    <p class="export-note">Sends this property's saved audio so the typist can check any word the text got wrong. Audio is cleared when you tap Finish &amp; Clear.</p>
+    <button class="btn-export" onclick="shareAllRecordings()"><svg class="ico ico-share" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14.5V4M8 8l4-4 4 4M5.5 12.5v6c0 .6.4 1 1 1h11c.6 0 1-.4 1-1v-6"/></svg><span>Send this property's audio to the VA</span></button>
+    <button class="btn-export secondary" onclick="closeRecordings()"><svg class="ico ico-chevL" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg><span>Back</span></button>
   </div>
+</div>
+
+<!-- FIX A WORD: bottom sheet, opened from a "check this" line on the review page -->
+<div class="sheet-backdrop" id="fixBackdrop" onclick="closeFixSheet()"></div>
+<div class="sheet" id="fixSheet" role="dialog" aria-modal="true" aria-labelledby="fixTitle">
+  <div class="sheet-grab" aria-hidden="true"></div>
+  <div class="sheet-head">
+    <div><div class="sheet-title" id="fixTitle">Fix a word</div><div class="sheet-sub" id="fixSub"></div></div>
+    <button type="button" class="sheet-close" onclick="closeFixSheet()" aria-label="Close">×</button>
+  </div>
+  <div class="fix-quote" id="fixQuote"></div>
+  <div class="fix-heard" id="fixHeard"></div>
+  <button type="button" class="fix-play" id="fixPlay" onclick="playFixClip()"><svg class="ico ico-play solid" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.6v12.8a.8.8 0 0 0 1.2.7l10.2-6.4a.8.8 0 0 0 0-1.4L9.2 4.9A.8.8 0 0 0 8 5.6z"/></svg><span>Hear what I said</span></button>
+  <label class="fix-label" for="fixText">Change it to</label>
+  <textarea id="fixText" rows="3"></textarea>
+  <button type="button" class="btn-primary" onclick="saveFix(false)">Save fix</button>
+  <button type="button" class="btn-export secondary fix-keep" onclick="saveFix(true)">It's correct, keep as is</button>
+  <p class="export-note">Your fix goes into this room's files in Dropbox, so the typist doesn't have to check it.</p>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -2086,6 +2696,23 @@ let ENGINE = DEFAULT_ENGINE; // resolved at startup from the saved choice
 let TRANSCRIBE_URL = '';     // resolved at startup from the saved URL for that engine
 
 function engineDef(id) { return ENGINES[id] || ENGINES[DEFAULT_ENGINE]; }
+// Save a service link only when it differs from the built-in one. A blank is a
+// deliberate "off" and is kept. Built-in links from earlier builds go in
+// RETIRED_URLS when the val addresses change, so phones that saved one move on.
+const RETIRED_URLS = [];
+function saveServiceUrl(key, value, builtIn) {
+  try {
+    const v = (value || '').trim();
+    if (v && (v === builtIn || RETIRED_URLS.includes(v))) localStorage.removeItem(key);
+    else localStorage.setItem(key, v);
+  } catch (e) {}
+}
+function dropSavedDefault(key, builtIn) {
+  try {
+    const v = localStorage.getItem(key);
+    if (v && (v === builtIn || RETIRED_URLS.includes(v))) localStorage.removeItem(key);
+  } catch (e) {}
+}
 function engineLabel(id) { return ENGINES[id] ? ENGINES[id].label : (id || ''); }
 // A pasted URL beats the baked-in default, per engine. An empty saved string is
 // a deliberate "turn this off", so it wins over the default too.
@@ -2130,7 +2757,7 @@ function selectEngine(id) {
   const input = document.getElementById('transcribeUrl');
   const typed = input ? (input.value || '').trim() : null;
   if (input && lastRenderedUrl !== null && typed !== lastRenderedUrl) {
-    try { localStorage.setItem('pa_transcribe_url_' + ENGINE, typed); } catch (e) {}
+    saveServiceUrl('pa_transcribe_url_' + ENGINE, typed, engineDef(ENGINE).url);
   }
   ENGINE = id;
   try { localStorage.setItem('pa_engine', ENGINE); localStorage.setItem('pa_engine_chosen', '1'); } catch (e) {}
@@ -2241,7 +2868,7 @@ function resumeSaved() {
   state.address = saved.address; state.client = saved.client; state.inspector = saved.inspector;
   state.jobId = saved.jobId || '';   // older saves have none — address matching applies
   state.beds = saved.beds; state.baths = saved.baths; state.stateCode = saved.stateCode;
-  state.inspType = saved.inspType || '';
+  state.inspType = INSPECTION_TYPE;
   state.currentRoomIdx = saved.currentRoomIdx || 0;
   state.roomNotes = saved.roomNotes || {};
   state.serialModels = saved.serialModels || {};
@@ -2319,7 +2946,7 @@ function showAwayNotice() {
   const el = document.getElementById('backBanner');
   const txt = document.getElementById('backBannerText');
   if (el && txt) {
-    txt.textContent = `✓ Welcome back. Your ${name} recording was saved when you left at ${at}. Tap 🎤 to carry on — it adds to the same room.`;
+    txt.textContent = `Welcome back. Your ${name} recording was saved at ${at}. Tap record to carry on in the same room.`;
     el.classList.add('show');
   }
 }
@@ -2383,6 +3010,9 @@ function initSetup() {
       localStorage.setItem('pa_transcribe_url_deepgram', legacy);
     }
   } catch (e) {}
+  Object.keys(ENGINES).forEach(id => dropSavedDefault('pa_transcribe_url_' + id, ENGINES[id].url));
+  dropSavedDefault('pa_archive_url', DEFAULT_ARCHIVE_URL);
+  dropSavedDefault('pa_cleanup_url', DEFAULT_CLEANUP_URL);
   TRANSCRIBE_URL = engineUrl(ENGINE);
   renderEngineSelect();
 
@@ -2460,11 +3090,9 @@ function initSetup() {
   if (navigator.onLine) processPhotoQueue();
 }
 
-let selectedInspType = '';
-function selectInspType(t) {
-  selectedInspType = t;
-  document.querySelectorAll('#inspTypeSelect .engine-toggle').forEach(el => el.classList.toggle('selected', el.dataset.type === t));
-}
+// The app is for PCRs (entry condition reports) only, so there is no type to
+// choose. Every file still says what it is.
+const INSPECTION_TYPE = 'Entry (PCR)';
 
 function addCustomSetupRoom() {
   const name = prompt('Name of the custom room');
@@ -2484,23 +3112,21 @@ function startInspection() {
   state.address = document.getElementById('propAddress').value.trim();
   state.client = document.getElementById('propClient').value.trim();
   state.inspector = document.getElementById('propInspector').value.trim();
-  state.inspType = selectedInspType;
+  state.inspType = INSPECTION_TYPE;
   state.stateCode = document.getElementById('propState').value;
   TRANSCRIBE_URL = (document.getElementById('transcribeUrl').value || '').trim();
-  try {
-    localStorage.setItem('pa_engine', ENGINE);
-    localStorage.setItem('pa_transcribe_url_' + ENGINE, TRANSCRIBE_URL);
-  } catch (e) {}
+  try { localStorage.setItem('pa_engine', ENGINE); } catch (e) {}
+  saveServiceUrl('pa_transcribe_url_' + ENGINE, TRANSCRIBE_URL, engineDef(ENGINE).url);
   const archiveEl = document.getElementById('archiveUrl');
   ARCHIVE_URL = archiveEl ? (archiveEl.value || '').trim() : ARCHIVE_URL;
-  try { localStorage.setItem('pa_archive_url', ARCHIVE_URL); } catch (e) {}
+  saveServiceUrl('pa_archive_url', ARCHIVE_URL, DEFAULT_ARCHIVE_URL);
   const cleanupEl = document.getElementById('cleanupUrl');
   const newCleanup = cleanupEl ? (cleanupEl.value || '').trim() : CLEANUP_URL;
   // Only save it when someone actually changed it; otherwise the built-in
   // default keeps applying (and can be updated in a later build).
   if (newCleanup !== CLEANUP_URL) {
     CLEANUP_URL = newCleanup;
-    try { localStorage.setItem('pa_cleanup_url', CLEANUP_URL); } catch (e) {}
+    saveServiceUrl('pa_cleanup_url', CLEANUP_URL, DEFAULT_CLEANUP_URL);
     checkCleanupReady();
   }
 
@@ -2508,10 +3134,8 @@ function startInspection() {
     showToast('Please enter address and client name');
     return;
   }
-  // Every Dropbox file carries the inspector's name and the paperwork is
-  // labelled by type, so neither can be left blank.
+  // Every Dropbox file carries the inspector's name, so it can't be left blank.
   if (!state.inspector) { showToast('Please enter your name'); document.getElementById('propInspector').focus(); return; }
-  if (!state.inspType) { showToast('Choose the inspection type: Entry, Routine or Exit'); return; }
   try { localStorage.setItem('pa_inspector_name', state.inspector); } catch (e) {}
 
   const selected = [...document.querySelectorAll('#roomsSelect .room-toggle.selected')].map(d => d.dataset.id);
@@ -2569,11 +3193,10 @@ function renderRoomNav() {
     const inFlight = m.pending || m.uploading;
     const safe = m.withAudio > 0 && (m.audioUp >= m.withAudio || !cloudArchiveEnabled()) && !inFlight;
     let mark = '';
-    if (safe) { tab.classList.add('complete'); mark = '<span class="check">✓</span>'; }
-    else if (m.uploading) mark = '<span class="check">⏳</span>';
-    else if (m.withAudio) mark = '<span class="check">☁︎</span>';
-    else if (m.noAudio) mark = '<span class="check" style="color:var(--red)">⚠</span>';
-    else if ((state.roomNotes[room.id] || '').trim()) mark = '<span class="check">✎</span>';
+    if (safe) { tab.classList.add('complete'); mark = '<span class="tab-mark">' + ico('check') + '</span>'; }
+    else if (m.uploading || m.withAudio) mark = '<span class="tab-dot wait"></span>';
+    else if (m.noAudio) mark = '<span class="tab-dot bad"></span>';
+    else if ((state.roomNotes[room.id] || '').trim()) mark = '<span class="tab-dot"></span>';
     tab.innerHTML = `${escapeHtml(room.name)}${mark}`;
     tab.onclick = () => { stopListening(); state.currentRoomIdx = idx; renderInspection(); };
     nav.appendChild(tab);
@@ -2612,9 +3235,7 @@ function renderRoomContent() {
   header.innerHTML = `
     <div class="room-title">${escapeHtml(room.name)}</div>
     <div class="room-header-actions">
-      <button class="room-move-btn" onclick="moveRoom(-1)" aria-label="Move room left" ${isFirst ? 'disabled' : ''}>◀</button>
-      <button class="room-move-btn" onclick="moveRoom(1)" aria-label="Move room right" ${isLastRoom ? 'disabled' : ''}>▶</button>
-      <button class="room-edit-btn" onclick="toggleRoomTools()">Edit ⚙</button>
+      <button class="room-edit-btn" onclick="toggleRoomTools()">${ico('pencil')}<span>Edit</span></button>
     </div>
   `;
   content.appendChild(header);
@@ -2630,18 +3251,18 @@ function renderRoomContent() {
   tools.className = 'room-tools';
   tools.id = 'roomTools';
   tools.innerHTML = `
-    <button onclick="renameRoom()">✎ Rename</button>
-    <button onclick="addRoom()">＋ Add room</button>
-    <button onclick="moveRoom(-1)">← Move left</button>
-    <button onclick="moveRoom(1)">Move right →</button>
-    <button class="danger" onclick="deleteRoom()">🗑 Delete room</button>
+    <button onclick="renameRoom()">${ico('pencil')}<span>Rename</span></button>
+    <button onclick="addRoom()">${ico('plus')}<span>Add room</span></button>
+    <button onclick="moveRoom(-1)" ${isFirst ? 'disabled' : ''}>${ico('moveL')}<span>Move left</span></button>
+    <button onclick="moveRoom(1)" ${isLastRoom ? 'disabled' : ''}>${ico('moveR')}<span>Move right</span></button>
+    <button class="danger" onclick="deleteRoom()">${ico('trash')}<span>Delete</span></button>
   `;
   content.appendChild(tools);
 
   if (state.stateCode === 'NSW' && state.currentRoomIdx === 0) {
     const note = document.createElement('div');
     note.className = 'nsw-note';
-    note.innerHTML = '⚠️ <strong>NSW:</strong> Note loose wiring, damaged appliances, mould/dampness, pests, rubbish on premises.';
+    note.innerHTML = ico('alert') + '<span><strong>NSW:</strong> note loose wiring, damaged appliances, mould or damp, pests and rubbish.</span>';
     content.appendChild(note);
   }
 
@@ -2662,37 +3283,40 @@ function renderRoomContent() {
   const flagged = findForbidden(val);
 
   block.innerHTML = `
-    <button type="button" class="checklist-toggle" id="checklistToggle" onclick="toggleChecklist()">${checklistOpen ? '▾ Hide checklist' : '▸ Show checklist'}</button>
+    <button type="button" class="checklist-toggle" id="checklistToggle" onclick="toggleChecklist()"><span>${checklistOpen ? 'Hide checklist' : 'Show checklist'}</span>${ico('chevD', checklistOpen ? 'up' : '')}</button>
     <div class="checklist ${checklistOpen ? 'open' : ''}" id="checklistBox">${chips}</div>
     <div class="next-sub" id="nextSub"></div>
-    <p class="field-note one-line">🎤 Say the subsection, <strong>pause</strong>, describe it. "Scratch that" drops the last sentence.</p>
+    <p class="field-note one-line">Say the subsection, pause, then describe it. “Scratch that” removes the last sentence.</p>
     <div class="live-preview" id="livePreview"></div>
     <textarea class="room-dictate ${flagged.length ? 'flagged' : ''}" id="roomta-${room.id}" rows="9"
       placeholder="The accurate transcript lands here after each recording. You can also type."
       oninput="onRoomEdit('${room.id}')">${escapeHtml(val)}</textarea>
     <div class="forbidden-warning ${flagged.length ? 'show' : ''}" id="roomwarn-${room.id}">
-      ${flagged.length ? '⚠️ Avoid: ' + flagged.join(', ') : ''}
+      ${flagged.length ? 'Avoid: ' + flagged.join(', ') : ''}
     </div>
     <div class="action-row">
       ${val ? `<button class="btn-clear" onclick="clearRoom('${room.id}')">Clear room notes</button>` : ''}
     </div>
+    <details class="more-details"${(state.inventory[room.id] || state.serialModels[room.id] || (state.serialPhotos[room.id] || []).length) ? ' open' : ''}>
+    <summary><span>Inventory and serial numbers</span>${ico('chevD')}</summary>
     <div class="inventory-field">
-      <label>Inventory <span>— items left at the property, kept out of the condition note</span></label>
+      <label>Inventory <span>Items left at the property</span></label>
       <textarea id="inv-${room.id}" rows="2"
         placeholder="e.g. 2 x remote controls, 1 x window key, 4 x dining chairs"
         oninput="onInventoryEdit('${room.id}')">${escapeHtml(state.inventory[room.id] || '')}</textarea>
     </div>
     <div class="serial-field">
-      <label>Serial / model numbers <span>— type, or photograph the data plate</span></label>
+      <label>Serial / model numbers <span>Type them, or photograph the plate</span></label>
       <textarea id="serial-${room.id}" rows="2"
         placeholder="e.g. Dishwasher Bosch SMS46; HWS Rheem 260L SN 12345678"
         oninput="onSerialEdit('${room.id}')">${escapeHtml(state.serialModels[room.id] || '')}</textarea>
       <div class="serial-photo-row">
         <input type="file" id="serialphoto-${room.id}" accept="image/*" capture="environment" style="display:none" onchange="onSerialPhoto('${room.id}', this)">
-        <button type="button" class="serial-photo-btn" onclick="triggerSerialPhoto('${room.id}')">📷 Photograph serial / model plate</button>
+        <button type="button" class="serial-photo-btn" onclick="triggerSerialPhoto('${room.id}')">${ico('camera')}<span>Photo of the plate</span></button>
         <span class="serial-photo-status" id="serialphoto-status-${room.id}">${serialPhotoStatusText(room.id)}</span>
       </div>
     </div>
+    </details>
   `;
   content.appendChild(block);
 
@@ -2701,7 +3325,7 @@ function renderRoomContent() {
   renderRoomStatus();
 
   const isLast = state.currentRoomIdx === state.rooms.length - 1;
-  document.getElementById('btnNextRoom').textContent = isLast ? 'Review →' : 'Next room →';
+  document.getElementById('btnNextRoom').innerHTML = '<span>' + (isLast ? 'Review' : 'Next room') + '</span>' + ico('chevR');
   document.getElementById('btnPrevRoom').style.opacity = state.currentRoomIdx === 0 ? '0.3' : '1';
 }
 
@@ -2709,7 +3333,7 @@ function renderMandatoryFields(content) {
   const div = document.createElement('div');
   div.className = 'mandatory-section';
   div.innerHTML = `
-    <div class="mandatory-title">⚡ Mandatory Items — Don't Miss These</div>
+    <div class="mandatory-title">Mandatory items</div>
     <div class="mandatory-field">
       <label>Water Meter Reading</label>
       <input type="text" placeholder="e.g. 1234.567 kL" value="${escapeAttr(state.mandatory.waterMeter)}"
@@ -2795,7 +3419,7 @@ function renderNextSub() {
   if (!sub) { box.classList.remove('show'); box.innerHTML = ''; return; }
   box.classList.add('show');
   box.innerHTML = `Next: <strong>${escapeHtml(sub)}</strong>`
-    + `<button type="button" class="next-sub-btn" onclick="tickAndAdvance()">Done, next ▸</button>`;
+    + `<button type="button" class="next-sub-btn" onclick="tickAndAdvance()">Done, next</button>`;
 }
 function tickAndAdvance() {
   const room = state.rooms[state.currentRoomIdx];
@@ -2859,46 +3483,42 @@ function renderRoomStatus() {
   const chips = [];
   const m = roomRecMap[roomId] || {};
   const online = navigator.onLine;
-  if (listeningRoom === roomId) chips.push(['working', '🎙 recording']);
-  // Audio — the part the typist can't do without.
-  if (m.withAudio || m.noAudio) {
-    if (m.withAudio && m.audioUp >= m.withAudio) chips.push(['ready', '✓ audio in Dropbox']);
-    else if (m.withAudio && !cloudArchiveEnabled()) chips.push(['working', '📱 audio on this phone (Dropbox off)']);
-    else if (m.withAudio && !online) chips.push(['working', '📱 audio on this phone — uploads when you have signal']);
-    else if (m.withAudio) chips.push(['working', '☁︎ audio sending to Dropbox…' + (m.audioError ? ` (last try: ${m.audioError})` : '')]);
-    if (m.noAudio && !m.withAudio) chips.push(['bad', '⚠ no audio captured — record this room again']);
-  }
-  // Transcript — with a live clock and the reason for any retry.
+  const at = t => new Date(t).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' });
+  if (listeningRoom === roomId) chips.push(['live', 'Recording']);
+  // Audio: the part the typist can't do without.
+  if (m.withAudio && m.audioUp >= m.withAudio) chips.push(['ready', 'Audio in Dropbox']);
+  else if (m.withAudio && !cloudArchiveEnabled()) chips.push(['working', 'Audio on this phone']);
+  else if (m.withAudio && !online) chips.push(['working', 'Audio on phone, waiting for signal']);
+  else if (m.withAudio) chips.push(['working', 'Sending audio']);
+  if (m.noAudio && !m.withAudio) chips.push(['bad', 'No audio. Record this room again']);
+  // Transcript.
   if (m.uploading) {
     const secs = m.since ? Math.max(0, Math.round((Date.now() - m.since) / 1000)) : 0;
-    chips.push(['working', `⏳ transcribing ${formatClock(secs)}` + (m.attempts ? ` — try ${m.attempts + 1} of 5` : '')]);
+    chips.push(['working', `Transcribing ${formatClock(secs)}` + (m.attempts ? ` (try ${m.attempts + 1} of 5)` : '')]);
   } else if (m.pending) {
-    if (!online) chips.push(['working', '⏸ transcript waits for signal']);
-    else {
-      const wait = m.nextTryAt > Date.now() ? ` — next try in ${formatClock(Math.round((m.nextTryAt - Date.now()) / 1000))}` : '';
-      if (m.attempts) chips.push(['working', `⏳ retrying — try ${m.attempts + 1} of 5 (last: ${m.lastError || 'failed'})${wait}`]);
-      else if (m.lastError === 'no connection') chips.push(['working', `⏸ no data signal${wait || ' — retrying'}`]);
-      else chips.push(['working', '⏳ queued to transcribe']);
-    }
+    if (!online) chips.push(['working', 'Transcript waits for signal']);
+    else if (m.attempts) chips.push(['working', `Retrying (try ${m.attempts + 1} of 5)`]);
+    else if (m.lastError === 'no connection') chips.push(['working', 'No data signal, retrying']);
+    else chips.push(['working', 'Queued to transcribe']);
   }
-  if (m.failed && !m.done && !m.noAudio && m.finalError) {
-    chips.push(['bad', `⚠ ${m.finalError} — the typist works from the audio`]);
-  } else if (m.failed && !m.done && !m.noAudio) {
-    const again = m.autoRetryAt ? ` — tries again by itself at ${new Date(m.autoRetryAt).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })}` : ' — tap Retry in Recordings';
-    chips.push(['bad', `⚠ transcript failed after 5 tries (${m.lastError || 'error'})${again}. The typist can work from the audio.`]);
+  if (m.failed && !m.done && !m.noAudio) {
+    chips.push(['bad', m.finalError || !m.autoRetryAt ? 'No transcript. Audio is saved' : `No transcript yet. Tries again at ${at(m.autoRetryAt)}`]);
   }
-  if (m.done) chips.push(['ready', '✓ transcript in']);
   const secs = state.roomSections && state.roomSections[roomId];
-  if (secs && secs.length) {
-    const n = ((state.roomChecks && state.roomChecks[roomId]) || []).length;
-    chips.push(['ready', n ? `✨ cleaned — ${n} to check` : '✨ cleaned — nothing flagged']);
-  }
-  if (roomAudioFlags[roomId] === 'noaudio') chips.push(['bad', '⚠ no audio backup for this room — re-record it']);
+  const open = ((state.roomChecks && state.roomChecks[roomId]) || []).filter(c => !c.resolved).length;
+  if (m.done) chips.push(['ready', (secs && secs.length && open) ? `Transcript in, ${open} to check` : 'Transcript in']);
+  if (roomAudioFlags[roomId] === 'noaudio') chips.push(['bad', 'No audio backup. Record again']);
   const mm = roomMismatches[roomId];
-  if (mm) chips.push(['bad', `⚠ you said "${mm.said}" — saved under ${mm.filedUnder}`]);
+  if (mm) chips.push(['bad', `You said “${mm.said}”. Saved under ${mm.filedUnder}`]);
   if (!chips.length) { box.classList.remove('show'); box.innerHTML = ''; return; }
+  // Problems first, then what's happening, then what's done. Three at most.
+  const rank = { bad: 0, live: 1, working: 2, ready: 3 };
+  const shown = chips.slice().sort((a, b) => rank[a[0]] - rank[b[0]]);
+  const keep = shown.filter(c => c[0] === 'bad').concat(shown.filter(c => c[0] !== 'bad')).slice(0, Math.max(3, shown.filter(c => c[0] === 'bad').length));
   box.classList.add('show');
-  box.innerHTML = chips.map(([cls, txt]) => `<span class="room-state-chip ${cls}">${escapeHtml(txt)}</span>`).join('');
+  box.innerHTML = keep.map(([cls, txt]) => `<span class="room-state-chip ${cls}">`
+    + (cls === 'ready' ? ico('check') : cls === 'bad' ? ico('alert') : '<i class="chip-dot"></i>')
+    + `<span>${escapeHtml(txt)}</span></span>`).join('');
 }
 
 function onSerialEdit(roomId) {
@@ -2932,7 +3552,7 @@ function toggleChecklist() {
   const box = document.getElementById('checklistBox');
   const btn = document.getElementById('checklistToggle');
   if (box) box.classList.toggle('open', checklistOpen);
-  if (btn) btn.textContent = checklistOpen ? '▾ Hide checklist' : '▸ Show checklist';
+  if (btn) btn.innerHTML = '<span>' + (checklistOpen ? 'Hide checklist' : 'Show checklist') + '</span>' + ico('chevD', checklistOpen ? 'up' : '');
 }
 
 function toggleRoomTools() {
@@ -2998,7 +3618,7 @@ function updateRoomFieldState(roomId, val) {
   const flagged = findForbidden(val);
   if (ta) ta.classList.toggle('flagged', flagged.length > 0);
   if (warn) {
-    if (flagged.length) { warn.textContent = '⚠️ Avoid: ' + flagged.join(', '); warn.classList.add('show'); }
+    if (flagged.length) { warn.textContent = 'Avoid: ' + flagged.join(', '); warn.classList.add('show'); }
     else warn.classList.remove('show');
   }
 }
@@ -3029,10 +3649,10 @@ function setFabRecording(on) {
     fab.classList.remove('paused');
     fab.setAttribute('aria-label', on ? 'Pause recording' : 'Start recording this room');
     const icon = fab.querySelector('.fab-icon');
-    if (icon) icon.textContent = on ? '⏸' : '🎤';
+    if (icon) icon.innerHTML = on ? ico('pause') : ico('mic');
   }
   if (pill) {
-    pill.textContent = on ? '● Recording' : REC_IDLE_TEXT;
+    pill.textContent = on ? 'Recording' : REC_IDLE_TEXT;
     pill.classList.toggle('show', on);
     pill.classList.remove('paused');
   }
@@ -3046,10 +3666,10 @@ function setFabPaused(on) {
     fab.classList.remove('recording');
     fab.setAttribute('aria-label', on ? 'Resume recording' : 'Start recording this room');
     const icon = fab.querySelector('.fab-icon');
-    if (icon) icon.textContent = on ? '▶' : '🎤';
+    if (icon) icon.innerHTML = on ? ico('play') : ico('mic');
   }
   if (pill) {
-    pill.textContent = on ? '❚❚ Paused' : REC_IDLE_TEXT;
+    pill.textContent = on ? 'Paused' : REC_IDLE_TEXT;
     pill.classList.toggle('paused', on);
     pill.classList.remove('show');
   }
@@ -3434,16 +4054,16 @@ function nextRoomFromDock() {
 function setFabError() {
   const fab = document.getElementById('fabRecord');
   const pill = document.getElementById('recStatus');
-  if (pill) { pill.textContent = '⚠️ Mic unavailable — nothing is being recorded'; pill.classList.remove('show', 'paused'); }
+  if (pill) { pill.textContent = 'Mic unavailable. Nothing is being recorded'; pill.classList.remove('show', 'paused'); }
   if (!fab) return;
   fab.classList.remove('recording');
   fab.classList.add('error');
   const icon = fab.querySelector('.fab-icon');
-  if (icon) icon.textContent = '⚠️';
+  if (icon) icon.innerHTML = ico('alert');
   setTimeout(() => {
     fab.classList.remove('error');
     const ic = fab.querySelector('.fab-icon');
-    if (ic && !fab.classList.contains('recording')) ic.textContent = '🎤';
+    if (ic && !fab.classList.contains('recording')) ic.innerHTML = ico('mic');
     if (pill && !fab.classList.contains('recording') && !fab.classList.contains('paused')) pill.textContent = REC_IDLE_TEXT;
   }, 5000);
 }
@@ -3611,6 +4231,23 @@ function dbPut(rec) {
   return openAudioDB().then(db => new Promise((resolve, reject) => {
     const r = db.transaction(AUDIO_STORE, 'readwrite').objectStore(AUDIO_STORE).put(rec);
     r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);
+  }));
+}
+// Read the record fresh and change it in one transaction. Passes that hold a
+// copy for a long time (the Dropbox pass, the Retry button) use this, so their
+// old copy can't put back a status another pass has moved on since.
+function dbUpdate(id, change) {
+  return openAudioDB().then(db => new Promise((resolve, reject) => {
+    const store = db.transaction(AUDIO_STORE, 'readwrite').objectStore(AUDIO_STORE);
+    const g = store.get(id);
+    g.onerror = () => reject(g.error);
+    g.onsuccess = () => {
+      const rec = g.result;
+      if (!rec) return resolve(null);
+      change(rec);
+      const p = store.put(rec);
+      p.onsuccess = () => resolve(rec); p.onerror = () => reject(p.error);
+    };
   }));
 }
 function dbDelete(id) {
@@ -3844,8 +4481,8 @@ function showMicProblem(on) {
   if (!on) micProblemShown = false;
   if (pill) {
     pill.classList.toggle('mic-problem', on);
-    if (on) pill.textContent = '⚠ Mic not recording — tap ✓ Done, then 🎤 again';
-    else if (fab && fab.classList.contains('recording')) pill.textContent = '● Recording';
+    if (on) pill.textContent = 'Mic not recording. Tap Done, then record again';
+    else if (fab && fab.classList.contains('recording')) pill.textContent = 'Recording';
   }
 }
 
@@ -4129,7 +4766,7 @@ async function processQueue() {
         await runCleanup(rec);
         if (!live()) break;
         if (cloudArchiveEnabled()) {
-          try { await archiveToDropbox(rec); rec.archived = true; }
+          try { await archiveToDropbox(rec); rec.archived = true; rec.archivedAt = Date.now(); }
           catch (e) { rec.archived = false; } // retried by processArchiveQueue()
         }
         await dbPut(rec);
@@ -4195,6 +4832,12 @@ function retryDelay(n) {
 // minutes, then 20, 30… up to six rounds. Nobody has to remember to tap Retry.
 const AUTO_RETRY_MS = 10 * 60000;
 const AUTO_RETRY_MAX = 6;
+// Round 10: audio stays on the phone for 14 days after it is safe in Dropbox,
+// then goes by itself. Finishing an inspection no longer deletes anything.
+const KEEP_AFTER_SYNC_DAYS = 14;
+const KEEP_AFTER_SYNC_MS = KEEP_AFTER_SYNC_DAYS * 24 * 3600 * 1000;
+function syncedAt(rec) { return (rec && (rec.archivedAt || rec.audioArchivedAt || rec.uploadedAt || rec.createdAt)) || 0; }
+function pastKeepPeriod(rec) { return Date.now() - syncedAt(rec) >= KEEP_AFTER_SYNC_MS; }
 // Phone storage from jobs that are over. "Start new", the 12-hour expiry, or a
 // phone that was never finished left every recording of the old job on the
 // phone for ever, which is what fills a phone up (see the storage warnings).
@@ -4209,12 +4852,13 @@ async function sweepOldJobs() {
   try {
     for (const rec of await dbAll()) {
       if (sameJob(rec) || savedJob(rec) || rec.archived !== true) continue;
+      if (!pastKeepPeriod(rec)) continue;   // kept 14 days after it reached Dropbox
       const finished = rec.status === 'done'
         || (rec.status === 'failed' && (rec.noAudio || (rec.autoRetries || 0) >= AUTO_RETRY_MAX));
       if (finished) { await dbDelete(rec.id); n++; }
     }
     for (const p of await photoAll()) {
-      if (p.uploaded && !sameJob(p) && !savedJob(p)) { await photoDelete(p.id); n++; }
+      if (p.uploaded && !sameJob(p) && !savedJob(p) && pastKeepPeriod(p)) { await photoDelete(p.id); n++; }
     }
   } catch (e) {}
   if (n) updatePendingUI();
@@ -4404,18 +5048,77 @@ function findPhraseFrom(words, phrase, from) {
   return i < 0 ? null : { at: words[i].s, idx: i };
 }
 
-// Every sentence of a block of text, prefixed with when it was said.
-function timecodeSentences(text, words, cursor) {
-  const parts = String(text || '').match(/[^.!?]+[.!?]*\s*/g) || [];
+// The cleanup val wraps a phrase it added in {+ … +}. Shown as [added: …] in
+// the note and the .txt, red italic in the Word file.
+function markAdded(t) {
+  return String(t || '').replace(/\{\+\s*([^{}]*?)\s*\+\}/g, (m, x) => x ? '[added: ' + x + ']' : '').replace(/\{\+|\+\}/g, '');
+}
+// Every sentence of a block of text with when it was said (at = seconds or null).
+function timedSentences(text, words, cursor) {
+  const parts = String(text || '').match(/(?:\[added: [^\]]*\]|\[(?!added: )|[^.!?\[])+(?:\[added: [^\]]*\]|[.!?])*\s*/g) || [];
   const c = cursor || { idx: 0 };
   return parts.map(p => {
     const sentence = p.trim();
-    if (!sentence) return '';
-    const hit = findPhraseFrom(words, sentence, c.idx);
-    if (!hit) return sentence;
+    if (!sentence) return null;
+    if (!words || !words.length) return { sentence, at: null };
+    const hit = findPhraseFrom(words, sentence.replace(/\[added: [^\]]*\]/g, ' '), c.idx);
+    if (!hit) return { sentence, at: null };
     c.idx = hit.idx + 1;
-    return '[' + formatClock(hit.at) + '] ' + sentence;
-  }).filter(Boolean).join(' ');
+    return { sentence, at: hit.at };
+  }).filter(Boolean);
+}
+// Every sentence of a block of text, prefixed with when it was said.
+function timecodeSentences(text, words, cursor) {
+  return timedSentences(text, words, cursor)
+    .map(x => (x.at != null ? '[' + formatClock(x.at) + '] ' : '') + x.sentence).join(' ');
+}
+// Is this sentence one the cleanup pass asked the typist to check?
+function checkNorm(t) {
+  return String(t || '').toLowerCase().replace(/\[added: [^\]]*\]/g, ' ').replace(/\[\d+:\d+(?::\d+)?\]/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
+}
+function sentenceFlagged(sentence, checks) {
+  const ns = checkNorm(sentence);
+  if (!ns || !checks || !checks.length) return false;
+  return checks.some(c => {
+    const q = checkNorm(c.quote);
+    if (!q) return false;
+    if (ns.includes(q) || (ns.length >= 12 && q.includes(ns))) return true;
+    const head = q.split(' ').slice(0, 5).join(' ');
+    return head.split(' ').length >= 4 && ns.includes(head);
+  });
+}
+// The room as the typist reads it: subareas in order, each sentence with its
+// time and whether it's flagged, plus the section index (spoken order).
+function roomLayout(rec, clean) {
+  const cleaned = Array.isArray(rec.sections) && rec.sections.length;
+  const subs = rec.subsections || [];
+  const raw0 = cleaned
+    ? rec.sections.map(s => ({ subarea: s.name, text: s.text }))
+    : (subs.length ? splitNotesBySubarea({ subsections: subs }, clean) : []);
+  const list = raw0.length ? raw0 : [{ subarea: rec.roomName || 'Notes', text: clean || '' }];
+  const words = rec.words && rec.words.length ? rec.words : null;
+  const allChecks = (cleaned && rec.check) ? rec.check : [];
+  const checks = allChecks.filter(c => !c.resolved);
+  const resolved = allChecks.filter(c => c.resolved);
+  const cursor = { idx: 0 };
+  const buckets = list.map(b => {
+    const sents = timedSentences(b.text, words, cursor).map(x => ({ ...x, flagged: sentenceFlagged(x.sentence, checks) }));
+    const times = sents.map(x => x.at).filter(x => x != null);
+    const start = times.length ? Math.min(...times) : null;
+    return { subarea: b.subarea, sents, start, clock: start != null ? formatClock(start) : '' };
+  });
+  const index = buckets.length > 1
+    ? buckets.filter(b => b.start != null).sort((a, b) => a.start - b.start).map(b => ({ name: b.subarea, clock: b.clock }))
+    : [];
+  const header = [
+    ...detailLines(rec.address, metaFor(rec)),
+    'Audio: ' + (rec.audioPath || (archiveBaseName(rec) + '.' + audioExt(rec.type))),
+    rec.engine ? 'Transcribed by: ' + engineLabel(rec.engine) : '',
+    cleaned ? 'Sorted into subareas by: ' + rec.cleanedBy : 'Subareas split by keyword'
+  ].filter(Boolean).join('\n');
+  const raw = (rec.transcript || '').trim();
+  return { cleaned: !!cleaned, buckets, index, checks, resolved, header, words,
+    raw: words ? timecodeRaw(raw, words) : raw };
 }
 
 // The raw transcript with a time at each sentence start and at least every
@@ -4473,14 +5176,14 @@ async function runCleanup(rec) {
     const out = await res.json();
     if (!out || out.ok !== true) throw new Error((out && out.error) || 'cleanup declined');
     const sections = (out.sections || [])
-      .map(s => ({ name: String((s && s.name) || '').trim(), text: String((s && s.text) || '').trim() }))
+      .map(s => ({ name: String((s && s.name) || '').trim(), text: markAdded(String((s && s.text) || '').trim()) }))
       .filter(s => s.name && s.text);
     if (!sections.length) throw new Error('no sections');
     rec.sections = sections;
     rec.check = (out.check || [])
       .map(c => ({
-        quote: String((c && c.quote) || '').trim(),
-        heard: String((c && (c.heard || c.quote)) || '').trim(),
+        quote: String((c && c.quote) || '').replace(/\{\+|\+\}/g, '').trim(),
+        heard: String((c && (c.heard || c.quote)) || '').replace(/\{\+|\+\}/g, '').trim(),
         why: String((c && c.why) || '').trim()
       }))
       .filter(c => c.quote);
@@ -4650,33 +5353,85 @@ function buildArchiveText(rec, clean) {
   // audio, and never has to listen to the rest of the room. If it's empty,
   // nothing in this room needed a second opinion.
   let checkBlock = '';
-  if (cleaned && rec.check && rec.check.length) {
+  const openChecks = (rec.check || []).filter(c => !c.resolved);
+  const doneChecks = (rec.check || []).filter(c => c.resolved);
+  if (cleaned && openChecks.length) {
     // The time is first on the line so the list reads as a play list: open the
     // room's audio file, jump to each one, done.
-    checkBlock = 'CHECK THESE AGAINST THE AUDIO (' + rec.check.length + ')\n'
+    checkBlock = 'CHECK THESE AGAINST THE AUDIO (' + openChecks.length + ')\n'
       + 'Open the audio file beside this one (' + (rec.audioPath || (archiveBaseName(rec) + '.' + audioExt(rec.type))) + ') and play the times listed.\n\n'
-      + rec.check.map(c => '  ' + (c.clock ? '[' + c.clock + '] ' : '[ — ] ')
+      + openChecks.map(c => '  ' + (c.clock ? '[' + c.clock + '] ' : '[ — ] ')
           + '"' + c.quote + '"' + (c.why ? ' — ' + c.why : '')).join('\n')
-      + '\n\n' + '-'.repeat(40) + '\n\n';
+      + '\n\n';
   } else if (cleaned) {
-    checkBlock = 'Nothing flagged for checking in this room.\n\n' + '-'.repeat(40) + '\n\n';
+    checkBlock = (doneChecks.length ? 'Nothing left to check in this room.' : 'Nothing flagged for checking in this room.') + '\n\n';
   }
+  if (cleaned && doneChecks.length) {
+    checkBlock += 'ALREADY CHECKED BY THE INSPECTOR (' + doneChecks.length + ')\n'
+      + doneChecks.map(c => '  ' + (c.clock ? '[' + c.clock + '] ' : '[ - ] ') + '"' + c.quote + '"'
+          + (c.resolved === 'fixed' ? ' changed to "' + c.fixedTo + '"' : ' is correct as is')).join('\n') + '\n\n';
+  }
+  if (cleaned) checkBlock += '-'.repeat(40) + '\n\n';
 
-  const subs = rec.subsections || [];
-  const buckets = cleaned
-    ? rec.sections.map(s => ({ subarea: s.name, text: s.text }))
-    : (subs.length ? splitNotesBySubarea({ subsections: subs }, clean) : []);
-  const words = rec.words && rec.words.length ? rec.words : null;
-  const cursor = { idx: 0 };
-  const timed = t => (words ? timecodeSentences(t, words, cursor) : t);
-  const body = buckets.length > 1
-    ? buckets.map(b => b.subarea.toUpperCase() + '\n' + timed(b.text)).join('\n\n')
-    : timed(clean);
+  const layout = roomLayout(rec, clean);
+  const words = layout.words;
+  const line = b => b.sents.map(x => (x.flagged ? '>>CHECK<< ' : '') + (x.at != null ? '[' + formatClock(x.at) + '] ' : '') + x.sentence).join(' ');
+  const body = layout.buckets.length > 1
+    ? layout.buckets.map(b => b.subarea.toUpperCase() + (b.clock ? '  (starts ' + b.clock + ')' : '') + '\n' + line(b)).join('\n\n')
+    : line(layout.buckets[0]);
   const rule = '='.repeat(40);
-  return header + '\n\n' + checkBlock
-    + rule + '\nBY SUBAREA\n' + rule + '\n\n' + body + '\n\n'
+  const indexBlock = layout.index.length
+    ? 'SECTIONS IN THE AUDIO\n' + layout.index.map(x => '  ' + x.name + ' — ' + x.clock).join('\n') + '\n\n'
+    : '';
+  const legend = (layout.checks.length || /\[added: /.test(body))
+    ? '>>CHECK<< marks a sentence to check against the audio. [added: …] is a phrase the AI added because no damage was mentioned: confirm or delete. The Word file beside this one shows both in red.\n\n'
+    : '';
+  return header + '\n\n' + indexBlock + checkBlock
+    + rule + '\nBY SUBAREA\n' + rule + '\n\n' + legend + body + '\n\n'
     + rule + '\nRAW TRANSCRIPT (exactly as the engine heard it)\n' + rule + '\n\n'
     + (words ? timecodeRaw((rec.transcript || '').trim(), words) : (rec.transcript || '').trim()) + '\n';
+}
+
+// Round 10: one room as data, beside its .txt and .docx. The typist editor reads
+// this instead of parsing the text. Version it so the editor can tell.
+function buildRoomJson(rec, clean) {
+  const layout = roomLayout(rec, clean);
+  const m = metaFor(rec);
+  const thisJob = sameJob(rec);
+  const addedIn = s => (String(s).match(/\[added: ([^\]]*)\]/g) || []).map(x => x.slice(8, -1));
+  const plain = s => String(s).replace(/\s*\[added: [^\]]*\]/g, '').replace(/\s+/g, ' ').trim();
+  const clockOf = at => (at != null ? formatClock(at) : null);
+  return {
+    format: 'pa-room', version: 1, app: 'PA Inspect round 10',
+    property: rec.address || '', client: m.client || '', inspector: m.inspector || '',
+    state: m.stateCode || '', inspectionType: m.inspType || '',
+    inspectionStarted: m.startedAt ? new Date(m.startedAt).toISOString() : null,
+    room: rec.roomName || rec.roomId || '', roomId: rec.roomId || '',
+    recording: rec.id != null ? rec.id : null, part: rec.part || 1,
+    recordedAt: rec.createdAt ? new Date(rec.createdAt).toISOString() : null,
+    audioFile: rec.audioPath || (archiveBaseName(rec) + '.' + audioExt(rec.type)),
+    textFile: archiveBaseName(rec) + '.txt', wordFile: archiveBaseName(rec) + '.docx',
+    transcribedBy: rec.engine ? engineLabel(rec.engine) : '',
+    sortedBy: layout.cleaned ? (rec.cleanedBy || 'cleanup') : 'keyword split',
+    timecodes: !!layout.words,
+    index: layout.index.map(x => ({ name: x.name, clock: x.clock })),
+    sections: layout.buckets.map(b => ({
+      name: b.subarea, start: b.start, clock: b.clock || null,
+      sentences: b.sents.map(x => ({
+        text: x.sentence, plain: plain(x.sentence), added: addedIn(x.sentence),
+        at: x.at, clock: clockOf(x.at), check: !!x.flagged
+      }))
+    })),
+    check: (rec.check || []).map(c => ({
+      quote: c.quote, heard: c.heard || '', why: c.why || '', at: c.at != null ? c.at : null, clock: c.clock || null,
+      resolved: c.resolved || null, fixedTo: c.fixedTo || null
+    })),
+    fixes: (rec.fixes || []).slice(),
+    serial: thisJob ? (state.serialModels[rec.roomId] || '').trim() : '',
+    inventory: thisJob ? (state.inventory[rec.roomId] || '').trim() : '',
+    raw: (rec.transcript || '').trim(),
+    words: (rec.words || []).map(w => [w.w, w.s])
+  };
 }
 
 // Upload one recording's audio and its text. Throws on failure so the caller can
@@ -4692,6 +5447,11 @@ async function archiveToDropbox(rec) {
     // One file: details, the subarea split, and the untouched engine output at
     // the bottom so nothing the app changed is lost.
     await archivePut(`${folder}/${base}.txt`, buildArchiveText(rec, clean), 'text/plain; charset=utf-8');
+    // Round 10: the same room as data, for the typist editor. Never holds the room.
+    try { await archivePut(`${folder}/${base}.json`, JSON.stringify(buildRoomJson(rec, clean), null, 1), 'application/json; charset=utf-8'); rec.jsonArchived = true; delete rec.jsonError; }
+    catch (e) { rec.jsonError = String((e && e.message) || 'failed').slice(0, 80); }
+    try { await archivePut(`${folder}/${base}.docx`, await buildRoomDocx(rec, clean), DOCX_TYPE, 90000); rec.docxArchived = true; }
+    catch (e) { rec.docxError = String((e && e.message) || 'failed').slice(0, 80); }
   } else {
     // Transcription failed or never ran. The audio still has to reach the typist,
     // and the file beside it has to say why there's no transcript.
@@ -4731,7 +5491,7 @@ async function archivePass() {
           + (rec.roughText || '').trim() + '\n';
         await archivePut(`${archiveFolderName(rec)}/${archiveBaseName(rec)} - NO AUDIO.txt`, body, 'text/plain; charset=utf-8');
         rec.archived = true;
-        await dbPut(rec);
+        await dbUpdate(rec.id, r => { r.archived = true; r.archivedAt = Date.now(); });
         updatePendingUI();
       } catch (e) {}
       continue;
@@ -4740,13 +5500,19 @@ async function archivePass() {
     try {
       await archiveToDropbox(rec);
       rec.archived = true;
-      // Safely in Dropbox now. A transcribed recording from a finished job can go,
-      // to reclaim phone storage. Anything that failed stays put so Retry still works.
-      if (!sameJob(rec) && rec.status === 'done') {
-        await dbDelete(rec.id);
-      } else {
-        await dbPut(rec);
-      }
+      // Only the Dropbox fields are written back, onto a fresh read. This pass
+      // can hold its copy for minutes; a Retry or the transcription queue may
+      // have moved the record on in that time.
+      const fresh = await dbUpdate(rec.id, r => {
+        // The audio is up either way, so that's always recorded.
+        if (rec.audioArchived) { r.audioArchived = true; r.audioArchivedAt = rec.audioArchivedAt; delete r.audioTooLarge; }
+        if (rec.audioPath) r.audioPath = rec.audioPath;
+        // The text file matches the status it was written for. If the record
+        // has moved on (a Retry), its own pass writes the new one.
+        if (r.status === rec.status) { r.archived = true; r.archivedAt = Date.now(); }
+      });
+      // Round 10: nothing is deleted here any more. sweepOldJobs() clears a
+      // finished job's audio 14 days after it reached Dropbox.
       updatePendingUI();
     } catch (e) { continue; } // this file's turn will come round again; don't block the others
   }
@@ -4833,6 +5599,7 @@ async function processPhotoQueue() {
             : `${folder}/${base} - Serial plate ${rec.id}.${photoExt(rec.type)}`;
         await archivePut(rel, rec.blob, rec.type || 'image/jpeg', 90000);
         rec.uploaded = true;
+        rec.uploadedAt = Date.now();
         if (!sameJob(rec)) { await photoDelete(rec.id); }
         else { await photoPut(rec); }
         markPhotoUploaded(rec.roomId, rec.id);
@@ -4889,7 +5656,7 @@ function applyTranscript(rec, transcript) {
     state.roomSectionParts = state.roomSectionParts || {};
     (state.roomSectionParts[roomId] = state.roomSectionParts[roomId] || []).push(rec.sections.map(s => ({ name: s.name, text: s.text })));
     if (rec.check && rec.check.length) {
-      state.roomChecks[roomId] = (state.roomChecks[roomId] || []).concat(rec.check);
+      state.roomChecks[roomId] = (state.roomChecks[roomId] || []).concat(rec.check.map(c => Object.assign({}, c, { recId: rec.id })));
     }
   }
   // The preview has served its purpose — the accurate text is in the note now.
@@ -4937,6 +5704,7 @@ async function updatePendingUI() {
     if (r.audioError && !r.audioArchived) m.audioError = r.audioError;
   });
   roomRecMap = rmap;
+  renderSyncCard(recs);
   const pending = recs.filter(r => r.status === 'pending').length;
   const uploading = recs.filter(r => r.status === 'uploading').length;
   const failed = recs.filter(r => r.status === 'failed').length;
@@ -4950,18 +5718,18 @@ async function updatePendingUI() {
     else {
       el.classList.remove('offline');
       if (uploading) {
-        el.textContent = `☁︎ Transcribing ${uploading} recording${uploading > 1 ? 's' : ''}…`;
+        el.textContent = `Transcribing ${uploading} recording${uploading > 1 ? 's' : ''}`;
         el.classList.add('show');
       } else if (pending) {
         if (navigator.onLine) {
-          el.textContent = `☁︎ ${pending} recording${pending > 1 ? 's' : ''} waiting to transcribe`;
+          el.textContent = `${pending} recording${pending > 1 ? 's' : ''} waiting to transcribe`;
         } else {
-          el.textContent = `● Saved offline — ${pending} will transcribe when back online`;
+          el.textContent = `Saved offline. ${pending} will transcribe when you have signal`;
           el.classList.add('offline');
         }
         el.classList.add('show');
       } else if (failed) {
-        el.textContent = `⚠ ${failed} recording${failed > 1 ? 's' : ''} failed to transcribe — see Recordings`;
+        el.textContent = `${failed} recording${failed > 1 ? 's' : ''} not transcribed. See Recordings`;
         el.classList.add('offline');
         el.classList.add('show');
       } else {
@@ -4986,17 +5754,35 @@ async function updatePendingUI() {
     if (noAudio.length) {
       msgs.push('⚠ No audio backup for: ' + noAudio.join(', ') + '. Re-record ' + (noAudio.length === 1 ? 'that room' : 'those rooms') + ' — the typist has nothing to check against.');
     }
-    warn.innerHTML = msgs.map(escapeHtml).join('<br>');
+    warn.innerHTML = msgs.map(x => '<div class="warn-line">' + ico('alert') + '<span>' + escapeHtml(plainText(x)) + '</span></div>').join('');
     warn.classList.toggle('show', msgs.length > 0);
   }
   renderRoomStatus();
   renderFinishStatus();
-  const reviewScreen = document.getElementById('screenReview');
-  if (reviewScreen && reviewScreen.classList.contains('active')) renderAreaStatus();
   if (document.getElementById('roomNav')) scheduleRoomNav();
   // Live-refresh the Recordings screen if it's open.
   const recScreen = document.getElementById('screenRecordings');
   if (recScreen && recScreen.classList.contains('active')) renderRecordings();
+}
+
+// Round 10: the Start screen says how many recordings (any job) are still on
+// their way to Dropbox. A Home Screen web app only uploads while it's open.
+function unsentRecordings(recs) {
+  return (recs || []).filter(r =>
+    r.status === 'pending' || r.status === 'uploading' || r.status === 'recording' ||
+    (cloudArchiveEnabled() && !r.noAudio && !r.audioTooLarge && r.blob && !r.audioArchived && r.archived !== true) ||
+    (cloudArchiveEnabled() && r.status === 'done' && r.archived !== true && !r.audioTooLarge));
+}
+function renderSyncCard(recs) {
+  const card = document.getElementById('syncCard');
+  if (!card) return;
+  const n = cloudEnabled() ? unsentRecordings(recs).length : 0;
+  card.style.display = n ? '' : 'none';
+  if (!n) return;
+  document.getElementById('syncCardTitle').textContent = `${n} recording${n === 1 ? '' : 's'} still sending`;
+  document.getElementById('syncCardText').textContent = navigator.onLine
+    ? 'Keep the app open with signal and they send by themselves.'
+    : 'No signal. They send by themselves once you have signal and the app is open.';
 }
 
 // Rooms whose audio hasn't finished the round trip yet — recording, waiting to
@@ -5009,23 +5795,11 @@ function roomsStillWorking() {
     return !!(m && (m.pending || m.uploading || m.unarchived));
   }).map(r => r.name);
 }
+// The area status reads every recording on the phone. It used to be rebuilt on
+// every save, on every screen, twice. Now only while the review screen is open.
 function renderFinishStatus() {
-  // Superseded by renderFinishGate(), which reads the recordings directly.
-  if (typeof renderAreaStatus === 'function' && document.getElementById('areaStatus')) { renderAreaStatus(); return; }
-  const box = document.getElementById('finishStatus');
-  const btn = document.getElementById('btnFinish');
-  if (!box) return;
-  const waiting = roomsStillWorking();
-  if (waiting.length) {
-    box.className = 'finish-status waiting';
-    box.textContent = `⏳ ${waiting.length} room${waiting.length === 1 ? '' : 's'} still finishing: ${waiting.join(', ')}. `
-      + 'Wait for these before you finish — transcription lands a few seconds after you stop talking.';
-    if (btn) { btn.classList.add('blocked'); btn.textContent = '✓ Finish & Clear (still working…)'; }
-  } else {
-    box.className = 'finish-status ready';
-    box.textContent = '✓ Every room is transcribed and backed up. Safe to finish.';
-    if (btn) { btn.classList.remove('blocked'); btn.textContent = '✓ Finish & Clear This Inspection'; }
-  }
+  const rs = document.getElementById('screenReview');
+  if (rs && rs.classList.contains('active')) renderAreaStatus();
 }
 
 // ─── AREA STATUS ──────────────────────────────────────────────────────────────
@@ -5095,6 +5869,8 @@ async function computeAreaStatus() {
       ? mine.some(r => r.status === 'done')
       : withAudio.length > 0 && withAudio.every(r => r.audioArchived || r.archived === true);
     const ready = !inFlight && audioSafe;
+    // Round 10: audio on the phone that is still on its way doesn't hold Finish.
+    const sending = !ready && withAudio.length > 0 && !mine.some(r => r.audioTooLarge && !r.audioArchived);
     let why = '';
     if (!ready) {
       if (!withAudio.length) why = 'no audio was captured — record it again';
@@ -5102,33 +5878,60 @@ async function computeAreaStatus() {
       else if (!online) why = 'saved on this phone, waiting for signal to upload';
       else why = 'uploading to Dropbox now';
     }
-    return { id: room.id, name: room.name, tx, dbx, text, ready, why, canSkip: !withAudio.length };
+    return { id: room.id, name: room.name, tx, dbx, text, ready, sending, why, canSkip: !withAudio.length };
   });
 }
 let areaStatusSeq = 0;
+// The three numbers at the top of the review page, and each room row's few
+// words and icon. Rebuilt from the recordings on the phone every time, so it
+// can't disagree with them; only the parts that change are touched, so an
+// open room stays open.
 async function renderAreaStatus() {
   const box = document.getElementById('areaStatus');
   if (!box) return;
   const seq = ++areaStatusSeq;
   const rows = await computeAreaStatus();
   if (seq !== areaStatusSeq) return;   // a newer refresh has already started
-  const missing = rows.filter(r => r.tx.cls === 'none' && r.dbx.label === '—').length;
-  const working = rows.filter(r => r.tx.cls === 'wait' || r.dbx.cls === 'wait').length;
-  const failed = rows.filter(r => r.tx.cls === 'bad').length;
-  const summary = working ? `${working} still going` : failed ? `${failed} failed` : missing ? `${missing} not recorded` : 'All done';
-  box.innerHTML = '<div class="area-status-card">'
-    + `<div class="area-status-head">Area status <span>${escapeHtml(summary)}</span></div>`
-    + '<div class="area-row cols"><div>Area</div><div class="area-chip">Transcript</div><div class="area-chip">Dropbox</div></div>'
-    + rows.map(r => `<div class="area-row"><div class="area-name">${escapeHtml(r.name)}`
-      + (r.skipped ? ` <button class="area-skip" onclick="toggleSkipRoom('${escapeAttr(r.id)}')">Undo</button>`
-        : r.typedOnly ? ` <button class="area-skip" onclick="toggleTypedOnly('${escapeAttr(r.id)}')">Undo</button>`
-        : (r.canSkip ? ` <button class="area-skip" onclick="toggleSkipRoom('${escapeAttr(r.id)}')">Not here</button>` : '')
-          + (r.canTyped ? ` <button class="area-skip" onclick="toggleTypedOnly('${escapeAttr(r.id)}')">Typed only</button>` : ''))
-      + `</div>`
-      + `<div class="area-chip ${r.tx.cls}">${escapeHtml(r.tx.label)}</div>`
-      + `<div class="area-chip ${r.dbx.cls}">${escapeHtml(r.dbx.label)}</div></div>`).join('')
+  const live = rows.filter(r => !r.skipped);
+  const inDbx = live.filter(r => r.ready).length;
+  const toCheck = Object.keys(state.roomChecks || {}).reduce((n, k) => n + (state.roomChecks[k] || []).filter(c => !c.resolved).length, 0);
+  box.innerHTML = '<div class="stat-row">'
+    + `<div class="stat"><span>Rooms</span><b>${live.length}</b></div>`
+    + `<div class="stat"><span>In Dropbox</span><b>${inDbx}</b></div>`
+    + `<div class="stat${toCheck ? ' attn' : ''}"><span>To check</span><b>${toCheck}</b></div>`
     + '</div>';
+  rows.forEach(paintReviewRow);
   renderFinishGate(rows);
+}
+function paintReviewRow(r) {
+  const sub = document.getElementById('rrsub-' + r.id);
+  const st = document.getElementById('rrstate-' + r.id);
+  const act = document.getElementById('rract-' + r.id);
+  if (!sub || !st) return;
+  const open = ((state.roomChecks || {})[r.id] || []).filter(c => !c.resolved).length;
+  let text, kind;
+  if (r.skipped) { text = 'Not at this property'; kind = 'none'; }
+  else if (r.typedOnly) { text = 'Typed only'; kind = 'ok'; }
+  else if (r.ready) {
+    kind = open ? 'attn' : 'ok';
+    text = open ? `${open} to check` : (r.tx.cls === 'bad' ? 'Audio in Dropbox, no transcript' : r.tx.cls === 'wait' ? 'Audio in Dropbox, transcribing' : 'Done');
+  } else if (r.sending) {
+    kind = 'wait';
+    text = navigator.onLine ? 'Sending to Dropbox' : 'On this phone, waiting for signal';
+  } else {
+    kind = 'bad';
+    text = r.canTyped ? 'Typed, not recorded' : /too large/.test(r.why) ? 'Too large to send. Use Recordings' : /no audio was captured/.test(r.why) ? 'No audio. Record it again' : 'Not recorded';
+  }
+  sub.textContent = text;
+  st.innerHTML = kind === 'ok' ? `<span class="rr-ic ok">${ico('check')}</span>`
+    : kind === 'bad' ? `<span class="rr-ic bad">${ico('alert')}</span>`
+    : `<span class="rr-ic ${kind}"></span>`;
+  if (act) {
+    const btn = (fn, t) => `<button type="button" class="area-skip" onclick="${fn}('${escapeAttr(r.id)}')">${t}</button>`;
+    act.innerHTML = r.skipped ? btn('toggleSkipRoom', 'Undo, it is here')
+      : r.typedOnly ? btn('toggleTypedOnly', 'Undo typed only')
+      : (r.canSkip ? btn('toggleSkipRoom', 'Not at this property') : '') + (r.canTyped ? btn('toggleTypedOnly', 'Typed only, no audio needed') : '');
+  }
 }
 
 // "Not at this property" — the only way a room with no recording counts as done.
@@ -5148,26 +5951,34 @@ function toggleTypedOnly(roomId) {
   renderAreaStatus();
 }
 
-// The lock on Finish & Clear. Says exactly which rooms are holding it and why.
+// The Finish line on the review page: one short sentence. Only rooms with
+// nothing recorded hold Finish; rooms still sending keep sending afterwards.
 let finishGateOpen = false;
 function renderFinishGate(rows) {
   const box = document.getElementById('finishStatus');
   const btn = document.getElementById('btnFinish');
   if (!box || !rows) return;
-  const blocking = rows.filter(r => !r.ready);
+  const blocking = rows.filter(r => !r.ready && !r.sending);
+  const sending = rows.filter(r => r.sending);
   finishGateOpen = blocking.length === 0;
-  if (finishGateOpen) {
+  const s = n => (n === 1 ? '' : 's');
+  const unlocked = () => { if (btn) { btn.classList.remove('blocked', 'locked'); btn.innerHTML = ico('check') + '<span>Finish inspection</span>'; } };
+  if (!blocking.length && !sending.length) {
     box.className = 'finish-status ready';
-    box.textContent = '✓ Every room is recorded and in Dropbox. Safe to finish.';
-    if (btn) { btn.classList.remove('blocked', 'locked'); btn.textContent = '✓ Finish & Clear This Inspection'; }
+    box.innerHTML = ico('check') + '<span>Every room is in Dropbox.</span>';
+    unlocked();
     return;
   }
-  const offline = !navigator.onLine;
+  if (!blocking.length) {
+    box.className = 'finish-status sending';
+    box.innerHTML = `<i class="chip-dot"></i><span><b>${sending.length} room${s(sending.length)} still sending.</b> You can finish now. `
+      + (navigator.onLine ? 'They send by themselves while the app is open.' : 'They send by themselves once you have signal and the app is open.') + '</span>';
+    unlocked();
+    return;
+  }
   box.className = 'finish-status waiting';
-  box.innerHTML = `<strong>🔒 ${blocking.length} room${blocking.length === 1 ? '' : 's'} not safe in Dropbox yet:</strong>`
-    + '<ul class="finish-list">' + blocking.map(r => `<li><b>${escapeHtml(r.name)}</b> — ${escapeHtml(r.why)}</li>`).join('') + '</ul>'
-    + (offline ? '<div>No signal here. Everything stays on this phone. Open the app again when you\'re back in signal and it finishes uploading by itself — then finish.</div>' : '');
-  if (btn) { btn.classList.add('blocked', 'locked'); btn.textContent = `🔒 Finish & Clear — ${blocking.length} room${blocking.length === 1 ? '' : 's'} to go`; }
+  box.innerHTML = ico('lock') + `<span><b>${blocking.length} room${s(blocking.length)} with no audio.</b> Record ${blocking.length === 1 ? 'it' : 'them'}, or open the room and tap Not at this property.</span>`;
+  if (btn) { btn.classList.add('blocked', 'locked'); btn.innerHTML = ico('lock') + `<span>Finish: ${blocking.length} room${s(blocking.length)} to go</span>`; }
 }
 
 // ─── NAVIGATION ──────────────────────────────────────────────────────────────
@@ -5198,126 +6009,213 @@ function showReview() {
   stopListening();
   if (navigator.onLine) processQueue();
   showScreen('screenReview');
-  renderFinishStatus();
-  renderAreaStatus();
   const dbx = document.getElementById('btnDropbox');
   if (dbx) {
     const url = dropboxFolderUrl();
     dbx.href = url || '#';
     dbx.classList.toggle('disabled', !url);
   }
-  document.getElementById('reviewMeta').textContent =
-    [state.address, state.inspType, state.client, state.stateCode].filter(Boolean).join(' · ');
+  document.getElementById('reviewTag').textContent = [state.inspType || 'Entry (PCR)', state.client].filter(Boolean).join(' · ');
+  document.getElementById('reviewMeta').textContent = state.address || '';
 
   const body = document.getElementById('reviewBody');
   body.innerHTML = '';
   reviewItems = [];
 
-  const hint = document.createElement('div');
-  hint.className = 'review-hint';
-  hint.innerHTML = '📋 Every room is going to Dropbox by itself. Check the <strong>Area status</strong> list above is all green, open <strong>Check it in Dropbox</strong> if you want to see it, then finish.';
-  body.appendChild(hint);
-
-  // The note fills from the accurate transcript, so a room recorded out of range
-  // is legitimately empty until it uploads. Say so loudly on the export screen.
-  const waitingRooms = state.rooms
-    .filter(r => { const m = roomRecMap[r.id]; return m && (m.pending || m.uploading); })
-    .map(r => r.name);
-  if (waitingRooms.length) {
-    const banner = document.createElement('div');
-    banner.className = 'warning-banner';
-    banner.innerHTML = `⏳ <div><strong>Still waiting on transcripts:</strong><br>${escapeHtml(waitingRooms.join(', '))}<br>Get back into signal and let these finish before you export — their notes are empty until they do.</div>`;
-    body.appendChild(banner);
-  }
-  const mismatched = state.rooms
-    .filter(r => roomMismatches[r.id])
-    .map(r => `${r.name} — the inspector said "${roomMismatches[r.id].said}"`);
-  if (mismatched.length) {
-    const banner = document.createElement('div');
-    banner.className = 'warning-banner';
-    banner.innerHTML = `⚠️ <div><strong>Room may be filed under the wrong heading:</strong><br>${escapeHtml(mismatched.join('; '))}<br>Check before exporting — moving the text now is far cheaper than the typist finding it later.</div>`;
-    body.appendChild(banner);
-  }
-
-  const failedRooms = state.rooms
-    .filter(r => { const m = roomRecMap[r.id]; return m && m.failed; })
-    .map(r => r.name);
-  if (failedRooms.length) {
-    const banner = document.createElement('div');
-    banner.className = 'warning-banner';
-    banner.innerHTML = `⚠️ <div><strong>Transcription failed:</strong><br>${escapeHtml(failedRooms.join(', '))}<br>The audio is kept and goes to Dropbox — the typist works from that.</div>`;
-    body.appendChild(banner);
-  }
-
-  const warnings = checkMandatory();
-  if (warnings.length) {
-    const banner = document.createElement('div');
-    banner.className = 'warning-banner';
-    banner.innerHTML = `⚠️ <div><strong>Missing required fields:</strong><br>${warnings.join(', ')}</div>`;
-    body.appendChild(banner);
-  }
-
-  const forbiddenHits = [];
+  // Before you finish: only what the inspector can still fix here.
+  const notes = [];
+  const missing = checkMandatory();
+  if (missing.length) notes.push('Not filled in: ' + missing.join(', '));
   state.rooms.forEach(room => {
     const hits = findForbidden(state.roomNotes[room.id] || '');
-    // Room names are user-entered — escape them before they hit innerHTML.
-    if (hits.length) forbiddenHits.push(`${escapeHtml(room.name)}: ${hits.join(', ')}`);
+    if (hits.length) notes.push(`Words to avoid in ${room.name}: ${hits.join(', ')}`);
+    const mm = roomMismatches[room.id];
+    if (mm) notes.push(`${room.name}: you said “${mm.said}”. Check it's under the right room.`);
   });
-  if (forbiddenHits.length) {
-    const banner = document.createElement('div');
-    banner.className = 'warning-banner';
-    banner.innerHTML = `⚠️ <div><strong>Forbidden words to fix:</strong><br>${forbiddenHits.join('<br>')}</div>`;
-    body.appendChild(banner);
+  const failedRooms = state.rooms.filter(r => { const m = roomRecMap[r.id]; return m && m.failed && !m.done; }).map(r => r.name);
+  if (failedRooms.length) notes.push(`No transcript for ${failedRooms.join(', ')}. The audio is saved for the typist.`);
+  if (notes.length) {
+    const card = document.createElement('div');
+    card.className = 'attn-card';
+    card.innerHTML = '<div class="attn-title">Before you finish</div>'
+      + notes.map(n => `<div class="attn-row">${ico('alert')}<span>${escapeHtml(n)}</span></div>`).join('');
+    body.appendChild(card);
   }
 
-  const mandDiv = document.createElement('div');
-  mandDiv.className = 'review-room';
-  mandDiv.innerHTML = `
-    <div class="review-room-title">⚡ Mandatory Items</div>
-    ${renderReviewItem('Water Meter', state.mandatory.waterMeter + (state.mandatory.waterMeterLocation ? ` — ${state.mandatory.waterMeterLocation}` : ''))}
-    ${renderReviewItem('RCD Box', state.mandatory.rcdBox)}
-    ${renderReviewItem('Smoke Alarms', state.mandatory.smokeAlarms)}
-    ${renderReviewItem('NBN Box', state.mandatory.nbnBox)}
-  `;
-  body.appendChild(mandDiv);
+  const label = document.createElement('div');
+  label.className = 'list-label';
+  label.textContent = 'Rooms';
+  body.appendChild(label);
 
-  // Rooms start folded: the area status above is what matters before leaving,
-  // and every room's note, split and check list used to make this page very long.
+  // One grouped card, a hairline between rooms, rather than a pile of cards.
+  const list = document.createElement('div');
+  list.className = 'room-list';
+  body.appendChild(list);
+  let opened = false;
   state.rooms.forEach(room => {
     const div = document.createElement('details');
     div.className = 'review-room fold';
+    div.dataset.room = room.id;
     const note = state.roomNotes[room.id] || '';
-    // Auto-computed sub-area split (read-only). The textarea stays the editable
-    // source of truth — this recomputes every time the review screen opens.
-    let splitHtml = '';
-    const buckets = subareasForRoom(room, note);
-    if (buckets.length) {
-      splitHtml = '<div class="review-split"><div class="review-split-title">Split by subsection</div>'
-        + buckets.map(b => `<div class="review-split-row"><span class="review-split-name">${escapeHtml(b.subarea)}:</span> ${escapeHtml(b.text)}</div>`).join('')
-        + '</div>';
-    }
-    // The short list of spots worth playing back. Everything not on it has been
-    // read in context and understood, which is what lets a VA stop listening to
-    // the whole room.
     const checks = (state.roomChecks && state.roomChecks[room.id]) || [];
+    const openCount = checks.filter(c => !c.resolved).length;
+    const buckets = note.trim() ? subareasForRoom(room, note) : [];
+    let textHtml = buckets.length
+      ? buckets.map(b => `<div class="rr-sec"><div class="rr-sec-name">${escapeHtml(b.subarea)}</div><div class="rr-sec-text">${escapeHtml(b.text)}</div></div>`).join('')
+      : (note.trim() ? `<div class="rr-sec"><div class="rr-sec-text">${escapeHtml(note)}</div></div>` : '<div class="rr-empty">No notes yet</div>');
+    const inv = (state.inventory[room.id] || '').trim();
+    const serial = (state.serialModels[room.id] || '').trim();
+    if (inv) textHtml += `<div class="rr-sec"><div class="rr-sec-name">Inventory</div><div class="rr-sec-text">${escapeHtml(inv)}</div></div>`;
+    if (serial) textHtml += `<div class="rr-sec"><div class="rr-sec-name">Serial / model</div><div class="rr-sec-text">${escapeHtml(serial)}</div></div>`;
     const checkHtml = checks.length
-      ? '<div class="review-check"><div class="review-check-title">🎧 Check these against the audio (' + checks.length + ')</div>'
-        + checks.map(c => `<div class="review-check-row"><b>${escapeHtml(c.clock ? '[' + c.clock + ']' : '[ — ]')}</b> “${escapeHtml(c.quote)}”${c.why ? ` <span>— ${escapeHtml(c.why)}</span>` : ''}</div>`).join('')
+      ? '<div class="review-check"><div class="review-check-title">' + (openCount ? 'Check ' + (openCount === 1 ? 'this' : 'these ' + openCount) + ' against the audio' : 'All checked') + '</div>'
+        + checks.map((c, i) => `<div class="review-check-row${c.resolved ? ' resolved' : ''}"><div class="rc-text">`
+          + (c.clock ? `<span class="rc-time">${escapeHtml(c.clock)}</span>` : '')
+          + `<span class="rc-q">${escapeHtml(c.quote)}</span></div>`
+          + (c.resolved
+            ? `<div class="rc-done">${ico('check')}<span>${c.resolved === 'fixed' ? 'Changed to “' + escapeHtml(c.fixedTo || '') + '”' : 'Correct as is'}</span></div>`
+            : `<button type="button" class="rc-fix" onclick="openFixSheet('${escapeAttr(room.id)}', ${i})">Fix a word</button>`)
+          + '</div>').join('')
         + '</div>'
       : '';
-    const serial = (state.serialModels[room.id] || '').trim();
-    const serialHtml = serial ? renderReviewItem('Serial / model', serial) : '';
-    const inv = (state.inventory[room.id] || '').trim();
-    const invHtml = inv ? renderReviewItem('Inventory', inv) : '';
-    const bits = [];
-    if (!note.trim()) bits.push('no notes');
-    else if (buckets.length) bits.push(buckets.length + ' subarea' + (buckets.length === 1 ? '' : 's'));
-    else bits.push('notes');
-    if (checks.length) bits.push(checks.length + ' to check');
-    if (findForbidden(note).length) bits.push('⚠ words to fix');
-    div.innerHTML = `<summary class="review-room-title">${escapeHtml(room.name)} <span class="review-room-sum">${escapeHtml(bits.join(' · '))}</span></summary>${renderReviewItem('Room notes', note)}${invHtml}${serialHtml}${splitHtml}${checkHtml}`;
-    body.appendChild(div);
+    div.innerHTML = `<summary><span class="rr-main"><span class="rr-name">${escapeHtml(room.name)}</span><span class="rr-sub" id="rrsub-${escapeAttr(room.id)}"></span></span><span class="rr-state" id="rrstate-${escapeAttr(room.id)}"></span></summary>`
+      + `<div class="rr-body">${checkHtml}${textHtml}<div class="rr-actions" id="rract-${escapeAttr(room.id)}"></div></div>`;
+    // The first room with something to check opens by itself.
+    if (openCount && !opened) { div.open = true; opened = true; }
+    list.appendChild(div);
   });
+
+  // Mandatory items, folded, under the rooms.
+  const mand = document.createElement('details');
+  mand.className = 'review-extra fold';
+  mand.innerHTML = `<summary><span class="rr-main"><span class="rr-name">Mandatory items</span><span class="rr-sub">${missing.length ? missing.length + ' not filled in' : 'All filled in'}</span></span>`
+    + `<span class="rr-state">${missing.length ? '<span class="rr-ic bad">' + ico('alert') + '</span>' : '<span class="rr-ic ok">' + ico('check') + '</span>'}</span></summary>`
+    + '<div class="rr-body">'
+    + renderReviewItem('Water meter', state.mandatory.waterMeter + (state.mandatory.waterMeterLocation ? `, ${state.mandatory.waterMeterLocation}` : ''))
+    + renderReviewItem('RCD box', state.mandatory.rcdBox)
+    + renderReviewItem('Smoke alarms', state.mandatory.smokeAlarms)
+    + renderReviewItem('NBN box', state.mandatory.nbnBox)
+    + '</div>';
+  body.appendChild(mand);
+  renderAreaStatus();
+}
+
+// ─── FIX A WORD (review page) ─────────────────────────────────────────────────
+// Round 10. Each "check this" sentence can be settled by the inspector, who was
+// there: play the moment, then keep it or type the right words. The change goes
+// into the room note and the room's files in Dropbox (sent again), so the
+// typist doesn't have to listen for it. Every fix is kept on the recording
+// (rec.fixes) and in the room's .json, ready for the team phrase list later.
+let fixTarget = null;
+let fixAudio = null, fixAudioUrl = null, fixStopTimer = null;
+function openFixSheet(roomId, idx) {
+  const c = ((state.roomChecks || {})[roomId] || [])[idx];
+  if (!c) return;
+  fixTarget = { roomId, idx };
+  const room = (state.rooms || []).find(r => r.id === roomId);
+  document.getElementById('fixSub').textContent = [room ? room.name : '', c.clock || ''].filter(Boolean).join(' · ');
+  document.getElementById('fixQuote').textContent = c.quote;
+  const heard = (c.heard || '').trim();
+  const showHeard = heard && checkNorm(heard) !== checkNorm(c.quote);
+  const h = document.getElementById('fixHeard');
+  h.textContent = showHeard ? 'The app heard: “' + heard + '”' : (c.why ? 'Why: ' + c.why : '');
+  h.style.display = h.textContent ? '' : 'none';
+  const ta = document.getElementById('fixText');
+  ta.value = c.quote;
+  const play = document.getElementById('fixPlay');
+  play.disabled = false;
+  play.innerHTML = ico('play') + '<span>Hear what I said</span>';
+  document.body.classList.add('sheet-open');
+  document.getElementById('fixSheet').classList.add('open');
+  document.getElementById('fixBackdrop').classList.add('open');
+}
+function stopFixAudio() {
+  if (fixStopTimer) { clearTimeout(fixStopTimer); fixStopTimer = null; }
+  try { if (fixAudio) fixAudio.pause(); } catch (e) {}
+  fixAudio = null;
+  if (fixAudioUrl) { try { URL.revokeObjectURL(fixAudioUrl); } catch (e) {} fixAudioUrl = null; }
+}
+function closeFixSheet() {
+  stopFixAudio();
+  fixTarget = null;
+  document.body.classList.remove('sheet-open');
+  document.getElementById('fixSheet').classList.remove('open');
+  document.getElementById('fixBackdrop').classList.remove('open');
+}
+async function fixRecordingFor(roomId, c) {
+  let recs = [];
+  try { recs = (await dbAll()).filter(r => r.roomId === roomId && sameJob(r)); } catch (e) {}
+  return recs.find(r => c.recId != null && r.id === c.recId)
+    || recs.find(r => (r.check || []).some(x => x.quote === c.quote))
+    || recs.find(r => r.blob) || null;
+}
+async function playFixClip() {
+  if (!fixTarget) return;
+  const c = ((state.roomChecks || {})[fixTarget.roomId] || [])[fixTarget.idx];
+  const play = document.getElementById('fixPlay');
+  stopFixAudio();
+  const rec = c ? await fixRecordingFor(fixTarget.roomId, c) : null;
+  if (!rec || !rec.blob) { play.innerHTML = '<span>No audio on this phone for this room</span>'; play.disabled = true; return; }
+  fixAudioUrl = URL.createObjectURL(rec.blob);
+  fixAudio = new Audio(fixAudioUrl);
+  const from = Math.max(0, (c.at != null ? c.at : 0) - 1);
+  try {
+    await new Promise((res) => { fixAudio.addEventListener('loadedmetadata', res, { once: true }); setTimeout(res, 1500); });
+    fixAudio.currentTime = from;
+  } catch (e) {}
+  const label = (i, t) => { play.innerHTML = ico(i) + '<span>' + t + '</span>'; };
+  try { await fixAudio.play(); label('stop', 'Stop'); } catch (e) { label('play', 'Hear what I said'); return; }
+  play.onclick = () => { stopFixAudio(); label('play', 'Hear what I said'); play.onclick = playFixClip; };
+  fixStopTimer = setTimeout(() => { stopFixAudio(); label('play', 'Hear it again'); play.onclick = playFixClip; }, 9000);
+}
+// Swap one sentence for another. Exact first; then the same words with any
+// spacing or case, so a sentence that wrapped differently is still found.
+function replaceSentence(text, from, to) {
+  const s = String(text || '');
+  if (!from) return s;
+  if (s.includes(from)) return s.replace(from, () => to);
+  const words = String(from).match(/[A-Za-z0-9']+/g);
+  if (!words || words.length < 2) return s;
+  const re = new RegExp(words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join("[^A-Za-z0-9']+") + '[.!?]?', 'i');
+  return re.test(s) ? s.replace(re, () => to) : s;
+}
+async function saveFix(keep) {
+  const f = fixTarget;
+  if (!f) return;
+  const list = (state.roomChecks || {})[f.roomId] || [];
+  const c = list[f.idx];
+  if (!c) { closeFixSheet(); return; }
+  let to = keep ? '' : document.getElementById('fixText').value.replace(/\s+/g, ' ').trim();
+  if (!keep && (!to || to === c.quote)) keep = true;
+  const from = c.quote;
+  if (!keep) {
+    state.roomNotes[f.roomId] = replaceSentence(state.roomNotes[f.roomId], from, to);
+    (state.roomSections[f.roomId] || []).forEach(s => { s.text = replaceSentence(s.text, from, to); });
+    ((state.roomSectionParts || {})[f.roomId] || []).forEach(part => (part || []).forEach(s => { s.text = replaceSentence(s.text, from, to); }));
+    const ta = document.getElementById(`roomta-${f.roomId}`);
+    if (ta) ta.value = state.roomNotes[f.roomId];
+  }
+  c.resolved = keep ? 'kept' : 'fixed';
+  if (!keep) c.fixedTo = to;
+  c.resolvedAt = Date.now();
+  saveState();
+  // The recording carries the same change, and its files go to Dropbox again.
+  try {
+    const rec = await fixRecordingFor(f.roomId, c);
+    if (rec) {
+      await dbUpdate(rec.id, r => {
+        if (!keep) (r.sections || []).forEach(s => { s.text = replaceSentence(s.text, from, to); });
+        const rc = (r.check || []).find(x => x.quote === from);
+        if (rc) { rc.resolved = c.resolved; if (!keep) rc.fixedTo = to; rc.resolvedAt = c.resolvedAt; }
+        if (!keep) r.fixes = (r.fixes || []).concat([{ heard: c.heard || '', from, to, at: c.at != null ? c.at : null, by: 'inspector', when: new Date().toISOString() }]);
+        if (r.archived === true) { r.archived = false; r.resendFiles = true; }
+      });
+      if (cloudArchiveEnabled() && navigator.onLine) processArchiveQueue();
+    }
+  } catch (e) {}
+  closeFixSheet();
+  showReview();
+  showToast(keep ? 'Marked as checked' : 'Fix saved. The room\'s files in Dropbox update by themselves.');
 }
 
 function renderReviewItem(name, val) {
@@ -5325,8 +6223,8 @@ function renderReviewItem(name, val) {
   reviewItems.push({ name: name, val: val || '' });
   const hasForbidden = findForbidden(val).length > 0;
   const cls = !val ? 'empty' : hasForbidden ? 'flagged' : '';
-  const display = !val ? 'Not recorded' : escapeHtml(val);
-  const flag = hasForbidden ? ' ⚠️' : '';
+  const display = !val ? 'Not filled in' : escapeHtml(val);
+  const flag = '';
   const copyBtn = '';   // removed in round 5 — everything is in Dropbox already
   return `<div class="review-item">
     <div class="review-item-name">${escapeHtml(name)}</div>
@@ -5344,6 +6242,7 @@ function copyField(idx) {
 function checkMandatory() {
   const missing = [];
   if (!state.mandatory.waterMeter) missing.push('Water Meter Reading');
+  if (!state.mandatory.rcdBox) missing.push('RCD Box');
   if (!state.mandatory.smokeAlarms) missing.push('Smoke Alarms');
   if (!state.mandatory.nbnBox) missing.push('NBN Box');
   return missing;
@@ -5413,89 +6312,13 @@ function buildInspectionSummary(statusRows) {
   lines.push('');
   return lines.join('\n') + '\n' + buildReportText().replace(/^PROPERTY INSPECTION REPORT\n=+\n(?:.*\n)*?\n/, '');
 }
-// ─── PCR WORD FILE ────────────────────────────────────────────────────────────
-// Fills the PA master WA Property Condition Report (pcr-template-wa.docx, kept
-// beside index.html) with what the app has: each room's text goes into the
-// comments column of the matching line item, using the AI sort when it ran and
-// the keyword split when it didn't. Anything that doesn't match a line goes in
-// that room's "Additional" row. Every room in the template is kept, as the
-// typists asked; rooms not inspected stay blank. Clean / Undamaged / Working
-// ticks are left for the typist.
-const PCR_TEMPLATE_URL = 'pcr-template-wa.docx';
-const W_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
-const PCR_COMMENT_COL = 4;   // Item | C | U | W | Comments (start of tenancy) | …
-// Room id → the template's heading for that room.
-const PCR_HEADINGS = {
-  front_gardens: 'FRONT GARDENS', garage: 'GARAGE/CARPORT', entry: 'ENTRY', lounge: 'LOUNGE',
-  passage: 'PASSAGE', staircase: 'STAIRCASE & LANDING', bedroom1: 'BEDROOM 1', ensuite: 'ENSUITE',
-  ensuite_toilet: 'ENSUITE TOILET', bedroom2: 'BEDROOM 2', bedroom3: 'BEDROOM 3', bedroom4: 'BEDROOM 4',
-  study: 'STUDY', bathroom2: 'BATHROOM 2', toilet: 'TOILET', kitchen: 'KITCHEN', dining: 'DINING',
-  family: 'FAMILY ROOM', theatre: 'THEATRE ROOM', powder_room: 'POWDER ROOM', laundry: 'LAUNDRY',
-  balcony: 'BALCONY', shed: 'SHED/STORE ROOM', rear_exterior: 'REAR EXTERIOR', _security: 'SECURITY/SAFETY'
-};
-function pcrNorm(s) { return String(s || '').toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9/&]/g, ''); }
-function wKids(node, local) { return Array.from(node.childNodes).filter(n => n.namespaceURI === W_NS && n.localName === local); }
-function wText(node) { return Array.from(node.getElementsByTagNameNS(W_NS, 't')).map(t => t.textContent).join('').trim(); }
-function wRun(doc, text, opts) {
-  const r = doc.createElementNS(W_NS, 'w:r');
-  const rPr = doc.createElementNS(W_NS, 'w:rPr');
-  const f = doc.createElementNS(W_NS, 'w:rFonts');
-  f.setAttributeNS(W_NS, 'w:ascii', 'Century Gothic'); f.setAttributeNS(W_NS, 'w:hAnsi', 'Century Gothic');
-  rPr.appendChild(f);
-  if (opts && opts.bold) rPr.appendChild(doc.createElementNS(W_NS, 'w:b'));
-  const sz = doc.createElementNS(W_NS, 'w:sz'); sz.setAttributeNS(W_NS, 'w:val', String((opts && opts.size) || 18));
-  rPr.appendChild(sz);
-  r.appendChild(rPr);
-  String(text).split('\n').forEach((line, i) => {
-    if (i) r.appendChild(doc.createElementNS(W_NS, 'w:br'));
-    const t = doc.createElementNS(W_NS, 'w:t');
-    t.setAttributeNS('http://www.w3.org/XML/1998/namespace', 'xml:space', 'preserve');
-    t.textContent = line;
-    r.appendChild(t);
-  });
-  return r;
-}
-function setCellText(doc, tc, text) {
-  const ps = wKids(tc, 'p');
-  let p = ps[0];
-  if (!p) { p = doc.createElementNS(W_NS, 'w:p'); tc.appendChild(p); }
-  ps.slice(1).forEach(x => tc.removeChild(x));
-  wKids(p, 'r').forEach(r => p.removeChild(r));
-  p.appendChild(wRun(doc, text));
-}
-// What goes where: { roomId: { items: {normName: text}, extra: [text] } }
-function pcrContent() {
-  const out = {};
-  const add = (rid, key, text) => {
-    text = String(text || '').trim(); if (!text) return;
-    const o = out[rid] = out[rid] || { items: {}, extra: [] };
-    if (key) o.items[key] = o.items[key] ? o.items[key] + ' ' + text : text;
-    else o.extra.push(text);
-  };
-  const skipped = state.skippedRooms || {};
-  (state.rooms || []).forEach(room => {
-    if (skipped[room.id]) return;
-    const note = (state.roomNotes[room.id] || '').trim();
-    const subs = (room.subsections || []).map(pcrNorm);
-    if (note) {
-      const buckets = subareasForRoom(room, note);
-      if (!buckets.length) add(room.id, null, note);
-      buckets.forEach(b => {
-        const k = pcrNorm(b.subarea);
-        if (k && subs.includes(k) && k !== 'additional') add(room.id, k, b.text);
-        else add(room.id, null, (b.subarea && k !== 'additional' ? b.subarea + ': ' : '') + b.text);
-      });
-    }
-    const inv = (state.inventory[room.id] || '').trim();
-    if (inv) add(room.id, null, 'Inventory: ' + inv);
-    const serial = (state.serialModels[room.id] || '').trim();
-    if (serial) add(room.id, null, 'Model / serial numbers (typed on the phone): ' + serial);
-  });
-  const m = state.mandatory || {};
-  if ((m.smokeAlarms || '').trim()) add('_security', 'smokealarms', m.smokeAlarms);
-  if ((m.rcdBox || '').trim()) add('_security', 'rcd/safetyswitch', m.rcdBox);
-  return out;
-}
+// ─── ROOM WORD FILE ───────────────────────────────────────────────────────────
+// One .docx per room, beside the room's .txt and audio in Dropbox (round 9; the
+// PCR template file was dropped on 7 Oct). Same content as the .txt, but the
+// sentences the cleanup pass flagged are RED, phrases it added ("in clean
+// condition", "secured and functional") are red italic, every sentence keeps its
+// [m:ss], and a section index at the top says where each subarea starts in the
+// audio. Built from scratch with JSZip, so no template is needed.
 async function loadJSZip() {
   if (window.JSZip) return window.JSZip;
   await new Promise((resolve, reject) => {
@@ -5505,95 +6328,72 @@ async function loadJSZip() {
   });
   return window.JSZip;
 }
-async function buildPcrDocx() {
-  const JSZip = await loadJSZip();
-  const res = await fetch(PCR_TEMPLATE_URL);
-  if (!res.ok) throw new Error('template not found');
-  const zip = await JSZip.loadAsync(await res.arrayBuffer());
-  const xml = await zip.file('word/document.xml').async('string');
-  const doc = new DOMParser().parseFromString(xml, 'application/xml');
-  const body = doc.getElementsByTagNameNS(W_NS, 'body')[0];
-  const tbl = wKids(body, 'tbl')[0];
-  if (!tbl) throw new Error('template table missing');
-  const content = pcrContent();
-  const headingToId = {};
-  Object.keys(PCR_HEADINGS).forEach(id => { headingToId[pcrNorm(PCR_HEADINGS[id])] = id; });
-  // Walk the table once: heading rows start a room, the rows after are its items.
-  const rows = {};   // roomId -> { normItem: tr }
-  let cur = null;
-  wKids(tbl, 'tr').forEach(tr => {
-    const tcs = wKids(tr, 'tc');
-    if (!tcs.length) return;
-    const k = pcrNorm(wText(tcs[0]));
-    if (headingToId[k]) { cur = headingToId[k]; rows[cur] = {}; return; }
-    if (cur && k && !(k in rows[cur])) rows[cur][k] = tr;
-  });
-  let filled = 0;
-  const leftovers = [];
-  Object.keys(content).forEach(rid => {
-    const c = content[rid];
-    const r = rows[rid];
-    const room = (state.rooms || []).find(x => x.id === rid);
-    if (!r) {   // a custom room — not in the template
-      const all = Object.keys(c.items).map(k => c.items[k]).concat(c.extra);
-      if (all.length) leftovers.push({ title: room ? room.name : rid, text: all.join('\n') });
-      return;
-    }
-    Object.keys(c.items).forEach(k => {
-      const tr = r[k];
-      if (tr) { setCellText(doc, wKids(tr, 'tc')[PCR_COMMENT_COL], c.items[k]); filled++; }
-      else c.extra.push(c.items[k]);
-    });
-    if (c.extra.length) {
-      const tr = r['additional'];
-      if (tr) { setCellText(doc, wKids(tr, 'tc')[PCR_COMMENT_COL], c.extra.join('\n')); filled++; }
-      else leftovers.push({ title: room ? room.name : PCR_HEADINGS[rid], text: c.extra.join('\n') });
-    }
-  });
-  // Address on the cover page.
-  const addrT = Array.from(doc.getElementsByTagNameNS(W_NS, 't')).find(t => /^\s*ADDRESS:\s*$/.test(t.textContent));
-  if (addrT) {
-    const p = addrT.parentNode.parentNode;
-    const ts = Array.from(p.getElementsByTagNameNS(W_NS, 't'));
-    const last = ts[ts.length - 1];
-    if (last && last !== addrT) last.textContent = ' ' + state.address;
-    else p.appendChild(wRun(doc, ' ' + state.address, { bold: true, size: 20 }));
-  }
-  // Items with no row of their own (water meter, NBN, custom rooms) go in a
-  // short section straight after the table, so nothing is dropped.
-  const m = state.mandatory || {};
-  const extras = [];
-  const wm = [m.waterMeter, m.waterMeterLocation].filter(x => (x || '').trim()).join(' — ');
-  if (wm) extras.push({ title: 'Water meter', text: wm });
-  if ((m.nbnBox || '').trim()) extras.push({ title: 'NBN box', text: m.nbnBox });
-  extras.push(...leftovers);
-  if (extras.length) {
-    const mk = (text, bold) => { const p = doc.createElementNS(W_NS, 'w:p'); p.appendChild(wRun(doc, text, { bold, size: 20 })); return p; };
-    let after = tbl;
-    const ins = (p) => { body.insertBefore(p, after.nextSibling); after = p; };
-    ins(mk('OTHER ITEMS RECORDED ON THE APP', true));
-    extras.forEach(e => { ins(mk(e.title, true)); ins(mk(e.text, false)); });
-  }
-  zip.file('word/document.xml', new XMLSerializer().serializeToString(doc));
-  const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-  return { blob, filled };
+const DOCX_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+const RED = 'C00000', GREY = '777777';
+function xmlEsc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function dRun(text, o) {
+  o = o || {};
+  const pr = '<w:rFonts w:ascii="Century Gothic" w:hAnsi="Century Gothic"/>'
+    + (o.b ? '<w:b/>' : '') + (o.i ? '<w:i/>' : '')
+    + (o.color ? '<w:color w:val="' + o.color + '"/>' : '')
+    + '<w:sz w:val="' + (o.sz || 20) + '"/>';
+  return String(text).split('\n').map((line, i) =>
+    '<w:r><w:rPr>' + pr + '</w:rPr>' + (i ? '<w:br/>' : '') + '<w:t xml:space="preserve">' + xmlEsc(line) + '</w:t></w:r>').join('');
 }
-async function queuePcrDocx() {
-  if (!cloudArchiveEnabled() || !state.address) return false;
-  try {
-    const { blob, filled } = await buildPcrDocx();
-    const type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-    await photoAdd({
-      kind: 'pcr', roomId: '_pcr', roomName: 'PCR',
-      fileName: `PCR ${safeSeg(state.address)}${state.inspType ? ' (' + state.inspType + ')' : ''}.docx`,
-      address: state.address, jobId: state.jobId || '', meta: inspectionMeta(),
-      createdAt: state.startedAt || Date.now(), blob, type, uploaded: false, filled
-    });
-    return true;
-  } catch (e) {
-    showToast('⚠ The PCR Word file couldn\'t be made (' + ((e && e.message) || 'error') + '). The typist can still use the .txt files.');
-    return false;
+function dPara(runs, o) {
+  o = o || {};
+  return '<w:p><w:pPr><w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after == null ? 120 : o.after) + '"/></w:pPr>' + runs + '</w:p>';
+}
+// A sentence as runs: [added: …] red italic, the rest red when flagged.
+function sentenceRuns(sentence, flagged) {
+  return sentence.split(/(\[added: [^\]]*\])/).filter(Boolean).map(part =>
+    /^\[added: /.test(part) ? dRun(part, { color: RED, i: true }) : dRun(part, flagged ? { color: RED, b: true } : {})).join('');
+}
+function buildRoomDocxXml(rec, layout) {
+  const out = [];
+  out.push(dPara(dRun((rec.roomName || rec.roomId || 'Room') + ' — ' + (rec.address || ''), { b: true, sz: 28 })));
+  out.push(dPara(dRun(layout.header, { color: GREY, sz: 16 })));
+  out.push(dPara(dRun('Red bold', { color: RED, b: true, sz: 18 }) + dRun(' = check this sentence against the audio.   ', { sz: 18 })
+    + dRun('[added: …]', { color: RED, i: true, sz: 18 }) + dRun(' = phrase the AI added because no damage was mentioned. Confirm or delete it.   [m:ss] = where it was said in the audio.', { sz: 18 })));
+  if (layout.index.length) {
+    out.push(dPara(dRun('SECTIONS IN THE AUDIO', { b: true }), { before: 160, after: 60 }));
+    layout.index.forEach(x => out.push(dPara(dRun(x.name + ' — ' + x.clock), { after: 0 })));
   }
+  if (layout.checks.length) {
+    out.push(dPara(dRun('CHECK THESE AGAINST THE AUDIO (' + layout.checks.length + ')', { b: true, color: RED }), { before: 200, after: 60 }));
+    layout.checks.forEach(c => out.push(dPara(
+      dRun((c.clock ? '[' + c.clock + '] ' : '[ — ] '), { color: GREY }) + dRun('"' + c.quote + '"', { color: RED }) + dRun(c.why ? ' — ' + c.why : ''), { after: 40 })));
+  } else if (layout.cleaned) {
+    out.push(dPara(dRun(layout.resolved && layout.resolved.length ? 'Nothing left to check in this room.' : 'Nothing flagged for checking in this room.', { color: GREY }), { before: 160 }));
+  }
+  if (layout.resolved && layout.resolved.length) {
+    out.push(dPara(dRun('ALREADY CHECKED BY THE INSPECTOR (' + layout.resolved.length + ')', { b: true }), { before: 200, after: 60 }));
+    layout.resolved.forEach(c => out.push(dPara(
+      dRun((c.clock ? '[' + c.clock + '] ' : '[ - ] '), { color: GREY }) + dRun('"' + c.quote + '"')
+      + dRun(c.resolved === 'fixed' ? ' changed to "' + c.fixedTo + '"' : ' is correct as is', { color: GREY }), { after: 40 })));
+  }
+  out.push(dPara(dRun('BY SUBAREA', { b: true, sz: 22 }), { before: 240, after: 60 }));
+  layout.buckets.forEach(b => {
+    if (layout.buckets.length > 1) out.push(dPara(dRun(b.subarea.toUpperCase() + (b.clock ? '   ' + b.clock : ''), { b: true }), { before: 160, after: 40 }));
+    out.push(dPara(b.sents.map(x => (x.at != null ? dRun('[' + formatClock(x.at) + '] ', { color: GREY, sz: 16 }) : '') + sentenceRuns(x.sentence, x.flagged) + dRun(' ')).join('')));
+  });
+  if (layout.raw) {
+    out.push(dPara(dRun('RAW TRANSCRIPT (exactly as the engine heard it)', { b: true, color: GREY, sz: 18 }), { before: 280, after: 60 }));
+    out.push(dPara(dRun(layout.raw, { color: GREY, sz: 16 })));
+  }
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+    + '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'
+    + out.join('')
+    + '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1000" w:right="1000" w:bottom="1000" w:left="1000" w:header="500" w:footer="500" w:gutter="0"/></w:sectPr>'
+    + '</w:body></w:document>';
+}
+async function buildRoomDocx(rec, clean) {
+  const JSZip = await loadJSZip();
+  const zip = new JSZip();
+  zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
+  zip.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+  zip.file('word/document.xml', buildRoomDocxXml(rec, roomLayout(rec, clean)));
+  return zip.generateAsync({ type: 'blob', mimeType: DOCX_TYPE });
 }
 
 async function queueInspectionSummary(statusRows) {
@@ -5695,81 +6495,68 @@ function downloadCSV() {
 
 async function finishAndClear() {
   // Push anything waiting before judging, so a room that's one upload away
-  // doesn't hold the button needlessly.
+  // doesn't show as still sending.
   if (navigator.onLine) { try { await queueWatchdog(); processQueue(); processArchiveQueue(); } catch (e) {} }
   const statusRows = await computeAreaStatus();
   renderFinishGate(statusRows);
-  const blocking = statusRows.filter(r => !r.ready);
+  // Round 10: only rooms with nothing recorded stop Finish. Audio still on its
+  // way to Dropbox stays on the phone and keeps sending.
+  const blocking = statusRows.filter(r => !r.ready && !r.sending);
   let override = false;
   if (blocking.length) {
     const list = blocking.map(r => `• ${r.name}: ${r.why}`).join('\n');
     const typed = prompt(
-      `Not finished — these rooms are not safe in Dropbox yet:\n\n${list}\n\n`
-      + 'Record any missing room (or tap "Not here" if the property doesn\'t have it), and finish once you have signal.\n\n'
-      + 'Only if a manager has said so: type FINISH to clear anyway. Recordings still on the phone keep trying in the background.'
+      `Not finished. These rooms have no audio yet:\n\n${list}\n\n`
+      + 'Record any missing room, or tap "Not here" if the property doesn\'t have it.\n\n'
+      + 'Only if a manager has said so: type FINISH to finish anyway.'
     );
-    if (!typed || typed.trim().toUpperCase() !== 'FINISH') { showToast('Not finished — the inspection is still here'); return; }
+    if (!typed || typed.trim().toUpperCase() !== 'FINISH') { showToast('Not finished. The inspection is still here.'); return; }
     override = true;
-  } else if (!confirm('Every room is recorded and in Dropbox. Finish and clear this inspection from the phone?')) {
-    return;
   }
   statusRows.override = override;
-  stopListening();
-  await queueInspectionSummary(statusRows);
-  await queuePcrDocx();
-  // Clean up this property's recordings so they can never bleed into the next
-  // inspection. Anything not yet safe (not transcribed, or — when archiving is on —
-  // not yet backed up to Dropbox) is kept and keeps trying in the background.
-  try {
-    const recs = (await dbAll()).filter(r => sameJob(r));
-    let unsentPhotos = 0;
-    if (cloudArchiveEnabled()) {
-      try { unsentPhotos = (await photoAll()).filter(p => sameJob(p) && !p.uploaded && p.kind !== 'summary' && p.kind !== 'pcr').length; } catch (e) {}
-    }
-    const notSafe = recs.filter(r =>
-      r.status === 'pending' || r.status === 'uploading' || r.status === 'recording' || r.status === 'failed' ||
-      (cloudArchiveEnabled() && r.status === 'done' && r.archived !== true));
+  let recs = [];
+  let unsentPhotos = 0;
+  try { recs = (await dbAll()).filter(r => sameJob(r)); } catch (e) {}
+  if (cloudArchiveEnabled()) {
+    try { unsentPhotos = (await photoAll()).filter(p => sameJob(p) && !p.uploaded && p.kind !== 'summary' && p.kind !== 'pcr').length; } catch (e) {}
+  }
+  // A failed transcript whose audio is already in Dropbox is safe: the typist
+  // works from the audio. Only audio still on the phone counts here.
+  const audioUp = r => r.archived === true || r.audioArchived === true;
+  const notSafe = recs.filter(r =>
+    r.status === 'pending' || r.status === 'uploading' || r.status === 'recording' ||
+    (r.status === 'failed' && (!cloudArchiveEnabled() || !audioUp(r))) ||
+    (cloudArchiveEnabled() && r.status === 'done' && r.archived !== true));
+  // One question only. The typed manager override already said yes.
+  if (!override) {
+    let msg;
     if (notSafe.length || unsentPhotos) {
-      let msg;
-      if (cloudArchiveEnabled()) {
-        const parts = [];
-        if (notSafe.length) parts.push(`${notSafe.length} recording${notSafe.length === 1 ? '' : 's'}`);
-        if (unsentPhotos) parts.push(`${unsentPhotos} serial photo${unsentPhotos === 1 ? '' : 's'}`);
-        msg = `${parts.join(' and ')} ${(notSafe.length + unsentPhotos) === 1 ? "hasn't" : "haven't"} finished backing up to Dropbox yet. Finish anyway? They stay on this phone and keep trying in the background — you can check them under Recordings.`;
-      } else {
-        msg = `${notSafe.length} recording${notSafe.length === 1 ? " hasn't" : "s haven't"} been transcribed yet. Finish anyway? Their audio will be kept but won't go into a new inspection.`;
-      }
-      if (!confirm(msg)) return;
-      // These stay in the queue and really do keep trying. They used to be set to
-      // 'orphaned', a status neither queue ever looked at again — so the dialog's
-      // promise was false and the audio sat on the phone forever. Writing into the
-      // next property's notes is already prevented by the address check in
-      // applyTranscript(), so the status doesn't need to do that job.
-      for (const rec of notSafe) {
-        rec.closed = true;                 // belongs to a finished job
-        if (rec.status !== 'done' && rec.status !== 'failed') {
-          rec.status = 'pending';
-          rec.attempts = 0;
-        }
-        try { await dbPut(rec); } catch (e) {}
-      }
+      const parts = [];
+      if (notSafe.length) parts.push(`${notSafe.length} recording${notSafe.length === 1 ? '' : 's'}`);
+      if (unsentPhotos) parts.push(`${unsentPhotos} serial photo${unsentPhotos === 1 ? '' : 's'}`);
+      msg = `${parts.join(' and ')} still sending to Dropbox. `
+        + 'They stay on this phone and keep sending by themselves while the app is open with signal. You can check them under Recordings.\n\nFinish this inspection?';
+    } else {
+      msg = 'Every room is recorded and in Dropbox. Finish this inspection?';
     }
-    // Delete records whose audio is safely handled: transcribed AND (backed up, or archiving off).
-    for (const rec of recs) {
-      if (rec.status === 'done' && (!cloudArchiveEnabled() || rec.archived === true)) {
-        try { await dbDelete(rec.id); } catch (e) {}
-      }
-    }
-    // Serial photos: one more upload attempt, then clear backed-up ones for this
-    // property. Any still unsent stay on the phone and keep retrying.
+    if (!confirm(msg)) return;
+  }
+  stopListening();
+  // Everything of this job stays on the phone. Records still on their way keep
+  // trying; records already in Dropbox are cleared 14 days after they got there
+  // (sweepOldJobs). Nothing can bleed into the next inspection: applyTranscript()
+  // checks the job before it writes.
+  for (const rec of recs) {
     try {
-      if (cloudArchiveEnabled() && navigator.onLine) await processPhotoQueue();
-      const photos = (await photoAll()).filter(p => sameJob(p));
-      for (const p of photos) {
-        if (p.uploaded) { try { await photoDelete(p.id); } catch (e) {} }
-      }
+      await dbUpdate(rec.id, r => {
+        r.closed = true;               // belongs to a finished job
+        if (r.status === 'recording') { r.status = 'pending'; r.attempts = 0; }
+      });
     } catch (e) {}
-  } catch (e) { /* IndexedDB unavailable — nothing to clean */ }
+  }
+  // Only now, with the finish confirmed, does the details file go.
+  try { await queueInspectionSummary(statusRows); } catch (e) {}
+  try { if (cloudArchiveEnabled() && navigator.onLine) processPhotoQueue(); } catch (e) {}
   clearSaved();
   releaseSessionMic();   // let go of the microphone now the inspection is finished
   state.roomNotes = {}; state.serialModels = {}; state.serialPhotos = {}; state.checked = {}; state.rooms = [];
@@ -5780,15 +6567,22 @@ async function finishAndClear() {
   state.client = ''; state.inspector = ''; state.inspType = '';
   state.mandatory = { waterMeter:'', waterMeterLocation:'', rcdBox:'', smokeAlarms:'', nbnBox:'' };
   document.getElementById('resumeBanner').style.display = 'none';
-  document.getElementById('headerTitle').textContent = 'New Inspection';
+  document.getElementById('headerTitle').textContent = '';
   showScreen('screenSetup');
   updatePendingUI();
-  showToast('Cleared — ready for the next property');
+  showToast(notSafe.length
+    ? `Finished. ${notSafe.length} recording${notSafe.length === 1 ? ' is' : 's are'} still sending. Keep the app open with signal.`
+    : 'Finished. Ready for the next property.');
 }
 
 // ─── RECORDINGS SCREEN ────────────────────────────────────────────────────────
 // Lists every recording in IndexedDB, newest first, with audio playback for any
 // record that still holds a blob and a Retry button for failed ones.
+// The same words the room chips use, not the database's own.
+const REC_STATUS_WORDS = {
+  recording: 'Recording', pending: 'Waiting to send', uploading: 'Transcribing',
+  done: 'Transcript in', failed: 'No transcript', orphaned: 'Waiting to send'
+};
 let recObjectUrls = [];               // object URLs created for playback — revoked on teardown
 let recordingsReturnScreen = 'screenSetup';
 
@@ -5822,12 +6616,7 @@ function audioExt(type) {
   return 'audio';
 }
 function recFilename(rec) {
-  const safe = s => String(s || '').replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '').slice(0, 30);
-  const addr = safe(rec.address) || 'inspection';
-  const room = safe(rec.roomName || rec.roomId) || 'room';
-  const d = rec.createdAt ? new Date(rec.createdAt) : new Date();
-  const stamp = d.toISOString().slice(0, 16).replace(/[:T]/g, '-');
-  return `${addr}_${room}_${stamp}.${audioExt(rec.type)}`;
+  return `${safeSeg(rec.address) || 'Inspection'} - ${archiveBaseName(rec)}.${audioExt(rec.type)}`;
 }
 // Share one recording's audio (email / AirDrop / messages), falling back to a download.
 async function shareOneRecording(rec) {
@@ -5848,6 +6637,23 @@ function downloadOneRecording(rec) {
   setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
   showToast('✓ Audio saved');
 }
+// The review page's backup: every room's audio for this job, out of the app and
+// into the phone's own Files. The text is in Dropbox already; the audio is what
+// can't be typed again if a recording is lost.
+async function saveAudioBackup() {
+  let recs = [];
+  try { recs = (await dbAll()).filter(r => sameJob(r) && r.blob); } catch (e) {}
+  if (!recs.length) { showToast('No audio on this phone for this job yet'); return; }
+  recs.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+  const files = recs.map(r => new File([r.blob], recFilename(r), { type: r.type || 'audio/mp4' }));
+  if (navigator.canShare && navigator.canShare({ files })) {
+    try { await navigator.share({ files, title: 'Audio backup — ' + (state.address || '') }); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  // No share sheet (or it refused that many files): one download per room.
+  for (const r of recs) { downloadOneRecording(r); await new Promise(res => setTimeout(res, 400)); }
+}
+
 // Send every stored recording for THIS property to the VA in one share sheet.
 async function shareAllRecordings() {
   let recs = [];
@@ -5884,7 +6690,10 @@ async function renderRecordings() {
     const card = document.createElement('div');
     card.className = 'recording-card';
     const status = String(rec.status || 'pending');
-    const when = rec.createdAt ? new Date(rec.createdAt).toLocaleString('en-AU') : '';
+    // Short time: "10:23 am" today, "7 Oct, 10:23 am" before that.
+    const when = !rec.createdAt ? '' : (new Date(rec.createdAt).toDateString() === new Date().toDateString()
+      ? new Date(rec.createdAt).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })
+      : new Date(rec.createdAt).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }));
     // All user text is escaped — room names, addresses and transcripts are user input.
     let transcriptHtml = '';
     const t = (rec.transcript || '').trim();
@@ -5898,20 +6707,20 @@ async function renderRecordings() {
     let backupHtml = '';
     if (cloudArchiveEnabled() && status === 'failed') {
       backupHtml = rec.archived === true
-        ? '<div class="rec-backup ok">☁ Audio in Dropbox — no transcript, type from the audio</div>'
-        : '<div class="rec-backup pending">☁ Sending audio to Dropbox…</div>';
+        ? '<div class="rec-backup ok">' + ico('check') + '<span>Audio in Dropbox. Type from the audio</span></div>'
+        : '<div class="rec-backup pending"><i class="chip-dot"></i><span>Sending audio to Dropbox</span></div>';
     } else if (cloudArchiveEnabled() && status === 'done') {
       backupHtml = rec.archived === true
-        ? '<div class="rec-backup ok">☁ Backed up to Dropbox</div>'
-        : '<div class="rec-backup pending">☁ Backing up to Dropbox…</div>';
+        ? '<div class="rec-backup ok">' + ico('check') + '<span>In Dropbox</span></div>'
+        : '<div class="rec-backup pending"><i class="chip-dot"></i><span>Sending to Dropbox</span></div>';
     }
     card.innerHTML = `
       <div class="rec-card-top">
         <div>
           <div class="rec-card-room">${escapeHtml(rec.roomName || rec.roomId || 'Room')}</div>
-          <div class="rec-card-meta">${escapeHtml(rec.address || 'Unknown property')}${when ? ' · ' + escapeHtml(when) : ''}</div>
+          <div class="rec-card-meta">${sameJob(rec) ? '' : escapeHtml(rec.address || 'Unknown property') + (when ? ' · ' : '')}${escapeHtml(when)}</div>
         </div>
-        <span class="status-chip status-${escapeAttr(status)}">${escapeHtml(status)}</span>
+        <span class="status-chip status-${escapeAttr(status)}">${escapeHtml(REC_STATUS_WORDS[status] || status)}</span>
       </div>
       ${transcriptHtml}
       ${backupHtml}
@@ -5926,45 +6735,50 @@ async function renderRecordings() {
         card.appendChild(audio);
       } catch (e) {}
     }
+    const row = document.createElement('div');
+    row.className = 'rec-actions';
     if (status !== 'done') {
       // Retry used to be offered on 'failed' only, which left every other
       // unfinished status with no way out of the app at all.
       const btn = document.createElement('button');
       btn.className = 'rec-retry-btn';
-      btn.textContent = status === 'failed' ? 'Retry' : 'Try now';
+      btn.innerHTML = ico('refresh') + '<span>' + (status === 'failed' ? 'Retry' : 'Try now') + '</span>';
       btn.onclick = async () => {
-        rec.attempts = 0; rec.netFails = 0; rec.autoRetries = 0;
-        delete rec.nextTryAt; delete rec.autoRetryAt;
-        rec.status = 'pending';
-        try { await dbPut(rec); } catch (e) {}
+        try {
+          await dbUpdate(rec.id, r => {
+            if (r.status === 'done' || r.status === 'uploading') return;   // already moved on
+            r.attempts = 0; r.netFails = 0; r.autoRetries = 0;
+            delete r.nextTryAt; delete r.autoRetryAt; delete r.finalError;
+            r.status = 'pending';
+          });
+        } catch (e) {}
         updatePendingUI();
         renderRecordings();
         if (navigator.onLine) processQueue();
       };
-      card.appendChild(btn);
+      row.appendChild(btn);
     }
     if (t) {
       const cBtn = document.createElement('button');
       cBtn.className = 'rec-mini-btn';
-      cBtn.textContent = '⧉ Copy transcript';
+      cBtn.innerHTML = ico('copy') + '<span>Copy text</span>';
       cBtn.onclick = () => copyText(applyCorrections(applyScratch(t)), '✓ Transcript copied');
-      card.appendChild(cBtn);
+      row.appendChild(cBtn);
     }
     if (rec.blob) {
-      const actions = document.createElement('div');
-      actions.className = 'rec-actions';
+      const actions = row;
       const sBtn = document.createElement('button');
       sBtn.className = 'rec-mini-btn';
-      sBtn.textContent = '📤 Send';
+      sBtn.innerHTML = ico('share') + '<span>Send</span>';
       sBtn.onclick = () => shareOneRecording(rec);
       const dBtn = document.createElement('button');
       dBtn.className = 'rec-mini-btn';
-      dBtn.textContent = '⬇ Save';
+      dBtn.innerHTML = ico('download') + '<span>Save</span>';
       dBtn.onclick = () => downloadOneRecording(rec);
       actions.appendChild(sBtn);
       actions.appendChild(dBtn);
-      card.appendChild(actions);
     }
+    if (row.children.length) card.appendChild(row);
     body.appendChild(card);
   });
 }
@@ -6358,9 +7172,28 @@ function showScreen(id) {
 // One timer for the toast. Two toasts in a row used to share the first one's
 // timer, so the second vanished after a fraction of a second.
 let toastTimer = null;
+// ─── ICONS (round 10 polish) ─────────────────────────────────────────────
+// Line icons replace emoji everywhere the inspector looks. Messages written
+// with a symbol at the front still work: plainText() takes symbols out, and
+// the toast shows a tick or a warning icon instead.
+const ICONS = {"mic": "<rect x=\"9\" y=\"3\" width=\"6\" height=\"11\" rx=\"3\"/><path d=\"M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21\"/>", "pause": "<rect x=\"7\" y=\"5\" width=\"3.6\" height=\"14\" rx=\"1.2\"/><rect x=\"13.4\" y=\"5\" width=\"3.6\" height=\"14\" rx=\"1.2\"/>", "play": "<path d=\"M8 5.6v12.8a.8.8 0 0 0 1.2.7l10.2-6.4a.8.8 0 0 0 0-1.4L9.2 4.9A.8.8 0 0 0 8 5.6z\"/>", "stop": "<rect x=\"6.5\" y=\"6.5\" width=\"11\" height=\"11\" rx=\"2.2\"/>", "check": "<path d=\"M5 12.5l4.5 4.5L19 7.5\"/>", "alert": "<path d=\"M10.3 4.6L2.9 17.5A2 2 0 0 0 4.6 20.5h14.8a2 2 0 0 0 1.7-3L13.7 4.6a2 2 0 0 0-3.4 0z\"/><path d=\"M12 9.5v4.2M12 17h.01\"/>", "chevL": "<path d=\"M14.5 5.5L8 12l6.5 6.5\"/>", "chevR": "<path d=\"M9.5 5.5L16 12l-6.5 6.5\"/>", "chevD": "<path d=\"M6 9.5l6 6 6-6\"/>", "arrowR": "<path d=\"M5 12h14M13.5 6.5L19 12l-5.5 5.5\"/>", "plus": "<path d=\"M12 5v14M5 12h14\"/>", "folder": "<path d=\"M3.5 7.2c0-.9.7-1.7 1.7-1.7h3.9l2 2.2h7.7c.9 0 1.7.8 1.7 1.7v7.9c0 .9-.8 1.7-1.7 1.7H5.2c-1 0-1.7-.8-1.7-1.7z\"/>", "download": "<path d=\"M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14\"/>", "share": "<path d=\"M12 14.5V4M8 8l4-4 4 4M5.5 12.5v6c0 .6.4 1 1 1h11c.6 0 1-.4 1-1v-6\"/>", "camera": "<path d=\"M4 8.5c0-.6.4-1 1-1h2.6l1.5-2h5.8l1.5 2H19c.6 0 1 .4 1 1V18c0 .6-.4 1-1 1H5c-.6 0-1-.4-1-1z\"/><circle cx=\"12\" cy=\"13\" r=\"3.3\"/>", "pencil": "<path d=\"M4.5 19.5l1-4.2L15.7 5.1a1.9 1.9 0 0 1 2.7 0l.5.5a1.9 1.9 0 0 1 0 2.7L8.7 18.5z\"/>", "trash": "<path d=\"M4.5 7h15M9.5 7V4.8h5V7M6.5 7l.9 12.2c0 .5.5.8 1 .8h7.2c.5 0 1-.3 1-.8L17.5 7\"/>", "copy": "<rect x=\"8.5\" y=\"8.5\" width=\"11\" height=\"11\" rx=\"2\"/><path d=\"M15.5 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5\"/>", "refresh": "<path d=\"M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5v4h-4\"/>", "lock": "<rect x=\"5.5\" y=\"10.5\" width=\"13\" height=\"9.5\" rx=\"2\"/><path d=\"M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5\"/>", "moveL": "<path d=\"M19 12H5M10.5 6.5L5 12l5.5 5.5\"/>", "moveR": "<path d=\"M5 12h14M13.5 6.5L19 12l-5.5 5.5\"/>", "x": "<path d=\"M6.5 6.5l11 11M17.5 6.5l-11 11\"/>"};
+const SOLID_ICONS = ["pause", "play", "stop"];
+function ico(name, extra) {
+  if (!ICONS[name]) return '';
+  return '<svg class="ico ico-' + name + (SOLID_ICONS.includes(name) ? ' solid' : '') + (extra ? ' ' + extra : '') + '" viewBox="0 0 24 24" aria-hidden="true">' + ICONS[name] + '</svg>';
+}
+function plainText(s) {
+  return String(s == null ? '' : s)
+    .replace(/\s\u2192\s/g, ' > ')
+    .replace(/[\u2190-\u21FF\u2300-\u23FF\u2460-\u27BF\u2900-\u2BFF\u25A0-\u25FF\uFE0E\uFE0F\uFF0B\u2022]|[\u{1F000}-\u{1FAFF}]/gu, '')
+    .replace(/\s{2,}/g, ' ').replace(/^[\s\u2014\u2013-]+/, '').replace(/\s+\u2014\s+/g, ': ').trim();
+}
 function showToast(msg) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
+  const raw = String(msg == null ? '' : msg).trim();
+  const kind = /^\u2713/.test(raw) ? 'check' : /^\u26A0/.test(raw) ? 'alert' : '';
+  t.className = 'toast' + (kind ? ' toast-' + kind : '') + (t.classList.contains('show') ? ' show' : '');
+  t.innerHTML = (kind ? ico(kind) : '') + '<span>' + escapeHtml(plainText(raw)) + '</span>';
   t.classList.add('show');
   if (toastTimer) clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { t.classList.remove('show'); toastTimer = null; }, 2800);

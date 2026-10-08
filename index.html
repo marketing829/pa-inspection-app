@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Property Assist — Inspection Report</title>
+<!-- ROUND 11 -->
 <!-- Install-to-home-screen (PWA) -->
 <meta name="theme-color" content="#ECECEA" id="metaTheme">
 <meta name="color-scheme" content="light" id="metaScheme">
@@ -1881,6 +1882,9 @@
   .warn-line { display: flex; gap: 8px; align-items: flex-start; line-height: 1.4; }
   .warn-line + .warn-line { margin-top: 6px; }
   .warn-line .ico { width: 16px; height: 16px; margin-top: 1px; }
+  .app-ver { font-weight: 400; opacity: 0.55; font-size: 0.85em; }
+  .warn-btn { flex: none; display: inline-flex; align-items: center; gap: 6px; margin-left: auto; padding: 6px 12px; border-radius: 999px; border: 0; font: inherit; font-weight: 600; background: var(--ink); color: var(--bg); }
+  .warn-btn .ico { width: 14px; height: 14px; margin: 0; }
   .back-banner { padding: 12px 44px 12px 16px; font-weight: 600; }
   .room-tab { display: inline-flex; align-items: center; gap: 6px; }
   .tab-mark { display: inline-flex; }
@@ -2059,7 +2063,7 @@
     <!-- Service settings. Inspectors never need these, and a stray tap here
          used to be able to break uploads, so they're tucked away. -->
     <details class="admin-settings" id="adminSettings">
-      <summary>Admin settings</summary>
+      <summary>Admin settings <span class="app-ver">· app version 11</span></summary>
     <div class="field-group appearance-group">
       <label>Appearance</label>
       <div class="engine-select theme-select" id="themeSelect">
@@ -2832,7 +2836,7 @@ let queueStartedAt = 0;      // when the running pass started — the watchdog u
 let queueRunId = 0;          // bumps on every pass; a pass the watchdog abandoned stops writing
 let queueController = null;  // aborts whatever request the running pass is waiting on
 const QUEUE_STUCK_MS = 7 * 60 * 1000; // longer than every timeout on one room added together
-const audioInFlight = new Set(); // record ids whose audio is uploading right now (no double uploads)
+const audioInFlight = new Map(); // record id → its audio upload in progress (no double uploads; ROUND 11: others wait for it)
 let pendingRoomMap = {};     // roomId -> 'pending' | 'uploading' for nav badges
 let photoQueueRunning = false; // guard so the serial-photo upload queue runs once at a time
 
@@ -3108,6 +3112,7 @@ function initSetup() {
     if (m.uploading) renderRoomStatus();
   }, 2000);
   setInterval(async () => {
+    await retryUnsaved();
     await queueWatchdog();
     if (!navigator.onLine || queueRunning || !('indexedDB' in window)) return;
     try {
@@ -3115,7 +3120,8 @@ function initSetup() {
       const recs = await dbAll();
       const now = Date.now();
       if (cloudEnabled() && recs.some(r => r.status === 'pending' && !(r.nextTryAt > now))) processQueue();
-      else if (cloudArchiveEnabled() && recs.some(r => (r.status === 'done' || r.status === 'failed') && r.archived !== true && r.blob)) processArchiveQueue();
+      else if (cloudArchiveEnabled() && recs.some(r => ((r.status === 'done' || r.status === 'failed') && r.archived !== true && r.blob && !(r.archNextAt > now))
+        || (r.archived === true && r.jsonError && !r.jsonArchived && !(r.jsonNextAt > now)))) processArchiveQueue();
       if (cloudArchiveEnabled()) processPhotoQueue();
     } catch (e) {}
   }, 20000);
@@ -4254,74 +4260,82 @@ function openAudioDB() {
         db.createObjectStore(PHOTO_STORE, { keyPath: 'id', autoIncrement: true });
       }
     };
-    req.onsuccess = () => { audioDB = req.result; resolve(audioDB); };
+    req.onsuccess = () => {
+      const db = req.result;
+      // ROUND 11: iOS can close the connection while the app sits in the
+      // background. The handle used to be kept for good, so every save after
+      // that failed until the app was restarted. Forget it and open a new one.
+      db.onclose = () => { if (audioDB === db) audioDB = null; };
+      db.onversionchange = () => { try { db.close(); } catch (e) {} if (audioDB === db) audioDB = null; };
+      audioDB = db;
+      resolve(db);
+    };
     req.onerror = () => reject(req.error);
   });
 }
-function dbAdd(rec) {
-  return openAudioDB().then(db => new Promise((resolve, reject) => {
-    const r = db.transaction(AUDIO_STORE, 'readwrite').objectStore(AUDIO_STORE).add(rec);
-    r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);
+// Errors that mean "the connection went", not "the phone is full".
+function dbRetryable(e) {
+  const n = e && e.name, m = String((e && e.message) || '');
+  return n === 'InvalidStateError' || n === 'UnknownError' || n === 'AbortError' || n === 'TransactionInactiveError'
+    || /connection|closing|closed|lost/i.test(m);
+}
+// One transaction. It resolves when the write has really been committed, not
+// when the request said yes (a full phone can still refuse at commit). On a
+// dropped connection it opens a fresh one and tries once more.
+function dbTx(storeName, mode, body) {
+  const once = () => openAudioDB().then(db => new Promise((resolve, reject) => {
+    let tx, out;
+    try { tx = db.transaction(storeName, mode); } catch (e) { reject(e); return; }
+    tx.oncomplete = () => resolve(out);
+    tx.onabort = () => reject(tx.error || new DOMException('transaction aborted', 'AbortError'));
+    try { body(tx.objectStore(storeName), v => { out = v; }); }
+    catch (e) { try { tx.abort(); } catch (e2) {} reject(e); }
   }));
+  return once().catch(e => {
+    if (!dbRetryable(e)) throw e;
+    try { if (audioDB) audioDB.close(); } catch (e2) {}
+    audioDB = null;
+    return once();
+  });
+}
+function dbAdd(rec) {
+  return dbTx(AUDIO_STORE, 'readwrite', (s, set) => { const r = s.add(rec); r.onsuccess = () => set(r.result); });
 }
 function dbAll() {
-  return openAudioDB().then(db => new Promise((resolve, reject) => {
-    const r = db.transaction(AUDIO_STORE, 'readonly').objectStore(AUDIO_STORE).getAll();
-    r.onsuccess = () => resolve(r.result || []); r.onerror = () => reject(r.error);
-  }));
+  return dbTx(AUDIO_STORE, 'readonly', (s, set) => { const r = s.getAll(); r.onsuccess = () => set(r.result || []); }).then(v => v || []);
 }
 function dbPut(rec) {
-  return openAudioDB().then(db => new Promise((resolve, reject) => {
-    const r = db.transaction(AUDIO_STORE, 'readwrite').objectStore(AUDIO_STORE).put(rec);
-    r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);
-  }));
+  return dbTx(AUDIO_STORE, 'readwrite', (s, set) => { const r = s.put(rec); r.onsuccess = () => set(r.result); });
 }
 // Read the record fresh and change it in one transaction. Passes that hold a
 // copy for a long time (the Dropbox pass, the Retry button) use this, so their
 // old copy can't put back a status another pass has moved on since.
 function dbUpdate(id, change) {
-  return openAudioDB().then(db => new Promise((resolve, reject) => {
-    const store = db.transaction(AUDIO_STORE, 'readwrite').objectStore(AUDIO_STORE);
-    const g = store.get(id);
-    g.onerror = () => reject(g.error);
+  return dbTx(AUDIO_STORE, 'readwrite', (s, set) => {
+    const g = s.get(id);
     g.onsuccess = () => {
       const rec = g.result;
-      if (!rec) return resolve(null);
+      if (!rec) { set(null); return; }
       change(rec);
-      const p = store.put(rec);
-      p.onsuccess = () => resolve(rec); p.onerror = () => reject(p.error);
+      s.put(rec);
+      set(rec);
     };
-  }));
+  });
 }
 function dbDelete(id) {
-  return openAudioDB().then(db => new Promise((resolve, reject) => {
-    const r = db.transaction(AUDIO_STORE, 'readwrite').objectStore(AUDIO_STORE).delete(id);
-    r.onsuccess = () => resolve(); r.onerror = () => reject(r.error);
-  }));
+  return dbTx(AUDIO_STORE, 'readwrite', s => { s.delete(id); });
 }
 function photoAdd(rec) {
-  return openAudioDB().then(db => new Promise((resolve, reject) => {
-    const r = db.transaction(PHOTO_STORE, 'readwrite').objectStore(PHOTO_STORE).add(rec);
-    r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);
-  }));
+  return dbTx(PHOTO_STORE, 'readwrite', (s, set) => { const r = s.add(rec); r.onsuccess = () => set(r.result); });
 }
 function photoAll() {
-  return openAudioDB().then(db => new Promise((resolve, reject) => {
-    const r = db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE).getAll();
-    r.onsuccess = () => resolve(r.result || []); r.onerror = () => reject(r.error);
-  }));
+  return dbTx(PHOTO_STORE, 'readonly', (s, set) => { const r = s.getAll(); r.onsuccess = () => set(r.result || []); }).then(v => v || []);
 }
 function photoPut(rec) {
-  return openAudioDB().then(db => new Promise((resolve, reject) => {
-    const r = db.transaction(PHOTO_STORE, 'readwrite').objectStore(PHOTO_STORE).put(rec);
-    r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);
-  }));
+  return dbTx(PHOTO_STORE, 'readwrite', (s, set) => { const r = s.put(rec); r.onsuccess = () => set(r.result); });
 }
 function photoDelete(id) {
-  return openAudioDB().then(db => new Promise((resolve, reject) => {
-    const r = db.transaction(PHOTO_STORE, 'readwrite').objectStore(PHOTO_STORE).delete(id);
-    r.onsuccess = () => resolve(); r.onerror = () => reject(r.error);
-  }));
+  return dbTx(PHOTO_STORE, 'readwrite', s => { s.delete(id); });
 }
 
 // ─── SCREEN WAKE LOCK ─────────────────────────────────────────────────────────
@@ -4445,9 +4459,11 @@ async function startAudioRecording(roomId, stillWanted) {
 // Either failing turns the dock red with a plain instruction. It can't fix the
 // mic, but it turns "found out back at the office" into "found out in the room".
 let micGuardTimer = null;
+let micGuardOwner = null;   // ROUND 11: the recording the guard is watching
 let micGuardCtx = null;
 function startMicGuard(session, stream) {
   stopMicGuard();
+  micGuardOwner = session;
   session.startedAt = Date.now();
   session.lastSoundAt = Date.now();
   let analyser = null, buf = null;
@@ -4507,6 +4523,7 @@ function onRecorderDied(session, why) {
   setTimeout(() => { if (!session.stopped) { session.lastPersist = 0; persistPartialRecording(session); } }, 300);
 }
 function stopMicGuard() {
+  micGuardOwner = null;
   if (micGuardTimer) { clearInterval(micGuardTimer); micGuardTimer = null; }
   if (micGuardCtx) { try { micGuardCtx.close(); } catch (e) {} micGuardCtx = null; }
   showMicProblem(false);
@@ -4660,7 +4677,7 @@ async function stopAudioRecording(roomId, roughText, announce) {
   // save and put the record back to 'recording'.
   for (let i = 0; i < 20 && session.persisting; i++) await new Promise(r => setTimeout(r, 100));
   if (stream) { try { stream.getTracks().forEach(t => t.stop()); } catch (e) {} }
-  stopMicGuard();
+  if (micGuardOwner === session) stopMicGuard();   // ROUND 11: not the next room's
   if (!chunks.length) {
     const rough = (roughText || '').trim();
     if (!rough) {
@@ -4689,8 +4706,9 @@ async function stopAudioRecording(roomId, roughText, announce) {
   }
   const type = mr.mimeType || (chunks[0] && chunks[0].type) || 'audio/mp4';
   const blob = new Blob(chunks, { type });
+  let rec = null;
   try {
-    const rec = {
+    rec = {
       roomId: rid,
       roomName: session.roomName,
       address: session.address,
@@ -4709,10 +4727,50 @@ async function stopAudioRecording(roomId, roughText, announce) {
     updatePendingUI();
     if (navigator.onLine) processQueue();
   } catch (e) {
-    // The audio is gone. Say so, and keep the phone's text in the note.
+    // ROUND 11: the audio is no longer thrown away. It stays in memory, the app
+    // keeps trying to save it, and the warning banner has a Save audio button so
+    // the inspector can get it off the phone another way. The phone's text still
+    // goes in the note, marked, so the room isn't empty if the app is closed.
     reportStorageFailure(`The ${session.roomName || 'room'} recording was NOT saved`);
     keepRoughAfterSaveFailure(rid, session.roomName, session, roughText);
+    const rough = (roughText || '').trim();
+    if (rough) rec.fallbackText = '⚠ AUDIO NOT SAVED (phone storage) — phone dictation only:\n' + rough;
+    holdUnsaved(rec);
   }
+}
+
+// ROUND 11: recordings the phone refused to save, kept in memory until it can.
+let unsavedRecs = [];
+function holdUnsaved(rec) {
+  if (!rec || !rec.blob) return;
+  unsavedRecs.push(rec);
+  updatePendingUI();
+}
+async function retryUnsaved() {
+  if (!unsavedRecs.length) return;
+  for (const rec of unsavedRecs.slice()) {
+    try {
+      const id = await dbPut(rec);
+      if (rec.id == null) rec.id = id;
+      unsavedRecs = unsavedRecs.filter(r => r !== rec);
+      if (sameJob(rec) && roomAudioFlags[rec.roomId] === 'noaudio') { delete roomAudioFlags[rec.roomId]; saveState(); }
+      storageRecovered();
+      showToast('✓ ' + (rec.roomName || 'Room') + ' recording saved after all');
+      if (navigator.onLine) processQueue();
+    } catch (e) { break; }
+  }
+  updatePendingUI();
+}
+// The banner's button: share sheet (Files, AirDrop, email), or one download each.
+async function saveUnsavedAudio() {
+  const recs = unsavedRecs.filter(r => r.blob);
+  if (!recs.length) { showToast('Nothing waiting to be saved'); return; }
+  const files = recs.map(r => new File([r.blob], recFilename(r), { type: r.type || 'audio/mp4' }));
+  if (navigator.canShare && navigator.canShare({ files })) {
+    try { await navigator.share({ files, title: 'Room audio not saved on the phone' }); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  for (const r of recs) { downloadOneRecording(r); await new Promise(res => setTimeout(res, 400)); }
 }
 
 // Anything left mid-flight goes back into the queue on startup:
@@ -4776,14 +4834,33 @@ async function processQueue() {
         queueController = controller;
         const timer = setTimeout(() => { try { controller.abort(); } catch (e) {} }, uploadTimeout(engineDef(engineAtUpload).timeoutMs || 60000, rec.blob && rec.blob.size));
         let res;
+        // ROUND 11: AssemblyAI still working on this room from the last try? Ask
+        // for that job instead of uploading and paying for it all over again.
+        const resume = engineAtUpload === 'assemblyai' && !rec.noResume && rec.aaiJob && rec.aaiJob.id
+          && (Date.now() - (rec.aaiJob.at || 0) < 6 * 3600000) ? rec.aaiJob.id : '';
         try {
-          res = await fetch(withKey(TRANSCRIBE_URL), {
+          res = await fetch(withKey(TRANSCRIBE_URL), resume ? {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: resume }),
+            signal: controller.signal
+          } : {
             method: 'POST',
             headers: { 'Content-Type': rec.type || 'application/octet-stream' },
             body: rec.blob,
             signal: controller.signal
           });
         } finally { clearTimeout(timer); }
+        if (res.status === 504 && engineAtUpload === 'assemblyai' && !rec.noResume) {
+          let d = null; try { d = await res.clone().json(); } catch (e) {}
+          if (d && d.id && d.retry) {
+            const id = String(d.id).slice(0, 80);
+            rec.aaiJob = { id, at: (rec.aaiJob && rec.aaiJob.id === id && rec.aaiJob.at) || Date.now() };
+            throw new Error('still transcribing');
+          }
+        }
+        if (resume && res.status === 400) { rec.noResume = true; delete rec.aaiJob; throw new Error('resume refused'); }   // older val
+        if (resume && res.status === 404) { delete rec.aaiJob; throw new Error('resume refused'); }   // job gone
         if (res.status === 413) throw new Error('too large');
         if (!res.ok) throw new Error('http ' + res.status);
         const data = await res.json();
@@ -4799,6 +4876,7 @@ async function processQueue() {
         // which deletes 'done' records that are backed up. Storage is reclaimed on finish.
         delete rec.nextTryAt; delete rec.netFails;
         rec.status = 'done'; rec.transcript = transcript;
+        delete rec.aaiJob;
         // Which engine produced this text. Goes into the Dropbox file so the
         // typist — and anyone comparing the two — can see it at a glance.
         rec.engine = (data && data.engine) || engineAtUpload;
@@ -4808,6 +4886,7 @@ async function processQueue() {
         // own keyword split, exactly as before.
         await runCleanup(rec);
         if (!live()) break;
+        queueStartedAt = Date.now();   // ROUND 11: the Dropbox step gets its own seven minutes
         if (cloudArchiveEnabled()) {
           try { await archiveToDropbox(rec); rec.archived = true; rec.archivedAt = Date.now(); }
           catch (e) { rec.archived = false; } // retried by processArchiveQueue()
@@ -4818,7 +4897,23 @@ async function processQueue() {
       } catch (e) {
         if (!live()) break;   // abandoned by the watchdog — the record is reset there
         if (/too large/.test(String(e && e.message))) { await failForGood(rec, 'too large to transcribe'); continue; }
+        const emsg = String((e && e.message) || '');
+        // ROUND 11: a job still running isn't a failure, for up to 20 minutes.
+        if (emsg === 'still transcribing' && rec.aaiJob && Date.now() - rec.aaiJob.at < 20 * 60000) {
+          rec.lastError = 'still transcribing'; rec.status = 'pending'; rec.nextTryAt = Date.now() + 15000;
+          try { await dbPut(rec); } catch (e2) {}
+          updatePendingUI();
+          continue;
+        }
+        if (emsg === 'resume refused') {
+          rec.status = 'pending'; delete rec.nextTryAt;
+          try { await dbPut(rec); } catch (e2) {}
+          continue;
+        }
         rec.lastError = describeError(e);
+        // Keep a running job's id through a signal drop; anything else (or a job
+        // over 20 minutes) starts again from the audio, and counts as a try.
+        if (!/no connection|timed out/.test(rec.lastError)) delete rec.aaiJob;
         // Only a real answer from the server counts as a try. An iPhone says
         // "online" with no data at all, and every blip used to burn one of the
         // five — all five gone in about a minute on a bad street.
@@ -4896,6 +4991,7 @@ async function sweepOldJobs() {
     for (const rec of await dbAll()) {
       if (sameJob(rec) || savedJob(rec) || rec.archived !== true) continue;
       if (!pastKeepPeriod(rec)) continue;   // kept 14 days after it reached Dropbox
+      if (rec.blob && !rec.audioArchived) continue;   // ROUND 11: only once the audio itself is confirmed
       const finished = rec.status === 'done'
         || (rec.status === 'failed' && (rec.noAudio || (rec.autoRetries || 0) >= AUTO_RETRY_MAX));
       if (finished) { await dbDelete(rec.id); n++; }
@@ -5351,16 +5447,31 @@ async function archivePut(relPath, body, contentType, timeoutMs) {
 // flag and the in-flight set stop a second copy going up.
 async function archiveAudio(rec) {
   if (!cloudArchiveEnabled() || !rec || !rec.blob || rec.audioArchived) return false;
-  if (audioInFlight.has(rec.id)) return false;
-  audioInFlight.add(rec.id);
-  try {
+  // ROUND 11: already going up from another pass? Wait for that upload and take
+  // its answer. Returning straight away let the caller carry on and mark the
+  // room as in Dropbox even when that upload then failed.
+  const running = audioInFlight.get(rec.id);
+  if (running) {
+    const done = await running;   // throws if that upload failed
+    rec.audioArchived = true; rec.audioArchivedAt = done.at; delete rec.audioTooLarge;
+    if (done.path) rec.audioPath = done.path;
+    return false;
+  }
+  const job = (async () => {
     const res = await archivePut(`${archiveFolderName(rec)}/${archiveBaseName(rec)}.${audioExt(rec.type)}`,
       rec.blob, rec.type || 'application/octet-stream');
     // Where it actually landed, if the val says. The text file names this.
-    try { const out = await res.clone().json(); const p = out && (out.path || out.path_display); if (p) rec.audioPath = String(p).split('/').pop(); } catch (e) {}
+    let path = '';
+    try { const out = await res.clone().json(); const p = out && (out.path || out.path_display); if (p) path = String(p).split('/').pop(); } catch (e) {}
+    return { at: Date.now(), path };
+  })();
+  audioInFlight.set(rec.id, job);
+  try {
+    const done = await job;
+    if (done.path) rec.audioPath = done.path;
     rec.audioArchived = true;
     delete rec.audioTooLarge;
-    rec.audioArchivedAt = Date.now();
+    rec.audioArchivedAt = done.at;
     return true;
   } catch (e) {
     if (/too large/.test(String(e && e.message))) rec.audioTooLarge = true;
@@ -5374,8 +5485,8 @@ async function archiveAudio(rec) {
 function buildArchiveText(rec, clean) {
   const cleaned = Array.isArray(rec.sections) && rec.sections.length;
   const thisJob = sameJob(rec);
-  const serial = thisJob ? (state.serialModels[rec.roomId] || '').trim() : '';
-  const inv = thisJob ? (state.inventory[rec.roomId] || '').trim() : '';
+  const serial = thisJob ? (state.serialModels[rec.roomId] || '').trim() : (rec.serialTyped || '');
+  const inv = thisJob ? (state.inventory[rec.roomId] || '').trim() : (rec.inventoryTyped || '');
   const header = [
     ...detailLines(rec.address, metaFor(rec)),
     '',
@@ -5445,7 +5556,7 @@ function buildRoomJson(rec, clean) {
   const plain = s => String(s).replace(/\s*\[added: [^\]]*\]/g, '').replace(/\s+/g, ' ').trim();
   const clockOf = at => (at != null ? formatClock(at) : null);
   return {
-    format: 'pa-room', version: 1, app: 'PA Inspect round 10',
+    format: 'pa-room', version: 1, app: 'PA Inspect round 11',
     property: rec.address || '', client: m.client || '', inspector: m.inspector || '',
     state: m.stateCode || '', inspectionType: m.inspType || '',
     inspectionStarted: m.startedAt ? new Date(m.startedAt).toISOString() : null,
@@ -5470,8 +5581,8 @@ function buildRoomJson(rec, clean) {
       resolved: c.resolved || null, fixedTo: c.fixedTo || null
     })),
     fixes: (rec.fixes || []).slice(),
-    serial: thisJob ? (state.serialModels[rec.roomId] || '').trim() : '',
-    inventory: thisJob ? (state.inventory[rec.roomId] || '').trim() : '',
+    serial: thisJob ? (state.serialModels[rec.roomId] || '').trim() : (rec.serialTyped || ''),
+    inventory: thisJob ? (state.inventory[rec.roomId] || '').trim() : (rec.inventoryTyped || ''),
     raw: (rec.transcript || '').trim(),
     words: (rec.words || []).map(w => [w.w, w.s])
   };
@@ -5484,6 +5595,7 @@ async function archiveToDropbox(rec) {
   const folder = archiveFolderName(rec);
   const base = archiveBaseName(rec);
   if (!rec.audioArchived) await archiveAudio(rec);   // usually already up — it goes first now
+  if (!rec.audioArchived) throw new Error('audio not in Dropbox yet');   // ROUND 11: never write the text first
   const raw = (rec.transcript || '').trim();
   if (raw) {
     const clean = punctuateBySubarea({ subsections: rec.subsections || [] }, applyCorrections(applyScratch(raw)));
@@ -5507,6 +5619,19 @@ async function archiveToDropbox(rec) {
   }
   return true;
 }
+// ROUND 11: a Dropbox upload that fails waits before the next go: 30 s, 1, 2,
+// 4, 8, 16 minutes, then every 30. It used to go again every 20 seconds,
+// re-sending whole rooms of audio over mobile data while the fault lasted.
+function archiveDelay(n) { return Math.min(30 * 60000, 30000 * Math.pow(2, Math.max(0, (n || 1) - 1))); }
+async function noteArchiveFail(rec, e) {
+  try {
+    await dbUpdate(rec.id, r => {
+      r.archFails = (r.archFails || 0) + 1;
+      r.archNextAt = Date.now() + archiveDelay(r.archFails);
+      r.archError = describeError(e);
+    });
+  } catch (e2) {}
+}
 // Retry pass: back up any transcribed-but-not-archived recording that still has audio.
 let archiveRunning = false;
 async function processArchiveQueue() {
@@ -5518,7 +5643,22 @@ async function processArchiveQueue() {
 async function archivePass() {
   let recs = [];
   try { recs = await dbAll(); } catch (e) { return; }
+  const now = Date.now();
   for (const rec of recs) {
+    if (rec.archNextAt > now) continue;   // ROUND 11: waiting after a failed try
+    // ROUND 11: the room .json the round 7 val turned away goes up on its own
+    // once the val takes it. The rest of the room is already in Dropbox.
+    if (rec.archived === true && rec.jsonError && !rec.jsonArchived && rec.status === 'done'
+        && (rec.transcript || '').trim() && !(rec.jsonNextAt > now)) {
+      try {
+        const clean = punctuateBySubarea({ subsections: rec.subsections || [] }, applyCorrections(applyScratch(rec.transcript.trim())));
+        await archivePut(`${archiveFolderName(rec)}/${archiveBaseName(rec)}.json`, JSON.stringify(buildRoomJson(rec, clean), null, 1), 'application/json; charset=utf-8');
+        await dbUpdate(rec.id, r => { r.jsonArchived = true; delete r.jsonError; delete r.jsonNextAt; delete r.jsonFails; });
+      } catch (e) {
+        try { await dbUpdate(rec.id, r => { r.jsonFails = (r.jsonFails || 0) + 1; r.jsonNextAt = Date.now() + archiveDelay(r.jsonFails); }); } catch (e2) {}
+      }
+      continue;
+    }
     // 'failed' and 'orphaned' recordings are archived too. The audio backup is
     // the typist's whole safety net, and it used to have a hole exactly where it
     // was needed most: anything that failed transcription reached Dropbox never.
@@ -5534,9 +5674,9 @@ async function archivePass() {
           + (rec.roughText || '').trim() + '\n';
         await archivePut(`${archiveFolderName(rec)}/${archiveBaseName(rec)} - NO AUDIO.txt`, body, 'text/plain; charset=utf-8');
         rec.archived = true;
-        await dbUpdate(rec.id, r => { r.archived = true; r.archivedAt = Date.now(); });
+        await dbUpdate(rec.id, r => { r.archived = true; r.archivedAt = Date.now(); delete r.archFails; delete r.archNextAt; delete r.archError; });
         updatePendingUI();
-      } catch (e) {}
+      } catch (e) { await noteArchiveFail(rec, e); }
       continue;
     }
     if (!archivable || rec.archived === true || !rec.blob || rec.audioTooLarge) continue;
@@ -5552,12 +5692,15 @@ async function archivePass() {
         if (rec.audioPath) r.audioPath = rec.audioPath;
         // The text file matches the status it was written for. If the record
         // has moved on (a Retry), its own pass writes the new one.
-        if (r.status === rec.status) { r.archived = true; r.archivedAt = Date.now(); }
+        // ROUND 11: and only if no Fix a word came in while this pass was
+        // uploading (rev). Otherwise that fix would never reach Dropbox.
+        if (r.status === rec.status && (r.rev || 0) === (rec.rev || 0)) { r.archived = true; r.archivedAt = Date.now(); }
+        delete r.archFails; delete r.archNextAt; delete r.archError;
       });
       // Round 10: nothing is deleted here any more. sweepOldJobs() clears a
       // finished job's audio 14 days after it reached Dropbox.
       updatePendingUI();
-    } catch (e) { continue; } // this file's turn will come round again; don't block the others
+    } catch (e) { await noteArchiveFail(rec, e); continue; } // this file's turn will come round again; don't block the others
   }
 }
 
@@ -5630,8 +5773,10 @@ async function processPhotoQueue() {
   try {
     let recs = [];
     try { recs = await photoAll(); } catch (e) { return; }
+    const now = Date.now();
     for (const rec of recs) {
       if (rec.uploaded) continue;
+      if (rec.nextTryAt > now) continue;   // ROUND 11: waiting after a failed try
       try {
         const folder = archiveFolderName(rec);
         const base = archiveBaseName(rec);
@@ -5646,7 +5791,12 @@ async function processPhotoQueue() {
         if (!sameJob(rec)) { await photoDelete(rec.id); }
         else { await photoPut(rec); }
         markPhotoUploaded(rec.roomId, rec.id);
-      } catch (e) { continue; } // don't let one bad photo block the rest of the pass
+      } catch (e) {
+        rec.fails = (rec.fails || 0) + 1;
+        rec.nextTryAt = Date.now() + archiveDelay(rec.fails);
+        try { await photoPut(rec); } catch (e2) {}
+        continue;   // don't let one bad photo block the rest of the pass
+      }
     }
   } finally {
     photoQueueRunning = false;
@@ -5719,12 +5869,40 @@ function applyTranscript(rec, transcript) {
 
 // Update the status bar + per-room badges + header Recordings badge from storage.
 // Badge = pending + failed: everything that still needs attention or a retry.
+function renderWarnings() {
+  // Warnings that a toast would hide. These stay on screen until they're not true.
+  const warn = document.getElementById('warnBanner');
+  if (warn) {
+    const msgs = [];
+    if (!cloudEnabled()) {
+      msgs.push('⚠ Accurate transcription is off — no room audio is being recorded at all. Add the transcription link on the setup screen before inspecting.');
+    }
+    if (inSafariTab()) {
+      msgs.push('⚠ You\'re in Safari, not the Home Screen app. Close this and open the PA icon on your Home Screen — Safari keeps its own copy of jobs and can wipe recordings after 7 days.');
+    }
+    if (storageProblem) {
+      msgs.push('⚠ The phone is failing to save — it may be out of storage. Recordings and photos are NOT safe until you free some space.');
+    }
+    const noAudio = (state.rooms || []).filter(r => roomAudioFlags[r.id] === 'noaudio').map(r => r.name);
+    if (noAudio.length) {
+      msgs.push('⚠ No audio backup for: ' + noAudio.join(', ') + '. Re-record ' + (noAudio.length === 1 ? 'that room' : 'those rooms') + ' — the typist has nothing to check against.');
+    }
+    let extra = '';
+    if (unsavedRecs.length) {
+      const names = unsavedRecs.map(r => r.roomName || 'a room').join(', ');
+      extra = '<div class="warn-line">' + ico('alert') + '<span>' + escapeHtml('Audio for ' + names + ' is only in the app\'s memory. Keep the app open, free some space, or save it now.') + '</span>'
+        + '<button class="warn-btn" onclick="saveUnsavedAudio()">' + ico('download') + '<span>Save audio</span></button></div>';
+    }
+    warn.innerHTML = msgs.map(x => '<div class="warn-line">' + ico('alert') + '<span>' + escapeHtml(plainText(x)) + '</span></div>').join('') + extra;
+    warn.classList.toggle('show', msgs.length > 0 || !!extra);
+  }
+}
 async function updatePendingUI() {
   const el = document.getElementById('cloudStatus');
   const badge = document.getElementById('recBadge');
   if (!('indexedDB' in window)) { pendingRoomMap = {}; if (el) el.classList.remove('show'); if (badge) badge.style.display = 'none'; return; }
   let recs = [];
-  try { recs = await dbAll(); } catch (e) { return; }
+  try { recs = await dbAll(); } catch (e) { renderWarnings(); return; }
   const map = {};
   recs.forEach(r => { if (r.status === 'pending' || r.status === 'uploading') map[r.roomId] = r.status; });
   pendingRoomMap = map;
@@ -5780,26 +5958,7 @@ async function updatePendingUI() {
       }
     }
   }
-  // Warnings that a toast would hide. These stay on screen until they're not true.
-  const warn = document.getElementById('warnBanner');
-  if (warn) {
-    const msgs = [];
-    if (!cloudEnabled()) {
-      msgs.push('⚠ Accurate transcription is off — no room audio is being recorded at all. Add the transcription link on the setup screen before inspecting.');
-    }
-    if (inSafariTab()) {
-      msgs.push('⚠ You\'re in Safari, not the Home Screen app. Close this and open the PA icon on your Home Screen — Safari keeps its own copy of jobs and can wipe recordings after 7 days.');
-    }
-    if (storageProblem) {
-      msgs.push('⚠ The phone is failing to save — it may be out of storage. Recordings and photos are NOT safe until you free some space.');
-    }
-    const noAudio = (state.rooms || []).filter(r => roomAudioFlags[r.id] === 'noaudio').map(r => r.name);
-    if (noAudio.length) {
-      msgs.push('⚠ No audio backup for: ' + noAudio.join(', ') + '. Re-record ' + (noAudio.length === 1 ? 'that room' : 'those rooms') + ' — the typist has nothing to check against.');
-    }
-    warn.innerHTML = msgs.map(x => '<div class="warn-line">' + ico('alert') + '<span>' + escapeHtml(plainText(x)) + '</span></div>').join('');
-    warn.classList.toggle('show', msgs.length > 0);
-  }
+  renderWarnings();
   renderRoomStatus();
   renderFinishStatus();
   if (document.getElementById('roomNav')) scheduleRoomNav();
@@ -6251,7 +6410,11 @@ async function saveFix(keep) {
         const rc = (r.check || []).find(x => x.quote === from);
         if (rc) { rc.resolved = c.resolved; if (!keep) rc.fixedTo = to; rc.resolvedAt = c.resolvedAt; }
         if (!keep) r.fixes = (r.fixes || []).concat([{ heard: c.heard || '', from, to, at: c.at != null ? c.at : null, by: 'inspector', when: new Date().toISOString() }]);
-        if (r.archived === true) { r.archived = false; r.resendFiles = true; }
+        // ROUND 11: always resend, and bump rev so an upload already running
+        // (with the text from before this fix) can't mark the room done.
+        r.rev = (r.rev || 0) + 1;
+        r.archived = false; r.resendFiles = true;
+        delete r.archNextAt; r.archFails = 0;
       });
       if (cloudArchiveEnabled() && navigator.onLine) processArchiveQueue();
     }
@@ -6449,7 +6612,7 @@ async function queueInspectionSummary(statusRows) {
     blob: new Blob([text], { type: 'text/plain;charset=utf-8' }),
     type: 'text/plain; charset=utf-8', uploaded: false
   };
-  try { await photoAdd(rec); } catch (e) {}
+  await photoAdd(rec);   // ROUND 11: a failure goes back to Finish, which stops
 }
 
 function exportReport() {
@@ -6584,6 +6747,14 @@ async function finishAndClear() {
     }
     if (!confirm(msg)) return;
   }
+  // ROUND 11: the details file (typed-only rooms, mandatory items, serial
+  // numbers) is saved first. If the phone can't save it, nothing is cleared.
+  try { await queueInspectionSummary(statusRows); }
+  catch (e) {
+    reportStorageFailure('Inspection details NOT saved');
+    alert('Not finished: the phone couldn\'t save the inspection details (typed rooms, mandatory items, serial numbers).\n\nFree some space on the phone, then tap Finish again. Nothing has been cleared.');
+    return;
+  }
   stopListening();
   // Everything of this job stays on the phone. Records still on their way keep
   // trying; records already in Dropbox are cleared 14 days after they got there
@@ -6593,12 +6764,13 @@ async function finishAndClear() {
     try {
       await dbUpdate(rec.id, r => {
         r.closed = true;               // belongs to a finished job
+        // ROUND 11: keep what was typed for this room; its files may be written after Finish.
+        const sm = (state.serialModels[r.roomId] || '').trim(); if (sm) r.serialTyped = sm;
+        const iv = (state.inventory[r.roomId] || '').trim(); if (iv) r.inventoryTyped = iv;
         if (r.status === 'recording') { r.status = 'pending'; r.attempts = 0; }
       });
     } catch (e) {}
   }
-  // Only now, with the finish confirmed, does the details file go.
-  try { await queueInspectionSummary(statusRows); } catch (e) {}
   try { if (cloudArchiveEnabled() && navigator.onLine) processPhotoQueue(); } catch (e) {}
   clearSaved();
   releaseSessionMic();   // let go of the microphone now the inspection is finished
@@ -6792,6 +6964,7 @@ async function renderRecordings() {
             if (r.status === 'done' || r.status === 'uploading') return;   // already moved on
             r.attempts = 0; r.netFails = 0; r.autoRetries = 0;
             delete r.nextTryAt; delete r.autoRetryAt; delete r.finalError;
+            delete r.archNextAt; r.archFails = 0;
             r.status = 'pending';
           });
         } catch (e) {}

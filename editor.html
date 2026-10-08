@@ -577,6 +577,44 @@
   .sp-btn.has b { display: inline-grid; }
   .legend .sp1 { text-decoration: underline wavy #D93025; text-underline-offset: 3px; }
   .legend .sp2 { text-decoration: underline wavy #1A73E8; text-underline-offset: 3px; }
+  /* v3.2: room header that reads at a glance */
+  .room-head { padding-bottom: 18px; margin-bottom: 18px; border-bottom: 1px solid var(--paper-line); }
+  .rh-top { display: flex; align-items: center; gap: 8px; }
+  .key-btn { font-size: 12px; font-weight: 600; color: var(--ink-2); border: 1px solid var(--line-2); border-radius: 999px; padding: 3px 11px; }
+  .key-btn:hover { background: var(--tint); color: var(--ink); }
+  .room-head h1.big { margin: 4px 0 14px; }
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--paper-line); border-radius: 14px; overflow: hidden; margin: 0; }
+  .stat { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 10px 14px; text-align: left; border-left: 1px solid var(--paper-line); background: var(--paper); min-width: 0; }
+  .stat:first-child { border-left: 0; }
+  .stat b { font-size: 22px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .stat:not(:disabled):hover { background: var(--tint); }
+  .stat:disabled { opacity: 1; cursor: default; }
+  .stat.yel:not(.zero) { background: var(--check-bg); }
+  .stat.yel:not(.zero) b { color: var(--warn-ink); }
+  .stat.red:not(.zero) b { color: #D93025; }
+  :root[data-theme="dark"] .stat.red:not(.zero) b { color: #FF8A7A; }
+  .stat.grey:not(.zero) b { color: var(--add-ink); font-style: italic; }
+  .stat.zero b { color: var(--ink-3); }
+  .key-row { display: grid; grid-template-columns: 110px 1fr; gap: 10px; align-items: baseline; font-size: 12.5px; }
+  .key-row .hl { background: var(--yellow-flat); color: var(--on-yellow); font-weight: 700; padding: 0 4px; border-radius: 3px; justify-self: start; }
+  .key-row .add-s { color: var(--add-ink); }
+  .key-row .nm-s { color: var(--nm); }
+  .key-row .sp1 { text-decoration: underline wavy #D93025; text-underline-offset: 3px; }
+  .key-row .sp2 { text-decoration: underline wavy #1A73E8; text-underline-offset: 3px; }
+  .key-row .sp3 { text-decoration: underline dotted #9A7B00 2px; text-underline-offset: 3px; }
+  .menu { max-width: 340px; }
+  /* the row being played: a calm bar on the row, not a jumping page */
+  .trow.playing > .rn { box-shadow: inset 3px 0 0 var(--yellow-flat); }
+  .trow.playing > .rn b::before { content: '▶ '; font-size: 10px; color: var(--warn-ink); vertical-align: 1px; }
+  .sent.now { background: var(--tint-2); box-shadow: none; border-radius: 4px; }
+  .jump { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 25; display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; background: var(--sel); color: var(--sel-ink); box-shadow: 0 8px 22px rgba(0,0,0,0.22); }
+  .jump .eq { display: inline-flex; gap: 2px; align-items: flex-end; height: 12px; }
+  .jump .eq i { width: 3px; background: var(--yellow-flat); border-radius: 1px; animation: eq 0.9s ease-in-out infinite; }
+  .jump .eq i:nth-child(1) { height: 6px; } .jump .eq i:nth-child(2) { height: 12px; animation-delay: .2s; } .jump .eq i:nth-child(3) { height: 8px; animation-delay: .4s; }
+  @keyframes eq { 50% { transform: scaleY(0.4); } }
+  @media (max-width: 700px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .stat:nth-child(3) { border-left: 0; } .stat:nth-child(n+3) { border-top: 1px solid var(--paper-line); } }
 
 </style>
 </head>
@@ -726,6 +764,7 @@
         <button class="btn btn-ghost btn-sm" id="rawBtn" title="Raw transcript (Ctrl+/)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Raw transcript</button>
       </div>
       <div class="doc-body" id="docBody"><div class="doc-inner" id="roomPane"></div></div>
+      <button class="jump" id="jumpPill" hidden title="Go to the row being played"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span id="jumpText"></span></button>
     </div>
   </div>
 </section>
@@ -2788,12 +2827,19 @@ function renderRoom() {
   const rows = sheetRows(room, rs);
   const said = rows.filter(r => !r.extra && r.i != null && liveSents(rs.secs[r.i]).length).length, total = rows.filter(r => !r.extra).length;
   const eyebrow = ['Room ' + (App.idx + 1) + ' of ' + j.rooms.length, room.hhmm && 'recorded ' + room.hhmm.slice(0, 2) + ':' + room.hhmm.slice(2),
-    room.takes > 1 && 'take ' + room.take + ' of ' + room.takes, room.part > 1 && 'part ' + room.part, room.rec != null && 'rec ' + room.rec,
-    room.sortedBy && room.sortedBy !== 'keyword split' ? 'cleaned up by AI' : ''].filter(Boolean).join(' · ');
-  let h = `<span class="eyebrow">${esc(eyebrow)}</span><h1 class="big">${fadeTitle(room.name)}</h1>
-    <div class="room-meta"><span><b>${said} of ${total}</b> rows with notes</span>${c.open ? `<span><b>${c.open}</b> to check</span>` : ''}${c.added ? `<span><b>${c.added}</b> grey phrase${c.added > 1 ? 's' : ''}</span>` : ''}
-      ${room.transcribedBy || room.sortedBy ? `<span>${esc([room.transcribedBy && 'Transcribed by ' + room.transcribedBy, room.sortedBy && 'sorted by ' + room.sortedBy].filter(Boolean).join(' · '))}</span>` : ''}</div>
-    <div class="legend"><span><span class="hl">highlighted</span> may be misheard: click, listen, fix</span><span><em>grey italic</em> added by the AI: keep or remove</span><span><span class="nm">Not mentioned</span> nothing said: click to type</span><span><span class="sp1">red</span> / <span class="sp2">blue</span> underline: spelling / grammar</span></div>`;
+    room.takes > 1 && 'take ' + room.take + ' of ' + room.takes, room.part > 1 && 'part ' + room.part, room.rec != null && 'rec ' + room.rec].filter(Boolean).join(' · ');
+  const nSp = App.sp ? App.sp.list.length : 0;
+  const stat = (n, label, cls, act, title) => `<button class="stat ${cls || ''}${n ? '' : ' zero'}"${act ? ` data-act="${act}"` : ' disabled'} title="${esc(title || '')}"><b>${n}</b><span>${label}</span></button>`;
+  let h = `<header class="room-head">
+    <div class="rh-top"><span class="eyebrow">${esc(eyebrow)}</span><span style="flex:1"></span>
+      <button class="key-btn" id="keyBtn" aria-haspopup="menu" title="What the colours mean, and where this text came from">Key</button></div>
+    <h1 class="big">${fadeTitle(room.name)}</h1>
+    <div class="stats">
+      ${stat(said, 'of ' + total + ' rows with notes', 'rows', '', 'Template rows the inspector said something about')}
+      ${stat(c.open, c.open === 1 ? 'word to check' : 'words to check', 'yel', c.open ? 'gocheck' : '', 'Go to the next word to check (Ctrl + ])')}
+      ${stat(c.added, c.added === 1 ? 'grey phrase' : 'grey phrases', 'grey', c.added ? 'goadd' : '', 'Go to the next grey phrase')}
+      ${stat(nSp, 'spelling & style', 'red', nSp ? 'gosp' : '', 'Go to the next spelling or grammar note (F7)')}
+    </div></header>`;
   if (j.rooms.every(r => roomState(r).done)) h += `<div class="banner ok">Every room in this job is done. <button class="btn btn-sm btn-main" data-act="docx">Download Word file</button><button class="btn btn-sm btn-ghost" data-act="copyall">Copy all rooms</button></div>`;
   if (rs.changed && !rs.changed.seen) {
     h += `<div class="banner">This room changed on the phone after you started it (its transcript arrived, or the inspector fixed a word). Your edits were kept.`
@@ -2852,6 +2898,7 @@ function renderRoom() {
   }
   h += '</div>';
   $('roomPane').innerHTML = h;
+  const kb = $('keyBtn'); if (kb) kb.onclick = () => keyMenu(room);
   wireRoom();
   markCur(false);
   updateBar();
@@ -2877,6 +2924,17 @@ function sentHtml(room, s, i, jj) {
   const cls = ['sent', s.check ? 'check' : '', whole ? 'whole' : '', s.edited ? 'edited' : '', s.removed ? 'removed' : ''].filter(Boolean).join(' ');
   const title = s.edited ? ' title="Edited. Original: ' + esc(plainText(s.orig)) + '"' : '';
   return `<span class="${cls}" data-i="${i}" data-j="${jj}"${at != null ? ` data-at="${at}"` : ''}${title}>${whole ? chip : ''}${inner}</span> `;
+}
+function keyMenu(room) {
+  menu($('keyBtn'), `<div class="label">Key</div>
+    <div class="key-row"><span class="hl">highlighted</span><span>The engine may have misheard it. Click, listen, fix.</span></div>
+    <div class="key-row"><em class="add-s">grey italic</em><span>Added by the AI. The inspector didn't say it. Keep or remove.</span></div>
+    <div class="key-row"><span class="nm-s">Not mentioned</span><span>Nothing said for this row. Click to type.</span></div>
+    <div class="key-row"><span class="sp1">red wavy</span><span>Spelling</span></div>
+    <div class="key-row"><span class="sp2">blue wavy</span><span>Grammar</span></div>
+    <div class="key-row"><span class="sp3">gold dotted</span><span>PA house style or a known mishear</span></div>
+    <div class="label" style="margin-top:6px">Where this text came from</div>
+    <div class="small muted">${esc(room.transcribedBy ? 'Transcribed by ' + room.transcribedBy + '.' : '')} ${esc(room.sortedBy && room.sortedBy !== 'keyword split' ? 'Sorted into rows and tidied by AI (' + room.sortedBy + ').' : room.sortedBy ? 'Sorted into rows by keywords (no AI).' : '')} The Raw transcript shows the words before the AI touched them.</div>`);
 }
 function updateBar() {
   const room = curRoom(); if (!room) return;
@@ -2931,12 +2989,13 @@ function nextAction(room) {
   const nx = nextRoomIndex();
   return nx >= 0 ? { kind: 'room', to: nx } : { kind: 'all' };
 }
-function goNext(dir) {
+function goNext(dir, only) {
   dir = dir || 1;
   const room = curRoom(); if (!room) return;
   if (App.editing) commitEditor();
   const was = App.fix; closeFix(); clearCur();
-  const items = todoItems(room);
+  let items = todoItems(room);
+  if (only) items = items.filter(x => only === 'add' ? x.kind === 'add' : x.kind !== 'add');
   if (items.length) {
     let p = App.pos;
     if (!p && was && was.i != null) p = [0, (sheetRows(room, roomState(room)).findIndex(r => r.i === was.i)), was.j, -1];
@@ -2970,7 +3029,7 @@ function focusItem(it) {
     if (row) { row.classList.add('cur'); row.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
     toast('This sentence changed since it was flagged. Play it, then press ✓ Checked');
   }
-  if (it.at != null) playFrom(it.at - 1);
+  if (it.at != null) { if (LS.get('pa-ed:playSentence', true)) playSentence(it.at); else playFrom(it.at - 1); }
 }
 function clearCur() {
   App.curAdd = null;
@@ -3086,6 +3145,8 @@ function wireRoom() {
     if (t.dataset.act != null) {
       const a = t.dataset.act;
       if (a === 'copyall') return copyAll();
+      if (a === 'gocheck' || a === 'goadd') { App.pos = null; return goNext(1, a === 'goadd' ? 'add' : 'check'); }
+      if (a === 'gosp') { App.spCur = null; return nextIssue(); }
       if (a === 'docx') return downloadDocx();
       if (a === 'reload') return reloadJob();
       if (a === 'donenext') return toggleDone(true);
@@ -3139,6 +3200,7 @@ function startEdit(i, j, opts) {
   fit(); ta.oninput = fit;
   ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
   App.editing = { i, j, ta, before: s.text, flow: !!(opts && opts.flow) };
+  if (!(opts && opts.flow) && num(s.at) != null && LS.get('pa-ed:playSentence', true) && audio().src) playSentence(s.at);
   App.pos = [0, rowIndexOf(i), j, -1];
   box.addEventListener('mousedown', e => { if (e.target.closest('[data-e]')) e.preventDefault(); });
   box.onclick = e => {
@@ -3453,20 +3515,49 @@ function markPlaying(force) {
   });
   const ns = $('nowSec');
   if (audio().src && (secName || audio().currentTime)) ns.textContent = secName;
-  if (!App.follow) best = null;
-  if (best === lastNow && !force) return;
-  lastNow = best;
-  $('roomPane').querySelectorAll('.sent.now').forEach(e => e.classList.remove('now'));
-  if (!best) return;
-  const [i, j] = best.split('.');
-  const el = $('roomPane').querySelector(`.sent[data-i="${i}"][data-j="${j}"]`);
-  if (!el) return;
-  el.classList.add('now');
-  if (!audio().paused && !App.editing && !App.fix) {
-    const r = el.getBoundingClientRect(), d = docScroller(), b = d ? d.getBoundingClientRect() : { top: 140, bottom: window.innerHeight - 60 };
-    if (r.top < b.top + 10 || r.bottom > b.bottom - 10) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  const mode = followMode();
+  if (mode === 'off') best = null;
+  if (best !== lastNow || force) {
+    lastNow = best;
+    $('roomPane').querySelectorAll('.sent.now, .trow.playing').forEach(e => e.classList.remove('now', 'playing'));
+    if (best) {
+      const [i, j] = best.split('.');
+      const el = $('roomPane').querySelector(`.sent[data-i="${i}"][data-j="${j}"]`);
+      if (el) {
+        el.classList.add('now');
+        const row = el.closest('.trow'); row && row.classList.add('playing');
+        // Scroll only when asked to, and never while the typist is editing.
+        if (mode === 'scroll' && !audio().paused && !App.editing && !App.fix) {
+          const r = el.getBoundingClientRect(), d = docScroller(), bx = d ? d.getBoundingClientRect() : { top: 140, bottom: window.innerHeight - 60 };
+          if (r.top < bx.top + 10 || r.bottom > bx.bottom - 10) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
+      }
+    }
   }
+  updateJump(secName);
 }
+// "Playing: <row> ↓": shown when the audio is on a row that is off screen, so the
+// typist chooses when to jump there instead of the page moving under them.
+function updateJump(secName) {
+  const pill = $('jumpPill'); if (!pill) return;
+  const el = $('roomPane').querySelector('.sent.now');
+  let show = false, down = true;
+  if (el && !audio().paused && followMode() !== 'off') {
+    const r = el.getBoundingClientRect(), d = docScroller(), bx = d ? d.getBoundingClientRect() : { top: 0, bottom: window.innerHeight };
+    show = r.bottom < bx.top + 60 || r.top > bx.bottom - 20; down = r.top > bx.bottom - 20;
+  }
+  pill.hidden = !show;
+  if (show) $('jumpText').textContent = 'Playing: ' + (secName || 'this room') + (down ? '  ↓' : '  ↑');
+}
+const followMode = () => { const m = LS.get('pa-ed:followMode', null); return m || (LS.get('pa-ed:follow', true) ? 'row' : 'off'); };
+// The sentence that starts at this time ends where the next one starts.
+function sentEnd(at) {
+  const room = curRoom(); let end = null;
+  if (room) roomState(room).secs.forEach(sec => sec.sents.forEach(s => { const t = num(s.at); if (t != null && t > at + 0.3 && (end == null || t < end)) end = t; }));
+  return end != null ? end + 0.4 : at + 8;
+}
+// Play just one sentence (the one being checked or edited), then stop.
+function playSentence(at) { at = num(at); if (at == null) return; playFrom(at - 0.4); clipEnd = sentEnd(at); }
 function wireAudio() {
   const a = audio();
   a.addEventListener('loadedmetadata', () => { $('nowSec').textContent = ''; tick(); });
@@ -3507,14 +3598,17 @@ function renderSkipLabels() { const s = skipS(); $('back').querySelector('span')
 function audioSettings() {
   menu($('audioSetBtn'), `<div class="label">Speed</div>
     <div class="radios" data-r="speed">${SPEED_LIST.map(v => `<button data-s="${v}" class="${v === speed() ? 'on' : ''}">${v}×</button>`).join('')}</div>
-    <label class="chk"><input type="checkbox" id="followChk" ${App.follow ? 'checked' : ''}> Follow the audio (light up and scroll to the sentence playing)</label>
+    <label>Follow the audio <select class="field" id="followSel"><option value="row">Light up the row (no scrolling)</option><option value="scroll">Light up and scroll</option><option value="off">Off</option></select></label>
+    <label class="chk"><input type="checkbox" id="playSentChk" ${LS.get('pa-ed:playSentence', true) ? 'checked' : ''}> When I open a sentence, play just that sentence</label>
     <div class="label">Audio</div>
     <label>Step back on resume <select class="field" data-k="pa-ed:rewind"><option value="0">Off</option><option value="1">1 s</option><option value="2">2 s</option><option value="3">3 s</option></select></label>
     <label>Back / forward buttons <select class="field" data-k="pa-ed:skip"><option value="3">3 s</option><option value="5">5 s</option></select></label>
     <label>While you type <select class="field" data-k="pa-ed:typingPause" data-str="1"><option value="off">Keep playing</option><option value="pause">Pause</option><option value="resume">Pause, resume after 2 s</option></select></label>`,
   m => {
     m.querySelector('.radios').onclick = e => { const x = e.target.closest('[data-s]'); if (x) setSpeed(+x.dataset.s); };
-    m.querySelector('#followChk').onchange = e => { App.follow = e.target.checked; LS.set('pa-ed:follow', App.follow); markPlaying(true); };
+    const fs = m.querySelector('#followSel'); fs.value = followMode();
+    fs.onchange = () => { LS.set('pa-ed:followMode', fs.value); markPlaying(true); };
+    m.querySelector('#playSentChk').onchange = e => LS.set('pa-ed:playSentence', e.target.checked);
     m.querySelectorAll('select').forEach(sel => {
       const k = sel.dataset.k, def = k === 'pa-ed:skip' ? 3 : k === 'pa-ed:rewind' ? 1 : 'pause';
       sel.value = String(LS.get(k, def));
@@ -3597,7 +3691,7 @@ function markRaw() {
   let el = null; for (const l of lines) { if (+l.dataset.t <= t + 0.05) el = l; else break; }
   if (el !== rawOn) {
     rawOn && rawOn.classList.remove('on'); rawOn = el;
-    if (el) { el.classList.add('on'); if (App.follow && !audio().paused) { const r = el.getBoundingClientRect(), b = body.getBoundingClientRect(); if (r.top < b.top + 10 || r.bottom > b.bottom - 10) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } }
+    if (el) { el.classList.add('on'); if (followMode() !== 'off' && !audio().paused) { const r = el.getBoundingClientRect(), b = body.getBoundingClientRect(); if (r.top < b.top + 10 || r.bottom > b.bottom - 10) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } }
   }
   let w = null; if (el) for (const x of el.querySelectorAll('.w')) { if (+x.dataset.t <= t + 0.05) w = x; else break; }
   if (w !== rawWordOn) { rawWordOn && rawWordOn.classList.remove('on'); rawWordOn = w; w && w.classList.add('on'); }
@@ -3756,7 +3850,49 @@ const HOUSE_WORDS = new Set(('downpipe downpipes colorbond benchtop benchtops be
   + 'colourbond bifold bifolds stovetop hotplate hotplates griller dishwasher dishwashers rangehood exhaust vanity vanities shaver showerhead showerheads '
   + 'mixer mixers spout spouts cistern cisterns tiled untiled unpainted downpipe verandah portico patio pergola alfresco carport roller-door '
   + 'mozzie mozzies weatherseal weatherstrip weatherstrips deadbolt deadbolts deadlock deadlocks keyless sensor sensors smoke-alarm hardwired '
-  + 'kelvinator westinghouse fisher paykel dulux caroma fowler hettich bosch smeg electrolux chef omega technika ilve dishlex').split(/\s+/));
+  + 'kelvinator westinghouse fisher paykel dulux caroma fowler hettich bosch smeg electrolux chef omega technika ilve dishlex '
+  + 'underbench overbench balustrade balustrading kickboard kickboards frameless semi-frameless showerhead showerheads arlec dmirs gpo gpos '
+  + 'isolator isolators lintel lintels weephole weepholes pavers paved bitumen limestone mulched reticulated letterbox letterboxes carpeted '
+  + 'flyscreened screendoor plantation shutters rangehoods glasswasher splitsystem reverse-cycle panelling panellings cladding weatherboard '
+  + 'colorbond-style powdercoated powder-coated aluminium stainless chrome brushed mortar render rendered cornices skirting architraved '
+  + 'garage carport roller-door downlights pendant pendants batten battens fluoro fluoros halogen halogens dimmer dimmers').split(/\s+/));
+// Words a correction may be drawn from: property words, plus every word in the WA template rows.
+const CONDITION_WORDS = ('crack cracks cracked cracking chip chips chipped scuff scuffs scuffed scuffing stain stains stained staining mark marks marked '
+  + 'dent dents dented rust rusted rusting mould mouldy discolouration discoloured tarnish tarnished tarnishing peeling peeled flaking scratch '
+  + 'scratches scratched hole holes loose missing broken torn worn fraying frayed lifting lifted gap gaps calcium build-up debris cobwebs '
+  + 'watermarks water-stained secured functional working tested present clean condition painted white silver metal brass timber tiled '
+  + 'carpet carpeted vinyl laminate stone ceramic porcelain glass mirror chrome stainless aluminium plastic brick render rendered').split(/\s+/);
+const VOCAB = [...new Set([...HOUSE_WORDS, ...CONDITION_WORDS, ...Object.values(T_ROWS).join('|').toLowerCase().split(/[^a-z]+/)].filter(w => w.length > 3))];
+// Damerau-Levenshtein (optimal string alignment) distance.
+function editDist(a, b) {
+  const m = a.length, n = b.length; if (Math.abs(m - n) > 3) return 9;
+  const d = Array.from({ length: m + 1 }, (_, i) => [i].concat(new Array(n).fill(0)));
+  for (let j = 1; j <= n; j++) d[0][j] = j;
+  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) {
+    const c = a[i - 1] === b[j - 1] ? 0 : 1;
+    d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + c);
+    if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 0.6);  // swapped letters are the commonest slip
+  }
+  return d[m][n];
+}
+// Only close, likely corrections: the phrase list first, then property words,
+// then the dictionary's own guesses that are within two letters. Nothing far-fetched.
+function spellSuggest(word) {
+  const lw = word.toLowerCase(), max = lw.length > 6 ? 2 : 1, maxDict = lw.length >= 9 ? 2 : 1, c = new Map();
+  const put = (v, s) => { const k = v.toLowerCase(); if (k === lw) return; if (!c.has(k) || c.get(k).s > s) c.set(k, { v, s }); };
+  PL.all().forEach(x => { if (x.from === lw) put(x.to, -1 - x.n); });
+  VOCAB.forEach(v => { const dd = editDist(lw, v); if (dd <= max) put(v, dd - 0.5); });
+  let guesses = [];
+  try { guesses = SP.dict ? SP.dict.suggest(word, 8) : []; } catch (e) {}
+  guesses.forEach(v => {
+    if (/'/.test(v) && !/'/.test(lw)) return;
+    if (/^[A-Z]/.test(v) && !/^[A-Z]/.test(word)) return;
+    const dd = editDist(lw, v.toLowerCase()); if (dd > maxDict) return;
+    put(v, dd + (v[0].toLowerCase() !== lw[0] ? 0.6 : 0) + (Math.abs(v.length - lw.length) > 1 ? 0.3 : 0));
+  });
+  const cap = /^[A-Z]/.test(word);
+  return [...c.values()].sort((a, b) => a.s - b.s).slice(0, 3).map(x => cap ? x.v[0].toUpperCase() + x.v.slice(1) : x.v);
+}
 const AVOID = ['aged', 'appears', 'damages', 'dirt', 'dirty', 'grouting', 'intact', 'minor', 'showing signs', 'slightly', 'some', 'structural', 'unclean', 'untested',
   'untidy', 'washable marks', 'faded', 'wipeable marks', 'wearing'];
 const MISHEARS = [
@@ -3876,6 +4012,7 @@ function openSp(id) {
   App.spCur = id;
   el.classList.add('cur');
   App.fix = { sp: id };
+  const sx = roomState(curRoom()).secs[x.i], sentAt = sx && sx.sents[x.j] ? sx.sents[x.j].at : null;
   const card = document.createElement('div');
   card.className = 'fixcard'; card.id = 'fixcard'; card.setAttribute('role', 'dialog');
   const label = x.kind === 'spell' ? 'Spelling' : x.kind === 'style' ? 'House style' : 'Grammar';
@@ -3884,7 +4021,7 @@ function openSp(id) {
     <div class="top"><span class="orb ${x.kind}"></span><div><div class="msg"><b>${label}.</b> ${esc(x.msg)}</div></div></div>
     <div class="btns sugs" style="margin-top:10px">${x.kind === 'spell' ? '<span class="small muted">Finding suggestions…</span>' : sugBtns(x.sug)}</div>
     <div class="box"><input class="field" id="spInput" spellcheck="true" lang="en-AU" autocomplete="off" aria-label="Replace with"></div>
-    <div class="btns"><button class="btn btn-ghost btn-sm" data-f="apply">Replace</button><button class="btn btn-plain btn-sm" data-f="ignore">Ignore in this job</button>
+    <div class="btns">${num(sentAt) != null ? '<button class="btn btn-ghost btn-sm" data-f="play">▶ Play sentence</button>' : ''}<button class="btn btn-ghost btn-sm" data-f="apply">Replace</button><button class="btn btn-plain btn-sm" data-f="ignore">Ignore in this job</button>
       ${x.kind === 'spell' ? '<button class="btn btn-plain btn-sm" data-f="learn">Add to my dictionary</button>' : ''}<button class="btn btn-plain btn-sm" data-f="next">Next note</button></div>
     <div class="src">Type a replacement and press Enter, or pick a suggestion. Checked on this computer; nothing is sent anywhere.</div>`;
   $('docBody').appendChild(card);
@@ -3896,9 +4033,9 @@ function openSp(id) {
   inp.focus(); inp.select();
   if (x.kind === 'spell') setTimeout(() => {
     let s = [];
-    try { s = SP.dict ? SP.dict.suggest(x.word, 5) : []; } catch (e) {}
+    s = spellSuggest(x.word);
     const box = card.querySelector('.sugs'); if (!box) return;
-    box.innerHTML = s.length ? sugBtns(s) : '<span class="small muted">No suggestions. Type the right word below.</span>';
+    box.innerHTML = s.length ? sugBtns(s) : '<span class="small muted">No close match in the dictionary. Play the sentence to hear what was said, then type it below, or Ignore if it\'s right.</span>';
   }, 30);
   card.addEventListener('mousedown', e => { if (e.target.closest('[data-f],[data-use]')) e.preventDefault(); });
   card.onclick = e => {
@@ -3907,6 +4044,7 @@ function openSp(id) {
     const f = b.dataset.f;
     if (f === 'close') return closeFix();
     if (f === 'apply') return spApply(x, inp.value);
+    if (f === 'play') { playSentence(sentAt); return inp.focus(); }
     if (f === 'next') { closeFix(); return nextIssue(); }
     if (f === 'ignore') {
       App.store.spIgnore = (App.store.spIgnore || []).concat([x.kind === 'spell' ? 'w:' + x.word.toLowerCase() : 'r:' + x.key + ':' + x.word.toLowerCase()]);
@@ -4049,6 +4187,8 @@ function init() {
   $('cnavText').onclick = () => goNext(1);
   $('findBtn').onclick = findReplace;
   $('spBtn').onclick = nextIssue;
+  $('jumpPill').onclick = () => { const el = $('roomPane').querySelector('.sent.now'); if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); setTimeout(() => updateJump(), 600); };
+  $('docBody').addEventListener('scroll', () => updateJump($('nowSec').textContent), { passive: true });
   $('reloadJob').onclick = reloadJob;
   $('jobFilter').onclick = e => { const b = e.target.closest('[data-f]'); if (b) { LS.set('pa-ed:filter', b.dataset.f); renderJobs(); } };
   document.querySelectorAll('[data-manage]').forEach(b => b.onclick = managePhrases);

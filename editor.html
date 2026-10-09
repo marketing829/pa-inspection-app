@@ -682,6 +682,72 @@
   #jobPeople { display: flex; flex-wrap: wrap; gap: 0 10px; }
   @media (max-width: 1100px) and (min-width: 901px) { #rawBtn .lbl-x, #spBtn:not(.off) #spLabel { display: none; } #spBtn, #rawBtn { gap: 4px; } }
 
+  /* ═══ v3.4: New job from audio ═══ */
+  #mnPane { position: sticky; top: 76px; height: calc(100vh - 90px); min-height: 0; overflow: hidden; }
+  #mnPane .doc-body { overflow: auto; min-height: 0; }
+  @media (min-width: 901px) { #screenNew .layout { padding-bottom: 12px; } }
+  @media (max-width: 900px) { #mnPane { position: static; height: auto; overflow: visible; } #mnPane .doc-body { overflow: visible; } }
+  .mn-card { overflow: auto; flex: 0 1 auto !important; }
+  .mn-steps { list-style: none; display: grid; gap: 4px; margin: 10px 0 12px; font-size: 13px; color: var(--ink-2); }
+  .mn-steps li { display: flex; align-items: center; gap: 8px; }
+  .mn-steps .no { background: var(--tint-2); color: var(--ink-2); }
+  .mn-steps li.on { color: var(--ink); font-weight: 600; }
+  .mn-steps li.on .no { background: var(--yellow-flat); color: var(--on-yellow); }
+  .mn-steps li.done .no { background: var(--ok-bg); color: var(--ok); }
+  .mn-form { display: grid; gap: 8px; }
+  .mn-form label { display: grid; gap: 3px; min-width: 0; }
+  .mn-form .label { font-size: 10.5px; }
+  .mn-form .field { padding: 7px 10px; font-size: 14px; border-radius: 10px; }
+  .mn-two { display: grid; grid-template-columns: minmax(0, 1fr) 84px; gap: 8px; }
+  .mn-audio-card { min-height: 120px !important; }
+  .mn-audio-card audio { width: 100%; margin-top: 10px; height: 36px; }
+  .mn-audio-card #mnSrc { overflow-wrap: anywhere; }
+  .bad-ink { color: var(--bad); }
+  .mn-src { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 16px; align-items: stretch; margin-top: 18px; }
+  @media (max-width: 1100px) { .mn-src { grid-template-columns: 1fr; } }
+  .mn-drop { border: 1.5px dashed var(--line-2); border-radius: 18px; padding: 24px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; text-align: center; color: var(--ink-2); background: var(--paper-2); min-height: 190px; transition: background .15s, border-color .15s; }
+  .mn-drop b { color: var(--ink); font-size: 15px; overflow-wrap: anywhere; }
+  .mn-drop.over { border-color: var(--check-line); background: var(--check-bg); }
+  .mn-or { display: grid; place-items: center; color: var(--ink-3); font-size: 12.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; }
+  .mn-linkbox { display: flex; flex-direction: column; justify-content: center; gap: 6px; padding: 8px 4px; }
+  .mn-go { margin-top: 18px; align-items: center; }
+  .mn-go .sp { flex: 1; }
+  .mn-status { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 16px; }
+  .mn-status > span:not(.spin) { flex: 1; min-width: 200px; }
+  .mn-status .progress { flex-basis: 100%; }
+  .mn-spin { width: 18px; height: 18px; border-width: 2.5px; margin: 0; flex: none; }
+  .mn-tip { margin: 0 0 14px; font-size: 13px; }
+  .mn-list { font-size: 15px; line-height: 1.55; }
+  .mn-s { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 10px; align-items: baseline; padding: 4px 8px; border-radius: 10px; cursor: default; }
+  .mn-s[data-t] { cursor: pointer; }
+  .mn-s:hover { background: var(--tint); }
+  .mn-s.on { background: var(--check-bg); box-shadow: inset 3px 0 0 var(--yellow-flat); }
+  .mn-s .t, .mn-room .t { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .mn-cut { font-size: 11.5px; font-weight: 600; color: var(--ink-2); border: 1px solid var(--line-2); border-radius: 999px; padding: 1px 9px; opacity: 0; white-space: nowrap; }
+  .mn-s:hover .mn-cut, .mn-cut:focus-visible { opacity: 1; }
+  .mn-cut:hover { background: var(--tint-2); color: var(--ink); }
+  .mn-room { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 18px 0 6px; padding: 8px 10px; border-radius: 14px;
+    background: var(--paper-2); border: 1px solid var(--paper-line); position: sticky; top: 0; z-index: 2; }
+  .mn-group:first-child .mn-room { margin-top: 0; }
+  @media (max-height: 800px) and (min-width: 901px) { .mn-steps { display: none; } .mn-card .jc-top { margin-bottom: 8px; } }
+  .mn-room .no { background: var(--sel); color: var(--sel-ink); flex: none; }
+  .mn-name { flex: 1 1 180px; min-width: 120px; font-size: 16px; font-weight: 600; background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 3px 7px; }
+  .mn-name:hover { border-color: var(--line-2); }
+  .mn-name:focus { outline: none; border-color: var(--check-line); background: var(--field-solid); }
+  .mn-tpl { font-size: 12.5px; border: 1px solid var(--line-2); border-radius: 8px; padding: 4px 6px; background: var(--field-solid); max-width: 180px; }
+  .mn-x { width: 26px; height: 26px; border-radius: 50%; color: var(--ink-2); font-size: 16px; line-height: 1; }
+  .mn-x:hover { background: var(--tint-2); color: var(--ink); }
+  .chip.bad { background: var(--bad-bg); color: var(--bad); }
+  .mn-edit { min-height: 62vh; font-size: 14.5px; line-height: 1.6; resize: vertical; background: var(--field-solid); }
+  .mn-tag { font-size: 10.5px; padding: 1px 7px; margin-left: 6px; vertical-align: 2px; font-weight: 600; }
+  .mn-pick { display: grid; gap: 8px; }
+  .mn-pick label { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; padding: 10px 12px; border: 1px solid var(--line-2); border-radius: 12px; cursor: pointer; }
+  .mn-pick label:has(input:checked) { border-color: var(--check-line); background: var(--check-bg); }
+  .mn-pick select { margin-top: 6px; padding: 6px 8px; font-size: 13.5px; }
+  #mnBar:empty { display: none; }
+  #mnBar code { font-family: var(--mono); font-size: 12px; background: var(--tint); padding: 1px 5px; border-radius: 6px; }
+
 </style>
 </head>
 <body>
@@ -745,6 +811,11 @@
           </div>
           <input type="file" id="folderInput" webkitdirectory directory multiple hidden>
         </div>
+        <div class="folder">
+          <div class="src-row"><span class="status-dot on"></span>
+            <div class="src-txt"><b>An audio recording</b>Not from the app? Upload it or paste a Dropbox link. Claude sorts it into rooms.</div></div>
+          <div class="btn-row"><button class="btn btn-ghost btn-sm" id="newAudioBtn">New job from audio</button></div>
+        </div>
         <div class="who" id="whoQ"></div>
       </div>
       <div class="glass grow-card phrase-card">
@@ -764,6 +835,7 @@
           <h1 class="big" id="listTitle"><span class="fade">Recent</span> jobs</h1>
           <span class="sp"></span>
           <div class="q-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="jobSearch" placeholder="Search address or date" autocomplete="off"></div>
+          <button class="btn btn-ghost" id="newAudioBtn2" title="Transcribe a recording that didn't come through the app">New job from audio</button>
           <button class="btn btn-main" id="qPrimary">Open a job folder</button>
         </div>
         <div class="resume" id="resume" hidden></div>
@@ -811,6 +883,7 @@
         <div class="rooms" id="rooms"></div>
         <div class="side-foot">
           <div style="flex:1;min-width:120px"><div class="small muted" id="jobProgressText"></div><div class="progress"><i id="jobProgress"></i></div></div>
+          <button class="btn btn-plain btn-sm" id="mnBackBtn" hidden title="Back to this recording's transcript and room dividers, to change them and polish again">Transcript and rooms</button>
           <button class="btn btn-plain btn-sm" id="reloadJob" hidden title="Read this job again from Dropbox: new rooms, transcripts and the inspector's fixes">Check for updates</button>
         </div>
       </div>
@@ -834,6 +907,39 @@
       </div>
       <div class="doc-body" id="docBody"><div class="doc-inner" id="roomPane"></div></div>
       <button class="jump" id="jumpPill" hidden title="Go to the row being played"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span id="jumpText"></span></button>
+    </div>
+  </div>
+</section>
+
+<!-- v3.4: NEW JOB FROM AUDIO: upload or Dropbox link → raw transcript → Claude sorts it into rooms and rows -->
+<section class="screen" id="screenNew">
+  <div class="layout">
+    <aside class="left">
+      <div class="glass job-card mn-card">
+        <div class="jc-top"><span class="tag">From audio</span><span style="flex:1"></span><span class="small muted" id="mnSaved"></span></div>
+        <ol class="mn-steps" id="mnSteps"></ol>
+        <div class="mn-form">
+          <label><span class="label">Property address</span><input class="field" id="mn_address" placeholder="12 Example Street, Baldivis" autocomplete="off"></label>
+          <label><span class="label">Client (agency)</span><input class="field" id="mn_client" autocomplete="off"></label>
+          <label><span class="label">Inspector</span><input class="field" id="mn_inspector" autocomplete="off"></label>
+          <div class="mn-two">
+            <label><span class="label">Type</span><input class="field" id="mn_type" list="mnTypes" placeholder="Entry (PCR)" autocomplete="off"></label>
+            <label><span class="label">State</span><select class="field" id="mn_state"><option>WA</option><option>NSW</option><option>QLD</option></select></label>
+          </div>
+          <label><span class="label">Inspected</span><input class="field" id="mn_date" type="date"></label>
+          <datalist id="mnTypes"><option value="Entry (PCR)"><option value="Exit (PCR)"><option value="Routine"><option value="Home Open"></datalist>
+        </div>
+      </div>
+      <div class="glass grow-card mn-audio-card">
+        <div class="card-head"><span class="label">Audio</span><button class="btn btn-plain btn-sm" id="mnChange" hidden>Use different audio</button></div>
+        <div class="small muted" id="mnSrc"></div>
+        <audio id="mnAudio" controls preload="metadata" hidden></audio>
+        <div class="side-foot"><span class="small muted" style="flex:1">Click a sentence to hear it.</span><button class="btn btn-plain btn-sm" id="mnDelete" hidden>Delete</button></div>
+      </div>
+    </aside>
+    <div class="doc solid" id="mnPane">
+      <div class="doc-bar" id="mnBar"></div>
+      <div class="doc-body" id="mnDocBody"><div class="doc-inner" id="mnBody"></div></div>
     </div>
   </div>
 </section>
@@ -1711,6 +1817,8 @@ if (typeof module !== 'undefined') {
 <script>
 'use strict';
 // ═══ PA Typist Editor v3 ═══════════════════════════════════════════════════
+// v3.4 (9 Oct 2026): New job from audio (partG): upload a recording or paste a Dropbox
+// link, AssemblyAI transcribes it, Claude finds the rooms and sorts each into its rows.
 // v3.3 (8 Oct 2026): review fixes (undo per job, whole-word fixes, no markup in the
 // edit box, one tab saves at a time, "Not saved" when a save fails, spelling
 // suggestions off the main thread, audio reset per room); better spelling and
@@ -2396,10 +2504,11 @@ function fadeTitle(name) {
   return m && m[2] ? `<span class="fade">${esc(m[1])}</span>${esc(m[2])}` : `<span class="fade">${esc(name)}</span>`;
 }
 function show(screen) {
-  ['screenQueue', 'screenJob'].forEach(s => $(s).classList.toggle('active', s === screen));
-  const inJob = screen === 'screenJob' && !!App.job;
+  ['screenQueue', 'screenJob', 'screenNew'].forEach(s => $(s).classList.toggle('active', s === screen));
+  const inJob = screen === 'screenJob' && !!App.job, inNew = screen === 'screenNew';
   ['timerBtn', 'savedInd', 'copyRoomBtn', 'doneBtn', 'exportBtn', 'crumbSep'].forEach(id => { $(id).hidden = !inJob; });
-  $('crumbJob').textContent = inJob ? App.job.address : '';
+  $('crumbSep').hidden = !(inJob || inNew);
+  $('crumbJob').textContent = inJob ? App.job.address : inNew ? 'New job from audio' : '';
   if (!inJob) { closeRaw(); pauseAudio(); closeFix(); closeMenu(); }
   window.scrollTo(0, 0);
 }
@@ -2705,6 +2814,7 @@ function statusChip(info) {
   return `<span class="chip warn"><span class="d"></span>${st.total ? st.done + ' of ' + st.total + ' rooms' : 'Started'}</span>`;
 }
 function renderJobs() {
+  mnMergeJobs();   // v3.4: jobs made from audio on this computer
   const q = $('jobSearch').value.trim().toLowerCase();
   let f = LS.get('pa-ed:filter', 'all');
   if (!['all', 'open', 'typed'].includes(f)) f = 'all';
@@ -2714,7 +2824,7 @@ function renderJobs() {
   $('cntOpen').textContent = App.jobs.length ? infos.filter(i => i.state !== 'typed').length : '';
   $('cntTyped').textContent = App.jobs.length ? infos.filter(i => i.state === 'typed').length : '';
   $('listTitle').innerHTML = f === 'open' ? '<span class="fade">Not</span> finished' : f === 'typed' ? '<span class="fade">Typed</span> jobs' : '<span class="fade">Recent</span> jobs';
-  const list = App.jobs.filter(j => (!q || j.id.toLowerCase().includes(q)) && (f === 'all' || (f === 'typed') === jobTyped(j.id)));
+  const list = App.jobs.filter(j => (!q || (j.id + ' ' + (j.label || '')).toLowerCase().includes(q)) && (f === 'all' || (f === 'typed') === jobTyped(j.id)));
   renderResume();
   $('noSource').hidden = !!App.jobs.length;
   $('qPrimary').textContent = App.jobsFrom === 'dropbox' ? 'Refresh' : 'Open a job folder';
@@ -2723,22 +2833,22 @@ function renderJobs() {
     + (list.length ? list.map(j => {
       const pf = parseJobFolder(j.id), info = jobInfo(j.id), st = info.st || {}, m = st.meta || {};
       return `<button class="job-row" data-k="${App.jobs.indexOf(j)}">
-        <span class="job-addr">${esc(m.address || pf.address)}${m.inspector || m.typist ? `<small class="job-who">${esc([m.inspector && 'Inspector ' + m.inspector, m.typist && 'Typed by ' + m.typist].filter(Boolean).join(' · '))}</small>` : ''}</span>
-        <span class="c">${esc(prettyDate(pf.date) || '—')}</span>
+        <span class="job-addr">${esc(j.draft ? j.label : (m.address || j.label || pf.address))}${j.from === 'manual' ? ' <span class="tag mn-tag">From audio</span>' : ''}${m.inspector || m.typist ? `<small class="job-who">${esc([m.inspector && 'Inspector ' + m.inspector, m.typist && 'Typed by ' + m.typist].filter(Boolean).join(' · '))}</small>` : ''}</span>
+        <span class="c">${esc(prettyDate(pf.date || j.date) || '—')}</span>
         <span class="c hs">${esc(m.client || '—')}</span>
         <span class="c hs">${st.time ? hms(st.time) : '—'}</span>
-        <span>${statusChip(info)}</span>
+        <span>${j.draft ? '<span class="chip">Draft</span>' : statusChip(info)}</span>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.45"><path d="M9 6l6 6-6 6"/></svg>
       </button>`;
     }).join('') : '<div class="empty">' + (q ? 'No job matches that search.' : f === 'typed' ? 'No typed jobs yet.' : 'Every job here is typed.') + '</div>');
-  $('jobs').querySelectorAll('.job-row').forEach(b => b.onclick = () => openJob(App.jobs[+b.dataset.k]));
+  $('jobs').querySelectorAll('.job-row').forEach(b => b.onclick = () => openAny(App.jobs[+b.dataset.k]));
 }
 // "Pick up where you left off": the last job opened on this computer, if it isn't finished.
 function renderResume() {
   const el = $('resume'), last = LS.get('pa-ed:last', null);
   const st = last && LS.get(storeKey(last.id), null);
   if (!last || !st || (st.total && st.done >= st.total) || App.job) { el.hidden = true; return; }
-  const canOpen = last.from === 'sample' || (last.from === 'dropbox' && DBX.conf) || (last.from === 'local' && App.jobs.some(j => j.id === last.id));
+  const canOpen = last.from === 'sample' || (last.from === 'dropbox' && DBX.conf) || ((last.from === 'local' || last.from === 'manual') && App.jobs.some(j => j.id === last.id));
   const f = parseJobFolder(last.id);
   el.hidden = false;
   el.innerHTML = `<span class="no" style="background:var(--yellow-flat);color:var(--on-yellow)">▶</span>
@@ -2855,6 +2965,7 @@ async function readDropped(dt) {
   const entries = [...dt.items].map(i => i.webkitGetAsEntry && i.webkitGetAsEntry()).filter(Boolean);
   for (const e of entries) await walk(e, []);
   if (entries.length === 1 && entries[0].isDirectory) openLocal(out);
+  else if (out.length === 1 && AUDIO_EXT.has(splitName(out[0].file.name).ext)) openNew(null, out[0].file);   // v3.4
   else toast('Drop a folder, not single files');
 }
 
@@ -2866,8 +2977,8 @@ async function openJob(j, keepKey) {
   document.querySelector('#jobLoading .spin').hidden = false;
   $('jobLoadingText').textContent = 'Opening ' + parseJobFolder(j.id).address + '…';
   try {
-    const files = j.files || await DBX.jobFiles(j.id);
-    const job = await buildJob(j.id, files, (n, of) => { $('jobLoadingText').textContent = 'Reading room ' + n + ' of ' + of + '…'; });
+    // v3.4: a job made from audio is built from what was saved on this computer.
+    const job = j.build ? await j.build() : await buildJob(j.id, j.files || await DBX.jobFiles(j.id), (n, of) => { $('jobLoadingText').textContent = 'Reading room ' + n + ' of ' + of + '…'; });
     if (!job.rooms.length) throw new Error('No rooms in this folder yet.');
     App.job = job; App.jobRef = j; App.store = loadStore(job.id); App.store.opened = Date.now();
     App.stale = false; const sb = $('staleBar'); if (sb) sb.remove();
@@ -2881,6 +2992,7 @@ async function openJob(j, keepKey) {
     saveStore(true);
     LS.set('pa-ed:last', { id: j.id, from: j.from });
     $('reloadJob').hidden = j.from !== 'dropbox';
+    $('mnBackBtn').hidden = j.from !== 'manual';
     $('jobLoading').hidden = true; $('jobView').hidden = false;
     show('screenJob');
     renderSide(); openRoom(App.idx, true);
@@ -2969,7 +3081,8 @@ function renderRoom() {
   const rows = sheetRows(room, rs);
   const said = rows.filter(r => !r.extra && r.i != null && liveSents(rs.secs[r.i]).length).length, total = rows.filter(r => !r.extra).length;
   const eyebrow = ['Room ' + (App.idx + 1) + ' of ' + j.rooms.length, room.hhmm && 'recorded ' + room.hhmm.slice(0, 2) + ':' + room.hhmm.slice(2),
-    room.takes > 1 && 'take ' + room.take + ' of ' + room.takes, room.part > 1 && 'part ' + room.part, room.rec != null && 'rec ' + room.rec].filter(Boolean).join(' · ');
+    room.takes > 1 && 'take ' + room.take + ' of ' + room.takes, room.part > 1 && 'part ' + room.part, room.rec != null && 'rec ' + room.rec,
+    room.startAt != null && 'starts at ' + clock(room.startAt) + ' in the recording'].filter(Boolean).join(' · ');
   const nSp = App.sp ? App.sp.list.length : 0;
   const stat = (n, label, cls, act, title) => `<button class="stat ${cls || ''}${n ? '' : ' zero'}"${act ? ` data-act="${act}"` : ' disabled'} title="${esc(title || '')}"><b>${n}</b><span>${label}</span></button>`;
   let h = `<header class="room-head">
@@ -3595,7 +3708,9 @@ async function loadAudio(room) {
     const url = await room.audio.url();
     if (audioRoomKey !== room.key) return;
     a.src = url; a.playbackRate = speed(); a.load();
-    decodePeaks(room, url);
+    // v3.4: one recording for every room: start at this room, and don't decode a long file for the waveform.
+    if (room.startAt != null) a.addEventListener('loadedmetadata', () => { if (audioRoomKey === room.key && a.currentTime < 0.5) { a.currentTime = Math.max(0, room.startAt - 0.3); tick(); } }, { once: true });
+    if (!room.audio.noPeaks) decodePeaks(room, url);
   } catch (e) { $('nowSec').textContent = 'Audio could not be loaded: ' + (e.message || 'error'); }
 }
 // The real waveform, when the browser can read the file; otherwise speech
@@ -4447,7 +4562,7 @@ function renderWho() {
 // nothing until the typist accepts it. Results are kept per sentence, so a
 // second run only sends sentences that changed: a job costs a few US cents once.
 const PA_KEY = 'ZfFSr6J42MtujG_F88NgF1go';       // the same shared key as the inspector app (index.html)
-const DEFAULT_PROOF_URL = '';                     // paste the inspectionapp-proofread val address here once it exists
+const DEFAULT_PROOF_URL = 'https://propertyassist--f40862f6c31611f1801a1607ee4eb77e.web.val.run';   // inspectionapp-proofread (live 8 Oct 2026)
 const proofUrl = () => String(LS.get('pa-ed:proofUrl', '') || DEFAULT_PROOF_URL).trim();
 const CL_PRICE = { 'claude-haiku-4-5': [1, 5], 'claude-sonnet-5-5': [2, 10], 'claude-opus-5-5': [4, 20] };   // US$ per million tokens in / out
 const clPrice = model => { const k = Object.keys(CL_PRICE).find(x => String(model || '').startsWith(x)); return CL_PRICE[k || 'claude-sonnet-5-5']; };
@@ -4677,6 +4792,829 @@ function sampleJob() {
   files.push(mk('00 - Inspection details.txt', 'Property: 14 Acacia Street, Subiaco WA 6008\nClient: Ray White Subiaco\nInspection type: Entry (PCR)\nInspector: Sample inspector\nState: WA\nInspection started: 8/10/2026, 9:05:00 am\nSmoke alarms: Hallway and master\nRCD box: Two RCDs in the meter box\nWater meter: 4521 kL — front verge\n'));
   return { id, from: 'sample', files };
 }
+// ═══ v3.4 (9 Oct 2026): New job from audio ═══════════════════════════════
+// For a recording that didn't come through the inspector app (an inspector's own
+// phone recorder, an older job, a re-do): upload the audio file or paste a
+// Dropbox link → AssemblyAI gives the raw transcript (same val as the app) →
+// "Polish with Claude": Claude finds where each room starts (inspectionapp-
+// proofread, mode "rooms"), then each room goes through inspectionapp-cleanup,
+// exactly like a room from the app: template rows, mishears fixed, grey added
+// phrases, words to check. The result opens as a normal job in the editor.
+// Everything is kept in this browser: the job in localStorage, an uploaded audio
+// file in IndexedDB (a Dropbox link is just remembered).
+const TRANSCRIBE_URL = 'https://propertyassist--7e43f138ad2311f186b71607ee4eb77e.web.val.run';   // inspectionapp-assemblyai (round 11)
+const CLEANUP_URL = 'https://propertyassist--a1d7b510c12511f1bf831607ee4eb77e.web.val.run';      // inspectionapp-cleanup (round 12)
+const mnTranscribeUrl = () => String(LS.get('pa-ed:transcribeUrl', '') || TRANSCRIBE_URL).trim();
+const mnCleanupUrl = () => String(LS.get('pa-ed:cleanupUrl', '') || CLEANUP_URL).trim();
+const MN_MAX_BYTES = 60 * 1024 * 1024;   // the AssemblyAI val's limit for an uploaded file
+const MN_CHUNK = 6000;                   // a room longer than this is sorted in parts (Val Town stops a call at 60 s)
+// Room templates Claude (or the typist) can pick. The rows are the app's (T_ROWS).
+const MN_TEMPLATES = [['front_gardens', 'Front Gardens'], ['entry', 'Entry'], ['lounge', 'Lounge'], ['dining', 'Dining'], ['family', 'Family/Rumpus'],
+  ['theatre', 'Theatre'], ['kitchen', 'Kitchen'], ['passage', 'Passage/Hallway'], ['staircase', 'Staircase'], ['bedroom1', 'Bedroom'], ['study', 'Study'],
+  ['ensuite', 'Ensuite'], ['ensuite_toilet', 'Ensuite Toilet'], ['bathroom2', 'Bathroom'], ['toilet', 'Toilet'], ['powder_room', 'Powder Room'],
+  ['laundry', 'Laundry'], ['garage', 'Garage'], ['balcony', 'Balcony/Alfresco'], ['shed', 'Shed/Store'], ['rear_exterior', 'Rear Exterior']];
+const MN_TPL = new Map(MN_TEMPLATES);
+const withPaKey = u => { const x = new URL(u); x.searchParams.set('k', PA_KEY); return x.toString(); };
+
+// ── the audio file, kept in this browser ─────────────────────────────────
+const IDB = {
+  db: null,
+  open() {
+    if (!this.db) this.db = new Promise((res, rej) => {
+      try { const r = indexedDB.open('pa-ed', 1); r.onupgradeneeded = () => r.result.createObjectStore('audio'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }
+      catch (e) { rej(e); }
+    });
+    return this.db;
+  },
+  async run(mode, fn) {
+    const db = await this.open();
+    return new Promise((res, rej) => {
+      const tx = db.transaction('audio', mode), req = fn(tx.objectStore('audio'));
+      tx.oncomplete = () => res(req ? req.result : undefined); tx.onerror = () => rej(tx.error); tx.onabort = () => rej(tx.error);
+    });
+  },
+  put(k, v) { return this.run('readwrite', s => s.put(v, k)); },
+  get(k) { return this.run('readonly', s => s.get(k)); },
+  del(k) { return this.run('readwrite', s => s.delete(k)); }
+};
+const mnBlobUrls = {};
+async function mnAudioUrl(d) {
+  if (!d || !d.audio) return '';
+  if (d.audio.kind === 'link') return d.audio.url;
+  if (mnBlobUrls[d.id]) return mnBlobUrls[d.id];
+  let rec = null; try { rec = await IDB.get(d.id); } catch (e) {}
+  if (!rec || !rec.blob) throw new Error('The audio file isn\'t kept on this computer. Open Transcript and rooms and choose the file again.');
+  return (mnBlobUrls[d.id] = URL.createObjectURL(rec.blob));
+}
+// The job's audio as the editor's rooms use it: one file for every room.
+function mnAudioFile(d) {
+  if (!d.audio) return null;
+  return { name: d.audio.name || 'audio', size: d.audio.size || 0, noPeaks: true, url: () => mnAudioUrl(d) };
+}
+
+// ── drafts (one per recording) ───────────────────────────────────────────
+const MN = { d: null, file: null, busy: false, editing: false, sc: null, status: '', statusKind: '', prog: null };
+const mnKey = id => 'pa-ed:mjob:' + id;
+const mnIds = () => { const a = LS.get('pa-ed:manual', []); return Array.isArray(a) ? a : []; };
+const mnLoad = id => { const d = LS.get(mnKey(id), null); return d && d.id ? d : null; };
+const mnToday = () => { const t = new Date(); return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0'); };
+function mnNew() {
+  return { id: 'm' + Date.now().toString(36), v: 1, created: Date.now(), details: { address: '', client: '', inspector: '', type: '', state: 'WA', date: mnToday() },
+    audio: null, transcript: null, split: null, splitBy: '', rooms: null, jobId: '' };
+}
+let mnSaveT = 0;
+function mnSave(now) {
+  const d = MN.d; if (!d) return true;
+  clearTimeout(mnSaveT);
+  const go = () => {
+    d.updated = Date.now();
+    const ok = LS.set(mnKey(d.id), d);
+    if (ok && !mnIds().includes(d.id)) LS.set('pa-ed:manual', [d.id].concat(mnIds()));
+    const el = $('mnSaved'); if (el) el.textContent = ok ? 'Saved' : 'Not saved';
+    if (!ok) toast('Not saved: this browser is out of storage space. Copy the transcript now so nothing is lost.');
+    return ok;
+  };
+  if (now) return go();
+  mnSaveT = setTimeout(go, 400); return true;
+}
+const mnPolished = d => !!(d && d.jobId && Array.isArray(d.rooms) && d.rooms.length);
+// Home page: drafts and polished jobs from audio, newest first, above the others.
+function mnMergeJobs() {
+  App.jobs = App.jobs.filter(j => j.from !== 'manual');
+  const add = [];
+  mnIds().forEach(id => {
+    const d = mnLoad(id); if (!d) return;
+    const done = mnPolished(d);
+    add.push({ id: done ? d.jobId : 'draft:' + d.id, from: 'manual', draftId: d.id, draft: !done, label: d.details.address || 'New job from audio',
+      date: d.details.date || '', build: () => manualJob(d.id) });
+  });
+  App.jobs = add.concat(App.jobs);
+}
+function openAny(j) { return j && j.draft ? openNew(j.draftId) : openJob(j); }
+
+// ── the polished job, as the editor opens it ────────────────────────────
+async function manualJob(id) {
+  const d = mnLoad(id);
+  if (!mnPolished(d)) throw new Error('This recording hasn\'t been polished yet. Open it from Recent jobs and press Polish with Claude.');
+  const det = d.details, audio = mnAudioFile(d);
+  const rooms = d.rooms.map(r => Object.assign(roomFromJson(r.json), {
+    key: r.key, base: r.key, hhmm: '', part: 1, rec: null, partial: false, audio, docx: null, readError: '', startAt: num(r.at)
+  }));
+  const seen = {};
+  rooms.forEach(r => { const k = r.name.toLowerCase(); seen[k] = (seen[k] || 0) + 1; r.take = seen[k]; });
+  rooms.forEach(r => { r.takes = seen[r.name.toLowerCase()]; });
+  return { id: d.jobId, date: det.date || '', address: det.address || 'Job from audio', rooms, photos: [], info: {}, fromAudio: d.id,
+    facts: { Client: det.client || '', Inspector: det.inspector || '', State: det.state || '', Type: det.type || '', Started: '' } };
+}
+function mnJobId(d) {
+  const base = (d.details.date || mnToday()) + ' - ' + String(d.details.address || 'Job').replace(/[\/\\]+/g, '-').trim() + ' (audio)';
+  const taken = new Set(mnIds().map(mnLoad).filter(x => x && x.id !== d.id && x.jobId).map(x => x.jobId));
+  let id = base, n = 2; while (taken.has(id)) id = base.replace(/ \(audio\)$/, ' (audio ' + n++ + ')');
+  return id;
+}
+
+// ── transcript → sentences with times ────────────────────────────────────
+function mnWords(raw) {
+  const pairs = (Array.isArray(raw) ? raw : []).map(it => Array.isArray(it) ? [it[0], it[1]] : [it && (it.word || it.text), it && (it.start != null ? it.start : it.start_time)])
+    .map(([w, s]) => [String(w || '').toLowerCase().replace(/[^a-z0-9']/g, ''), Number(s)]).filter(([w, s]) => w && s != null && isFinite(s) && s >= 0);
+  const last = pairs.reduce((m, p) => Math.max(m, p[1]), 0), sc = last > 7200 ? 0.001 : 1;   // milliseconds from an older val
+  return pairs.map(([w, s]) => [w, Math.round(s * sc * 10) / 10]);
+}
+const MN_SENT_RE = /[^.!?]+(?:[.!?]+["')\]]*|$)\s*/g;
+// Each sentence, the second it starts and the index of its first word (walking the
+// engine's words alongside the text, so it stays exact even for repeated phrases).
+function mnSentences(text, words) {
+  const out = []; let wi = 0;
+  const W = words || [];
+  for (const p of String(text || '').replace(/\s+/g, ' ').trim().match(MN_SENT_RE) || []) {
+    const s = p.trim(); if (!s) continue;
+    const startWi = wi; let at = null;
+    if (W.length) for (const tok of s.split(' ')) {
+      const n = tok.toLowerCase().replace(/[^a-z0-9']/g, ''); if (!n) continue;
+      for (let k = wi; k < Math.min(W.length, wi + 6); k++) if (W[k][0] === n) { if (at == null) at = W[k][1]; wi = k + 1; break; }
+    }
+    out.push({ text: s, at, wi: startWi });
+  }
+  return out;
+}
+function mnSents(d) {
+  const t = d && d.transcript; if (!t) return [];
+  if (MN.sc && MN.sc.text === t.text && MN.sc.n === (t.words || []).length) return MN.sc.list;
+  const list = mnSentences(t.text, t.words);
+  MN.sc = { text: t.text, n: (t.words || []).length, list };
+  return list;
+}
+// Starts going up, inside the transcript, the first one at 0.
+function mnCleanSplit(list, n) {
+  const out = [];
+  (Array.isArray(list) ? list : []).map(r => ({ name: String(r && r.name || '').replace(/\s+/g, ' ').trim().slice(0, 60) || 'Room',
+    template: MN_TPL.has(r && r.template) ? r.template : 'other', start: Math.max(0, Math.min(Math.max(0, n - 1), Math.round(Number(r && r.start) || 0))) }))
+    .sort((a, b) => a.start - b.start)
+    .forEach(r => { if (out.length && out[out.length - 1].start === r.start) out[out.length - 1] = r; else out.push(r); });
+  if (out.length) out[0].start = 0;
+  return out.length ? out : null;
+}
+// The rooms as ranges of sentences, each with its own text and word timings.
+function mnRanges(d) {
+  const S = mnSents(d), W = (d.transcript && d.transcript.words) || [];
+  const sp = d.split && d.split.length ? d.split : [{ name: 'Whole recording', template: 'other', start: 0 }];
+  const ranges = sp.map((r, k) => {
+    const end = k + 1 < sp.length ? sp[k + 1].start : S.length, ss = S.slice(r.start, end);
+    const w0 = ss.length ? ss[0].wi : 0, w1 = end < S.length ? S[end].wi : W.length;
+    const first = ss.find(x => x.at != null);
+    return Object.assign({}, r, { k, end, sents: ss, text: ss.map(x => x.text).join(' '), words: W.slice(w0, w1), at: first ? first.at : null });
+  });
+  const seen = {};
+  ranges.forEach(r => { const b = r.name.trim() || 'Room', lk = b.toLowerCase(); seen[lk] = (seen[lk] || 0) + 1; r.key = seen[lk] > 1 ? b + ' (' + seen[lk] + ')' : b; });
+  return ranges;
+}
+const mnIsNotes = r => /^(general|intro|introduction|notes|closing|closing remarks|end|whole recording)$/i.test(String(r.name).trim()) && r.template === 'other';
+// Template rows for a room: the chosen template, or (for "other" and combined rooms
+// like Bathroom/Laundry) the same name rules the app uses.
+function mnRowsFor(r) {
+  const byTpl = r.template && r.template !== 'other' && T_ROWS[r.template] && !(/\blaundry\b/i.test(r.name) && r.template !== 'laundry');
+  return { rows: byTpl ? rowsOf(r.template) : templateRowsForName(r.name), roomId: byTpl ? r.template : '' };
+}
+const mnSig = (d, r) => hashStr([r.name, r.template, mnRowsFor(r).rows.join('|'), r.text, d.details.address].join('§'));
+function mnRoomStatus(d, r) {
+  const p = (d.rooms || []).find(x => x.key === r.key);
+  if (!p) return { st: 'new' };
+  if (p.sig !== mnSig(d, r)) return { st: 'changed', p };
+  return { st: p.error ? 'error' : 'ok', p };
+}
+
+// ── room split by keywords (when Claude can't be asked) ──────────────────
+const MN_NUMS = { one: '1', two: '2', three: '3', four: '4', five: '5', six: '6', first: '1', second: '2', third: '3', fourth: '4' };
+function mnTplFor(name) {
+  const n = String(name || '').toLowerCase().replace(/[\/&+,_-]+/g, ' ');
+  if (/\bensuite|en suite\b/.test(n)) return /\b(toilet|wc)\b/.test(n) ? 'ensuite_toilet' : 'ensuite';
+  if (/\bstudy|office\b/.test(n)) return 'study';
+  const hit = ROOM_NAME_RULES.find(([re]) => re.test(n));
+  return hit && MN_TPL.has(hit[1]) ? hit[1] : 'other';
+}
+function mnKeywordSplit(S) {
+  const out = [];
+  S.forEach((s, i) => {
+    let t = s.text.toLowerCase().replace(/[^a-z0-9\s\/&'-]/g, ' ').replace(/\s+/g, ' ').trim();
+    t = t.replace(/^((okay|ok|right|so|now|and|next|um|uh|alright|all right)\s+)+/, '')
+      .replace(/^((we are|we're|i'm|i am|now)\s+)?((moving|going|heading|onto|on to)\s+)?(on\s+)?((in)?to\s+)?(the\s+)?/, '').trim();
+    const words = t.split(' ').filter(Boolean);
+    if (!words.length || words.length > 4) return;
+    if (/\b(door|doors|ceiling|walls?|floor|flooring|windows?|lights?|cupboards?|taps?|bench|vanity|mirror|carpet|tiles?|fan|blinds?)\b/.test(t)) return;
+    const tpl = mnTplFor(t); if (tpl === 'other') return;
+    out.push({ name: titleCase(words.map(w => MN_NUMS[w] || w).join(' ')), template: tpl, start: i });
+  });
+  if (!out.length) return null;
+  if (out[0].start > 0) out.unshift({ name: 'General', template: 'other', start: 0 });
+  return mnCleanSplit(out, S.length);
+}
+
+// ── AssemblyAI (the app's val) ───────────────────────────────────────────
+// A Dropbox share link, as a link AssemblyAI and the audio player can download.
+function mnDirectLink(raw) {
+  let u; try { u = new URL(String(raw || '').trim()); } catch (e) { return { error: 'That isn\'t a web address. In Dropbox: Share › Copy link, then paste it here.' }; }
+  if (u.protocol !== 'https:') return { error: 'The link should start with https://' };
+  const host = u.hostname.toLowerCase();
+  if (/(^|\.)dropbox\.com$/.test(host)) {
+    if (/^\/(scl\/fo|sh)\//.test(u.pathname)) return { error: 'That\'s a link to a folder. Copy the link of the audio file itself.' };
+    if (!/^\/(s|scl\/fi)\//.test(u.pathname)) return { error: 'That\'s the Dropbox page address, not a share link. In Dropbox, click Share › Copy link on the audio file.' };
+    u.searchParams.delete('raw'); u.searchParams.set('dl', '1');
+  }
+  let name = 'audio'; try { name = decodeURIComponent(u.pathname.split('/').filter(Boolean).pop() || 'audio'); } catch (e) {}
+  return { url: u.toString(), name };
+}
+function mnFriendlyError(msg, isLink) {
+  const m = String(msg || '');
+  if (/413|too large/i.test(m)) return 'The file is too big to send from here (60 MB at most). Put it in Dropbox, Share › Copy link, and paste the link instead.';
+  if (isLink && /html|does not appear to contain audio|download|could not be|unable to|404|403|not found/i.test(m)) return 'AssemblyAI couldn\'t download the audio from that link. Check the link plays the file for anyone (Share › Copy link, "Anyone with the link"), then try again.';
+  if (/Failed to fetch|NetworkError|Load failed|network/i.test(m)) return isLink ? 'Couldn\'t reach the transcription service. Check the internet connection and try again.'
+    : 'The file couldn\'t be sent. A long recording may be too big to send from here: put it in Dropbox, Share › Copy link, and paste the link instead.';
+  return 'Transcription failed: ' + m.slice(0, 200);
+}
+async function mnPost(body, isJson, ms) {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), ms);
+  try {
+    const r = await fetch(withPaKey(mnTranscribeUrl()), { method: 'POST', body: isJson ? JSON.stringify(body) : body,
+      headers: { 'Content-Type': isJson ? 'application/json' : ((body && body.type) || 'application/octet-stream') }, signal: ctl.signal });
+    const out = await r.json().catch(() => ({}));
+    return { status: r.status, out };
+  } finally { clearTimeout(t); }
+}
+async function mnTranscribe(resume) {
+  const d = MN.d; if (!d || MN.busy) return;
+  let first = null;
+  if (!resume || !d.pending) {
+    const linkIn = $('mnLink') ? $('mnLink').value.trim() : '';
+    if (linkIn) {
+      const L = mnDirectLink(linkIn);
+      if (L.error) return mnSetStatus(L.error, 'bad');
+      d.audio = { kind: 'link', url: L.url, name: L.name, original: linkIn };
+      first = { body: { url: L.url }, json: true };
+    } else if (MN.file) {
+      if (MN.file.size > MN_MAX_BYTES) return mnSetStatus('That file is ' + Math.round(MN.file.size / 1048576) + ' MB; the most that can be sent from here is 60 MB. Put it in Dropbox, Share › Copy link, and paste the link instead.', 'bad');
+      d.audio = { kind: 'file', name: MN.file.name, size: MN.file.size, type: MN.file.type || '' };
+      mnBlobUrls[d.id] = URL.createObjectURL(MN.file);
+      first = { body: MN.file, json: false };
+    } else if (d.audio && d.audio.kind === 'link') first = { body: { url: d.audio.url }, json: true };
+    else if (d.audio && d.audio.kind === 'file') {
+      let rec = null; try { rec = await IDB.get(d.id); } catch (e) {}
+      if (!rec) return mnSetStatus('Choose the audio file again (it isn\'t kept on this computer).', 'bad');
+      first = { body: rec.blob, json: false };
+    } else return mnSetStatus('Choose an audio file or paste a Dropbox link first.', 'bad');
+  }
+  const isLink = d.audio && d.audio.kind === 'link';
+  mnSave(true);
+  MN.busy = true; const started = Date.now();
+  if (first && !first.json && MN.file) {
+    try { await IDB.put(d.id, { blob: MN.file, name: MN.file.name, type: MN.file.type }); d.audio.kept = true; }
+    catch (e) { d.audio.kept = false; }
+  }
+  const tick = setInterval(() => mnSetStatus((first && !first.json && Date.now() - started < 4000 ? 'Sending the audio… ' : 'Transcribing… ') + hms((Date.now() - started) / 1000)
+    + '<br><span class="small">A 30-minute recording usually takes 1 to 3 minutes. Keep this page open until it has finished.</span>', 'busy'), 1000);
+  mnSetStatus(first && !first.json ? 'Sending the audio…' : 'Transcribing…', 'busy'); mnRender();
+  try {
+    let res = first ? await mnPost(first.body, first.json, 5 * 60000) : { status: 504, out: { id: d.pending, retry: true } };
+    // The val waits about 50 s, then hands back the job's id; ask again with the id until it's done.
+    for (let n = 0; res.status === 504 && res.out && res.out.id && n < 40; n++) {
+      if (MN.d !== d) return;
+      d.pending = res.out.id; d.pendingAt = d.pendingAt || Date.now(); mnSave(true);
+      res = await mnPost({ id: res.out.id }, true, 120000);
+      if (res.status === 400 && /url/i.test(res.out.error || '')) throw new Error('The transcription service needs its round 11 update to finish long recordings.');
+    }
+    if (res.status !== 200 || !res.out || typeof res.out.transcript !== 'string') {
+      if (res.status === 404) { d.pending = null; d.pendingAt = null; }
+      throw new Error((res.out && (res.out.error + (res.out.detail ? ' ' + res.out.detail : ''))) || ('the service answered ' + res.status));
+    }
+    const o = res.out;
+    if (!o.transcript.trim()) throw new Error('No speech was found in the recording.');
+    d.transcript = { text: o.transcript.trim(), words: mnWords(o.words), engine: 'AssemblyAI', model: o.model || '', seconds: num(o.audio_seconds), id: o.id || '', at: Date.now() };
+    d.pending = null; d.pendingAt = null; d.split = null; d.splitBy = '';
+    MN.file = null; MN.sc = null;
+    mnSetStatus('', ''); mnSave(true);
+    toast('Transcribed: ' + mnWordCount(d) + ' words');
+  } catch (e) {
+    mnSetStatus(e.name === 'AbortError' ? 'The transcription service took too long to answer. Press Transcribe to try again.' : mnFriendlyError(e.message, isLink), 'bad');
+    mnSave(true);
+  } finally {
+    clearInterval(tick); MN.busy = false;
+    if (MN.d === d) mnRender();
+  }
+}
+const mnWordCount = d => (d.transcript && d.transcript.text.match(/\S+/g) || []).length;
+
+// ── Claude: find the rooms, then sort each one ───────────────────────────
+async function mnFindRooms(d) {
+  const S = mnSents(d);
+  let why = '';
+  try {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 90000);
+    const r = await fetch(withPaKey(proofUrl()), { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ctl.signal,
+      body: JSON.stringify({ mode: 'rooms', address: d.details.address || '', templates: MN_TEMPLATES.map(([id, name]) => ({ id, name })), sentences: S.map(s => s.text) }) })
+      .finally(() => clearTimeout(t));
+    const out = await r.json().catch(() => null);
+    if (r.ok && out && out.ok && Array.isArray(out.rooms) && out.rooms.length) {
+      d.split = mnCleanSplit(out.rooms, S.length); d.splitBy = out.model || 'claude';
+      if (out.usage) d.spent = (d.spent || 0) + mnUsd(out.model, out.usage.input_tokens, out.usage.output_tokens);
+      return { by: 'claude' };
+    }
+    why = out && out.ok && !Array.isArray(out.rooms) ? 'the Claude check val needs the v3.4 update' : ((out && out.error) || 'the service answered ' + r.status);
+  } catch (e) { why = e.name === 'AbortError' ? 'it took too long' : (e.message || 'error'); }
+  d.split = mnKeywordSplit(S) || [{ name: 'Whole recording', template: 'other', start: 0 }];
+  d.splitBy = 'keywords';
+  return { by: 'keywords', why };
+}
+const mnUsd = (model, tin, tout) => { const [pi, po] = clPrice(model); return ((tin || 0) * pi + (tout || 0) * po) / 1e6; };
+// The app's cleanup marks a phrase it added as {+ … +}; the editor shows [added: …].
+const mnMarkAdded = t => String(t || '').replace(/\{\+\s*([^{}]*?)\s*\+\}/g, (m, x) => x ? '[added: ' + x + ']' : '').replace(/\{\+|\+\}/g, '');
+function mnFillerOnly(name, text) {
+  const nameWords = new Set(String(name).toLowerCase().match(/[a-z]+/g) || []);
+  const said = String(text).replace(/\[added: [^\]]*\]/g, ' ').toLowerCase().match(/[a-z0-9]+/g) || [];
+  return said.every(w => nameWords.has(w) || nameWords.has(w.replace(/s$/, '')) || nameWords.has(w + 's'));
+}
+async function mnCleanup(text, name, rows, address) {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 90000);
+  try {
+    const r = await fetch(withPaKey(mnCleanupUrl()), { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ctl.signal,
+      body: JSON.stringify({ transcript: text, room: name, subsections: rows, address }) });
+    const out = await r.json().catch(() => null);
+    if (!r.ok || !out || out.ok !== true) throw new Error((out && out.error) || ('the sorting service answered ' + r.status));
+    const sections = (out.sections || []).map(s => ({ name: String((s && s.name) || '').trim(),
+      text: mnMarkAdded(String((s && s.text) || '').trim()).replace(/[{}]/g, '').replace(/\s+([.,])/g, '$1').trim() }))
+      .filter(s => s.name && s.text && !mnFillerOnly(s.name, s.text));
+    if (!sections.length) throw new Error('no rows came back');
+    const check = (out.check || []).map(c => ({ quote: String((c && c.quote) || '').replace(/\{\+|\+\}|[{}]/g, '').trim(),
+      heard: String((c && (c.heard || c.quote)) || '').replace(/\{\+|\+\}|[{}]/g, '').trim(), why: String((c && c.why) || '').trim() })).filter(c => c.quote);
+    return { sections, check, model: out.model || 'claude' };
+  } catch (e) { throw e.name === 'AbortError' ? new Error('it took too long') : e; }
+  finally { clearTimeout(t); }
+}
+// Where a phrase was said (the app's findPhraseFrom), searching forward from a cursor.
+function mnFindFrom(words, phrase, from) {
+  if (!words || !words.length) return null;
+  const probe = (String(phrase || '').toLowerCase().match(/[a-z0-9']+/g) || []).slice(0, 6);
+  if (!probe.length) return null;
+  const need = Math.min(probe.length, Math.max(2, Math.ceil(probe.length / 2)));
+  const c = Math.max(0, from || 0);
+  let best = -1, bestScore = 0, bestDist = Infinity;
+  for (let i = 0; i < words.length; i++) {
+    let hits = 0, k = i; const end = Math.min(words.length, i + probe.length + 3);
+    for (let j = 0; j < probe.length && k < end; j++) {
+      let f = -1; for (let x = k; x < Math.min(end, k + 3); x++) if (words[x][0] === probe[j]) { f = x; break; }
+      if (f >= 0) { hits++; k = f + 1; }
+    }
+    if (hits < need) continue;
+    const score = hits + (words[i][0] === probe[0] ? 1.5 : 0), dist = i >= c ? i - c : words.length + (c - i);
+    if (score > bestScore || (score === bestScore && dist < bestDist)) { best = i; bestScore = score; bestDist = dist; }
+  }
+  return best < 0 ? null : { at: words[best][1], idx: best };
+}
+// One room → the same .json the inspector app writes, so the editor treats it the same.
+function mnRoomJson(d, r, sorted) {
+  const det = d.details, { roomId } = mnRowsFor(r), W = r.words;
+  const checks = (sorted.check || []).map(c => { const hit = mnFindFrom(W, c.heard || c.quote, 0); return Object.assign({}, c, { at: hit ? hit.at : null }); });
+  const cur = { idx: 0 };
+  const sections = sorted.sections.map(s => {
+    const sentences = splitSentences(s.text).map(text => {
+      const hit = mnFindFrom(W, text.replace(/\[added: [^\]]*\]/g, ' '), cur.idx);
+      if (hit) cur.idx = hit.idx + 1;
+      return { text, at: hit ? hit.at : null, check: !!sorted.flag && checks.some(c => sentenceMatches(text, c.quote)) };
+    });
+    const times = sentences.map(x => x.at).filter(x => x != null);
+    return { name: s.name, start: times.length ? Math.min.apply(null, times) : null, sentences };
+  });
+  return { format: 'pa-room', version: 1, app: 'PA Typist Editor v3.4 (from audio)', property: det.address || '', client: det.client || '', inspector: det.inspector || '',
+    state: det.state || '', inspectionType: det.type || '', room: r.name, roomId, transcribedBy: (d.transcript && d.transcript.engine) || '',
+    sortedBy: sorted.model || '', sections, check: checks, fixes: [], raw: r.text, words: W };
+}
+async function mnPolishRoom(d, r) {
+  const { rows } = mnRowsFor(r), base = { key: r.key, name: r.name, at: r.at, sig: mnSig(d, r), polishedAt: Date.now() };
+  if (!r.text.trim() || mnIsNotes(r)) {
+    return Object.assign(base, { json: mnRoomJson(d, r, { sections: r.text.trim() ? [{ name: 'Notes', text: r.text }] : [{ name: 'Notes', text: '' }], check: [], model: 'not sorted (general talk)' }), checks: 0 });
+  }
+  try {
+    // A long room is sorted in parts, then joined row by row.
+    const parts = []; let cur = [], n = 0;
+    r.sents.forEach(s => { if (n + s.text.length > MN_CHUNK && cur.length) { parts.push(cur.join(' ')); cur = []; n = 0; } cur.push(s.text); n += s.text.length + 1; });
+    if (cur.length) parts.push(cur.join(' '));
+    const outs = [];
+    for (const p of parts) outs.push(await mnCleanup(p, r.name, rows, d.details.address || ''));
+    const byName = new Map();
+    outs.forEach(o => o.sections.forEach(s => { const k = s.name.toLowerCase(); byName.set(k, { name: byName.has(k) ? byName.get(k).name : s.name, text: ((byName.get(k) || {}).text ? byName.get(k).text + ' ' : '') + s.text }); }));
+    const order = new Map(rows.map((x, i) => [x.toLowerCase(), i]));
+    const sections = [...byName.values()].sort((a, b) => (order.has(a.name.toLowerCase()) ? order.get(a.name.toLowerCase()) : 99) - (order.has(b.name.toLowerCase()) ? order.get(b.name.toLowerCase()) : 99));
+    const check = [].concat(...outs.map(o => o.check));
+    return Object.assign(base, { json: mnRoomJson(d, r, { sections, check, model: outs[0].model, flag: true }), checks: check.length, model: outs[0].model, chars: r.text.length });
+  } catch (e) {
+    // Not sorted: the room still opens, with its text in one row, and can be polished again.
+    return Object.assign(base, { error: e.message || 'failed', json: mnRoomJson(d, r, { sections: [{ name: 'Not sorted', text: r.text }], check: [], model: 'not sorted' }), checks: 0 });
+  }
+}
+// Rough cost: Sonnet 5.5 at US$2 / $10 per million tokens, ~3.6 characters a token,
+// the cleanup rules ~2,800 tokens a call.
+function mnEstimate(d, todo, split) {
+  let tin = 0, tout = 0;
+  if (split) { const c = mnSents(d).reduce((a, s) => a + s.text.length + 7, 0); tin += 1300 + c / 3.6; tout += 300 + c / 140; }
+  todo.forEach(r => { if (mnIsNotes(r) || !r.text.trim()) return; const c = r.text.length, n = Math.max(1, Math.ceil(c / MN_CHUNK)); tin += n * 2900 + c / 3.6; tout += c / 3.6 * 1.3 + 260 * n; });
+  return mnUsd('claude-sonnet-5-5', tin, tout);
+}
+async function mnPolish(all, sure) {
+  const d = MN.d; if (!d || MN.busy || !d.transcript) return;
+  if (MN.editing) mnSaveEdit();
+  if (!String(d.details.address || '').trim()) { mnSetStatus('Add the property address first (on the left).', 'bad'); $('mn_address') && $('mn_address').focus(); return; }
+  let needSplit = !d.split;
+  if (needSplit) {
+    let pick = 'find', oneTpl = MN_TEMPLATES[0][0];
+    const v = await modal('Polish with Claude', `<p class="muted" style="margin-bottom:10px">Claude first finds where each room starts, then sorts every room into its template rows, fixes misheard words, adds the grey phrases and lists the words to check, the same as for a room from the app.</p>
+      <div class="mn-pick"><label><input type="radio" name="mnPick" value="find" checked> <span><b>Find the rooms</b><br><span class="small muted">One recording of the whole inspection</span></span></label>
+      <label><input type="radio" name="mnPick" value="one"> <span><b>It's one room</b><br><select class="field" id="mnOneTpl">${MN_TEMPLATES.map(([id, n]) => `<option value="${id}">${esc(n)}</option>`).join('')}</select></span></label></div>
+      <p class="small muted" style="margin-top:10px">Estimated cost: about ${esc(fmtUsd(mnEstimate(d, mnRanges(Object.assign({}, d, { split: null })), true)))} (only the text is sent, never the audio).</p>`,
+      [{ label: 'Cancel', value: null }, { label: 'Polish', cls: 'btn-main', value: 'go' }], body => {
+        body.querySelectorAll('input[name=mnPick]').forEach(x => x.onchange = () => { pick = x.value; });
+        body.querySelector('#mnOneTpl').onchange = e => { oneTpl = e.target.value; pick = 'one'; body.querySelector('input[value=one]').checked = true; };
+      });
+    if (v !== 'go') return;
+    if (pick === 'one') { d.split = [{ name: MN_TPL.get(oneTpl) || 'Room', template: oneTpl, start: 0 }]; d.splitBy = 'typist'; needSplit = false; }
+  } else if (!sure) {
+    const todo = mnRanges(d).filter(r => all || mnRoomStatus(d, r).st !== 'ok');
+    if (!todo.length) return;
+    const v = await modal('Polish with Claude', `<p class="muted" style="margin-bottom:10px">Claude sorts ${todo.length === 1 ? 'this room' : 'these ' + todo.length + ' rooms'} into the template rows, fixes misheard words, adds the grey phrases and lists the words to check.</p>
+      <div class="pre-list"><div><span>Rooms</span><span class="n">${todo.length}</span></div><div><span>Estimated cost</span><span class="n">${esc(fmtUsd(mnEstimate(d, todo, false)))}</span></div></div>
+      <p class="small muted" style="margin-top:10px">Only the text is sent, never the audio.</p>`,
+      [{ label: 'Cancel', value: null }, { label: 'Polish ' + todo.length + ' room' + (todo.length > 1 ? 's' : ''), cls: 'btn-main', value: 'go' }]);
+    if (v !== 'go') return;
+  }
+  MN.busy = true; MN.prog = { phase: needSplit ? 'rooms' : 'sort', done: 0, of: 0 }; mnRender();
+  try {
+    if (needSplit) {
+      mnSetStatus('Claude is finding the rooms…', 'busy');
+      const f = await mnFindRooms(d);
+      mnSave(true);
+      if (f.by === 'keywords') toast('Rooms found by keywords instead of Claude (' + f.why + '). Check the room dividers.');
+    }
+    if (!d.jobId) d.jobId = mnJobId(d);
+    const ranges = mnRanges(d), prev = d.rooms || [];
+    const out = ranges.map(r => { const s = mnRoomStatus(d, r); return !all && s.st === 'ok' ? s.p : null; });
+    const todo = ranges.filter((r, k) => !out[k]);
+    MN.prog = { phase: 'sort', done: 0, of: todo.length };
+    mnSetStatus('Claude is sorting ' + todo.length + ' room' + (todo.length === 1 ? '' : 's') + '…', 'busy'); mnRender();
+    await pool(todo, 3, async r => {
+      const res = await mnPolishRoom(d, r);
+      out[r.k] = res;
+      if (!res.error && res.chars) d.spent = (d.spent || 0) + mnEstimate(d, [r], false);
+      MN.prog.done++;
+      d.rooms = out.map((x, k) => x || prev.find(p => p.key === ranges[k].key) || null).filter(Boolean);
+      mnSetStatus('Claude is sorting the rooms: ' + MN.prog.done + ' of ' + todo.length + ' done…', 'busy');
+      mnRender();
+    });
+    d.rooms = out; d.polished = Date.now();
+    mnSave(true);
+    const bad = out.filter(x => x.error).length, checks = out.reduce((a, x) => a + (x.checks || 0), 0);
+    mnSetStatus(bad ? bad + ' room' + (bad > 1 ? 's' : '') + ' couldn\'t be sorted (' + esc(out.find(x => x.error).error) + '). They open with the text unsorted; press Polish again to retry them.'
+      : 'Polished ' + out.length + ' room' + (out.length > 1 ? 's' : '') + (checks ? ', with ' + checks + ' word' + (checks > 1 ? 's' : '') + ' to check' : '') + '. Open it in the editor to type it up.', bad ? 'bad' : 'ok');
+  } catch (e) {
+    mnSetStatus('Polishing stopped: ' + esc(e.message || 'error'), 'bad'); mnSave(true);
+  } finally { MN.busy = false; MN.prog = null; if (MN.d === d) { mnRender(); $('mnDocBody').scrollTop = 0; } }
+}
+function mnOpenJob() {
+  const d = MN.d; if (!mnPolished(d)) return;
+  if (MN.editing) mnSaveEdit();
+  mnSave(true); const a = $('mnAudio'); if (a) a.pause();
+  MN.d = null;
+  openJob({ id: d.jobId, from: 'manual', draftId: d.id, build: () => manualJob(d.id) });
+}
+
+// ── the screen ───────────────────────────────────────────────────────────
+function openNew(draftId, file) {
+  if (App.job) backToQueue();
+  MN.d = (draftId && mnLoad(draftId)) || mnNew();
+  MN.file = null; MN.editing = false; MN.sc = null; MN.status = ''; MN.statusKind = '';
+  if (MN.d.pending && !MN.d.transcript) MN.status = 'A transcription was still running when this page closed. Press <b>Pick it up</b> to fetch it.';
+  show('screenNew');
+  if (file) mnTakeFile(file);
+  mnRender(true);
+}
+function mnLeave() {
+  if (MN.busy && !confirm('Claude or the transcription is still working. Leave anyway? Nothing finished is lost.')) return;
+  if (MN.editing) mnSaveEdit();
+  if (MN.d && (MN.d.audio || MN.d.transcript || MN.d.details.address)) mnSave(true);
+  const a = $('mnAudio'); if (a) a.pause();
+  MN.d = null; MN.file = null;
+  show('screenQueue'); renderJobs(); renderPhrases();
+}
+function mnSetStatus(html, kind) { MN.status = html; MN.statusKind = kind || ''; const el = $('mnStatus'); if (el) mnPaintStatus(el); }
+function mnPaintStatus(el) {
+  el.innerHTML = MN.status ? `<div class="banner ${MN.statusKind === 'bad' ? 'bad' : MN.statusKind === 'ok' ? 'ok' : ''} mn-status">${MN.statusKind === 'busy' ? '<span class="spin mn-spin"></span>' : ''}<span>${MN.status}</span>`
+    + (MN.prog && MN.prog.of ? `<div class="progress"><i style="width:${Math.round(100 * MN.prog.done / MN.prog.of)}%"></i></div>` : '') + '</div>' : '';
+}
+function mnTakeFile(f) {
+  if (!f) return;
+  const ext = splitName(f.name).ext;
+  if (!AUDIO_EXT.has(ext) && !/^audio\//.test(f.type || '') && ext !== 'mp4') return mnSetStatus('That doesn\'t look like an audio file (' + esc(f.name) + ').', 'bad');
+  MN.file = f; if ($('mnLink')) $('mnLink').value = '';
+  if (MN.d && mnBlobUrls[MN.d.id]) { try { URL.revokeObjectURL(mnBlobUrls[MN.d.id]); } catch (e) {} delete mnBlobUrls[MN.d.id]; }
+  mnSetStatus('', ''); mnRender();
+}
+function mnSteps(d) {
+  const s = [['Audio', !!(d.audio || d.transcript)], ['Raw transcript', !!d.transcript], ['Polished by Claude', mnPolished(d)]];
+  const on = s.findIndex(x => !x[1]);
+  return s.map(([n, done], i) => `<li class="${done ? 'done' : i === on ? 'on' : ''}"><span class="no">${done ? '✓' : i + 1}</span>${esc(n)}</li>`).join('');
+}
+function mnRender(first) {
+  const d = MN.d; if (!d) return;
+  // left: details and the audio
+  const det = d.details;
+  ['address', 'client', 'inspector', 'type', 'state', 'date'].forEach(k => { const el = $('mn_' + k); if (el && document.activeElement !== el) el.value = det[k] || ''; });
+  $('mnSteps').innerHTML = mnSteps(d);
+  const src = d.audio ? (d.audio.kind === 'link' ? 'Dropbox link · ' + esc(d.audio.name) : esc(d.audio.name) + (d.audio.size ? ' · ' + Math.round(d.audio.size / 1048576 * 10) / 10 + ' MB' : '')
+    + (d.audio.kept === false ? '<br><span class="bad-ink">Not kept on this computer: choose it again after closing the page.</span>' : ''))
+    : MN.file ? esc(MN.file.name) + ' · ' + Math.round(MN.file.size / 1048576 * 10) / 10 + ' MB (not sent yet)' : 'No audio yet.';
+  $('mnSrc').innerHTML = src + (d.transcript && d.transcript.seconds ? '<br>' + hms(d.transcript.seconds) + ' long' : '');
+  $('mnChange').hidden = !d.transcript || MN.busy;
+  $('mnDelete').hidden = !mnIds().includes(d.id);
+  const a = $('mnAudio');
+  const want = MN.file ? 'f:' + MN.file.name + ':' + MN.file.size : d.audio ? d.id + ':' + (d.audio.url || d.audio.name) : '';
+  if (!want) { a.hidden = true; a.removeAttribute('src'); a.dataset.for = ''; }
+  else if (a.dataset.for !== want) {
+    a.dataset.for = want;
+    const f = MN.file;
+    (f ? Promise.resolve(URL.createObjectURL(f)) : mnAudioUrl(d)).then(u => { if (MN.d === d && a.dataset.for === want) { a.src = u; a.hidden = false; } })
+      .catch(e => { a.hidden = true; $('mnSrc').innerHTML += '<br><span class="bad-ink">' + esc(e.message) + '</span>'; });
+  }
+  $('crumbJob').textContent = det.address || 'New job from audio';
+  // right
+  const body = $('mnBody'), bar = $('mnBar');
+  if (!d.transcript) { bar.innerHTML = ''; body.innerHTML = mnAudioStep(d); mnWireAudioStep(); }
+  else if (MN.editing) { mnRenderEdit(); }
+  else { mnRenderTranscript(first); }
+  mnPaintStatus($('mnStatus'));
+}
+function mnAudioStep(d) {
+  const off = !ON_WEB && location.protocol === 'file:';
+  return `<header class="room-head"><span class="eyebrow">New job from audio · step 1 of 3</span>
+    <h1 class="big">Add the recording</h1>
+    <p class="lede">A recording that didn't come through the app: the whole inspection in one go, or a single room. AssemblyAI types the raw transcript (the same engine as the app). Then Claude sorts it into rooms and template rows, and it opens here like any other job.</p></header>
+    ${off ? '<div class="banner">This copy was opened from your computer. Transcribing works, but Claude only answers the editor\'s web address.</div>' : ''}
+    <div class="mn-src">
+      <div class="mn-drop" id="mnDrop">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 4v12M7 9l5-5 5 5"/><path d="M5 20h14"/></svg>
+        <b>${MN.file ? esc(MN.file.name) : 'Drop the audio file here'}</b>
+        <span class="small muted">${MN.file ? Math.round(MN.file.size / 1048576 * 10) / 10 + ' MB · ready to transcribe' : 'm4a, mp3, wav, aac · up to 60 MB'}</span>
+        <button class="btn btn-ghost btn-sm" id="mnPick">${MN.file ? 'Choose another file' : 'Choose a file'}</button>
+        <input type="file" id="mnFile" accept="audio/*,.m4a,.mp3,.wav,.aac,.mp4,.webm,.ogg" hidden>
+      </div>
+      <div class="mn-or"><span>or</span></div>
+      <div class="mn-linkbox">
+        <label class="label" for="mnLink">Dropbox link</label>
+        <input class="field" id="mnLink" placeholder="https://www.dropbox.com/scl/fi/…" autocomplete="off" spellcheck="false" value="${esc(d.audio && d.audio.kind === 'link' && !MN.file ? d.audio.original || d.audio.url : '')}">
+        <p class="hint">In Dropbox, on the audio file: Share › Copy link. Best for long recordings: nothing is uploaded from this computer.</p>
+      </div>
+    </div>
+    <div class="btn-row mn-go">
+      ${d.pending ? '<button class="btn btn-main" id="mnResume">Pick it up</button>' : ''}
+      <button class="btn ${d.pending ? 'btn-ghost' : 'btn-main'}" id="mnGo"${MN.busy ? ' disabled' : ''}>Transcribe</button>
+      <span class="sp"></span>
+      <button class="btn btn-plain" id="mnPaste"${MN.busy ? ' disabled' : ''}>Paste a transcript instead</button>
+    </div>
+    <div id="mnStatus"></div>`;
+}
+function mnWireAudioStep() {
+  const dz = $('mnDrop');
+  $('mnPick').onclick = () => $('mnFile').click();
+  $('mnFile').onchange = e => { const f = e.target.files[0]; e.target.value = ''; mnTakeFile(f); };
+  ['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('over'); }));
+  dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+  dz.addEventListener('drop', e => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('over'); const f = e.dataTransfer && e.dataTransfer.files[0]; mnTakeFile(f); });
+  $('mnLink').oninput = () => { if ($('mnLink').value.trim() && MN.file) { MN.file = null; const b = dz.querySelector('b'); b.textContent = 'Drop the audio file here'; } };
+  $('mnLink').onkeydown = e => { if (e.key === 'Enter') mnTranscribe(); };
+  $('mnGo').onclick = () => { MN.d.pending = null; mnTranscribe(false); };
+  const r = $('mnResume'); if (r) r.onclick = () => mnTranscribe(true);
+  $('mnPaste').onclick = mnPasteTranscript;
+}
+async function mnPasteTranscript() {
+  let val = '';
+  const v = await modal('Paste a transcript', `<p class="small muted" style="margin-bottom:10px">From Dropbox's own transcript, an older job or anywhere else. Without the audio's word timings, sentences can't be played from the transcript.</p>
+    <textarea class="field" id="mnPasteIn" rows="10" placeholder="Paste the whole transcript here"></textarea>`,
+    [{ label: 'Cancel', value: null }, { label: 'Use this transcript', cls: 'btn-main', value: 'go' }], body => {
+      const t = body.querySelector('#mnPasteIn'); t.oninput = () => { val = t.value; }; setTimeout(() => t.focus(), 30);
+    });
+  if (v !== 'go' || !val.trim()) return;
+  const parsed = mnParseEdit(val);
+  MN.d.transcript = { text: parsed.text, words: [], engine: 'Pasted', model: '', seconds: null, at: Date.now() };
+  MN.d.split = parsed.split; MN.d.splitBy = parsed.split ? 'typist' : ''; MN.sc = null; MN.d.pending = null;
+  mnSave(true); mnSetStatus('', ''); mnRender();
+}
+function mnStats(d) {
+  const S = mnSents(d), t = d.transcript;
+  const bits = [[mnWordCount(d).toLocaleString('en-AU'), 'words'], [S.length, 'sentences'], [d.split ? d.split.length : '—', 'rooms']];
+  if (t.seconds) bits.unshift([hms(t.seconds), 'long']);
+  return bits.map(([n, l]) => `<span class="stat"><b>${esc(n)}</b><span>${esc(l)}</span></span>`).join('');
+}
+function mnRenderTranscript(first) {
+  const d = MN.d, body = $('mnBody'), bar = $('mnBar'), S = mnSents(d);
+  const done = mnPolished(d), ranges = d.split ? mnRanges(d) : null;
+  const st = ranges ? ranges.map(r => mnRoomStatus(d, r)) : [];
+  const changed = st.filter(x => x.st !== 'ok').length;
+  const B = MN.busy ? ' disabled' : '';
+  bar.innerHTML = `<button class="btn btn-ghost btn-sm" id="mnCopy" title="Copy the raw transcript">Copy</button>
+    <button class="btn btn-ghost btn-sm" id="mnTxt" title="Download the raw transcript with times (.txt)">Download .txt</button>
+    <button class="btn btn-ghost btn-sm" id="mnEdit"${B} title="Edit the transcript, and the rooms as ## lines">Edit text</button>
+    <span class="sp"></span>
+    ${d.split ? '' : `<button class="btn btn-ghost btn-sm" id="mnFind"${B} title="Only find where each room starts, to check before sorting">Find rooms</button>`}
+    ${done ? (changed ? `<button class="btn btn-ghost btn-sm claude-btn" id="mnPolish"${B}><span class="dotp"></span>Polish ${changed} changed room${changed > 1 ? 's' : ''}</button>` : `<button class="btn btn-plain btn-sm" id="mnPolishAll"${B}>Polish all again</button>`)
+      + `<button class="btn btn-main btn-sm" id="mnOpen"${B}>Open in editor</button>`
+      : `<button class="btn btn-main btn-sm claude-btn" id="mnPolish"${B}><span class="dotp"></span>Polish with Claude</button>`}`;
+  const tpls = sel => MN_TEMPLATES.map(([id, n]) => `<option value="${id}"${id === sel ? ' selected' : ''}>${esc(n)}</option>`).join('') + `<option value="other"${sel === 'other' ? ' selected' : ''}>Other (rows by name)</option>`;
+  const starts = new Map((d.split || []).map((r, k) => [r.start, k]));
+  const chip = s => s.st === 'ok' ? `<span class="chip ok"><span class="d"></span>Sorted${s.p.checks ? ' · ' + s.p.checks + ' to check' : ''}</span>`
+    : s.st === 'error' ? `<span class="chip bad" title="${esc(s.p.error)}">Not sorted</span>` : s.st === 'changed' ? '<span class="chip warn">Changed</span>' : (done ? '<span class="chip warn">New</span>' : '');
+  let h = `<header class="room-head"><span class="eyebrow">New job from audio · step ${done ? 3 : 2} of 3 · ${esc(d.transcript.engine || '')}${d.splitBy ? ' · ' + (/claude/i.test(d.splitBy) ? 'rooms found by Claude' : d.splitBy === 'keywords' ? 'rooms found by keywords' : 'rooms set by hand') : ''}</span>
+    <h1 class="big">${done ? 'Polished' : 'Raw transcript'}</h1>
+    <div class="stats">${mnStats(d)}</div></header>
+    <div id="mnStatus"></div>`;
+  if (!d.split && !MN.busy) h += `<p class="hint mn-tip">Press <b>Polish with Claude</b>: Claude finds the rooms, then sorts each one into its template rows. To check the rooms first, press <b>Find rooms</b>. You can also start a room yourself: hover a sentence and press <b>+ Room</b>.</p>`;
+  else if (d.split && !done && !MN.busy) h += `<p class="hint mn-tip">Check the room dividers: rename a room, change its template, press <b>+ Room</b> on a sentence to start one there, or × to join a room to the one above. Then <b>Polish with Claude</b>.</p>`;
+  h += '<div class="mn-list" id="mnList">';
+  let open = false;
+  S.forEach((s, i) => {
+    if (starts.has(i)) {
+      const k = starts.get(i), r = d.split[k], rg = ranges[k];
+      h += (open ? '</section>' : '') + '<section class="mn-group">'; open = true;
+      h += `<div class="mn-room" data-r="${k}"><span class="no">${k + 1}</span>
+        <input class="mn-name" value="${esc(r.name)}" aria-label="Room name"${B}>
+        <select class="mn-tpl" aria-label="Template"${B}>${tpls(r.template)}</select>
+        <span class="t">${rg.at != null ? clock(rg.at) : ''}</span>${chip(st[k])}
+        ${k > 0 ? `<button class="mn-x" title="Join this room to the one above"${B}>×</button>` : ''}</div>`;
+    }
+    h += `<div class="mn-s" data-i="${i}"${s.at != null ? ` data-t="${s.at}"` : ''}><span class="t">${s.at != null ? clock(s.at) : ''}</span><span class="tx">${esc(s.text)}</span>${starts.has(i) || MN.busy ? '' : '<button class="mn-cut" title="Start a new room at this sentence">+ Room</button>'}</div>`;
+  });
+  h += (open ? '</section>' : '') + '</div>';
+  const keep = $('mnDocBody').scrollTop;
+  body.innerHTML = h;
+  if (!first) $('mnDocBody').scrollTop = keep;
+  $('mnCopy').onclick = mnCopy; $('mnTxt').onclick = mnDownload;
+  $('mnEdit').onclick = () => { MN.editing = true; mnRender(); };
+  const f = $('mnFind'); if (f) f.onclick = async () => {
+    if (MN.busy) return; MN.busy = true; mnSetStatus('Claude is finding the rooms…', 'busy'); mnRender();
+    const r = await mnFindRooms(MN.d).catch(e => ({ by: 'keywords', why: e.message }));
+    MN.busy = false; mnSave(true);
+    mnSetStatus(r.by === 'claude' ? 'Found ' + MN.d.split.length + ' rooms. Check the dividers, then Polish with Claude.' : 'Rooms found by keywords instead of Claude (' + esc(r.why) + '). Check the dividers.', r.by === 'claude' ? 'ok' : 'bad');
+    mnRender();
+  };
+  const p = $('mnPolish'); if (p) p.onclick = () => mnPolish(false);
+  const pa = $('mnPolishAll'); if (pa) pa.onclick = async () => {
+    const v = await modal('Polish all again?', '<p class="muted">Every room goes through Claude again (about ' + esc(fmtUsd(mnEstimate(MN.d, mnRanges(MN.d), false))) + '). Typing already done in the editor is kept where the sentence is unchanged.</p>',
+      [{ label: 'Cancel', value: null }, { label: 'Polish all again', cls: 'btn-main', value: 'go' }]);
+    if (v === 'go') mnPolish(true, true);
+  };
+  const o = $('mnOpen'); if (o) o.onclick = mnOpenJob;
+  const list = $('mnList');
+  list.onclick = e => {
+    const cut = e.target.closest('.mn-cut');
+    if (cut) { const i = +cut.closest('.mn-s').dataset.i; mnAddRoom(i); return; }
+    const x = e.target.closest('.mn-x');
+    if (x) { const k = +x.closest('.mn-room').dataset.r; MN.d.split.splice(k, 1); if (!MN.d.split.length) MN.d.split = null; MN.d.splitBy = MN.d.splitBy || 'typist'; mnSave(); mnRender(); return; }
+    const s = e.target.closest('.mn-s');
+    if (s && s.dataset.t != null && !e.target.closest('button')) mnPlayFrom(+s.dataset.t);
+  };
+  list.querySelectorAll('.mn-name').forEach(inp => {
+    inp.onchange = () => { const k = +inp.closest('.mn-room').dataset.r, r = MN.d.split[k]; const v = inp.value.replace(/\s+/g, ' ').trim().slice(0, 60);
+      if (!v) { inp.value = r.name; return; }
+      const wasAuto = r.template === mnTplFor(r.name) || r.template === 'other'; r.name = v;
+      if (wasAuto) { const g = mnTplFor(v); if (g !== 'other') r.template = g; }
+      mnSave(); mnRender(); };
+    inp.onkeydown = e => { if (e.key === 'Enter') inp.blur(); };
+  });
+  list.querySelectorAll('.mn-tpl').forEach(sel => { sel.onchange = () => { MN.d.split[+sel.closest('.mn-room').dataset.r].template = sel.value; mnSave(); mnRender(); }; });
+  mnMarkPlaying(true);
+}
+function mnAddRoom(i) {
+  const d = MN.d;
+  if (!d.split) d.split = [{ name: 'General', template: 'other', start: 0 }];
+  if (i === 0) { d.split[0] = { name: 'New room', template: 'other', start: 0 }; }
+  else { d.split.push({ name: 'New room', template: 'other', start: i }); d.split.sort((a, b) => a.start - b.start); }
+  d.splitBy = d.splitBy || 'typist';
+  mnSave(); mnRender();
+  const k = d.split.findIndex(r => r.start === i), inp = document.querySelector(`.mn-room[data-r="${k}"] .mn-name`);
+  if (inp) { inp.focus(); inp.select(); }
+}
+// The transcript as text, rooms as "## Name [template]" lines: what Edit text shows.
+function mnAsEditText(d) {
+  if (!d.split) return mnSents(d).map(s => s.text).join(' ');
+  return mnRanges(d).map(r => '## ' + r.name + ' [' + r.template + ']\n' + r.text).join('\n\n');
+}
+function mnParseEdit(txt) {
+  const segs = []; let cur = null;
+  String(txt || '').replace(/\r/g, '').split('\n').forEach(line => {
+    const m = line.match(/^\s*##\s*(.*?)\s*(?:\[([a-z0-9_]+)\])?\s*$/);
+    if (m) { cur = { name: m[1] || 'Room', template: m[2] && (MN_TPL.has(m[2]) || m[2] === 'other') ? m[2] : mnTplFor(m[1]), text: '' }; segs.push(cur); return; }
+    if (!cur) { cur = { name: 'General', template: 'other', text: '', lead: true }; segs.push(cur); }
+    cur.text += ' ' + line;
+  });
+  const parts = segs.map(s => Object.assign(s, { text: s.text.replace(/\s+/g, ' ').trim() })).filter(s => s.text || !s.lead);
+  const hasHead = parts.some(s => !s.lead);
+  let text = '', n = 0; const split = [];
+  parts.forEach(s => {
+    if (!s.text) return;
+    const t = /[.!?]["')\]]*$/.test(s.text) ? s.text : s.text + '.';
+    split.push({ name: s.name, template: s.template, start: n });
+    n += (t.match(MN_SENT_RE) || []).filter(x => x.trim()).length;
+    text += (text ? ' ' : '') + t;
+  });
+  return { text, split: hasHead && split.length ? split : null };
+}
+function mnRenderEdit() {
+  const d = MN.d;
+  $('mnBar').innerHTML = `<span class="small muted" style="padding-left:6px">Rooms start at a line beginning <b>##</b>, for example <code>## Bedroom 2 [bedroom1]</code>.</span><span class="sp"></span>
+    <button class="btn btn-plain btn-sm" id="mnEditCancel">Cancel</button><button class="btn btn-dark btn-sm" id="mnEditSave">Save</button>`;
+  $('mnBody').innerHTML = `<header class="room-head"><span class="eyebrow">Editing the raw transcript</span><h1 class="big">Edit text</h1>
+    <p class="hint">Fix words, delete the parts that aren't the inspection, or type ## lines to set the rooms yourself. Timings are kept for the words that still match.</p></header>
+    <div id="mnStatus"></div><textarea class="field mn-edit" id="mnEditBox" spellcheck="true">${esc(mnAsEditText(d))}</textarea>`;
+  $('mnEditCancel').onclick = () => { MN.editing = false; mnRender(); };
+  $('mnEditSave').onclick = () => { mnSaveEdit(); mnRender(); };
+}
+function mnSaveEdit() {
+  const box = $('mnEditBox'); MN.editing = false;
+  if (!box || !MN.d) return;
+  const p = mnParseEdit(box.value);
+  if (!p.text.trim()) { toast('The transcript can\'t be empty'); return; }
+  MN.d.transcript.text = p.text; MN.d.split = p.split; if (p.split) MN.d.splitBy = MN.d.splitBy || 'typist';
+  MN.sc = null; mnSave(true); toast('Transcript saved');
+}
+function mnPlainText(d, stamps) {
+  const det = d.details, head = [det.address && 'Property: ' + det.address, det.client && 'Client: ' + det.client, det.inspector && 'Inspector: ' + det.inspector,
+    det.date && 'Date: ' + det.date, 'Transcribed by: ' + (d.transcript.engine || '')].filter(Boolean).join('\n');
+  const line = s => (stamps && s.at != null ? '[' + clock(s.at) + '] ' : '') + s.text;
+  const body = d.split ? mnRanges(d).map(r => r.name.toUpperCase() + '\n' + r.sents.map(line).join(stamps ? '\n' : ' ')).join('\n\n')
+    : mnSents(d).map(line).join(stamps ? '\n' : ' ');
+  return stamps ? head + '\n\nRAW TRANSCRIPT\n\n' + body + '\n' : body;
+}
+async function mnCopy() { toast(await copyOut(mnPlainText(MN.d, false), null) ? 'Raw transcript copied' : 'Could not copy: use Download .txt'); }
+function mnDownload() {
+  const d = MN.d;
+  download((d.details.date || mnToday()) + ' - ' + (d.details.address || 'recording').replace(/[\/\\:*?"<>|]+/g, '-') + ' - raw transcript.txt', mnPlainText(d, true), 'text/plain;charset=utf-8');
+}
+function mnPlayFrom(t) { const a = $('mnAudio'); if (!a || !a.src) return; a.currentTime = Math.max(0, t - 0.3); a.play().catch(() => {}); }
+let mnOn = null;
+function mnMarkPlaying(force) {
+  const a = $('mnAudio'), list = $('mnList'); if (!a || !list) return;
+  const t = a.currentTime || 0;
+  const rows = list.querySelectorAll('.mn-s[data-t]');
+  let lo = 0, hi = rows.length - 1, hit = null;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (+rows[m].dataset.t <= t + 0.05) { hit = rows[m]; lo = m + 1; } else hi = m - 1; }
+  if (hit !== mnOn || force) {
+    if (mnOn) mnOn.classList.remove('on');
+    mnOn = a.paused && !force ? mnOn : hit;
+    if (hit && !a.paused) { hit.classList.add('on'); const r = hit.getBoundingClientRect(), b = $('mnDocBody').getBoundingClientRect(); if (r.top < b.top + 60 || r.bottom > b.bottom - 20) hit.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+  }
+}
+async function mnDeleteDraft() {
+  const d = MN.d; if (!d) return;
+  const v = await modal('Delete this job?', `<p class="muted">The transcript${mnPolished(d) ? ', the rooms and the typing done on them are' : ' is'} deleted from this computer. The audio in Dropbox isn't touched.</p>`,
+    [{ label: 'Cancel', value: null }, { label: 'Delete', cls: 'btn-dark', value: 'del' }]);
+  if (v !== 'del') return;
+  try { localStorage.removeItem(mnKey(d.id)); if (d.jobId) localStorage.removeItem(storeKey(d.jobId)); } catch (e) {}
+  LS.set('pa-ed:manual', mnIds().filter(x => x !== d.id));
+  IDB.del(d.id).catch(() => {});
+  MN.d = null; show('screenQueue'); renderJobs(); toast('Deleted');
+}
+async function mnChangeAudio() {
+  const d = MN.d; if (!d || MN.busy) return;
+  const v = await modal('Use different audio?', '<p class="muted">The transcript and the rooms found are cleared, and the new recording is transcribed. Typing already done in the editor is kept for rooms with the same name.</p>',
+    [{ label: 'Cancel', value: null }, { label: 'Use different audio', cls: 'btn-main', value: 'go' }]);
+  if (v !== 'go') return;
+  d.audio = null; d.transcript = null; d.split = null; d.rooms = null; d.pending = null; MN.file = null; MN.sc = null;
+  IDB.del(d.id).catch(() => {});
+  if (mnBlobUrls[d.id]) { try { URL.revokeObjectURL(mnBlobUrls[d.id]); } catch (e) {} delete mnBlobUrls[d.id]; }
+  mnSave(true); mnSetStatus('', ''); mnRender();
+}
+function mnInit() {
+  $('newAudioBtn').onclick = () => openNew();
+  $('newAudioBtn2').onclick = () => openNew();
+  $('mnBackBtn').onclick = () => { const id = App.jobRef && App.jobRef.draftId; if (id) openNew(id); };
+  ['address', 'client', 'inspector', 'type', 'state', 'date'].forEach(k => {
+    const el = $('mn_' + k);
+    el.addEventListener('input', () => {
+      if (!MN.d) return; MN.d.details[k] = el.value; mnSave();
+      if (k === 'address') $('crumbJob').textContent = el.value || 'New job from audio';
+      if (k === 'address' && /^Add the property address/.test(MN.status)) mnSetStatus('', '');
+    });
+  });
+  $('mnChange').onclick = mnChangeAudio;
+  $('mnDelete').onclick = mnDeleteDraft;
+  const a = $('mnAudio');
+  a.addEventListener('timeupdate', () => mnMarkPlaying(false));
+  a.addEventListener('play', () => mnMarkPlaying(true));
+  // a file dropped anywhere on this screen is taken as the recording
+  ['dragenter', 'dragover'].forEach(ev => document.addEventListener(ev, e => { if ($('screenNew').classList.contains('active')) e.preventDefault(); }));
+  document.addEventListener('drop', e => {
+    if (!$('screenNew').classList.contains('active')) return;
+    e.preventDefault();
+    if (MN.d && !MN.d.transcript && !MN.busy && e.dataTransfer && e.dataTransfer.files[0]) mnTakeFile(e.dataTransfer.files[0]);
+  });
+  window.addEventListener('beforeunload', e => { if (MN.d) mnSave(true); if (MN.busy) { e.preventDefault(); e.returnValue = ''; } });
+}
+mnInit();
+
 
 // ── start ──────────────────────────────────────────────────────────────
 function init() {
@@ -4684,8 +5622,8 @@ function init() {
   PL.seed();
   $('themeBtn').onclick = () => { const order = ['light', 'dark', 'auto']; const t = LS.get('pa-ed:theme', 'light'); LS.set('pa-ed:theme', order[(order.indexOf(t) + 1) % 3]); applyTheme(); toast($('themeBtn').title); };
   $('keysBtn').onclick = showHelp;
-  $('brandBtn').onclick = () => App.job ? backToQueue() : null;
-  $('crumbQueue').onclick = () => App.job ? backToQueue() : null;
+  $('brandBtn').onclick = () => App.job ? backToQueue() : (MN.d ? mnLeave() : null);
+  $('crumbQueue').onclick = () => App.job ? backToQueue() : (MN.d ? mnLeave() : null);
   $('timerBtn').onclick = () => { T.paused = !T.paused; T.render(); toast(T.paused ? 'Typing timer paused' : 'Typing timer running'); };
   $('copyRoomBtn').onclick = copyRoom;
   $('doneBtn').onclick = () => toggleDone(!roomState(curRoom()).done);

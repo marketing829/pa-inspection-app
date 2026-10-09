@@ -747,6 +747,11 @@
   .mn-pick select { margin-top: 6px; padding: 6px 8px; font-size: 13.5px; }
   #mnBar:empty { display: none; }
   #mnBar code { font-family: var(--mono); font-size: 12px; background: var(--tint); padding: 1px 5px; border-radius: 6px; }
+  /* v3.4.1: Play/Pause on the transcript */
+  .mn-play { min-width: 112px; justify-content: flex-start; font-variant-numeric: tabular-nums; }
+  .mn-play svg { width: 13px; height: 13px; }
+  .mn-play .mn-ptime { font-weight: 500; opacity: .75; margin-left: 2px; }
+  #mnDl { color: var(--ink-3); font-size: 12px; }
 
 </style>
 </head>
@@ -934,7 +939,7 @@
         <div class="card-head"><span class="label">Audio</span><button class="btn btn-plain btn-sm" id="mnChange" hidden>Use different audio</button></div>
         <div class="small muted" id="mnSrc"></div>
         <audio id="mnAudio" controls preload="metadata" hidden></audio>
-        <div class="side-foot"><span class="small muted" style="flex:1">Click a sentence to hear it.</span><button class="btn btn-plain btn-sm" id="mnDelete" hidden>Delete</button></div>
+        <div class="side-foot"><span class="small muted" style="flex:1">Click a sentence to hear it. Space plays and pauses.</span><button class="btn btn-plain btn-sm" id="mnDelete" hidden>Delete</button></div>
       </div>
     </aside>
     <div class="doc solid" id="mnPane">
@@ -3691,6 +3696,16 @@ const typingPause = () => LS.get('pa-ed:typingPause', 'pause');
 const Wave = { key: null, peaks: null, real: false };
 async function loadAudio(room) {
   const a = audio();
+  // v3.4.1: rooms cut from one recording share the file: keep it loaded and just move to this room,
+  // so changing rooms doesn't load a 20-minute recording again.
+  if (room.audio && room.audio.shared && a.dataset.shared === room.audio.shared && a.getAttribute('src')) {
+    pauseAudio(); clearTimeout(resumeT); autoPaused = false; clipEnd = null; clearTimeout(clipT);
+    audioRoomKey = room.key; Wave.key = room.key; Wave.peaks = null; Wave.real = false;
+    if (room.startAt != null) a.currentTime = Math.max(0, room.startAt - 0.3);
+    if (a.readyState >= 1) { $('nowSec').textContent = ''; $('play').disabled = $('back').disabled = $('fwd').disabled = false; }
+    tick(); drawWave(); return;
+  }
+  delete a.dataset.shared;
   pauseAudio();
   // v3.3: drop the last room's audio first, so Play can never play the wrong room,
   // and cancel any "resume after 2 s" left from that room.
@@ -3708,6 +3723,7 @@ async function loadAudio(room) {
     const url = await room.audio.url();
     if (audioRoomKey !== room.key) return;
     a.src = url; a.playbackRate = speed(); a.load();
+    if (room.audio.shared) a.dataset.shared = room.audio.shared;
     // v3.4: one recording for every room: start at this room, and don't decode a long file for the waveform.
     if (room.startAt != null) a.addEventListener('loadedmetadata', () => { if (audioRoomKey === room.key && a.currentTime < 0.5) { a.currentTime = Math.max(0, room.startAt - 0.3); tick(); } }, { once: true });
     if (!room.audio.noPeaks) decodePeaks(room, url);
@@ -4058,6 +4074,7 @@ const KEYS = [
   ['Ctrl + ]', 'Next word to check (or grey phrase, then copy, done, next room)'],
   ['Ctrl + [', 'Previous word to check'],
   ['Enter', 'In the fix box: saves the fix, or keeps it as is if unchanged'],
+  ['Space', 'Play / pause, when you aren\'t typing in a box'],
   IS_MAC ? ['⌥ Option + Space', 'Play / pause (Ctrl + Space switches the keyboard language on a Mac), or the ▶❙❙ key']
     : ['Ctrl + Space  /  Ctrl + K', 'Play / pause (or the keyboard\'s play key). Alt + Space opens the Windows window menu, so use Ctrl + Space'],
   ['Ctrl + ,  /  Ctrl + .', 'Back / forward a few seconds'],
@@ -4078,11 +4095,16 @@ function onKey(e) {
   const inJob = $('screenJob').classList.contains('active') && App.job;
   const typing = /^(TEXTAREA|INPUT|SELECT)$/.test(document.activeElement && document.activeElement.tagName);
   if (!inJob) {
+    // v3.4.1: on New job from audio, Space (or Ctrl/Alt + Space) plays and pauses the recording.
+    if ($('screenNew').classList.contains('active') && e.code === 'Space' && !e.metaKey && !e.shiftKey
+      && ((!typing && !e.ctrlKey && !e.altKey) || e.ctrlKey || e.altKey) && !(document.activeElement && document.activeElement.tagName === 'AUDIO')) { e.preventDefault(); return mnToggle(); }
     if (e.key === '?' && !typing) { e.preventDefault(); showHelp(); }
     return;
   }
   const ctrl = e.ctrlKey || (e.metaKey && /Mac/.test(navigator.platform) && e.code === 'KeyK');
   if ((ctrl && (e.code === 'Space' || e.code === 'KeyK')) || (e.altKey && !e.ctrlKey && !e.metaKey && e.code === 'Space')) { e.preventDefault(); return togglePlay(); }
+  // v3.4.1: Space alone plays and pauses, when the cursor isn't in a text box.
+  if (e.code === 'Space' && !typing && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey && !(document.activeElement && document.activeElement.tagName === 'AUDIO')) { e.preventDefault(); return togglePlay(); }
   if (e.ctrlKey && e.code === 'Comma') { e.preventDefault(); return e.shiftKey ? stepSpeed(-1) : skip(-skipS()); }
   if (e.ctrlKey && e.code === 'Period') { e.preventDefault(); return e.shiftKey ? stepSpeed(1) : skip(skipS()); }
   if (e.ctrlKey && e.code === 'Slash') { e.preventDefault(); return toggleRaw(); }
@@ -4802,6 +4824,9 @@ function sampleJob() {
 // phrases, words to check. The result opens as a normal job in the editor.
 // Everything is kept in this browser: the job in localStorage, an uploaded audio
 // file in IndexedDB (a Dropbox link is just remembered).
+// v3.4.1 (9 Oct 2026): a Dropbox recording is downloaded once into this browser,
+// so clicking a sentence plays at once instead of loading; every room shares the one
+// loaded file; Space plays and pauses; a Play/Pause button on the transcript.
 const TRANSCRIBE_URL = 'https://propertyassist--7e43f138ad2311f186b71607ee4eb77e.web.val.run';   // inspectionapp-assemblyai (round 11)
 const CLEANUP_URL = 'https://propertyassist--a1d7b510c12511f1bf831607ee4eb77e.web.val.run';      // inspectionapp-cleanup (round 12)
 const mnTranscribeUrl = () => String(LS.get('pa-ed:transcribeUrl', '') || TRANSCRIBE_URL).trim();
@@ -4840,16 +4865,79 @@ const IDB = {
 const mnBlobUrls = {};
 async function mnAudioUrl(d) {
   if (!d || !d.audio) return '';
-  if (d.audio.kind === 'link') return d.audio.url;
   if (mnBlobUrls[d.id]) return mnBlobUrls[d.id];
   let rec = null; try { rec = await IDB.get(d.id); } catch (e) {}
-  if (!rec || !rec.blob) throw new Error('The audio file isn\'t kept on this computer. Open Transcript and rooms and choose the file again.');
-  return (mnBlobUrls[d.id] = URL.createObjectURL(rec.blob));
+  if (rec && rec.blob && (d.audio.kind === 'file' || rec.src === d.audio.url)) return (mnBlobUrls[d.id] = URL.createObjectURL(rec.blob));
+  // v3.4.1: a Dropbox link streams (each jump has to load) until the copy in this browser is ready.
+  if (d.audio.kind === 'link') { mnCacheAudio(d); return d.audio.url; }
+  throw new Error('The audio file isn\'t kept on this computer. Open Transcript and rooms and choose the file again.');
+}
+// v3.4.1: download a Dropbox recording once and keep it in this browser, so playing
+// from any sentence starts at once. Dropbox's content address allows this from a
+// web page; the dl=1 address is the fallback. If neither works, the link streams.
+const mnFetching = {}, MN_DL = {};
+const mnAudioType = name => ({ m4a: 'audio/mp4', mp4: 'audio/mp4', aac: 'audio/aac', mp3: 'audio/mpeg', wav: 'audio/wav', ogg: 'audio/ogg', webm: 'audio/webm' })[splitName(String(name || '')).ext] || '';
+function mnCorsUrls(url) {
+  const out = [];
+  try { const u = new URL(url); if (/(^|\.)dropbox\.com$/.test(u.hostname)) { u.hostname = 'dl.dropboxusercontent.com'; u.searchParams.delete('dl'); u.searchParams.delete('raw'); out.push(u.toString()); } } catch (e) {}
+  out.push(url);
+  return out;
+}
+function mnCacheAudio(d) {
+  if (!d || !d.audio || d.audio.kind !== 'link') return Promise.resolve(false);
+  if (mnFetching[d.id]) return mnFetching[d.id];
+  const src = d.audio.url;
+  const job = (async () => {
+    try { const have = await IDB.get(d.id); if (have && have.blob && have.src === src) return true; } catch (e) {}
+    for (const u of mnCorsUrls(src)) {
+      try {
+        const r = await fetch(u);
+        if (!r.ok || /text\/html/i.test(r.headers.get('content-type') || '')) continue;
+        const total = +(r.headers.get('content-length') || 0), parts = []; let got = 0;
+        if (r.body && r.body.getReader) {
+          const rd = r.body.getReader();
+          for (;;) { const { done, value } = await rd.read(); if (done) break; parts.push(value); got += value.length; MN_DL[d.id] = total ? got / total : -1; mnDlNote(d); }
+        } else { const b = await r.arrayBuffer(); parts.push(new Uint8Array(b)); got = b.byteLength; }
+        if (got < 1000) continue;
+        const blob = new Blob(parts, { type: mnAudioType(d.audio.name) || (r.headers.get('content-type') || '').split(';')[0] || 'audio/mp4' });
+        try { await IDB.put(d.id, { blob, name: d.audio.name, type: blob.type, src }); } catch (e) {}
+        if (!d.audio || d.audio.url !== src) return false;   // the audio was changed meanwhile
+        mnBlobUrls[d.id] = URL.createObjectURL(blob);
+        return true;
+      } catch (e) {}
+    }
+    return false;
+  })();
+  mnFetching[d.id] = job.then(ok => {
+    delete MN_DL[d.id]; MN_DL[d.id + ':done'] = ok ? 'ok' : 'stream';
+    mnDlNote(d); if (ok) mnUseCached(d);
+    return ok;
+  }).finally(() => { delete mnFetching[d.id]; });
+  return mnFetching[d.id];
+}
+// Swap a player that is streaming the link for the copy now in this browser, at the same place.
+function mnSwapSrc(a, url) {
+  if (!a || !url || a.src === url) return;
+  const t = a.currentTime || 0, playing = !a.paused;
+  a.src = url; a.load();
+  a.addEventListener('loadedmetadata', () => { a.currentTime = t; if (playing) a.play().catch(() => {}); }, { once: true });
+}
+function mnUseCached(d) {
+  const url = mnBlobUrls[d.id]; if (!url) return;
+  if (MN.d && MN.d.id === d.id) { const a = $('mnAudio'); if (a && a.src && a.src !== url) mnSwapSrc(a, url); }
+  if (App.job && App.job.fromAudio === d.id) { const a = audio(); if (a.dataset.shared === d.id && a.src !== url) mnSwapSrc(a, url); }
+}
+function mnDlNote(d) {
+  if (!MN.d || MN.d.id !== d.id) return;
+  const el = $('mnDl'); if (!el) return;
+  const p = MN_DL[d.id], done = MN_DL[d.id + ':done'];
+  el.textContent = p != null ? 'Downloading the recording for instant playback' + (p >= 0 ? ' · ' + Math.round(p * 100) + '%' : '…')
+    : done === 'ok' ? 'Recording saved on this computer: plays instantly.' : done === 'stream' ? 'Playing from Dropbox: a jump can take a moment to load.' : '';
 }
 // The job's audio as the editor's rooms use it: one file for every room.
 function mnAudioFile(d) {
   if (!d.audio) return null;
-  return { name: d.audio.name || 'audio', size: d.audio.size || 0, noPeaks: true, url: () => mnAudioUrl(d) };
+  return { name: d.audio.name || 'audio', size: d.audio.size || 0, noPeaks: true, shared: d.id, url: () => mnAudioUrl(d) };
 }
 
 // ── drafts (one per recording) ───────────────────────────────────────────
@@ -4897,6 +4985,7 @@ async function manualJob(id) {
   const d = mnLoad(id);
   if (!mnPolished(d)) throw new Error('This recording hasn\'t been polished yet. Open it from Recent jobs and press Polish with Claude.');
   const det = d.details, audio = mnAudioFile(d);
+  if (d.audio && d.audio.kind === 'link') mnCacheAudio(d);
   const rooms = d.rooms.map(r => Object.assign(roomFromJson(r.json), {
     key: r.key, base: r.key, hhmm: '', part: 1, rec: null, partial: false, audio, docx: null, readError: '', startAt: num(r.at)
   }));
@@ -5091,6 +5180,7 @@ async function mnTranscribe(resume) {
     d.pending = null; d.pendingAt = null; d.split = null; d.splitBy = '';
     MN.file = null; MN.sc = null;
     mnSetStatus('', ''); mnSave(true);
+    if (d.audio && d.audio.kind === 'link') mnCacheAudio(d);
     toast('Transcribed: ' + mnWordCount(d) + ' words');
   } catch (e) {
     mnSetStatus(e.name === 'AbortError' ? 'The transcription service took too long to answer. Press Transcribe to try again.' : mnFriendlyError(e.message, isLink), 'bad');
@@ -5328,7 +5418,9 @@ function mnRender(first) {
   const src = d.audio ? (d.audio.kind === 'link' ? 'Dropbox link · ' + esc(d.audio.name) : esc(d.audio.name) + (d.audio.size ? ' · ' + Math.round(d.audio.size / 1048576 * 10) / 10 + ' MB' : '')
     + (d.audio.kept === false ? '<br><span class="bad-ink">Not kept on this computer: choose it again after closing the page.</span>' : ''))
     : MN.file ? esc(MN.file.name) + ' · ' + Math.round(MN.file.size / 1048576 * 10) / 10 + ' MB (not sent yet)' : 'No audio yet.';
-  $('mnSrc').innerHTML = src + (d.transcript && d.transcript.seconds ? '<br>' + hms(d.transcript.seconds) + ' long' : '');
+  $('mnSrc').innerHTML = src + (d.transcript && d.transcript.seconds ? '<br>' + hms(d.transcript.seconds) + ' long' : '') + '<br><span id="mnDl"></span>';
+  mnDlNote(d);
+  if (d.audio && d.audio.kind === 'link' && d.transcript && !MN_DL[d.id + ':done'] && MN_DL[d.id] == null) mnCacheAudio(d);
   $('mnChange').hidden = !d.transcript || MN.busy;
   $('mnDelete').hidden = !mnIds().includes(d.id);
   const a = $('mnAudio');
@@ -5415,7 +5507,8 @@ function mnRenderTranscript(first) {
   const st = ranges ? ranges.map(r => mnRoomStatus(d, r)) : [];
   const changed = st.filter(x => x.st !== 'ok').length;
   const B = MN.busy ? ' disabled' : '';
-  bar.innerHTML = `<button class="btn btn-ghost btn-sm" id="mnCopy" title="Copy the raw transcript">Copy</button>
+  bar.innerHTML = `<button class="btn btn-dark btn-sm mn-play" id="mnPlayBtn" title="Play or pause (Space)"${d.audio ? '' : ' disabled'}></button>
+    <button class="btn btn-ghost btn-sm" id="mnCopy" title="Copy the raw transcript">Copy</button>
     <button class="btn btn-ghost btn-sm" id="mnTxt" title="Download the raw transcript with times (.txt)">Download .txt</button>
     <button class="btn btn-ghost btn-sm" id="mnEdit"${B} title="Edit the transcript, and the rooms as ## lines">Edit text</button>
     <span class="sp"></span>
@@ -5452,6 +5545,7 @@ function mnRenderTranscript(first) {
   body.innerHTML = h;
   if (!first) $('mnDocBody').scrollTop = keep;
   $('mnCopy').onclick = mnCopy; $('mnTxt').onclick = mnDownload;
+  $('mnPlayBtn').onclick = mnToggle; mnPlayLabel();
   $('mnEdit').onclick = () => { MN.editing = true; mnRender(); };
   const f = $('mnFind'); if (f) f.onclick = async () => {
     if (MN.busy) return; MN.busy = true; mnSetStatus('Claude is finding the rooms…', 'busy'); mnRender();
@@ -5474,7 +5568,10 @@ function mnRenderTranscript(first) {
     const x = e.target.closest('.mn-x');
     if (x) { const k = +x.closest('.mn-room').dataset.r; MN.d.split.splice(k, 1); if (!MN.d.split.length) MN.d.split = null; MN.d.splitBy = MN.d.splitBy || 'typist'; mnSave(); mnRender(); return; }
     const s = e.target.closest('.mn-s');
-    if (s && s.dataset.t != null && !e.target.closest('button')) mnPlayFrom(+s.dataset.t);
+    if (!s || s.dataset.t == null || e.target.closest('button')) return;
+    const a = $('mnAudio');
+    if (s.classList.contains('on') && a && !a.paused) a.pause();   // click the sentence playing to pause
+    else mnPlayFrom(+s.dataset.t);
   };
   list.querySelectorAll('.mn-name').forEach(inp => {
     inp.onchange = () => { const k = +inp.closest('.mn-room').dataset.r, r = MN.d.split[k]; const v = inp.value.replace(/\s+/g, ' ').trim().slice(0, 60);
@@ -5554,18 +5651,31 @@ function mnDownload() {
   download((d.details.date || mnToday()) + ' - ' + (d.details.address || 'recording').replace(/[\/\\:*?"<>|]+/g, '-') + ' - raw transcript.txt', mnPlainText(d, true), 'text/plain;charset=utf-8');
 }
 function mnPlayFrom(t) { const a = $('mnAudio'); if (!a || !a.src) return; a.currentTime = Math.max(0, t - 0.3); a.play().catch(() => {}); }
-let mnOn = null;
-function mnMarkPlaying(force) {
+// The sentence being played: highlighted while the audio has a place, followed while it plays.
+function mnMarkPlaying() {
+  mnPlayLabel();
   const a = $('mnAudio'), list = $('mnList'); if (!a || !list) return;
-  const t = a.currentTime || 0;
-  const rows = list.querySelectorAll('.mn-s[data-t]');
+  const t = a.currentTime || 0, started = !!a.getAttribute('src') && (t > 0 || !a.paused);
+  const rows = list.querySelectorAll('.mn-s[data-t]');   // + 0.4: a clicked sentence plays from 0.3 s before it
   let lo = 0, hi = rows.length - 1, hit = null;
-  while (lo <= hi) { const m = (lo + hi) >> 1; if (+rows[m].dataset.t <= t + 0.05) { hit = rows[m]; lo = m + 1; } else hi = m - 1; }
-  if (hit !== mnOn || force) {
-    if (mnOn) mnOn.classList.remove('on');
-    mnOn = a.paused && !force ? mnOn : hit;
-    if (hit && !a.paused) { hit.classList.add('on'); const r = hit.getBoundingClientRect(), b = $('mnDocBody').getBoundingClientRect(); if (r.top < b.top + 60 || r.bottom > b.bottom - 20) hit.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+  if (started) while (lo <= hi) { const m = (lo + hi) >> 1; if (+rows[m].dataset.t <= t + 0.4) { hit = rows[m]; lo = m + 1; } else hi = m - 1; }
+  const was = list.querySelector('.mn-s.on');
+  if (was !== hit) { if (was) was.classList.remove('on'); if (hit) hit.classList.add('on'); }
+  if (hit && !a.paused && was !== hit) {
+    const r = hit.getBoundingClientRect(), b = $('mnDocBody').getBoundingClientRect();
+    if (r.top < b.top + 70 || r.bottom > b.bottom - 20) hit.scrollIntoView({ block: 'center', behavior: 'smooth' });
   }
+}
+function mnToggle() {
+  const a = $('mnAudio'); if (!a || !a.getAttribute('src')) return;
+  if (a.paused) a.play().catch(() => {}); else a.pause();
+}
+function mnPlayLabel() {
+  const b = $('mnPlayBtn'), a = $('mnAudio'); if (!b || !a) return;
+  const playing = !a.paused, waiting = playing && a.readyState < 3;
+  const html = (playing ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg>Pause'
+    : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>Play') + `<span class="mn-ptime">${waiting ? 'loading…' : clock(a.currentTime || 0)}</span>`;
+  if (b.innerHTML !== html) b.innerHTML = html;
 }
 async function mnDeleteDraft() {
   const d = MN.d; if (!d) return;
@@ -5583,6 +5693,7 @@ async function mnChangeAudio() {
     [{ label: 'Cancel', value: null }, { label: 'Use different audio', cls: 'btn-main', value: 'go' }]);
   if (v !== 'go') return;
   d.audio = null; d.transcript = null; d.split = null; d.rooms = null; d.pending = null; MN.file = null; MN.sc = null;
+  delete MN_DL[d.id]; delete MN_DL[d.id + ':done'];
   IDB.del(d.id).catch(() => {});
   if (mnBlobUrls[d.id]) { try { URL.revokeObjectURL(mnBlobUrls[d.id]); } catch (e) {} delete mnBlobUrls[d.id]; }
   mnSave(true); mnSetStatus('', ''); mnRender();
@@ -5602,8 +5713,7 @@ function mnInit() {
   $('mnChange').onclick = mnChangeAudio;
   $('mnDelete').onclick = mnDeleteDraft;
   const a = $('mnAudio');
-  a.addEventListener('timeupdate', () => mnMarkPlaying(false));
-  a.addEventListener('play', () => mnMarkPlaying(true));
+  ['timeupdate', 'play', 'pause', 'seeked', 'waiting', 'playing'].forEach(ev => a.addEventListener(ev, mnMarkPlaying));
   // a file dropped anywhere on this screen is taken as the recording
   ['dragenter', 'dragover'].forEach(ev => document.addEventListener(ev, e => { if ($('screenNew').classList.contains('active')) e.preventDefault(); }));
   document.addEventListener('drop', e => {

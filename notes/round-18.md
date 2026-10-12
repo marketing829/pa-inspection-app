@@ -36,6 +36,9 @@ WHAT CHANGED IN THE APP (the VA's Word file only)
   words still match ("second black under framing" → "black aluminium
   framing").
 
+LIVE 12 Oct: merged to main (pull request 3); the site serves cache v22 and
+"app version 18".
+
 VERSION
   App version 18, service worker cache v22. Also on this branch: cleanup
   val 17.2 (already pasted) and its notes.

@@ -25,16 +25,16 @@ Back end is Val Town (account `propertyassist`). Paste-ready copies of the val c
 |---|---|---|
 | `inspectionapp-assemblyai` | Default speech-to-text engine. Supports `{url}` (Dropbox link) and resume by `{id}` after a 504 | `vals/inspectionapp-assemblyai.ts` (version 17: Stirling words added) |
 | `inspectionapp` | Deepgram engine (`main.ts`), kept as the alternative | not yet |
-| `inspectionapp-cleanup` | Claude sorts a room's transcript into its subareas, fixes mishears and lists words to check (`file_room` tool) | `vals/inspectionapp-cleanup.ts` (round 17, version 17.1) |
+| `inspectionapp-cleanup` | Claude sorts a room's transcript into its subareas, fixes mishears and lists words to check (`file_room` tool) | `vals/inspectionapp-cleanup.ts` (round 17, version 17.2) |
 | `inspectionapp-proofread` | Claude check for the editor; `mode: "rooms"` finds where each room starts in one long recording | not yet |
 | `dropbox-archive` | Writes everything to Dropbox; also the phone problem log (`?action=log`) and editor reads | `vals/dropbox-archive.ts` (round 14) |
 
-Every val checks `PA_KEY`. A GET on a val URL shows its config, `key_required`, and its round/version (12 Oct: cleanup `"version": "17.1"` (17.2 to paste), assemblyai `17`, dropbox-archive `14`).
+Every val checks `PA_KEY`. A GET on a val URL shows its config, `key_required`, and its round/version (12 Oct: cleanup `"version": "17.2"`, assemblyai `17`, dropbox-archive `14`).
 
 ## Current state
 
-- Inspector app: **round 17 live 12 Oct** (cache v21, "app version 17"). **Round 18 built, not uploaded** (cache v22, "app version 18"): the Word file lists what was said but isn't in the AI's sorted text. Notes: `notes/round-17.md`, `notes/round-18.md`.
-- Cleanup val: `PA_MODEL` is set to `claude-sonnet-5-5` (12 Oct). **Round 17 cleanup val 17.1 is live** (`"version": "17.1"`; 17.2 in `vals/`, asks again when a long room comes back with nothing to check). It answers without thinking first (short thinking was tested and left out a sentence), asks again when an answer gets stuck, and always answers within 50 s (Val Town stops requests at 60 s). See `notes/round-17.md`. `?test=stirling&k=<PA_KEY>` runs four Stirling Street rooms through Claude and lists 19 PASS/FAIL checks.
+- Inspector app: **round 18 live 12 Oct** (cache v22, "app version 18"): the Word file lists what was said but isn't in the AI's sorted text. Notes: `notes/round-17.md`, `notes/round-18.md`.
+- Cleanup val: `PA_MODEL` is set to `claude-sonnet-5-5` (12 Oct). **Cleanup val 17.2 is live** (`"version": "17.2"`; also asks again when a long room comes back with nothing to check). It answers without thinking first (short thinking was tested and left out a sentence), asks again when an answer gets stuck, and always answers within 50 s (Val Town stops requests at 60 s). See `notes/round-17.md`. `?test=stirling&k=<PA_KEY>` runs four Stirling Street rooms through Claude and lists 19 PASS/FAIL checks.
 - Round 14 vals: **confirmed live** 12 Oct (`"version": 14`). The assemblyai val has a version 17 in `vals/` (ten more expected words).
 - Typist editor: **v3.4.2 is in this repo and live on GitHub Pages** (New job from audio). It needs the v3.4 proofread val pasted too; until then New job from audio may not work.
 - The project "INSPECTION APP" on claude.ai holds every round doc and the VA comparisons. `claude/pa-start-here-handoff.md` is the source of truth for status and open items. If this file and that doc disagree, the doc wins; update this file.
@@ -107,8 +107,8 @@ Compare the app's Word file for a real job against the VA's final report, room b
 
 ## Open items (from the start-here doc, 12 Oct)
 
-1. Cleanup val 17.1 pasted 12 Oct. Paste the latest copy (30 s cut-off), run `?test=stirling&k=<PA_KEY>` once more. Paste the assemblyai val version 17.
-2. Round 17 app is live. Check each phone shows "app version 17" after force-quit and reopen. Paste cleanup val 17.2.
+1. Round 18 app is live; cleanup val 17.2 and assemblyai val 17 are pasted. Check each phone shows "app version 18" after force-quit and reopen.
+2. After the next real job, check whether the "Said but not in the sorted text" notes are real misses or false alarms.
 3. Re-run the Stirling walk-through (Kitchen part 1 included, second store room as "Store Room 2") and score it against the VA.
 4. iPhone check of round 16: mandatory card → Review edit, inventory camera tile, Recordings day folds, Camera mid-job while a room is sending.
 5. Watch dropbox-archive logs for `PHONE PROBLEM` after real jobs.

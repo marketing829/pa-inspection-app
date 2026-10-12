@@ -2200,6 +2200,68 @@
   .rooms-select { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .room-toggle { min-width: 0; overflow-wrap: anywhere; }
   #r15Title:focus { outline: none; }
+
+  /* ═══ ROUND 16 ═══════════════════════════════════════════════════════════ */
+  /* Mandatory items on the Start screen */
+  .setup-mandatory { gap: 10px; }
+  .setup-mandatory .mand-hint { font-size: 13px; color: var(--ink-2); margin: -4px 2px 2px; }
+  .mand-fields { display: grid; gap: 12px; }
+  .mand-fields .mandatory-field { margin: 0; display: grid; gap: 6px; }
+  .mand-fields .mandatory-field label { text-transform: none; letter-spacing: 0; font-size: 14px; font-weight: 600; color: var(--ink); }
+  .mand-fields .mandatory-field input { width: 100%; box-sizing: border-box; min-height: 48px; padding: 12px 14px; }
+  .review-mandatory .rr-body.mand-fields { padding: 4px 16px 16px; }
+
+  /* Inventory and serial numbers: one row per item */
+  .inv-details > summary .inv-sum { display: grid; gap: 2px; min-width: 0; }
+  .inv-count { font-size: 13px; font-weight: 500; color: var(--ink-2); }
+  .inv-wrap { padding: 0 12px 14px; display: grid; gap: 10px; }
+  .inv-rows { display: grid; gap: 10px; }
+  .inv-row { display: grid; grid-template-columns: minmax(0, 1fr) 72px 32px; gap: 8px; align-items: stretch; }
+  .inv-fields { display: grid; gap: 6px; min-width: 0; }
+  .inv-in { width: 100%; box-sizing: border-box; min-height: 44px; padding: 10px 12px; font: inherit; font-size: 16px; color: var(--ink);
+    background: var(--field); border: 1px solid var(--line); box-shadow: var(--field-shadow); border-radius: 12px; }
+  .inv-in::placeholder { color: var(--ink-2); opacity: 0.7; }
+  .inv-in:focus { outline: none; border-color: var(--line-2); box-shadow: var(--field-shadow), 0 0 0 3px rgba(255,222,0,0.35); }
+  .inv-cam { position: relative; display: grid; place-items: center; align-content: center; gap: 4px; min-height: 94px; padding: 0; overflow: hidden;
+    border-radius: 14px; border: 1.5px dashed var(--line-2); background: var(--tint); color: var(--ink); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .inv-cam .ico { width: 24px; height: 24px; }
+  .inv-cam span { color: var(--ink-2); }
+  .inv-cam.has { border-style: solid; border-color: var(--line); }
+  .inv-cam img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .inv-cam .inv-n { position: absolute; right: 5px; bottom: 5px; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px;
+    background: rgba(20,21,24,0.82); color: #fff; font-size: 12px; font-weight: 700; display: grid; place-items: center; }
+  .inv-del { align-self: center; width: 32px; height: 32px; border-radius: 50%; border: 0; background: transparent; color: var(--ink-2);
+    display: grid; place-items: center; padding: 0; cursor: pointer; }
+  .inv-del .ico { width: 16px; height: 16px; }
+  .inv-add { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 42px; padding: 0 14px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--field); color: var(--ink); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .inv-add .ico { width: 17px; height: 17px; }
+  .inv-hint { margin: 0 2px; font-size: 13px; color: var(--ink-2); line-height: 1.4; }
+  .inv-wrap .serial-photo-status { font-size: 12px; color: var(--ink-2); margin: -4px 2px 0; }
+  .inv-wrap .serial-photo-status:empty { display: none; }
+
+  /* Recordings: one fold per day */
+  .rec-day { margin: 0 0 12px; border-radius: 22px; background: var(--glass); border: 1px solid var(--glass-edge);
+    box-shadow: var(--glass-shadow-sm), inset 0 1px 0 var(--glass-hi); overflow: hidden; }
+  .rec-day > summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: minmax(0, 1fr) auto 20px; gap: 10px; align-items: center;
+    padding: 14px 14px 14px 16px; min-height: 60px; box-sizing: border-box; }
+  .rec-day > summary::-webkit-details-marker { display: none; }
+  .rd-main { display: grid; gap: 2px; min-width: 0; }
+  .rd-name { font-size: 17px; font-weight: 700; color: var(--ink); }
+  .rd-sub { font-size: 13px; color: var(--ink-2); }
+  .rd-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+  .rd-chev { display: grid; place-items: center; color: var(--ink-2); transition: transform 0.25s cubic-bezier(.2,.8,.2,1); }
+  .rd-chev .ico { width: 18px; height: 18px; }
+  .rec-day[open] > summary .rd-chev { transform: rotate(180deg); }
+  .rd-body { padding: 0 10px 10px; border-top: 1px solid var(--line); }
+  .rd-job { display: grid; gap: 1px; padding: 14px 6px 8px; }
+  .rd-addr { font-size: 14px; font-weight: 700; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rd-when { font-size: 12px; color: var(--ink-2); }
+  .rd-body .recording-card { margin: 0 0 8px; padding: 14px; }
+  .rd-body .recording-card:last-child { margin-bottom: 0; }
+  .tj-chip.bad { background: var(--bad-bg); color: var(--bad); }
+  .attn-row[hidden], .attn-card[hidden] { display: none !important; }
+  @media (prefers-reduced-motion: reduce) { .rd-chev { transition: none; } }
 </style>
 </head>
 <body>
@@ -2265,6 +2327,13 @@
         <option value="SA">SA</option>
       </select>
       <span class="state-badge" id="nswBadge" style="display:none">NSW special reporting applies</span>
+    </div>
+
+    <!-- ROUND 16: mandatory items on the Start screen (were on the first room). -->
+    <div class="field-group setup-mandatory" id="setupMandatory">
+      <label>Mandatory items</label>
+      <span class="mand-hint">Fill in now, or later on the Review page.</span>
+      <div class="mand-fields" id="setupMandFields"></div>
     </div>
 
     <div class="field-group">
@@ -2391,7 +2460,7 @@
     <!-- Service settings. Inspectors never need these, and a stray tap here
          used to be able to break uploads, so they're tucked away. -->
     <details class="admin-settings" id="adminSettings">
-      <summary>Admin settings <span class="app-ver">· app version 15</span></summary>
+      <summary>Admin settings <span class="app-ver">· app version 16</span></summary>
       <p class="admin-warn">For Daphne / admin only. Changing these can stop recordings reaching Dropbox.</p>
     <div class="field-group">
       <label>Transcription engine</label>
@@ -3132,7 +3201,7 @@ let photoQueueRunning = false; // guard so the serial-photo upload queue runs on
 // every read of a stored recording now has a hard deadline (a send that never
 // answers, or ignores its abort, can no longer hold a queue), and every pass
 // has a watchdog. The numbers live here so the tests can shorten them.
-const APP_ROUND = 15;
+const APP_ROUND = 16;
 const TIMING = {
   grace: 5000,              // added to a request's own time limit before giving up on it outright
   readMs: 20000,            // reading one stored recording into memory
@@ -3175,7 +3244,8 @@ function saveStateNow() {
       inventory: state.inventory, roughDrafts: roughDrafts, roomAudioFlags: roomAudioFlags,
       roomMismatches: roomMismatches,
       roomSections: state.roomSections, roomSectionParts: state.roomSectionParts, roomChecks: state.roomChecks, skippedRooms: state.skippedRooms, typedOnly: state.typedOnly,
-      mandatory: state.mandatory, startedAt: state.startedAt, propertyNotes: state.propertyNotes || ''
+      mandatory: state.mandatory, startedAt: state.startedAt, propertyNotes: state.propertyNotes || '',
+      invItems: state.invItems || {}
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
     if (stateSaveFailed) { stateSaveFailed = false; storageRecovered(); }
@@ -3239,6 +3309,8 @@ function resumeSaved() {
   roomAudioFlags = saved.roomAudioFlags || {};
   roomMismatches = saved.roomMismatches || {};
   state.mandatory = saved.mandatory || state.mandatory;
+  state.invItems = saved.invItems || {};   // ROUND 16 (older saves: built from the typed text when the room opens)
+  mergeSetupMandatory();   // ROUND 16: a draft typed on the Start screen fills only empty fields, then goes
   state.propertyNotes = saved.propertyNotes || '';
   state.startedAt = saved.startedAt || Date.now();
   // New saves carry the full editable room list; older ones only stored selected IDs.
@@ -3515,6 +3587,8 @@ function startInspection() {
 
   const selected = [...document.querySelectorAll('#roomsSelect .room-toggle.selected')].map(d => d.dataset.id);
   if (!selected.length) { showToast('Select at least one room'); return; }
+  state.mandatory = takeSetupMandatory();   // ROUND 16: typed on the Start screen (only once every check has passed)
+  state.invItems = {};                      // ROUND 16: inventory rows start empty
 
   // The room toggles are the only place rooms are chosen now. Bedrooms and
   // bathrooms are counted from them for the details file.
@@ -3640,9 +3714,7 @@ function renderRoomContent() {
     content.appendChild(note);
   }
 
-  if (state.currentRoomIdx === 0) {
-    renderMandatoryFields(content);
-  }
+  // ROUND 16: mandatory items moved to the Start screen (and Review).
 
   const block = document.createElement('div');
   block.className = 'room-block';
@@ -3670,32 +3742,14 @@ function renderRoomContent() {
     <div class="action-row">
       ${val ? `<button class="btn-clear" onclick="clearRoom('${room.id}')">Clear room notes</button>` : ''}
     </div>
-    <details class="more-details"${(state.inventory[room.id] || state.serialModels[room.id] || (state.serialPhotos[room.id] || []).length) ? ' open' : ''}>
-    <summary><span>Inventory and serial numbers</span>${ico('chevD')}</summary>
-    <div class="inventory-field">
-      <label>Inventory <span>Items left at the property</span></label>
-      <textarea id="inv-${room.id}" rows="2"
-        placeholder="e.g. 2 x remote controls, 1 x window key, 4 x dining chairs"
-        oninput="onInventoryEdit('${room.id}')">${escapeHtml(state.inventory[room.id] || '')}</textarea>
-    </div>
-    <div class="serial-field">
-      <label>Serial / model numbers <span>Type them, or photograph the plate</span></label>
-      <textarea id="serial-${room.id}" rows="2"
-        placeholder="e.g. Dishwasher Bosch SMS46; HWS Rheem 260L SN 12345678"
-        oninput="onSerialEdit('${room.id}')">${escapeHtml(state.serialModels[room.id] || '')}</textarea>
-      <div class="serial-photo-row">
-        <input type="file" id="serialphoto-${room.id}" accept="image/*" capture="environment" style="display:none" onchange="onSerialPhoto('${room.id}', this)">
-        <button type="button" class="serial-photo-btn" onclick="triggerSerialPhoto('${room.id}')">${ico('camera')}<span>Photo of the plate</span></button>
-        <span class="serial-photo-status" id="serialphoto-status-${room.id}">${serialPhotoStatusText(room.id)}</span>
-      </div>
-    </div>
-    </details>
+    ${invSectionHTML(room)}
   `;
   content.appendChild(block);
 
   renderNextSub();
   renderLivePreview(room.id, roughDrafts[room.id] || '', listeningRoom === room.id);
   renderRoomStatus();
+  loadInvThumbs(room.id);   // ROUND 16
 
   const isLast = state.currentRoomIdx === state.rooms.length - 1;
   document.getElementById('btnNextRoom').innerHTML = '<span>' + (isLast ? 'Review' : 'Next room') + '</span>' + ico('chevR');
@@ -6620,12 +6674,12 @@ async function processPhotoQueue() {
           ? `${folder}/${DATA_DIR}/00 - Inspection details.txt`
           : rec.kind === 'pcr'
             ? `${folder}/${rec.fileName || 'PCR.docx'}`
-            : `${folder}/${PHOTO_DIR}/${base} - Serial plate ${rec.id}.${photoExt(rec.type)}`;
+            : `${folder}/${PHOTO_DIR}/${base} - Serial plate${invItemNameForPhoto(rec) ? ' - ' + safeSeg(invItemNameForPhoto(rec)) : ''} ${rec.id}.${photoExt(rec.type)}`;
         await archivePut(rel, rec.blob, rec.type || 'image/jpeg', 90000);
         rec.uploaded = true;
         rec.uploadedAt = Date.now();
         if (!sameJob(rec)) { await photoDelete(rec.id); }
-        else { await photoPut(rec); }
+        else if (await photoGet(rec.id).catch(() => null)) { await photoPut(rec); }   // ROUND 16: not if its item was removed meanwhile
         markPhotoUploaded(rec.roomId, rec.id);
       } catch (e) {
         rec.fails = (rec.fails || 0) + 1;
@@ -7081,7 +7135,7 @@ function showReview() {
     const card = document.createElement('div');
     card.className = 'attn-card';
     card.innerHTML = '<div class="attn-title">Before you finish</div>'
-      + notes.map(n => `<div class="attn-row">${ico('alert')}<span>${escapeHtml(n)}</span></div>`).join('');
+      + notes.map(n => `<div class="attn-row"${/^Not filled in: /.test(n) ? ' id="attnMandatory"' : ''}>${ico('alert')}<span>${escapeHtml(n)}</span></div>`).join('');
     body.appendChild(card);
   }
 
@@ -7137,17 +7191,16 @@ function showReview() {
   });
 
   // Mandatory items, folded, under the rooms.
+  // ROUND 16: editable here (they're typed on the Start screen, or now).
   const mand = document.createElement('details');
-  mand.className = 'review-extra fold';
-  mand.innerHTML = `<summary><span class="rr-main"><span class="rr-name">Mandatory items</span><span class="rr-sub">${missing.length ? missing.length + ' not filled in' : 'All filled in'}</span></span>`
-    + `<span class="rr-state">${missing.length ? '<span class="rr-ic bad">' + ico('alert') + '</span>' : '<span class="rr-ic ok">' + ico('check') + '</span>'}</span></summary>`
-    + '<div class="rr-body">'
-    + renderReviewItem('Water meter', state.mandatory.waterMeter + (state.mandatory.waterMeterLocation ? `, ${state.mandatory.waterMeterLocation}` : ''))
-    + renderReviewItem('RCD box', state.mandatory.rcdBox)
-    + renderReviewItem('Smoke alarms', state.mandatory.smokeAlarms)
-    + renderReviewItem('NBN box', state.mandatory.nbnBox)
-    + '</div>';
+  mand.className = 'review-extra fold review-mandatory';
+  mand.id = 'reviewMandatory';
+  if (missing.length) mand.open = true;
+  mand.innerHTML = `<summary><span class="rr-main"><span class="rr-name">Mandatory items</span><span class="rr-sub" id="reviewMandSub"></span></span>`
+    + '<span class="rr-state" id="reviewMandState"></span></summary>'
+    + '<div class="rr-body mand-fields">' + mandatoryFieldsHTML('review', state.mandatory) + '</div>';
   body.appendChild(mand);
+  paintReviewMandatory();
   const notesCard = document.createElement('div');
   notesCard.className = 'property-notes';
   notesCard.innerHTML = '<label class="fix-label" for="propertyNotes">Notes about the property</label>'
@@ -8127,6 +8180,9 @@ async function finishAndClear() {
   state.client = ''; state.inspector = ''; state.inspType = '';
   state.mandatory = { waterMeter:'', waterMeterLocation:'', rcdBox:'', smokeAlarms:'', nbnBox:'' };
   state.propertyNotes = '';
+  state.invItems = {};
+  r16ClearInvThumbs();
+  renderSetupMandatory();
   document.getElementById('resumeBanner').style.display = 'none';
   document.getElementById('headerTitle').textContent = '';
   showScreen('screenSetup');
@@ -8151,8 +8207,9 @@ function showRecordings() {
   const active = document.querySelector('.screen.active');
   if (active && active.id !== 'screenRecordings') recordingsReturnScreen = active.id;
   stopListening();
+  recDayOpen = null;   // ROUND 16: open on the newest day again
   showScreen('screenRecordings');
-  renderRecordings();
+  renderRecordings(true);
 }
 
 function closeRecordings() {
@@ -8239,9 +8296,13 @@ async function shareAllRecordings() {
   showToast('Sharing audio isn\'t supported here — use Save on each recording');
 }
 
-async function renderRecordings() {
+async function renderRecordings(force) {
   const body = document.getElementById('recordingsBody');
   if (!body) return;
+  // ROUND 16: the list redraws as recordings send. Not while one is playing:
+  // it used to stop the audio mid-listen. It catches up when playback stops.
+  if (!force && [...body.querySelectorAll('audio')].some(a => !a.paused && !a.ended)) { recRenderPending = true; return; }
+  recRenderPending = false;
   teardownRecordingUrls();
   let recs = [];
   try { recs = await dbAll(); }
@@ -8252,43 +8313,63 @@ async function renderRecordings() {
     body.innerHTML = '<p class="export-note">No recordings yet. Room audio appears here as you record.</p>';
     return;
   }
-  recs.forEach(rec => {
+  // ROUND 16: one fold per day, newest first; the jobs of that day inside it.
+  const groups = groupRecordingsByDay(recs);
+  if (!recDayOpen) recDayOpen = new Set([groups[0].key]);
+  const cardsFor = new Map();
+  groups.forEach(g => {
+    const day = document.createElement('details');
+    day.className = 'rec-day';
+    day.dataset.day = g.key;
+    day.open = recDayOpen.has(g.key);
+    day.innerHTML = `<summary><span class="rd-main"><span class="rd-name">${escapeHtml(g.label)}</span>`
+      + `<span class="rd-sub">${g.recs.length} recording${g.recs.length === 1 ? '' : 's'} · ${g.jobs.length} propert${g.jobs.length === 1 ? 'y' : 'ies'}</span></span>`
+      + `<span class="rd-chips">${dayChipsHTML(g.recs)}</span><span class="rd-chev">${ico('chevD')}</span></summary>`;
+    day.addEventListener('toggle', () => { if (day.open) recDayOpen.add(g.key); else recDayOpen.delete(g.key); });
+    const inner = document.createElement('div');
+    inner.className = 'rd-body';
+    g.jobs.forEach(j => {
+      const head = document.createElement('div');
+      head.className = 'rd-job';
+      head.innerHTML = `<span class="rd-addr">${escapeHtml(j.address || 'Unknown property')}</span>`
+        + `<span class="rd-when">${escapeHtml(timeOfDay(j.first))}${j.recs.length > 1 && j.last && j.last !== j.first ? ' – ' + escapeHtml(timeOfDay(j.last)) : ''}${j.current ? (j.first ? ' · ' : '') + 'this job' : ''}</span>`;
+      inner.appendChild(head);
+      j.recs.forEach(r => cardsFor.set(r, inner));
+    });
+    day.appendChild(inner);
+    body.appendChild(day);
+  });
+  const ordered = [];
+  groups.forEach(g => g.jobs.forEach(j => j.recs.forEach(r => ordered.push(r))));
+  ordered.forEach(rec => {
     const card = document.createElement('div');
     card.className = 'recording-card';
     const status = String(rec.status || 'pending');
-    // Short time: "10:23 am" today, "7 Oct, 10:23 am" before that.
-    const when = !rec.createdAt ? '' : (new Date(rec.createdAt).toDateString() === new Date().toDateString()
-      ? new Date(rec.createdAt).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })
-      : new Date(rec.createdAt).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }));
+    // ROUND 16: the day and the property are in the headings above; the card keeps the time.
+    const when = rec.createdAt ? timeOfDay(rec.createdAt) : '';
     // All user text is escaped — room names, addresses and transcripts are user input.
     let transcriptHtml = '';
     const t = (rec.transcript || '').trim();
-    if (t) {
-      if (t.length > 240) {
-        transcriptHtml = `<details class="rec-transcript"><summary>${escapeHtml(t.slice(0, 120))}…</summary>${escapeHtml(t)}</details>`;
-      } else {
-        transcriptHtml = `<div class="rec-transcript">${escapeHtml(t)}</div>`;
-      }
-    }
+    if (t) transcriptHtml = `<details class="rec-transcript" data-rec="${escapeAttr(String(rec.id))}"${recTextOpen.has(String(rec.id)) ? ' open' : ''}><summary>Show text</summary>${escapeHtml(t)}</details>`;   // ROUND 16: folded
+    // ROUND 16: one status word on the chip; a line underneath only when there's something to do.
     let backupHtml = '';
+    let chipCls = status, chipWord = REC_STATUS_WORDS[status] || status;
     if (rec.unreadable) {
-      backupHtml = '<div class="rec-backup pending">' + ico('alert') + '<span>Unreadable. Please record the room again</span></div>';
-    } else if (cloudArchiveEnabled() && status === 'failed') {
-      backupHtml = rec.archived === true
-        ? '<div class="rec-backup ok">' + ico('check') + '<span>Audio in Dropbox. Type from the audio</span></div>'
-        : '<div class="rec-backup pending"><i class="chip-dot"></i><span>Sending audio to Dropbox</span></div>';
-    } else if (cloudArchiveEnabled() && status === 'done') {
-      backupHtml = rec.archived === true
-        ? '<div class="rec-backup ok">' + ico('check') + '<span>In Dropbox</span></div>'
-        : '<div class="rec-backup pending"><i class="chip-dot"></i><span>Sending to Dropbox</span></div>';
+      chipCls = 'failed'; chipWord = 'Unreadable';
+      backupHtml = '<div class="rec-backup pending">' + ico('alert') + '<span>Please record the room again</span></div>';
+    } else if (cloudArchiveEnabled() && (status === 'done' || status === 'failed')) {
+      const up = rec.archived === true || (status === 'failed' && rec.audioArchived);
+      chipCls = up ? 'done' : 'pending';
+      chipWord = up ? 'In Dropbox' : 'Sending';
+      if (status === 'failed') backupHtml = '<div class="rec-backup pending">' + ico('alert') + '<span>No transcript. The typist works from the audio</span></div>';
     }
     card.innerHTML = `
       <div class="rec-card-top">
         <div>
           <div class="rec-card-room">${escapeHtml(rec.roomName || rec.roomId || 'Room')}</div>
-          <div class="rec-card-meta">${sameJob(rec) ? '' : escapeHtml(rec.address || 'Unknown property') + (when ? ' · ' : '')}${escapeHtml(when)}</div>
+          <div class="rec-card-meta">${escapeHtml(when)}${rec.part > 1 ? ' · take ' + rec.part : ''}</div>
         </div>
-        <span class="status-chip status-${escapeAttr(status)}">${escapeHtml(REC_STATUS_WORDS[status] || status)}</span>
+        <span class="status-chip status-${escapeAttr(chipCls)}">${escapeHtml(chipWord)}</span>
       </div>
       ${transcriptHtml}
       ${backupHtml}
@@ -8355,7 +8436,12 @@ async function renderRecordings() {
       actions.appendChild(dBtn);
     }
     if (row.children.length) card.appendChild(row);
-    body.appendChild(card);
+    (cardsFor.get(rec) || body).appendChild(card);
+  });
+  body.querySelectorAll('.rec-transcript[data-rec]').forEach(d => d.addEventListener('toggle', () => { if (d.open) recTextOpen.add(d.dataset.rec); else recTextOpen.delete(d.dataset.rec); }));
+  body.querySelectorAll('audio').forEach(a => {
+    a.addEventListener('pause', () => { if (recRenderPending) setTimeout(() => renderRecordings(), 300); });
+    a.addEventListener('ended', () => { if (recRenderPending) setTimeout(() => renderRecordings(), 300); });
   });
 }
 
@@ -9366,6 +9452,376 @@ function checkAllRows(on) {
 })();
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
+
+// ═══ ROUND 16 (12 Oct 2026) ═══════════════════════════════════════════════════
+// Recordings by date, mandatory items on the Start screen, inventory as rows.
+// `var` on purpose: these are read by functions that can run before this point.
+
+// ─── 1. RECORDINGS BY DATE ────────────────────────────────────────────────────
+var recDayOpen = null;          // day keys open on the Recordings screen (null = open the newest)
+var recRenderPending = false;   // a redraw waiting for playback to stop
+var recTextOpen = new Set();    // recordings whose "Show text" is open (kept across redraws)
+
+function dayKey(t) {
+  const d = new Date(t || 0);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function dayLabel(t) {
+  if (!t) return 'Date unknown';
+  const now = new Date();
+  if (dayKey(t) === dayKey(now)) return 'Today';
+  const y = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  if (dayKey(t) === dayKey(y)) return 'Yesterday';
+  return new Date(t || 0).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'short' });
+}
+function timeOfDay(t) {
+  if (!t) return '';
+  return new Date(t).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' });
+}
+// Days newest first; inside a day, jobs latest first; inside a job, rooms in the order recorded.
+function groupRecordingsByDay(recs) {
+  const days = new Map();
+  recs.forEach(r => {
+    const k = dayKey(r.createdAt);
+    if (!days.has(k)) days.set(k, { key: k, label: dayLabel(r.createdAt), recs: [], jobsMap: new Map() });
+    const g = days.get(k);
+    g.recs.push(r);
+    const jk = r.jobId || r.address || '?';
+    if (!g.jobsMap.has(jk)) g.jobsMap.set(jk, { address: r.address || '', recs: [], first: r.createdAt || 0, last: r.createdAt || 0, current: false });
+    const j = g.jobsMap.get(jk);
+    j.recs.push(r);
+    j.first = Math.min(j.first, r.createdAt || 0);
+    j.last = Math.max(j.last, r.createdAt || 0);
+    if (sameJob(r) && state.address) j.current = true;
+  });
+  return [...days.values()].sort((a, b) => b.key.localeCompare(a.key)).map(g => {
+    g.jobs = [...g.jobsMap.values()].sort((a, b) => b.last - a.last);
+    g.jobs.forEach(j => j.recs.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)));
+    delete g.jobsMap;
+    return g;
+  });
+}
+// At a glance, on the day's heading: what's still sending, and what needs recording again.
+function dayChipsHTML(recs) {
+  const sending = recs.filter(r => hasAudio(r) && !r.audioArchived && r.archived !== true).length;
+  const unreadable = recs.filter(r => r.unreadable).length;
+  const out = [];
+  if (unreadable) out.push(`<span class="tj-chip bad">${unreadable} unreadable</span>`);
+  if (sending) out.push(`<span class="tj-chip wait">${sending} sending</span>`);
+  if (!out.length && cloudArchiveEnabled()) out.push(`<span class="tj-chip ok">${ico('check')}In Dropbox</span>`);
+  return out.join('');
+}
+
+// ─── 2. MANDATORY ITEMS ON THE START SCREEN ───────────────────────────────────
+var MANDATORY_FIELDS = [
+  ['waterMeter', 'Water Meter Reading', 'e.g. 1234.567 kL'],
+  ['waterMeterLocation', 'Water Meter Location', 'e.g. Front verge, near driveway'],
+  ['rcdBox', 'RCD Box / Electrical Meter', 'e.g. All switches on, reading 4521 kWh'],
+  ['smokeAlarms', 'Smoke Alarms (location & light)', 'e.g. Hallway & master, green light showing'],
+  ['nbnBox', 'NBN Box (location, model, serial)', 'e.g. Laundry, NF18ACV, SN 12345678']
+];
+var SETUP_MAND_KEY = 'pa_setup_mandatory';
+var setupMandatory = {};
+function emptyMandatory() { return { waterMeter: '', waterMeterLocation: '', rcdBox: '', smokeAlarms: '', nbnBox: '' }; }
+function mandatoryFieldsHTML(where, vals) {
+  return MANDATORY_FIELDS.map(([k, label, ph]) => `<div class="mandatory-field">`
+    + `<label for="mand-${where}-${k}">${escapeHtml(label)}</label>`
+    + `<input type="text" id="mand-${where}-${k}" data-mand="${k}" placeholder="${escapeAttr(ph)}" value="${escapeAttr((vals || {})[k] || '')}" autocomplete="off">`
+    + `</div>`).join('');
+}
+// What's typed on the Start screen is kept on the phone until Start, so an iPhone
+// reload (Camera, a call) doesn't lose it.
+function renderSetupMandatory() {
+  const box = document.getElementById('setupMandFields');
+  if (!box) return;
+  try { setupMandatory = JSON.parse(localStorage.getItem(SETUP_MAND_KEY) || '{}') || {}; } catch (e) { setupMandatory = {}; }
+  box.innerHTML = mandatoryFieldsHTML('setup', setupMandatory);
+}
+// Resuming a job: anything typed on the Start screen fills only the job's empty fields.
+function mergeSetupMandatory() {
+  const d = setupMandatory || {};
+  if (!Object.keys(d).some(k => (d[k] || '').trim())) return;
+  if (!state.mandatory) state.mandatory = emptyMandatory();
+  Object.keys(d).forEach(k => { if (!(state.mandatory[k] || '').trim() && (d[k] || '').trim()) state.mandatory[k] = d[k].trim(); });
+  takeSetupMandatory();
+}
+function takeSetupMandatory() {
+  const m = Object.assign(emptyMandatory(), setupMandatory || {});
+  Object.keys(m).forEach(k => { m[k] = String(m[k] || '').trim(); });
+  setupMandatory = {};
+  try { localStorage.removeItem(SETUP_MAND_KEY); } catch (e) {}
+  const box = document.getElementById('setupMandFields');
+  if (box) box.innerHTML = mandatoryFieldsHTML('setup', {});
+  return m;
+}
+// Review: the fold's line, its icon, and the "Before you finish" line, as they're typed.
+function paintReviewMandatory() {
+  const missing = checkMandatory();
+  const sub = document.getElementById('reviewMandSub');
+  const st = document.getElementById('reviewMandState');
+  if (sub) sub.textContent = missing.length ? missing.length + ' not filled in' : 'All filled in';
+  if (st) st.innerHTML = missing.length ? '<span class="rr-ic bad">' + ico('alert') + '</span>' : '<span class="rr-ic ok">' + ico('check') + '</span>';
+  let row = document.getElementById('attnMandatory');
+  if (!row && missing.length) {
+    // Nothing was missing when Review opened: add the line (and the card) now.
+    const body = document.getElementById('reviewBody');
+    let card = body && body.querySelector('.attn-card');
+    if (body && !card) {
+      card = document.createElement('div');
+      card.className = 'attn-card';
+      card.innerHTML = '<div class="attn-title">Before you finish</div>';
+      body.insertBefore(card, body.firstChild);
+    }
+    if (card) {
+      row = document.createElement('div');
+      row.className = 'attn-row';
+      row.id = 'attnMandatory';
+      row.innerHTML = ico('alert') + '<span></span>';
+      card.insertBefore(row, card.children[1] || null);
+    }
+  }
+  if (row) {
+    const span = row.querySelector('span');
+    if (span) span.textContent = 'Not filled in: ' + missing.join(', ');
+    row.hidden = !missing.length;
+    const card = row.closest('.attn-card');
+    if (card) card.hidden = ![...card.querySelectorAll('.attn-row')].some(r => !r.hidden);
+  }
+}
+
+// ─── 3. INVENTORY AND SERIAL NUMBERS AS ROWS ─────────────────────────────────
+// One row per item: name, serial or model number, and a camera tile for the
+// plate. The rows still write the two texts the files have always used:
+// Inventory (items with no number) and Serial / model numbers.
+var invThumbs = {};          // photo id -> object URL for its thumbnail
+var invPhotoTarget = null;   // { roomId, rowId } waiting for the camera
+function newInvId() { return 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function blankInv() { return { id: newInvId(), item: '', serial: '', photos: [] }; }
+function invFilled(r) { return !!(r && ((r.item || '').trim() || (r.serial || '').trim() || (r.photos || []).length)); }
+// The room's rows. A job from before round 16 gets rows from what was typed.
+function invRowsFor(roomId) {
+  if (!state.invItems) state.invItems = {};
+  let rows = state.invItems[roomId];
+  if (!Array.isArray(rows)) {
+    rows = [];
+    const inv = (state.inventory[roomId] || '').trim();
+    const ser = (state.serialModels[roomId] || '').trim();
+    if (inv) rows.push(Object.assign(blankInv(), { item: inv }));
+    if (ser) rows.push(Object.assign(blankInv(), { serial: ser }));
+    state.invItems[roomId] = rows;
+  }
+  return rows;
+}
+// Rows -> the two texts every file uses.
+function syncInvText(roomId) {
+  const inv = [], ser = [];
+  (state.invItems[roomId] || []).forEach(r => {
+    const it = (r.item || '').trim(), sn = (r.serial || '').trim(), ph = (r.photos || []).length;
+    if (sn) ser.push(it ? it + ': ' + sn : sn);
+    else if (ph) ser.push((it || 'Item') + ': see photo');
+    else if (it) inv.push(it);
+  });
+  state.inventory[roomId] = inv.join(', ');
+  state.serialModels[roomId] = ser.join('; ');
+}
+function invCountText(roomId) {
+  const rows = (state.invItems[roomId] || []).filter(invFilled);
+  if (!rows.length) return 'None yet';
+  const photos = rows.reduce((n, r) => n + (r.photos || []).length, 0);
+  return rows.length + (rows.length === 1 ? ' item' : ' items') + (photos ? ' · ' + photos + (photos === 1 ? ' photo' : ' photos') : '');
+}
+function invRowHTML(roomId, r) {
+  const n = (r.photos || []).length;
+  const rid = escapeAttr(roomId), id = escapeAttr(r.id);
+  return `<div class="inv-row" data-row="${id}">`
+    + `<div class="inv-fields">`
+    + `<input type="text" class="inv-in" data-inv="${rid}|${id}|item" value="${escapeAttr(r.item || '')}" placeholder="Item, e.g. Oven or 2 x remotes" aria-label="Item" autocomplete="off">`
+    + `<input type="text" class="inv-in" data-inv="${rid}|${id}|serial" value="${escapeAttr(r.serial || '')}" placeholder="Serial or model number" aria-label="Serial or model number" autocomplete="off" autocapitalize="characters" spellcheck="false">`
+    + `</div>`
+    + `<button type="button" class="inv-cam${n ? ' has' : ''}" onclick="takeInvPhoto('${rid}','${id}')" aria-label="${n ? 'Add another photo of the serial plate' : 'Photo of the serial plate'}">`
+    + (n ? `<img alt="Serial plate photo" data-photo="${escapeAttr(String(r.photos[n - 1]))}">` + (n > 1 ? `<span class="inv-n">${n}</span>` : '')
+         : ico('camera') + '<span>Photo</span>')
+    + `</button>`
+    + `<button type="button" class="inv-del" onclick="removeInvItem('${rid}','${id}')" aria-label="Remove this item">${ico('x')}</button>`
+    + `</div>`;
+}
+function invSectionHTML(room) {
+  const rows = invRowsFor(room.id);
+  if (!rows.length) rows.push(blankInv());
+  const rid = escapeAttr(room.id);
+  const earlier = ((state.serialPhotos || {})[room.id] || []).filter(p => !p.itemId).length;
+  return `<details class="more-details inv-details"${rows.some(invFilled) ? ' open' : ''}>`
+    + `<summary><span class="inv-sum"><span>Inventory and serial numbers</span><span class="inv-count" id="invCount-${rid}">${escapeHtml(invCountText(room.id))}</span></span>${ico('chevD')}</summary>`
+    + `<div class="inv-wrap">`
+    + `<div class="inv-rows" id="invRows-${rid}">${rows.map(r => invRowHTML(room.id, r)).join('')}</div>`
+    + `<button type="button" class="inv-add" onclick="addInvItem('${rid}')">${ico('plus')}<span>Add item</span></button>`
+    + `<p class="inv-hint">Tap the camera to photograph the serial plate.${earlier ? ' ' + earlier + (earlier === 1 ? ' photo' : ' photos') + ' taken earlier for this room.' : ''}</p>`
+    + `<span class="serial-photo-status" id="serialphoto-status-${rid}">${serialPhotoStatusText(room.id)}</span>`
+    + `</div></details>`;
+}
+function paintInvCount(roomId) {
+  const el = document.getElementById('invCount-' + roomId);
+  if (el) el.textContent = invCountText(roomId);
+}
+function onInvInput(el, spec) {
+  const [roomId, rowId, field] = spec.split('|');
+  const row = (state.invItems[roomId] || []).find(r => r.id === rowId);
+  if (!row || (field !== 'item' && field !== 'serial')) return;
+  row[field] = el.value;
+  syncInvText(roomId);
+  paintInvCount(roomId);
+  saveState();
+  if (field === 'item' && (row.photos || []).length) renamePhotosSoon(roomId, row);
+}
+// A name typed after the photo was taken still names the photo in Dropbox
+// (for photos not sent yet; the upload also reads the name as it is then).
+var invRenameTimers = {};
+function renamePhotosSoon(roomId, row) {
+  clearTimeout(invRenameTimers[row.id]);
+  invRenameTimers[row.id] = setTimeout(async () => {
+    for (const pid of (row.photos || [])) {
+      try {
+        const p = await photoGet(pid);
+        if (p && !p.uploaded) { p.item = (row.item || '').trim(); await photoPut(p); }
+      } catch (e) {}
+    }
+  }, 800);
+}
+function addInvItem(roomId) {
+  const rows = invRowsFor(roomId);
+  const r = blankInv();
+  rows.push(r);
+  saveState();
+  const box = document.getElementById('invRows-' + roomId);
+  if (box) {
+    box.insertAdjacentHTML('beforeend', invRowHTML(roomId, r));
+    const inp = box.querySelector(`[data-row="${r.id}"] .inv-in`);
+    if (inp) { try { inp.focus({ preventScroll: false }); } catch (e) { inp.focus(); } }
+  }
+}
+async function removeInvItem(roomId, rowId) {
+  const rows = invRowsFor(roomId);
+  const i = rows.findIndex(r => r.id === rowId);
+  if (i < 0) return;
+  const row = rows[i];
+  if (invFilled(row) && !confirm(`Remove ${(row.item || '').trim() ? '"' + row.item.trim() + '"' : 'this item'}?`)) return;
+  // Photos not sent yet go with it; ones already in Dropbox stay there.
+  const marks = (state.serialPhotos[roomId] || []);
+  for (const pid of (row.photos || [])) {
+    const m = marks.find(p => p.id === pid);
+    if (m && !m.uploaded) {
+      try { await photoDelete(pid); } catch (e) {}
+      state.serialPhotos[roomId] = (state.serialPhotos[roomId] || []).filter(p => p.id !== pid);
+    }
+    if (invThumbs[pid]) { try { URL.revokeObjectURL(invThumbs[pid]); } catch (e) {} delete invThumbs[pid]; }
+  }
+  rows.splice(i, 1);
+  if (!rows.length) rows.push(blankInv());
+  syncInvText(roomId);
+  saveState();
+  const box = document.getElementById('invRows-' + roomId);
+  if (box) { box.innerHTML = rows.map(r => invRowHTML(roomId, r)).join(''); loadInvThumbs(roomId); }
+  paintInvCount(roomId);
+  refreshSerialPhotoStatus(roomId);
+}
+function invPhotoInput() {
+  let el = document.getElementById('invPhotoInput');
+  if (!el) {
+    el = document.createElement('input');
+    el.type = 'file'; el.accept = 'image/*'; el.setAttribute('capture', 'environment');
+    el.id = 'invPhotoInput'; el.hidden = true; el.tabIndex = -1;
+    el.addEventListener('change', () => onInvPhotoChosen(el));
+    document.body.appendChild(el);
+  }
+  return el;
+}
+function takeInvPhoto(roomId, rowId) {
+  invPhotoTarget = { roomId, rowId };
+  invPhotoInput().click();
+}
+async function onInvPhotoChosen(inputEl) {
+  const file = inputEl.files && inputEl.files[0];
+  inputEl.value = '';   // the same photo can be picked again later
+  const target = invPhotoTarget;
+  invPhotoTarget = null;
+  if (!file || !target) return;
+  const { roomId, rowId } = target;
+  const row = (invRowsFor(roomId)).find(r => r.id === rowId);
+  if (!row) return;
+  const room = (state.rooms || []).find(r => r.id === roomId) || {};
+  const rec = {
+    roomId, roomName: room.name || roomId, address: state.address || '', jobId: state.jobId || '',
+    client: state.client || '', createdAt: Date.now(), item: (row.item || '').trim(), invRowId: rowId,
+    blob: file, type: file.type || 'image/jpeg', uploaded: false
+  };
+  let id = null;
+  try { id = await photoAdd(rec); storageRecovered(); }
+  catch (e) { reportStorageFailure('Photo NOT saved. Type the number in the box instead'); return; }
+  if (!state.serialPhotos[roomId]) state.serialPhotos[roomId] = [];
+  state.serialPhotos[roomId].push({ id, ts: rec.createdAt, uploaded: false, itemId: rowId });
+  row.photos = (row.photos || []).concat([id]);
+  try { invThumbs[id] = URL.createObjectURL(file); } catch (e) {}
+  syncInvText(roomId);
+  saveState();
+  const el = document.querySelector(`#invRows-${CSS.escape(roomId)} [data-row="${CSS.escape(rowId)}"]`);
+  if (el) { el.outerHTML = invRowHTML(roomId, row); loadInvThumbs(roomId); }
+  paintInvCount(roomId);
+  refreshSerialPhotoStatus(roomId);
+  showToast(cloudArchiveEnabled() ? 'Photo saved. Sending to Dropbox.' : 'Photo saved on this phone.');
+  // Straight away if the item has a name; otherwise on the next 20-second round,
+  // so a name typed just after the photo goes into its file name.
+  if (cloudArchiveEnabled() && navigator.onLine && (row.item || '').trim()) processPhotoQueue();
+}
+function photoGet(id) {
+  return dbTx(PHOTO_STORE, 'readonly', (s, set) => { const r = s.get(id); r.onsuccess = () => set(r.result || null); }).then(v => v || null);
+}
+// Thumbnails: from memory if just taken, else from the phone.
+async function loadInvThumbs(roomId) {
+  const box = document.getElementById('invRows-' + roomId);
+  if (!box) return;
+  for (const img of box.querySelectorAll('img[data-photo]')) {
+    if (img.getAttribute('src')) continue;
+    const id = Number(img.dataset.photo);
+    if (!invThumbs[id]) {
+      try { const p = await photoGet(id); if (p && p.blob) invThumbs[id] = URL.createObjectURL(p.blob); } catch (e) {}
+    }
+    if (invThumbs[id]) img.src = invThumbs[id];
+    else { const b = img.closest('.inv-cam'); if (b) { b.classList.add('gone'); img.remove(); b.insertAdjacentHTML('afterbegin', ico('camera') + '<span>Sent</span>'); } }
+  }
+}
+function r16ClearInvThumbs() {
+  Object.keys(invThumbs).forEach(k => { try { URL.revokeObjectURL(invThumbs[k]); } catch (e) {} });
+  invThumbs = {};
+}
+// The item's name for the photo's file in Dropbox: as it reads now, if it's this job.
+function invItemNameForPhoto(rec) {
+  if (rec && rec.invRowId && sameJob(rec) && state.invItems && state.invItems[rec.roomId]) {
+    const row = state.invItems[rec.roomId].find(r => r.id === rec.invRowId);
+    if (row && (row.item || '').trim()) return row.item.trim();
+  }
+  return (rec && rec.item) || '';
+}
+
+// ─── WIRING ───────────────────────────────────────────────────────────────────
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (!t || !t.dataset) return;
+  if (t.dataset.mand) {
+    const k = t.dataset.mand;
+    if (t.closest('#setupMandatory')) {
+      setupMandatory[k] = t.value;
+      try { localStorage.setItem(SETUP_MAND_KEY, JSON.stringify(setupMandatory)); } catch (x) {}
+    } else {
+      state.mandatory[k] = t.value;
+      saveState();
+      paintReviewMandatory();
+    }
+    return;
+  }
+  if (t.dataset.inv) onInvInput(t, t.dataset.inv);
+});
+renderSetupMandatory();
+
 initSetup();
 
 if ('serviceWorker' in navigator) {

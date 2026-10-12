@@ -36,6 +36,22 @@
 //   - 17.2: a long room (120+ words) whose check list comes back empty is asked
 //     again too, and the second answer is used only if it lists something.
 //
+// Round 19 (13 Oct 2026), the owner's rules for sorting and polishing restated:
+//   - Keep the inspector's words and their order; only punctuation, capitals,
+//     clear mishears and Australian spelling change. "wood" and "timber" stay
+//     as said. Counts are written as words ("3" → "three"), as in the report.
+//   - "a deep scratch that runs along the door" is damage, not the "scratch
+//     that" command (the app sends it through now, and "sorry" too, so the
+//     self-corrections can be seen). Every self-correction is flagged.
+//   - A statement whose subarea can't be told is flagged "unclear area".
+//   - The wardrobe's own ceiling, walls, skirting and flooring go under the
+//     wardrobe; coming back to a subarea adds to it, never a second entry.
+//   - Added phrases: every sentence about an item is read before one is added;
+//     working fixtures get only "secured and functional".
+//   - Subarea names match whatever their spacing or capitals ("Ceiling /
+//     Cornice"), so they are no longer flagged as unclear; "model number is …"
+//     written out in words is checked against the photo too.
+//
 // Contract (the app already speaks this — don't change field names):
 //   POST { transcript, room, subsections: string[], address }
 //   →    { ok, model, sections: [{name, text}], text, check: [{quote, heard, why, words}] }
@@ -83,11 +99,11 @@ function json(body: unknown, status = 200) {
 
 const RULES = `You file a property inspector's spoken room notes for Property Assist, a Western Australian property inspection business. The text came from speech-to-text on a phone, recorded while walking through ONE room of a rental property. A typist will build the final condition report from your output.
 
-Your job: put every statement under the right subarea from the list you are given, fix words the speech engine clearly mis-heard, tidy sentences, and list anything you were not sure about.
+Your job: put every statement under the right subarea from the list you are given, fix words the speech engine clearly mis-heard, add punctuation and capitals, and list anything you were not sure about. Keep the inspector's own words in the order they said them: do not rewrite, reword, summarise or "improve" a sentence.
 
 THREE ABSOLUTE RULES. Breaking any of them makes the report wrong:
 1. Never invent detail. Do not add any colour, number, material, condition, brand or item that is not in the transcript. The ONLY exception is the ADDED PHRASES section below, and every such phrase must be wrapped in {+ +}. Do not expand a word into a longer phrase because a subarea is named that way ("no hooks or doors" stays as it is, it does not become "no hooks or door stoppers").
-2. Never omit anything. Every statement in the transcript appears in exactly one section. You re-file and re-punctuate; you do not summarise or shorten.
+2. Never omit anything. Every statement in the transcript appears in exactly one section. You re-file and re-punctuate; you do not summarise or shorten. Every mark, damage word, count, "no"/"not" and left/right/upper/lower the inspector said stays in.
 3. Never soften or strengthen a condition. "Scuff marks" stays scuff marks; "chips to frame" stays chips to frame.
 
 FILING
@@ -95,10 +111,12 @@ FILING
 - Inspectors usually announce a subarea ("Ceiling.", "Light fittings.") then describe it. Everything after an announcement belongs to that subarea until the next one, unless the words are clearly about something else.
 - When the inspector talks fast, a subarea name can appear mid-sentence with no full stop ("...scuff marks light fitting is a frosted glass..."). Split there.
 - A passing mention is not an announcement: "marks near the door" in the walls description stays under walls.
-- If a statement fits none of the subareas, file it under the closest one and add it to check with why "not sure which subarea".
+- If you can't tell which subarea a statement belongs to, do not guess silently: file it under the closest one and add it to check with why "unclear area".
 - Keep the subareas in the order given. Leave out subareas with nothing said about them: never return a subarea whose text would only be its own name or an added phrase.
+- Return each subarea once. When the inspector comes back to a subarea later, add those words to the end of the same subarea's text, in the order said. Only when it is clearly a different item of the same kind (a second wardrobe, a second vanity) keep its words together and add it to check with why "second item of the same kind".
 - Parts of a fixture go with that fixture when it has its own subarea: pantry doors under Pantry, the range hood light under Exhaust Fan/Range Hood, the shower screen door under Shower/Screen, shower wall and floor tiles under Shower Tiles, the laundry cupboard under the cupboard subarea.
 - Smoke alarms and smoke sensors go under the ceiling subarea (Ceiling or Ceiling/Cornice) when the room has one.
+- When the room has a wardrobe subarea, the wardrobe's own doors, tracks, ceiling, walls, skirting, flooring, shelves and hanging rods go under it, not under the room's Ceiling, Walls, Skirting or Flooring.
 - Keep the announced subarea word at the start of its text, as spoken.
 - Downlights, oyster lights, fluorescent lights and their globes and covers go under Light Fittings, even when they are said in the same breath as the ceiling.
 - Drop walk-through phrases that only say where the inspector is ("Coming into the bedroom.", "coming into the car bay area", "no additional present coming into the storeroom" keeps "No additional present." only). They belong to no subarea.
@@ -107,11 +125,11 @@ FIXING
 - Fix mis-heard words only when the context makes the right word obvious. Common ones in this work: "similar" / "submetal" / "once-off" / "simple" for "silver metal"; "screw" / "skin" / "good on" / "skid on" for "secured"; "pool cord" for "pull cord"; "pinch plate" for "pinch pleat"; "glass paint" for "glass pane"; "hanging road" for "hanging rod"; "tile rail" for "towel rail"; "light fangs" for "light fittings"; "cinnamon cornices" for "ceiling/cornices"; "kennel" for "fan"; "egg" for "AEG"; "iPhone" for "Aiphone" (intercom); "NBN coax" for "NBN Co box"; "Undermount" when the context is "underbench".
 - More mis-hearings to fix when the context makes them obvious: "up and down" / "down skirting" / "downlight skirting" for "downlights secured"; "skirting" right after an item and before "both sides", "to the wall", "to the ceiling" or "to the flooring" for "secured" ("handle skirting both sides" → "handle secured to both sides"); "7-way" / "7-meter" / "seven metre" for "silver metal" (as in "one silver metal weight secured to the bottom" of a blind); "foxhole" / "foxtail" / "box top" for "Foxtel"; "press-in light" / "press and light" for "fluorescent light"; "fossil plastic" for "frosted plastic"; "blows" / "gloves" (of a light) for "globes"; "white middle" / "middle base" (drawers, cupboards) for "white metal" / "metal and base"; "colour rack" (dishwasher) for "cutlery rack"; "secured neither" for "secured underneath"; "address burns" / "dual flash" for "dual flush button"; "Lincoln(s) present" for "indicators present"; "dustbin at present" for "dust build-up present"; "triplets" for "trivets"; "fish glass" for "fixed glass"; "pencil curtains" for "pencil pleat curtains"; "underhangers" for "no handles".
 - FIX AND FLAG (fix it, then put it in check): "once over" / "once of" / "once the" / "one sort of" before a metal fitting for "one silver metal"; "single" before a metal fitting (drain, sink, handle, mixer, tap, towel rail, cooking rack) for "silver metal" (but "single" is correct before power point, light switch, data point, Foxtel point and bed); "one side of the … is good" for "one silver metal … secured"; "twin handle" for "silver metal handle"; "lock winder head" / "corner skirting" (of a door or window) for "lockable handle(s)"; "sinks white plastic" (toilet) for "seat and cover are white plastic"; "which means the aircon" for "Mitsubishi Electric aircon"; "note the little frame" / "no digital frame" at the start of a garage for "No door or door frame".
-- Keep quantities as spoken words ("two white tilt cords" stays as it is). Write numerals only for model numbers, measurements and meter readings.
-- Australian spelling: grey, colour, discolouration, centre, mould, aluminium.
+- Write counts as words, the way the report does: "two white tilt cords" stays as it is, and "3 double power points" becomes "three double power points". Never change the number itself. Write numerals only for model numbers, serial numbers, measurements and meter readings.
+- Australian English spelling: grey, colour, discolouration, centre, metre, mould, aluminium, fibre, licence. Keep "wood" or "timber" exactly as the inspector said it; never swap one for the other.
 - Hyphenation: build-up, self-closer, wood-look, stone-look, marble-look, doorstop.
-- Remove fillers (um, uh, er, sorry) and any leftover "scratch that" / "delete that" together with the words it was cancelling.
-- A self-correction keeps only the corrected words: "sand— sorry, dust" → "dust"; "left— sorry, right side" → "right side"; "Door is a— oh, sorry. Door frame is…" → "Door frame is…". When the inspector abandons a description and starts it again ("The original frame is a black painted metal with chipping. Door is a— sorry. Door frame is a grey painted metal with chipping."), keep only the restarted version and put the dropped words in check.
+- Remove fillers (um, uh, er, sorry) and any leftover "scratch that" / "delete that" command together with the words it was cancelling. But "scratch" is also damage: "a deep scratch that runs along the door" or "one scratch that is about 10 centimetres long" describes a scratch and stays word for word.
+- A self-correction keeps only the corrected words: "sand— sorry, dust" → "dust"; "left— sorry, right side" → "right side"; "Door is a— oh, sorry. Door frame is…" → "Door frame is…". When the inspector abandons a description and starts it again ("The original frame is a black painted metal with chipping. Door is a— sorry. Door frame is a grey painted metal with chipping."), keep only the restarted version. Every self-correction goes in check with why "self-correction", and heard = the words as first said, so the typist can confirm it in the audio.
 - A restart ("one one double power point") becomes the intended phrase ("one double power point") — and goes in check.
 - Every section's text: sentences start with a capital and end with a full stop.
 - Never change a model or serial number. Copy it exactly and always add it to check with why "check against the photo".
@@ -120,9 +138,10 @@ FIXING
 - Spell brand names the way the brand spells them, so they can be searched on Google (Fisher & Paykel, Westinghouse, Rinnai, AEG, Aiphone, Kelvinator, Colorbond).
 
 ADDED PHRASES (the typists' house style)
-- If the inspector says nothing about marks, dirt or damage for an item, end that item's description with {+in clean condition+} for surfaces and floor coverings (ceiling, walls, skirtings, flooring) or {+in good condition+} for doors, frames, windows, fittings, cupboards and benchtops.
-- For a working fixture (power points, light switches, light fittings, taps, exhaust fans, smoke alarms, appliances) where the inspector does not say whether it is secured or working, add {+secured and functional+}.
-- Never add a phrase when the inspector mentions ANY mark, chip, crack, stain, dust, damage, wear or fault for that item, or says it was not tested or not working.
+- First read everything the inspector said about the item, including later sentences and anything said when they came back to it.
+- If the inspector says nothing about marks, dirt or damage for an item, end that item's description with {+in clean condition+} for surfaces and floor coverings (ceiling, walls, skirtings, flooring) or {+in good condition+} for doors, frames, windows, cupboards, shelves and benchtops.
+- For a working fixture (power points, light switches, light fittings, taps, exhaust fans, smoke alarms, appliances) where the inspector does not say whether it is secured or working, add {+secured and functional+} only (never "in good condition" as well). If the inspector already said "secured", "functional" or "working", add nothing.
+- Never add a phrase when the inspector mentions ANY mark, chip, crack, stain, dust, damage, wear or fault for that item, or says it was not tested or not working. Never add one to a sentence that names a condition.
 - Always write the braces exactly: {+in clean condition+}. Never put braces around anything the inspector said. Do not add these phrases to the check list; they are already highlighted.
 - Keep "wood" or "timber" exactly as the inspector said it.
 
@@ -187,7 +206,7 @@ export default async function (req: Request): Promise<Response> {
     const t = new URL(req.url).searchParams.get("test");
     if (t === "1") return await selfTest(req);
     if (t === "stirling") return await stirlingTest(req);
-    return json({ ok: !!KEY, round: 17, version: "17.2", provider: "anthropic", model: MODEL, key_required: !!PA_KEY, note: KEY ? "ready" : "ANTHROPIC_API_KEY is not set" });
+    return json({ ok: !!KEY, round: 19, version: "19", provider: "anthropic", model: MODEL, key_required: !!PA_KEY, note: KEY ? "ready" : "ANTHROPIC_API_KEY is not set" });
   }
   if (req.method !== "POST") return json({ ok: false, error: "POST only" }, 405);
   if (PA_KEY && new URL(req.url).searchParams.get("k") !== PA_KEY) return json({ ok: false, error: "not allowed" }, 403);
@@ -249,6 +268,10 @@ async function fileRoom(transcript: string, room: string, subsections: string[],
   if (!block) return json({ ok: false, error: "no file_room call (stop: " + (data?.stop_reason || "?") + ")" }, 502);
   const out = block?.input || {};
   const allowed = new Map(subsections.map((s) => [s.toLowerCase(), s]));
+  // ROUND 19: "Ceiling / Cornice" is Ceiling/cornice: spacing, capitals and "&"
+  // for "and" don't make a different subarea (they were flagged as unclear).
+  const squash = (t: string) => t.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "");
+  const loose = new Map(subsections.map((s) => [squash(s), s]));
   const order = new Map(subsections.map((s, i) => [s.toLowerCase(), i]));
 
   // Merge duplicates, keep only real subarea names, keep the room's own order.
@@ -257,7 +280,7 @@ async function fileRoom(transcript: string, room: string, subsections: string[],
   const words = (t: string) => new Set((t.toLowerCase().match(/[a-z]+/g) || []).map((w) => w.replace(/s$/, "")));
   const extraChecks: { quote: string; words: string; heard: string; why: string }[] = [];
   function resolveName(raw: string, text: string) {
-    const hit = allowed.get(raw.toLowerCase());
+    const hit = allowed.get(raw.toLowerCase()) || loose.get(squash(raw));
     if (hit) return hit;
     const want = words(raw + " " + text.split(/\s+/).slice(0, 3).join(" "));
     let best = "", score = 0;
@@ -266,7 +289,7 @@ async function fileRoom(transcript: string, room: string, subsections: string[],
       if (n > score) { score = n; best = s; }
     }
     const name = best || subsections.find((s) => /additional/i.test(s)) || subsections[subsections.length - 1];
-    extraChecks.push({ quote: text.slice(0, 80), words: "", heard: text.slice(0, 80), why: `not sure which subarea — filed under ${name}` });
+    extraChecks.push({ quote: text.slice(0, 80), words: "", heard: text.slice(0, 80), why: `unclear area — filed under ${name}` });
     return name;
   }
   const merged = new Map<string, string>();
@@ -301,11 +324,21 @@ async function fileRoom(transcript: string, room: string, subsections: string[],
   // A plate can sit mid-line ("… cutlery rack. Model Numbers: FSE73700P") or
   // share a line ("Model Numbers: X / Serial Numbers: Y"); a value needs a digit.
   for (const s of sections) {
-    for (const m of s.text.matchAll(/\b(Model Numbers?|Serial Numbers?|Type)\s*:\s*([^\n]*?)(?=\s+\/\s+|\.(?:\s|$)|\n|$)/gi)) {
+    // ROUND 19: also written out ("model number is MSZGE22VAD, serial number is …").
+    // A number counts as listed when an entry names it, or flags its whole
+    // sentence; an entry naming other words in that sentence doesn't cover it.
+    const covered = (v: string) => check.some((c: any) => c.words.includes(v) || (!c.words && c.quote.includes(v)));
+    for (const m of s.text.matchAll(/\b(Model Numbers?|Serial Numbers?|Type)\s*:\s*([^\n]*?)(?=\s+\/\s+|\.(?:\s|$)|\n|$)|\b(model|serial)\s+(?:numbers?|no\.?)\s+(?:is\s+)?([A-Za-z0-9][A-Za-z0-9\-\/.]*\d[A-Za-z0-9\-\/]*)/gi)) {
+      if (m[3]) {
+        const value = m[4];
+        if (covered(value)) continue;
+        check.push({ quote: s.text.match(new RegExp("[^.\\n]*" + value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "[^.\\n]*\\.?"))?.[0].trim() || value, words: value, heard: value, why: "check against the photo" });
+        continue;
+      }
       const value = m[2].trim();
       if (!/\d/.test(value)) continue;
       const plate = `${m[1]}: ${value}`;
-      if (check.some((c: any) => c.quote.includes(value) || c.words.includes(value))) continue;
+      if (covered(value)) continue;
       check.push({ quote: plate, words: value, heard: plate, why: "check against the photo" });
     }
   }
@@ -527,7 +560,7 @@ async function stirlingTest(req: Request): Promise<Response> {
   }));
   const main = runs[0];
   return json({
-    ok: main.passed === main.total, model: MODEL, round: 17, version: "17.2", took_ms: Date.now() - started,
+    ok: main.passed === main.total, model: MODEL, round: 19, version: "19", took_ms: Date.now() - started,
     passed: main.passed + " of " + main.total, in_use: THINK,
     compare: runs.map((r) => ({ thinking: r.mode, passed: r.passed + " of " + r.total, slowest_room_seconds: r.slowest_room_seconds,
       fails: r.results.filter((x) => x.result !== "PASS").map((x) => x.room + ": " + x.expect) })),

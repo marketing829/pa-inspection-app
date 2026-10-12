@@ -57,6 +57,9 @@ const KEY = Deno.env.get("ANTHROPIC_API_KEY") || "";
 // PA_KEY in index.html. Until it's set, the val accepts calls without it.
 const PA_KEY = Deno.env.get("PA_KEY") || "";
 const MAX_TRANSCRIPT_CHARS = 40000; // a long room is ~10,000; anything bigger isn't from the app
+type Think = "off" | "low" | "medium";
+// How the model works on a room in the app (see requestBody). Sonnet 5.5 only.
+const THINK: Think = "off";
 const MIN_KEEP_RATIO = 0.75; // refuse our own output if it dropped more than a quarter of the words
 
 // Only the deployed app may call this from a browser, so a stranger who finds
@@ -206,12 +209,12 @@ export default async function (req: Request): Promise<Response> {
 }
 
 // One room through the model, tidied and checked. Used by POST and the Stirling test.
-async function fileRoom(transcript: string, room: string, subsections: string[]): Promise<{ status: number; body: any }> {
+async function fileRoom(transcript: string, room: string, subsections: string[], think = THINK): Promise<{ status: number; body: any }> {
   const json = (body: unknown, status = 200) => ({ status, body });
   const user = `Room: ${room || "(not named)"}\n\nSubareas, in order:\n${subsections.map((s) => "- " + s).join("\n")}\n\nTranscript:\n"""\n${transcript}\n"""`;
 
   const started = Date.now();
-  let asked = await askClaude(user);
+  let asked = await askClaude(user, think);
   if (asked.error) return json({ ok: false, error: asked.error }, 502);
   // ROUND 17.1: the model can get stuck repeating itself inside one check entry
   // (Stirling Bathroom 1: "Ok. Done. Ok. End." until it ran out of room), and
@@ -219,7 +222,7 @@ async function fileRoom(transcript: string, room: string, subsections: string[])
   // inside the app's 60-second wait.
   let retried = false;
   if (ranAway(asked.data) && Date.now() - started < RETRY_IF_UNDER_MS) {
-    const again = await askClaude(user);
+    const again = await askClaude(user, think);
     retried = true;
     if (!again.error && (!ranAway(again.data) || !toolBlock(asked.data))) asked = again;
   }
@@ -300,7 +303,7 @@ async function fileRoom(transcript: string, room: string, subsections: string[])
   return json({ ok: true, model: data?.model || MODEL, sections, text, check, ...(retried ? { retried: true } : {}), ...(cutShort ? { cut_short: true } : {}) });
 }
 
-const RUNAWAY_WHY_CHARS = 300; // a "why" is a few words; longer means the model got stuck
+const RUNAWAY_WHY_CHARS = 160; // a "why" is a few words; longer means the model got stuck
 const RUNAWAY_WORDS_CHARS = 600;
 const RETRY_IF_UNDER_MS = 20000; // a second try takes up to ~25 s; the app waits 60 s
 
@@ -310,20 +313,25 @@ function toolBlock(data: any) {
 function ranAway(data: any) {
   if (data?.stop_reason === "max_tokens") return true;
   const check = toolBlock(data)?.input?.check;
+  // A "why" that rambles (over 160 characters or across lines) came with a
+  // check list that stopped early in the third live Stirling run.
   return Array.isArray(check) && check.some((c: any) =>
-    String(c?.why || "").length > RUNAWAY_WHY_CHARS || String(c?.words || "").length > RUNAWAY_WORDS_CHARS);
+    String(c?.why || "").length > RUNAWAY_WHY_CHARS || /\n/.test(trimRunOn(String(c?.why || ""))) || String(c?.words || "").length > RUNAWAY_WORDS_CHARS);
+}
+// The model sometimes runs on into the next field ('… may be door.",\n "heard":"…').
+function trimRunOn(why: string) {
+  return why.split(/"\s*,?\s*"?(?:heard|words|quote|why)"?\s*:/)[0].replace(/["\s]+$/, "").trim();
 }
 // Keep a runaway "why" readable: its first sentence, at most 120 characters.
 function shortWhy(why: string) {
-  // The model sometimes runs on into the next field ('… may be door.",\n "heard":"…').
-  why = why.split(/"\s*,?\s*"?(?:heard|words|quote|why)"?\s*:/)[0].replace(/["\s]+$/, "").trim();
+  why = trimRunOn(why);
   if (why.length <= 120) return why;
   const first = (why.match(/^.*?[.;](?=\s)/) || [why])[0];
   return (first.length <= 120 ? first : first.slice(0, 117) + "…").trim();
 }
 
 // The request, in whichever shape the model takes.
-function requestBody(user: string) {
+function requestBody(user: string, think: Think = THINK) {
   const base = { model: MODEL, system: RULES, messages: [{ role: "user", content: user }] };
   if (LEGACY) {
     return { ...base, max_tokens: 4096, temperature: 0, tools: [TOOL], tool_choice: { type: "tool", name: "file_room" } };
@@ -332,16 +340,17 @@ function requestBody(user: string) {
     ...base,
     // Covers any thinking as well as the answer. Sonnet 5.5 counts more tokens
     // for the same text than Haiku 4.5, and a long room could pass 4,096.
-    max_tokens: 8192,
+    max_tokens: think === "off" ? 8192 : 16000,
     tools: [{ ...TOOL, strict: true }],
     tool_choice: { type: "auto" },
-    // No thinking before the answer. This is filing and spelling, and thinking
-    // time would push a long room past the app's 60-second wait.
-    thinking: { type: "between_tools" },
+    // "off": no thinking before the answer (fast). "low"/"medium": a short think
+    // first (adaptive thinking at that effort), which may flag more steadily but
+    // takes longer. The Stirling test runs "off" and "low" side by side.
+    ...(think === "off" ? { thinking: { type: "between_tools" } } : { thinking: { type: "adaptive" }, output_config: { effort: think } }),
   };
 }
 
-async function askClaude(user: string): Promise<{ data?: any; error?: string }> {
+async function askClaude(user: string, think: Think = THINK): Promise<{ data?: any; error?: string }> {
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -350,7 +359,7 @@ async function askClaude(user: string): Promise<{ data?: any; error?: string }> 
         "anthropic-version": "2023-06-01",
         "content-type": "application/json",
       },
-      body: JSON.stringify(requestBody(user)),
+      body: JSON.stringify(requestBody(user, think)),
     });
     const data = await res.json();
     if (!res.ok) return { error: "anthropic " + res.status + ": " + String(data?.error?.message || "").slice(0, 160) };
@@ -445,21 +454,36 @@ async function stirlingTest(req: Request): Promise<Response> {
   if (PA_KEY && new URL(req.url).searchParams.get("k") !== PA_KEY) return json({ ok: false, error: "add &k=<PA_KEY> to the address" }, 403);
   if (!KEY) return json({ ok: false, error: "ANTHROPIC_API_KEY is not set" }, 500);
   const started = Date.now();
-  const outs = await Promise.all(STIRLING.map((r) => fileRoom(r.transcript, r.room, r.subsections)));
-  const results: { room: string; expect: string; result: string }[] = [];
-  const rooms: Record<string, unknown> = {};
-  STIRLING.forEach((r, i) => {
-    const o = outs[i].body;
-    rooms[r.room] = o.ok ? { retried: !!o.retried, cut_short: !!o.cut_short, check: o.check, sections: o.sections } : { error: o.error };
-    r.expect.forEach(([label, fn]) => {
-      let ok = false;
-      try { ok = !!o.ok && fn(o); } catch { ok = false; }
-      results.push({ room: r.room, expect: label, result: ok ? "PASS" : "FAIL" });
+  // Each way of working (no thinking, short thinking) on the four rooms, all at once.
+  const modes: Think[] = LEGACY ? ["off"] : ["off", "low"];
+  const runs = await Promise.all(modes.map(async (mode) => {
+    const outs = await Promise.all(STIRLING.map(async (r) => {
+      const t0 = Date.now();
+      const o = await fileRoom(r.transcript, r.room, r.subsections, mode);
+      return { o, ms: Date.now() - t0 };
+    }));
+    const results: { room: string; expect: string; result: string }[] = [];
+    const rooms: Record<string, unknown> = {};
+    STIRLING.forEach((r, i) => {
+      const o = outs[i].o.body;
+      rooms[r.room] = o.ok
+        ? { seconds: Math.round(outs[i].ms / 1000), retried: !!o.retried, cut_short: !!o.cut_short, check: o.check, sections: o.sections }
+        : { seconds: Math.round(outs[i].ms / 1000), error: o.error };
+      r.expect.forEach(([label, fn]) => {
+        let ok = false;
+        try { ok = !!o.ok && fn(o); } catch { ok = false; }
+        results.push({ room: r.room, expect: label, result: ok ? "PASS" : "FAIL" });
+      });
     });
-  });
-  const passed = results.filter((x) => x.result === "PASS").length;
+    const passed = results.filter((x) => x.result === "PASS").length;
+    return { mode, passed, total: results.length, slowest_room_seconds: Math.max(...outs.map((x) => Math.round(x.ms / 1000))), results, rooms };
+  }));
+  const main = runs[0];
   return json({
-    ok: passed === results.length, model: MODEL, round: 17, version: "17.1", took_ms: Date.now() - started,
-    passed: passed + " of " + results.length, results, rooms,
+    ok: main.passed === main.total, model: MODEL, round: 17, version: "17.1", took_ms: Date.now() - started,
+    passed: main.passed + " of " + main.total, in_use: THINK,
+    compare: runs.map((r) => ({ thinking: r.mode, passed: r.passed + " of " + r.total, slowest_room_seconds: r.slowest_room_seconds,
+      fails: r.results.filter((x) => x.result !== "PASS").map((x) => x.room + ": " + x.expect) })),
+    results: main.results, rooms: main.rooms, runs,
   });
 }

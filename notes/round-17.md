@@ -100,4 +100,12 @@ ROUND 17.1 (cleanup val only, same day)
   ("check against the photo") and trims that stray text. The Lounge misses
   ("wooden seat and wind ledge", "small smart architrave") are still
   highlighted in the Word file by the app's own list.
-  test-val-round17.mjs: 25 of 25 (15 before, plus 10 for 17.1).
+  Third live run (17.1 pasted) passed 11 of 19: Bedroom 1 and Bathroom 1
+  each stopped after one flag whose reason rambled. Results vary a lot from
+  run to run (15, 17, 11) when Claude answers without thinking first.
+  17.1 now also asks again when a reason rambles (over 160 characters or
+  across lines), and the Stirling test runs each room twice side by side:
+  no thinking (what the app uses) and a short think first ("low" effort),
+  with pass counts and the slowest room's time for each. The app keeps
+  no thinking until we choose.
+  test-val-round17.mjs: 28 of 28 (15 before, plus 13 for 17.1).

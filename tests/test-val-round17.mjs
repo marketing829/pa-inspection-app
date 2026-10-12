@@ -103,5 +103,17 @@ check('17.1: type number added to the check list when the model left it off', wh
 check('17.1: a plate already listed is not listed twice; "Not present" is not listed', whys.filter(w => /82897294/.test(w)).length === 1 && !whys.some(w => /Not present/.test(w)), whys);
 check('17.1: run-on text after "why" is trimmed', j.check[0].why === 'garbled, may be door.', j.check[0].why);
 
+// 17.1: the Stirling test runs no-thinking and short-thinking side by side; the app keeps no-thinking.
+const bodies = [];
+reply = (body) => { bodies.push(body); const room = /Room: (.*)\n/.exec(body.messages[0].content)[1]; const t = /"""\n([\s\S]*)\n"""/.exec(body.messages[0].content)[1]; return tool(pad(good[room], t)); };
+j = await (await handler(new Request('https://x.web.val.run/?test=stirling&k=k1'))).json();
+const offB = bodies.filter(b => b.thinking.type === 'between_tools'), lowB = bodies.filter(b => b.thinking.type === 'adaptive');
+check('17.1: Stirling test compares no thinking and short thinking (4 rooms each)', offB.length === 4 && lowB.length === 4 && lowB.every(b => b.output_config.effort === 'low' && b.max_tokens === 16000) && offB.every(b => !b.output_config && b.max_tokens === 8192), bodies.map(b => b.thinking));
+check('17.1: comparison lists both, the app still uses no thinking', j.in_use === 'off' && j.compare.length === 2 && j.compare[0].thinking === 'off' && j.compare[1].thinking === 'low' && j.compare.every(c => c.passed === '19 of 19') && j.results.length === 19, j.compare);
+calls = 0;
+reply = () => { calls++; return tool(calls === 1 ? { ...goodRoom, check: [{ quote: 'Metal chip to the frame.', words: '', why: 'mis-heard handle description, fixed and flagged.\nunclear garbled words' }] } : goodRoom); };
+j = await (await post()).json();
+check('17.1: a reason that runs across lines counts as stuck and is asked again', calls === 2 && j.retried === true && j.check.length === 2, { calls, j });
+
 console.log(out.join('\n') + `\n\n${pass} of ${pass + fail} checks pass`);
 process.exit(fail ? 1 : 0);

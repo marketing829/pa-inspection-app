@@ -2061,22 +2061,161 @@
   .rooms-all button { flex: 1 1 0; min-height: 36px; }
   .rooms-all button { font: inherit; font-size: 13px; font-weight: 600; padding: 6px 10px; border-radius: 10px;
     border: 1px solid var(--line-2); background: var(--tint); color: var(--ink); cursor: pointer; }
+
+  /* ═══ ROUND 15 ═══════════════════════════════════════════════════════════
+     Room order sheet, Add room sheet, Settings sheet, bottom tab bar, Today
+     list, checklist tick boxes, press feedback. Screen only. */
+
+  /* Press feedback: things react the moment a finger lands (zero specificity,
+     so any button that already has its own press style keeps it). */
+  :where(button:not(.ord-grip), .room-toggle, .room-tab, .checklist-item, .engine-toggle, .today-job) { transition: transform 0.2s cubic-bezier(.2,.8,.2,1); }
+  :where(button:not(.ord-grip), .room-toggle, .room-tab, .checklist-item, .engine-toggle, .today-job):where(:active) { transform: scale(0.97); transition-duration: 0.08s; }
+
+  /* Header: settings gear beside Recordings */
+  .header-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .gear-btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: var(--tint); color: var(--ink);
+    display: inline-flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; flex: 0 0 auto; }
+  .gear-btn .ico { width: 20px; height: 20px; }
+  body.r15-tabs .recordings-link { display: none; }
+
+  /* Start screen: today's date */
+  .date-chip { display: inline-block; font-size: 13px; font-weight: 600; color: var(--ink-2); padding: 4px 11px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--tint); margin-bottom: 10px; }
+  .date-chip:empty { display: none; }
+
+  /* Today on this phone */
+  .today-jobs { margin: 16px 16px 0; }
+  .today-head { font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2); margin: 0 4px 8px; }
+  .today-list { border-radius: 22px; overflow: hidden; background: var(--glass); border: 1px solid var(--glass-edge);
+    box-shadow: var(--glass-shadow-sm), inset 0 1px 0 var(--glass-hi); }
+  .today-job { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; width: 100%; padding: 13px 14px 13px 16px;
+    border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+  .today-job:last-child { border-bottom: 0; }
+  .tj-addr { display: block; font-size: 16px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tj-meta { display: block; font-size: 13px; color: var(--ink-2); margin: 2px 0 6px; }
+  .tj-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tj-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+  .tj-chip .ico { width: 13px; height: 13px; stroke-width: 2.4; }
+  .tj-chip.ok { background: var(--ok-bg); color: var(--ok); }
+  .tj-chip.wait { background: var(--warn-bg); color: var(--warn-ink); }
+  .tj-chip.bad { background: var(--bad-bg); color: var(--bad); }
+  .tj-chip.live { background: var(--tint); color: var(--ink); border: 1px solid var(--line); }
+  .tj-go { color: var(--ink-2); display: inline-flex; }
+  .tj-go .ico { width: 18px; height: 18px; }
+
+  /* Setup rooms: three buttons on one row, Add custom room as a real button */
+  .rooms-all { flex-wrap: wrap; }
+  button.state-badge.add-room-btn { font: inherit; font-size: 13px; font-weight: 600; min-height: 40px; margin-top: 10px; padding: 8px 14px; cursor: pointer; }
+
+  /* Bottom tab bar */
+  .tab-bar { position: fixed; left: 12px; right: 12px; bottom: calc(10px + env(safe-area-inset-bottom)); z-index: 170; max-width: 520px; margin: 0 auto;
+    display: none; grid-template-columns: 1fr 1fr; gap: 6px; padding: 6px; border-radius: 28px;
+    background: var(--bar); -webkit-backdrop-filter: blur(24px) saturate(170%); backdrop-filter: blur(24px) saturate(170%);
+    border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi); }
+  body.r15-tabs .tab-bar { display: grid; }
+  body.sheet-open .tab-bar { visibility: hidden; }
+  .tab-item { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 54px; padding: 7px 0 6px;
+    border: 0; border-radius: 22px; background: transparent; color: var(--ink-2); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .tab-item .ico { width: 21px; height: 21px; }
+  .tab-item[aria-current="page"] { background: var(--sel); color: var(--sel-ink); }
+  .tab-ico { position: relative; display: inline-flex; }
+  .tab-badge { position: absolute; top: -7px; left: 13px; min-width: 20px; height: 18px; padding: 0 5px; border-radius: 999px; background: #FFDE00; color: #141518;
+    font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; }
+  .tab-badge[hidden] { display: none; }
+  body.r15-tabs .screen.active { padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
+  body.r15-tabs .toast { bottom: calc(96px + env(safe-area-inset-bottom)); }
+  body.r15-tabs .rec-back { display: none; }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .tab-bar { background: var(--bar-solid); } }
+  @media (prefers-reduced-transparency: reduce) { .tab-bar { background: var(--bar-solid); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+
+  /* Round 15 sheet: drag by the top; long content scrolls inside; buttons stay put */
+  .r15-sheet { padding: 8px 0 0; gap: 0; overflow: hidden; max-height: calc(100vh - 70px - env(safe-area-inset-top)); max-height: calc(100dvh - 70px - env(safe-area-inset-top)); }
+  .r15-top { padding: 0 16px 10px; touch-action: none; cursor: grab; display: flex; flex-direction: column; gap: 10px; flex: 0 0 auto; }
+  .r15-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 2px 16px 12px; }
+  .r15-foot { flex: 0 0 auto; padding: 10px 16px 14px; display: grid; gap: 10px; border-top: 1px solid transparent; }
+  .r15-foot.edge { border-top-color: var(--line); }
+  .r15-foot.two { grid-template-columns: 1fr 1fr; }
+  .r15-foot .btn-primary, .r15-foot .btn-export { margin: 0; justify-content: center; }
+  .r15-panel[hidden] { display: none !important; }
+  #adminSettings[hidden] { display: none; }
+  .r15-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  #r15Add:not([hidden]) { display: grid; gap: 8px; }
+  #newRoomName { width: 100%; box-sizing: border-box; padding: 13px 14px; font: inherit; font-size: 16px; border-radius: 14px;
+    background: var(--field); border: 1px solid var(--line); box-shadow: var(--field-shadow); color: var(--ink); }
+  .r15-err { margin: 0 4px; font-size: 13px; color: var(--bad); }
+  .r15-err[hidden] { display: none; }
+  .r15-picks-head { font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2); margin: 8px 4px 8px; }
+  .r15-pick { border: 1px solid var(--line); background: var(--tint); color: var(--ink); border-radius: 999px; padding: 8px 13px; font: inherit; font-size: 14px;
+    font-weight: 600; min-height: 38px; cursor: pointer; margin: 0 6px 8px 0; }
+  .r15-ver { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; padding: 12px 14px; border-radius: 16px;
+    background: var(--tint); border: 1px solid var(--line); font-size: 15px; color: var(--ink); }
+  .r15-ver b { font-variant-numeric: tabular-nums; }
+  #r15Settings .appearance-group { margin: 6px 0 4px; }
+  #r15Settings .admin-settings { margin: 10px 0 4px; }
+
+  /* Room order list: rows follow the finger; the others make way */
+  .ord-list { position: relative; border-radius: 20px; background: var(--glass); border: 1px solid var(--glass-edge); }
+  .ord-row { position: absolute; left: 0; right: 0; top: 0; height: 54px; display: flex; align-items: center; gap: 12px; padding: 0 4px 0 16px;
+    border-radius: 14px; background: transparent; color: var(--ink); will-change: transform;
+    transition: box-shadow 0.18s ease, scale 0.18s ease, background-color 0.18s; }
+  .ord-row::after { content: ''; position: absolute; left: 48px; right: 12px; bottom: 0; height: 1px; background: var(--line); }
+  .ord-row.last::after, .ord-row.lifted::after { display: none; }
+  .ord-row.lifted { z-index: 5; scale: 1.03; background: var(--bar-solid); box-shadow: 0 16px 34px rgba(0,0,0,0.22), 0 0 0 2px #FFDE00; }
+  .ord-n { width: 22px; text-align: right; font-size: 14px; font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .ord-name { flex: 1; min-width: 0; font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ord-here { font-size: 12px; font-weight: 700; color: var(--warn-ink); background: var(--warn-bg); padding: 3px 8px; border-radius: 999px; }
+  .ord-grip { width: 48px; height: 48px; border: 0; background: transparent; color: var(--ink-2); display: inline-flex; align-items: center; justify-content: center;
+    cursor: grab; touch-action: none; border-radius: 12px; padding: 0; }
+  .ord-grip .ico { width: 22px; height: 22px; }
+  .lifted .ord-grip { cursor: grabbing; }
+
+  /* Checklist: a list with tick boxes, plus Check all / Uncheck all */
+  #checklistBox.open { grid-template-columns: 1fr; gap: 2px; padding: 8px 10px 10px; }
+  #checklistBox .cl-actions { display: flex; gap: 8px; margin: 0 0 6px; }
+  #checklistBox .cl-actions button { flex: 1 1 0; min-height: 38px; font: inherit; font-size: 13px; font-weight: 600; border-radius: 10px;
+    border: 1px solid var(--line-2); background: var(--tint); color: var(--ink); cursor: pointer; }
+  #checklistBox .checklist-item { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 6px 8px; border: 0; background: transparent;
+    border-radius: 12px; font-size: 15px; font-weight: 500; color: var(--ink); text-decoration: none; }
+  #checklistBox .checklist-item.done { color: var(--ink-2); background: transparent; }
+  .cl-box { width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid var(--line-2); display: inline-flex; align-items: center; justify-content: center;
+    flex: 0 0 auto; font-style: normal; }
+  .cl-box .ico { width: 15px; height: 15px; stroke-width: 2.6; opacity: 0; }
+  .checklist-item.done .cl-box { background: var(--sel); border-color: transparent; color: var(--sel-ink); }
+  .checklist-item.done .cl-box .ico { opacity: 1; }
+  #checklistBox .checklist-tip { grid-column: 1 / -1; }
+
+  /* Swipe between rooms; hold a tab for Room order */
+  #roomContent { touch-action: pan-y pinch-zoom; -webkit-user-select: none; user-select: none; }
+  /* The rise-in animation kept holding transform/opacity after it ended ("both"),
+     which overrode the swipe. Hold the start only, then let go. */
+  #screenInspection > #roomContent { animation-fill-mode: backwards; }
+  #roomContent textarea, #roomContent input { -webkit-user-select: text; user-select: text; }
+  .room-tab { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  .sheet-grab, .sheet-head { touch-action: none; }
+  @media (prefers-reduced-motion: reduce) {
+    :where(button:not(.ord-grip), .room-toggle, .room-tab, .checklist-item, .engine-toggle, .today-job) { transition: none; }
+    .ord-row { transition: none; }
+  }
+  /* Small phones: long room names wrap inside their box instead of pushing the page sideways */
+  .rooms-select { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .room-toggle { min-width: 0; overflow-wrap: anywhere; }
+  #r15Title:focus { outline: none; }
 </style>
 </head>
 <body>
 
 <div class="header">
   <div class="header-logo"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAAWfmNhQlgAABZ+anVtYgAAAB5qdW1kYzJwYQARABCAAACqADibcQNjMnBhAAAAFlhqdW1iAAAAR2p1bWRjMm1hABEAEIAAAKoAOJtxA3VybjpjMnBhOjk0M2FmZWNkLTBjNGEtNDE3Yi1hMDFhLWYyYTI1NjM2Mzk3ZQAAAAOTanVtYgAAAClqdW1kYzJhcwARABCAAACqADibcQNjMnBhLmFzc2VydGlvbnMAAAAAuGp1bWIAAABEanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5pbmdyZWRpZW50LnYzAAAAABhjMnNohbRyDZvTTK4IKYBMmKI9BQAAAGxjYm9yo2lkYzpmb3JtYXRpaW1hZ2UvcG5namluc3RhbmNlSUR4LHhtcDppaWQ6NTdhZDIyMjEtZjMwZi00ZTQxLWJmNjQtYWExOTRiZGMwYzkzbHJlbGF0aW9uc2hpcGhwYXJlbnRPZgAAAeJqdW1iAAAAQWp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuYWN0aW9ucy52MgAAAAAYYzJzaHGp+Q6vGJp9pd4+AtSjR4sAAAGZY2JvcqJnYWN0aW9uc4KiZmFjdGlvbmtjMnBhLm9wZW5lZGpwYXJhbWV0ZXJzoWtpbmdyZWRpZW50c4GiY3VybHgtc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5pbmdyZWRpZW50LnYzZGhhc2hYIKaHlb40EjRZJw7Ylankf01UMIDWaO1KsYjoWhY0upycpGZhY3Rpb254HWNvbS5hbnRocm9waWMuY2xhdWRlLnByb3ZpZGVkanBhcmFtZXRlcnOheB9jb20uYW50aHJvcGljLm9yaWdpbi1jb25maWRlbmNlZ3Vua25vd25rZGVzY3JpcHRpb254ZkNsYXVkZSBwcm92aWRlZCB0aGlzIGZpbGUgYXQgdGhlIHJlcXVlc3Qgb2YgYSB1c2VyIGFuZCBtYXkgaGF2ZSBjcmVhdGVkIG9yIG1vZGlmaWVkIHRoZSBmaWxlIGNvbnRlbnRzLm1zb2Z0d2FyZUFnZW50oWRuYW1lZkNsYXVkZXJhbGxBY3Rpb25zSW5jbHVkZWT1AAAAyGp1bWIAAABAanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5oYXNoLmRhdGEAAAAAGGMyc2iy9tsYYPaJKCBXLwOPrYbZAAAAgGNib3KlY2FsZ2ZzaGEyNTZjcGFkTQAAAAAAAAAAAAAAAABkaGFzaFggTggu2/Y0rzbFSO1ggWC+jP8Wl9dd5Hud1ay43SibPOZkbmFtZW5qdW1iZiBtYW5pZmVzdGpleGNsdXNpb25zgaJlc3RhcnQYIWZsZW5ndGgZFooAAAI+anVtYgAAACdqdW1kYzJjbAARABCAAACqADibcQNjMnBhLmNsYWltLnYyAAAAAg9jYm9ypWNhbGdmc2hhMjU2aXNpZ25hdHVyZXhNc2VsZiNqdW1iZj0vYzJwYS91cm46YzJwYTo5NDNhZmVjZC0wYzRhLTQxN2ItYTAxYS1mMmEyNTYzNjM5N2UvYzJwYS5zaWduYXR1cmVqaW5zdGFuY2VJRHgseG1wOmlpZDo4NmU1YzQyMy02NzA3LTQ0OGUtOTE0NC0yODQ0ZmI5ODkwZDlyY3JlYXRlZF9hc3NlcnRpb25zg6JjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggpoeVvjQSNFknDtiVqeR/TVQwgNZo7UqxiOhaFjS6nJyiY3VybHgqc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5hY3Rpb25zLnYyZGhhc2hYIF/zvdDcN3FtCIPe6v9im7kLocFTmvYdLGJ3OMFIJZOHomN1cmx4KXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaGFzaC5kYXRhZGhhc2hYIPYxNfo/93DSTlMEncNO1F5pMo+MdXJqnDhgcoB7mYa9dGNsYWltX2dlbmVyYXRvcl9pbmZvo2RuYW1lb0FudGhyb3BpYyBGaWxlc2d2ZXJzaW9uZTEuMC4wa3NwZWNWZXJzaW9uZTIuNC4wAAAQOGp1bWIAAAAoanVtZGMyY3MAEQAQgAAAqgA4m3EDYzJwYS5zaWduYXR1cmUAAAAQCGNib3LShFkCEqIBJhghWQIKMIICBjCCAY2gAwIBAgIUQOWgCu7COdC+uIP6BkIFPWdVEwAwCgYIKoZIzj0EAwMwSTEXMBUGA1UEChMOQW50aHJvcGljLCBQQkMxLjAsBgNVBAMTJUFudGhyb3BpYyBDb250ZW50IENyZWRlbnRpYWxzIFJvb3QgQ0EwHhcNMjYwODA3MTg0MzU2WhcNMjgwODA2MTk0MzU2WjBEMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEpMCcGA1UEAxMgQW50aHJvcGljIENsYXVkZSBDb250ZW50IFNpZ25pbmcwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAASYegpry1AYBRTVNL1CpTlbROnY3dey+UrsF9C3phYrATN3ZHf93Mo8RQN0KOUuOn19P4oWNFWe5n2/She9N7eTo1gwVjAOBgNVHQ8BAf8EBAMCB4AwFQYDVR0lBA4wDAYKKwYBBAGD6F4CATAMBgNVHRMBAf8EAjAAMB8GA1UdIwQYMBaAFM5R4gSBTmRbI/jjxM+aPpzB11zCMAoGCCqGSM49BAMDA2cAMGQCMDFzHRSeAXrSy1WOzkbhPZ6Km2wGTmZ/2gK18k8BQGXyqz88Rdrz6CTX9flAnYNVxgIwcF9c3fVhqmJKpi+UhasNUMko69cyX6STPfta3Q8EjyzDjzoyrol46FP6VFHhvUcJoWNwYWRZDZ4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA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" alt="Property Assist" width="34" height="34"><span class="brand-word" aria-hidden="true">PROPERTY ASSIST</span></div>
-  <button class="recordings-link" onclick="showRecordings()" aria-label="Recordings">Recordings<span class="rec-badge" id="recBadge" style="display:none">0</span></button>
+  <span class="header-actions"><button class="recordings-link" onclick="showRecordings()" aria-label="Recordings">Recordings<span class="rec-badge" id="recBadge" style="display:none">0</span></button><button type="button" class="gear-btn" id="gearBtn" onclick="openSettings()" aria-label="Settings"><svg class="ico ico-gear" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.5-2-3.4-2.3.9a7.4 7.4 0 0 0-2.6-1.5L14.1 2.5h-4.2l-.4 2.5a7.4 7.4 0 0 0-2.6 1.5l-2.3-.9-2 3.4 2 1.5a7.6 7.6 0 0 0 0 3l-2 1.5 2 3.4 2.3-.9a7.4 7.4 0 0 0 2.6 1.5l.4 2.5h4.2l.4-2.5a7.4 7.4 0 0 0 2.6-1.5l2.3.9 2-3.4z"/></svg></button></span>
   <div class="header-title" id="headerTitle"></div>
 </div>
 
 <!-- SETUP SCREEN -->
 <div class="screen active" id="screenSetup">
   <div class="setup-hero">
-    <div class="eyebrow">Entry condition report</div>
+    <div class="date-chip" id="dateChip"></div>
     <h1><span class="fade">Start</span> Inspection</h1>
-    <p>Fill in the property details, pick the rooms, then talk through each room in one go.</p>
+    <p>Entry condition report. Fill in the details, pick the rooms, then record each room.</p>
   </div>
 
   <!-- Round 10: what's still on its way to Dropbox, from any job. -->
@@ -2085,6 +2224,12 @@
     <span class="sync-words"><b id="syncCardTitle"></b><span id="syncCardText"></span></span>
     <span class="sync-go" aria-hidden="true">›</span>
   </button>
+
+  <!-- ROUND 15: jobs recorded on this phone today, with where their audio is. -->
+  <div class="today-jobs" id="todayJobs" hidden>
+    <div class="today-head">Today on this phone</div>
+    <div class="today-list" id="todayList"></div>
+  </div>
 
   <div class="safari-banner" id="safariBanner" style="display:none"><svg class="ico ico-alert" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 4.6L2.9 17.5A2 2 0 0 0 4.6 20.5h14.8a2 2 0 0 0 1.7-3L13.7 4.6a2 2 0 0 0-3.4 0z"/><path d="M12 9.5v4.2M12 17h.01"/></svg><span><b>Open the PA icon on your Home Screen.</b> Safari keeps its own copy and can delete recordings after 7 days.</span></div>
 
@@ -2124,44 +2269,11 @@
 
     <div class="field-group">
       <div class="rooms-head"><label>Rooms Present at Property</label>
-        <span class="rooms-all"><button type="button" id="btnRoomsAll" onclick="setAllRooms(true)">Check all</button><button type="button" id="btnRoomsNone" onclick="setAllRooms(false)">Uncheck all</button></span></div>
+        <span class="rooms-all"><button type="button" id="btnRoomsAll" onclick="setAllRooms(true)">Check all</button><button type="button" id="btnRoomsNone" onclick="setAllRooms(false)">Uncheck all</button><button type="button" id="btnRoomsOrder" onclick="openRoomOrder('setup')">Change order</button></span></div>
       <div class="rooms-select" id="roomsSelect"></div>
-      <span class="state-badge" onclick="addCustomSetupRoom()"><svg class="ico ico-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add custom room</span>
+      <button type="button" class="state-badge add-room-btn" onclick="addCustomSetupRoom()"><svg class="ico ico-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add custom room</button>
     </div>
 
-    <!-- Service settings. Inspectors never need these, and a stray tap here
-         used to be able to break uploads, so they're tucked away. -->
-    <details class="admin-settings" id="adminSettings">
-      <summary>Admin settings <span class="app-ver">· app version 13</span></summary>
-    <div class="field-group appearance-group">
-      <label>Appearance</label>
-      <div class="engine-select theme-select" id="themeSelect">
-        <div class="engine-toggle" data-theme-choice="light" onclick="setTheme('light')">Light</div>
-        <div class="engine-toggle" data-theme-choice="dark" onclick="setTheme('dark')">Dark</div>
-        <div class="engine-toggle" data-theme-choice="auto" onclick="setTheme('auto')">Match phone</div>
-      </div>
-    </div>
-      <p class="admin-warn">For Daphne / admin only. Changing these can stop recordings reaching Dropbox.</p>
-    <div class="field-group">
-      <label>Transcription engine</label>
-      <div class="engine-select" id="engineSelect"></div>
-      <input type="url" id="transcribeUrl" placeholder="Paste the service URL for this engine">
-      <span class="export-note" id="engineNote" style="margin-top:2px"></span>
-      <span class="export-note" style="margin-top:2px">Each engine remembers its own URL, so switching back and forth is one tap. Leave the URL blank to use on-device dictation only. When set, each room's audio is recorded and transcribed accurately — it works offline and uploads once you're back in signal.</span>
-    </div>
-
-    <div class="field-group">
-      <label>Dropbox archive URL (optional)</label>
-      <input type="url" id="archiveUrl" placeholder="Paste your Dropbox archive service URL to auto-save recordings">
-      <span class="export-note" style="margin-top:2px">When set, each room's audio and transcript are saved automatically into a dated property folder in Dropbox as they transcribe. Leave blank to keep recordings on the phone only.</span>
-    </div>
-
-    <div class="field-group">
-      <label>AI cleanup URL (optional)</label>
-      <input type="url" id="cleanupUrl" placeholder="Paste your cleanup service URL">
-      <span class="export-note" style="margin-top:2px">When set, each room's transcript gets a second pass that fixes mishears in context, breaks run-on sentences, files the text under the right subsections, and lists anything it wasn't sure about so the typist can check just those spots instead of playing the whole recording. Leave blank to use the app's own keyword split.</span>
-    </div>
-    </details>
 
     <button class="btn-primary" id="btnStartInspection" onclick="startInspection()">
       <span>Start inspection</span><svg class="ico ico-arrowR" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13.5 6.5L19 12l-5.5 5.5"/></svg>
@@ -2222,12 +2334,12 @@
 <div class="screen" id="screenRecordings">
   <div class="review-header">
     <h2><span class="fade">Rec</span>ordings</h2>
-    <p>Saved on this phone. Kept 14 days after it reaches Dropbox.</p>
+    <p>Kept on this phone for 14 days after sending.</p>
   </div>
   <div class="review-body" id="recordingsBody"></div>
   <div class="export-actions">
     <button class="btn-export" onclick="shareAllRecordings()"><svg class="ico ico-share" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14.5V4M8 8l4-4 4 4M5.5 12.5v6c0 .6.4 1 1 1h11c.6 0 1-.4 1-1v-6"/></svg><span>Send this property's audio to the VA</span></button>
-    <button class="btn-export secondary" onclick="closeRecordings()"><svg class="ico ico-chevL" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg><span>Back</span></button>
+    <button class="btn-export secondary rec-back" onclick="closeRecordings()"><svg class="ico ico-chevL" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg><span>Back</span></button>
   </div>
 </div>
 
@@ -2248,6 +2360,69 @@
   <button type="button" class="btn-export secondary fix-keep" onclick="saveFix(true)">It's correct, keep as is</button>
   <p class="export-note">Your fix goes into this room's files in Dropbox, so the typist doesn't have to check it.</p>
 </div>
+
+<!-- ROUND 15: one sheet for Room order, Add room and Settings -->
+<div class="sheet-backdrop" id="r15Backdrop" onclick="closeR15Sheet()"></div>
+<div class="sheet r15-sheet" id="r15Sheet" role="dialog" aria-modal="true" aria-labelledby="r15Title">
+  <div class="r15-top" id="r15Top">
+    <div class="sheet-grab" aria-hidden="true"></div>
+    <div class="sheet-head">
+      <div><div class="sheet-title" id="r15Title"></div><div class="sheet-sub" id="r15Sub"></div></div>
+      <button type="button" class="sheet-close" onclick="closeR15Sheet()" aria-label="Close">×</button>
+    </div>
+  </div>
+  <div class="r15-body" id="r15Body">
+    <div class="r15-panel" id="r15Order" hidden><div class="ord-list" id="ordList"></div><span class="r15-live" id="ordLive" aria-live="polite"></span></div>
+    <div class="r15-panel" id="r15Add" hidden>
+      <label class="fix-label" for="newRoomName">Room name</label>
+      <input type="text" id="newRoomName" maxlength="40" autocomplete="off" placeholder="e.g. Granny flat">
+      <p class="r15-err" id="newRoomErr" hidden></p>
+      <div class="r15-picks" id="newRoomPicks"></div>
+    </div>
+    <div class="r15-panel" id="r15Settings" hidden>
+    <div class="field-group appearance-group">
+      <label>Appearance</label>
+      <div class="engine-select theme-select" id="themeSelect">
+        <div class="engine-toggle" data-theme-choice="light" onclick="setTheme('light')">Light</div>
+        <div class="engine-toggle" data-theme-choice="dark" onclick="setTheme('dark')">Dark</div>
+        <div class="engine-toggle" data-theme-choice="auto" onclick="setTheme('auto')">Match phone</div>
+      </div>
+    </div>
+    <!-- Service settings. Inspectors never need these, and a stray tap here
+         used to be able to break uploads, so they're tucked away. -->
+    <details class="admin-settings" id="adminSettings">
+      <summary>Admin settings <span class="app-ver">· app version 15</span></summary>
+      <p class="admin-warn">For Daphne / admin only. Changing these can stop recordings reaching Dropbox.</p>
+    <div class="field-group">
+      <label>Transcription engine</label>
+      <div class="engine-select" id="engineSelect"></div>
+      <input type="url" id="transcribeUrl" placeholder="Paste the service URL for this engine">
+      <span class="export-note" id="engineNote" style="margin-top:2px"></span>
+      <span class="export-note" style="margin-top:2px">Each engine remembers its own URL, so switching back and forth is one tap. Leave the URL blank to use on-device dictation only. When set, each room's audio is recorded and transcribed accurately — it works offline and uploads once you're back in signal.</span>
+    </div>
+
+    <div class="field-group">
+      <label>Dropbox archive URL (optional)</label>
+      <input type="url" id="archiveUrl" placeholder="Paste your Dropbox archive service URL to auto-save recordings">
+      <span class="export-note" style="margin-top:2px">When set, each room's audio and transcript are saved automatically into a dated property folder in Dropbox as they transcribe. Leave blank to keep recordings on the phone only.</span>
+    </div>
+
+    <div class="field-group">
+      <label>AI cleanup URL (optional)</label>
+      <input type="url" id="cleanupUrl" placeholder="Paste your cleanup service URL">
+      <span class="export-note" style="margin-top:2px">When set, each room's transcript gets a second pass that fixes mishears in context, breaks run-on sentences, files the text under the right subsections, and lists anything it wasn't sure about so the typist can check just those spots instead of playing the whole recording. Leave blank to use the app's own keyword split.</span>
+    </div>
+    </details>
+    </div>
+  </div>
+  <div class="r15-foot" id="r15Foot"></div>
+</div>
+
+<!-- ROUND 15: bottom tab bar on the Start screen (and Recordings opened from it) -->
+<nav class="tab-bar" id="tabBar" aria-label="Main">
+  <button type="button" class="tab-item" id="tabToday" onclick="r15GoToday()"><span class="tab-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14" rx="3"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg></span><span>Today</span></button>
+  <button type="button" class="tab-item" id="tabRecs" onclick="r15GoRecordings()"><span class="tab-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 10.5v3"/></svg><span class="tab-badge" id="tabRecBadge" hidden>0</span></span><span>Recordings</span></button>
+</nav>
 
 <div class="toast" id="toast"></div>
 
@@ -2946,10 +3121,32 @@ let queueRunning = false;    // guard so the upload queue runs once at a time
 let queueStartedAt = 0;      // when the running pass started — the watchdog uses it
 let queueRunId = 0;          // bumps on every pass; a pass the watchdog abandoned stops writing
 let queueController = null;  // aborts whatever request the running pass is waiting on
-const QUEUE_STUCK_MS = 7 * 60 * 1000; // longer than every timeout on one room added together
+const QUEUE_STUCK_MS = 12 * 60 * 1000; // longer than any one step's deadlines (round 14: 12 min, timed per step)
 const audioInFlight = new Map(); // record id → its audio upload in progress (no double uploads; ROUND 11: others wait for it)
 let pendingRoomMap = {};     // roomId -> 'pending' | 'uploading' for nav badges
 let photoQueueRunning = false; // guard so the serial-photo upload queue runs once at a time
+
+// ROUND 14 (Archibald, 9 Oct): the phone had signal all job, photos and text
+// reached Dropbox, but not one recording ever left it, and seven rooms sat on
+// "sending" until Finish. So: every network step, every phone-storage step and
+// every read of a stored recording now has a hard deadline (a send that never
+// answers, or ignores its abort, can no longer hold a queue), and every pass
+// has a watchdog. The numbers live here so the tests can shorten them.
+const APP_ROUND = 15;
+const TIMING = {
+  grace: 5000,              // added to a request's own time limit before giving up on it outright
+  readMs: 20000,            // reading one stored recording into memory
+  dbMs: 20000,              // one phone-storage transaction
+  jsonMs: 30000,            // reading a server's answer
+  archiveBaseMs: 120000,    // one Dropbox audio upload, plus 8 s per MB
+  passStuckMs: 12 * 60000   // a Dropbox / photo / Word-file pass stuck this long on ONE item is abandoned
+};
+let archiveStartedAt = 0, archiveRunId = 0;
+let photoQueueStartedAt = 0, photoQueueRunId = 0;
+let jobDocStartedAt = 0, jobDocRunId = 0;
+const UNREADABLE_TRIES = 3;              // failed reads before a recording is called damaged...
+const UNREADABLE_SPREAD_MS = 10 * 60000;  // ...spread over at least this long (a passing fault isn't damage)
+const storedRecs = new WeakSet();         // unsaved recordings whose record IS in storage (only their audio isn't)
 
 // ─── PERSISTENCE ──────────────────────────────────────────────────────────────
 // localStorage writes are synchronous and serialise the whole inspection every
@@ -3232,7 +3429,7 @@ function initSetup() {
       const recs = await dbAll();
       const now = Date.now();
       if (cloudEnabled() && recs.some(r => r.status === 'pending' && !(r.nextTryAt > now))) processQueue();
-      else if (cloudArchiveEnabled() && recs.some(r => ((r.status === 'done' || r.status === 'failed') && r.archived !== true && r.blob && !(r.archNextAt > now))
+      else if (cloudArchiveEnabled() && recs.some(r => ((r.status === 'done' || r.status === 'failed') && r.archived !== true && (hasAudio(r) || r.unreadable) && !(r.archNextAt > now))
         || (r.archived === true && r.jsonError && !r.jsonArchived && !(r.jsonNextAt > now)))) processArchiveQueue();
       if (cloudArchiveEnabled()) processPhotoQueue();
       if (cloudArchiveEnabled() && !archiveRunning && jobDocsWaiting()) processArchiveQueue();
@@ -3248,6 +3445,16 @@ function initSetup() {
     sweepOldJobs();
     updatePendingUI();
     if (navigator.onLine) processQueue();
+    retryDamagedOnce();
+    // ROUND 14: recordings still not in Dropbox 10+ minutes after they were
+    // made go to the val's log once, with their last error.
+    dbAll().then(recs => {
+      const stuck = recs.filter(r => r.kind !== 'summary' && hasAudio(r) && !r.audioArchived && r.archived !== true
+        && Date.now() - (r.createdAt || 0) > 10 * 60000);
+      if (stuck.length) sendDiag('backlog', null, stuck.length + ' recording(s) not in Dropbox after 10+ minutes', {
+        rooms: stuck.slice(0, 20).map(r => ({ room: r.roomName || '', address: r.address || '', status: r.status, last: (r.errLog || []).slice(-1)[0] || r.lastError || r.archError || '' }))
+      });
+    }).catch(() => {});
   });
   if (navigator.onLine) processPhotoQueue();
 }
@@ -3261,8 +3468,8 @@ function setAllRooms(on) {
   document.querySelectorAll('#roomsSelect .room-toggle').forEach(d => d.classList.toggle('selected', !!on));
 }
 
-function addCustomSetupRoom() {
-  const name = prompt('Name of the custom room');
+function addCustomSetupRoom() { openAddRoom('setup'); }
+function addCustomSetupRoomNamed(name) {
   if (!name || !name.trim()) return;
   const room = { id: 'custom_' + Date.now(), name: name.trim(), subsections: templateRowsForName(name) };
   ROOM_LIBRARY.push(room);
@@ -3421,8 +3628,7 @@ function renderRoomContent() {
   tools.innerHTML = `
     <button onclick="renameRoom()">${ico('pencil')}<span>Rename</span></button>
     <button onclick="addRoom()">${ico('plus')}<span>Add room</span></button>
-    <button onclick="moveRoom(-1)" ${isFirst ? 'disabled' : ''}>${ico('moveL')}<span>Move left</span></button>
-    <button onclick="moveRoom(1)" ${isLastRoom ? 'disabled' : ''}>${ico('moveR')}<span>Move right</span></button>
+    <button onclick="openRoomOrder('room')" ${state.rooms.length < 2 ? 'disabled' : ''}>${ico('order')}<span>Room order</span></button>
     <button class="danger" onclick="deleteRoom()">${ico('trash')}<span>Delete</span></button>
   `;
   content.appendChild(tools);
@@ -3445,18 +3651,18 @@ function renderRoomContent() {
   let chips = '';
   room.subsections.forEach((sub, i) => {
     const done = !!(state.checked[room.id] && state.checked[room.id][sub]);
-    chips += `<span class="checklist-item ${done ? 'done' : ''}" id="chk-${room.id}-${i}" onclick="toggleCheck('${room.id}', ${i})">${escapeHtml(sub)}</span>`;
+    chips += `<span class="checklist-item ${done ? 'done' : ''}" id="chk-${room.id}-${i}" onclick="toggleCheck('${room.id}', ${i})"><i class="cl-box">${ico('check')}</i>${escapeHtml(sub)}</span>`;
   });
 
   const flagged = findForbidden(val);
 
   block.innerHTML = `
     <div class="next-sub" id="nextSub"></div>
-    <div class="checklist ${checklistOpen ? 'open' : ''}" id="checklistBox">${chips}<p class="checklist-tip">Say the row name, pause, then describe it. “Scratch that” removes the last sentence.</p></div>
+    <div class="checklist ${checklistOpen ? 'open' : ''}" id="checklistBox"><div class="cl-actions"><button type="button" onclick="checkAllRows(true)">Check all</button><button type="button" onclick="checkAllRows(false)">Uncheck all</button></div>${chips}<p class="checklist-tip">Say the row name, pause, then describe it. “Scratch that” removes the last sentence.</p></div>
     <div class="live-preview" id="livePreview"></div>
     <div class="tx-wait" id="txWait"></div>
     <textarea class="room-dictate ${flagged.length ? 'flagged' : ''}" id="roomta-${room.id}" rows="9"
-      placeholder="The accurate transcript lands here after each recording. You can also type."
+      placeholder="Transcript shows here after recording. You can also type."
       oninput="onRoomEdit('${room.id}')">${escapeHtml(val)}</textarea>
     <div class="forbidden-warning ${flagged.length ? 'show' : ''}" id="roomwarn-${room.id}">
       ${flagged.length ? 'Avoid: ' + flagged.join(', ') : ''}
@@ -3585,7 +3791,7 @@ function renderNextSub() {
   const sub = nextSubsection(room);
   box.classList.add('show');
   box.innerHTML = (sub
-      ? `<span class="ns-text"><span class="ns-label">Next</span><strong>${escapeHtml(sub)}</strong></span>`
+      ? `<span class="ns-text"><span class="ns-label">Next · ${(room.subsections || []).filter(x => (state.checked[room.id] || {})[x]).length} of ${(room.subsections || []).length}</span><strong>${escapeHtml(sub)}</strong></span>`
         + `<button type="button" class="next-sub-btn" onclick="tickAndAdvance()" aria-label="Done, next row">${ico('check')}</button>`
       : `<span class="ns-text"><span class="ns-label">All rows</span><strong>covered</strong></span>`)
     + `<button type="button" class="next-sub-more${checklistOpen ? ' up' : ''}" id="checklistToggle" onclick="toggleChecklist()" aria-label="${checklistOpen ? 'Hide' : 'Show'} all rows">${ico('chevD')}</button>`;
@@ -3647,21 +3853,21 @@ function scheduleLivePreview(roomId, text, live) {
 // 30 seconds, and they can move on. No signal or a failed try: the audio is
 // safe and the text follows. Shown as the box's placeholder when it's empty,
 // and as a line above it when there's already text from an earlier recording.
-const TX_PLACEHOLDER = 'The accurate transcript lands here after each recording. You can also type.';
+const TX_PLACEHOLDER = 'Transcript shows here after recording. You can also type.';
 function paintTranscriptWait(roomId, m) {
   const ta = document.getElementById('roomta-' + roomId);
   const line = document.getElementById('txWait');
   if (!ta) return;
   let msg = '', kind = '';
-  if (listeningRoom === roomId && !recPaused) { msg = 'Recording… your words will appear here after you tap Done.'; kind = 'rec'; }
-  else if (listeningRoom === roomId) { msg = 'Paused. Tap the button to carry on, or Done to finish this room.'; kind = 'rec'; }
-  else if (m.uploading || (m.pending && navigator.onLine && !m.attempts)) { msg = 'Transcribing… usually 10–30 seconds. You can move to the next room.'; kind = 'wait'; }
-  else if (m.pending || (m.failed && !m.done && !m.noAudio)) { msg = 'Audio saved. The transcript will come through when there\'s signal.'; kind = 'wait'; }
+  if (listeningRoom === roomId && !recPaused) { msg = 'Recording… your words appear after you tap Done.'; kind = 'rec'; }
+  else if (listeningRoom === roomId) { msg = 'Paused. Tap the button to carry on, or Done to finish.'; kind = 'rec'; }
+  else if (m.uploading || (m.pending && navigator.onLine && !m.attempts)) { msg = 'Transcribing… about 10–30 seconds. You can move on.'; kind = 'wait'; }
+  else if (m.pending || (m.failed && !m.done && !m.noAudio)) { msg = 'Audio saved. Text comes through when there\'s signal.'; kind = 'wait'; }
   ta.placeholder = msg || TX_PLACEHOLDER;
   if (line) {
     const show = !!msg && !!ta.value.trim();
     line.className = 'tx-wait' + (show ? ' show ' + kind : '');
-    line.textContent = show ? msg.replace('your words will appear here', 'new words are added below') : '';
+    line.textContent = show ? msg.replace('your words appear', 'new words are added below') : '';
   }
 }
 
@@ -3766,8 +3972,8 @@ function renameRoom() {
   renderInspection();
 }
 
-function addRoom() {
-  const name = prompt('Name of the new room', 'New Room');
+function addRoom() { openAddRoom('room'); }
+function addRoomNamed(name) {
   if (!name || !name.trim()) return;
   const room = { id: 'custom_' + Date.now(), name: name.trim(), subsections: templateRowsForName(name) };
   state.rooms.splice(state.currentRoomIdx + 1, 0, room);
@@ -4424,13 +4630,14 @@ function stopListening(opts) {
 // the browser lacks MediaRecorder/IndexedDB — dictation still works as before.
 const AUDIO_STORE = 'recordings';
 const PHOTO_STORE = 'serialphotos';
+const BYTES_STORE = 'audiobytes';   // ROUND 14: audio kept as plain bytes, keyed by the recording's id
 function cloudEnabled() { return !!TRANSCRIBE_URL; }
 
 function openAudioDB() {
   return new Promise((resolve, reject) => {
     if (audioDB) return resolve(audioDB);
     if (!('indexedDB' in window)) return reject(new Error('no-indexeddb'));
-    const req = indexedDB.open('pa_audio_db', 2);
+    const req = indexedDB.open('pa_audio_db', 3);   // ROUND 14: 3 adds BYTES_STORE
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains(AUDIO_STORE)) {
@@ -4438,6 +4645,9 @@ function openAudioDB() {
       }
       if (!db.objectStoreNames.contains(PHOTO_STORE)) {
         db.createObjectStore(PHOTO_STORE, { keyPath: 'id', autoIncrement: true });
+      }
+      if (!db.objectStoreNames.contains(BYTES_STORE)) {
+        db.createObjectStore(BYTES_STORE, { keyPath: 'id' });
       }
     };
     req.onsuccess = () => {
@@ -4457,35 +4667,79 @@ function openAudioDB() {
 function dbRetryable(e) {
   const n = e && e.name, m = String((e && e.message) || '');
   return n === 'InvalidStateError' || n === 'UnknownError' || n === 'AbortError' || n === 'TransactionInactiveError'
+    || n === 'TimeoutError'   // ROUND 14: a transaction that never finishes (iOS after the background)
     || /connection|closing|closed|lost/i.test(m);
 }
 // One transaction. It resolves when the write has really been committed, not
 // when the request said yes (a full phone can still refuse at commit). On a
 // dropped connection it opens a fresh one and tries once more.
 function dbTx(storeName, mode, body) {
-  const once = () => openAudioDB().then(db => new Promise((resolve, reject) => {
+  const once = () => withDeadline(openAudioDB().then(db => new Promise((resolve, reject) => {
     let tx, out;
     try { tx = db.transaction(storeName, mode); } catch (e) { reject(e); return; }
     tx.oncomplete = () => resolve(out);
     tx.onabort = () => reject(tx.error || new DOMException('transaction aborted', 'AbortError'));
     try { body(tx.objectStore(storeName), v => { out = v; }); }
     catch (e) { try { tx.abort(); } catch (e2) {} reject(e); }
-  }));
+  })), TIMING.dbMs, 'phone storage');
   return once().catch(e => {
     if (!dbRetryable(e)) throw e;
+    // ROUND 14: a write that timed out may still go through; trying it again
+    // could save a recording twice. Only reads are tried again after a timeout.
+    if (e && e.name === 'TimeoutError' && mode !== 'readonly') throw e;
     try { if (audioDB) audioDB.close(); } catch (e2) {}
     audioDB = null;
     return once();
   });
 }
+// ROUND 14: on a phone whose stored files fail the read-back check after Done,
+// a recording's audio is kept as plain bytes in a store of its own (BYTES_STORE,
+// keyed by the recording's id) and the record says bytesStored. The bytes are
+// loaded only when needed (sending, playing, sharing), so listing recordings
+// stays as light as before. In memory a record may still carry its file; it is
+// never written alongside the bytes.
+function storedForm(rec) {
+  if (!rec || !rec.bytesStored || !rec.blob) return rec;
+  const c = Object.assign({}, rec);
+  c.blob = null;
+  return c;
+}
 function dbAdd(rec) {
-  return dbTx(AUDIO_STORE, 'readwrite', (s, set) => { const r = s.add(rec); r.onsuccess = () => set(r.result); });
+  return dbTx(AUDIO_STORE, 'readwrite', (s, set) => { const r = s.add(storedForm(rec)); r.onsuccess = () => set(r.result); });
 }
 function dbAll() {
   return dbTx(AUDIO_STORE, 'readonly', (s, set) => { const r = s.getAll(); r.onsuccess = () => set(r.result || []); }).then(v => v || []);
 }
+function dbGet(id) {
+  return dbTx(AUDIO_STORE, 'readonly', (s, set) => { const r = s.get(id); r.onsuccess = () => set(r.result || null); }).then(v => v || null);
+}
 function dbPut(rec) {
-  return dbTx(AUDIO_STORE, 'readwrite', (s, set) => { const r = s.put(rec); r.onsuccess = () => set(r.result); });
+  return dbTx(AUDIO_STORE, 'readwrite', (s, set) => { const r = s.put(storedForm(rec)); r.onsuccess = () => set(r.result); });
+}
+function bytesPut(id, ab) { return dbTx(BYTES_STORE, 'readwrite', s => { s.put({ id, bytes: ab }); }); }
+function bytesGet(id) { return dbTx(BYTES_STORE, 'readonly', (s, set) => { const r = s.get(id); r.onsuccess = () => set(r.result ? r.result.bytes : null); }); }
+function bytesDelete(id) { return dbTx(BYTES_STORE, 'readwrite', s => { s.delete(id); }).catch(() => {}); }
+// The recording as a file, for playing and sharing.
+async function recBlob(rec) {
+  if (!rec) return null;
+  if (rec.blob) return rec.blob;
+  if (rec.bytesStored && rec.id != null) {
+    const ab = await bytesGet(rec.id).catch(() => null);
+    if (ab) return new Blob([ab], { type: rec.type || 'audio/mp4' });
+  }
+  return null;
+}
+// Store a recording's audio as bytes and check it reads back whole. Only the
+// audio fields change on the stored record, never its status.
+async function saveAsBytes(rec, blob) {
+  const ab = await withDeadline(blobBytes(blob), TIMING.readMs, 'reading the recording');
+  if (!ab || !ab.byteLength) throw new Error('recording is empty');
+  await bytesPut(rec.id, ab);
+  const back = await bytesGet(rec.id);
+  if (!back || back.byteLength !== ab.byteLength) throw new Error('recording could not be stored and read back');
+  rec.bytesStored = true;
+  rec.bytesSize = ab.byteLength;
+  await dbUpdate(rec.id, r => { r.bytesStored = true; r.bytesSize = ab.byteLength; r.blob = null; });
 }
 // Read the record fresh and change it in one transaction. Passes that hold a
 // copy for a long time (the Dropbox pass, the Retry button) use this, so their
@@ -4497,13 +4751,13 @@ function dbUpdate(id, change) {
       const rec = g.result;
       if (!rec) { set(null); return; }
       change(rec);
-      s.put(rec);
+      s.put(storedForm(rec));
       set(rec);
     };
   });
 }
 function dbDelete(id) {
-  return dbTx(AUDIO_STORE, 'readwrite', s => { s.delete(id); });
+  return dbTx(AUDIO_STORE, 'readwrite', s => { s.delete(id); }).then(() => bytesDelete(id));   // ROUND 14: and its bytes
 }
 function photoAdd(rec) {
   return dbTx(PHOTO_STORE, 'readwrite', (s, set) => { const r = s.add(rec); r.onsuccess = () => set(r.result); });
@@ -4760,6 +5014,164 @@ function withKey(url) {
   return url + (url.indexOf('?') === -1 ? '?' : '&') + 'k=' + encodeURIComponent(PA_KEY);
 }
 
+// ─── ROUND 14: DEADLINES, SAFE READS, ERROR TRAIL ────────────────────────────
+// A promise that gives up after ms, whatever the thing behind it is doing.
+function withDeadline(p, ms, what) {
+  let t;
+  return Promise.race([
+    Promise.resolve(p),
+    new Promise((_, reject) => {
+      t = setTimeout(() => { const e = new Error((what || 'step') + ' timed out'); e.name = 'TimeoutError'; reject(e); }, ms);
+    })
+  ]).finally(() => clearTimeout(t));
+}
+// The error as the phone gave it, for the trail and the log ("TypeError: Load failed").
+function errDetail(e) {
+  if (!e) return 'failed';
+  if (typeof e === 'string') return e.slice(0, 160);
+  const name = e.name && e.name !== 'Error' ? e.name + ': ' : '';
+  return (name + String(e.message || e)).replace(/\s+/g, ' ').slice(0, 160);
+}
+// Last few failures on the recording itself: stage, time, exact error. Goes
+// into the room .json, the inspection details file and the val's log.
+function pushErr(rec, stage, e) {
+  if (!rec) return;
+  rec.errLog = (rec.errLog || []).concat([{ t: Date.now(), stage, msg: errDetail(e) }]).slice(-8);
+}
+function bodySize(b) {
+  if (!b) return 0;
+  if (typeof b === 'string') return b.length;
+  if (b.size != null) return b.size;
+  return b.byteLength || 0;
+}
+function blobBytes(blob) {
+  if (blob && typeof blob.arrayBuffer === 'function') return blob.arrayBuffer();
+  return new Promise((resolve, reject) => {
+    try {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result);
+      fr.onerror = () => reject(fr.error || new Error('read failed'));
+      fr.readAsArrayBuffer(blob);
+    } catch (e) { reject(e); }
+  });
+}
+function unreadableError(why) {
+  const e = new Error('recording unreadable on this phone' + (why ? ' (' + why + ')' : ''));
+  e.unreadable = true;
+  return e;
+}
+// A stored file read into memory, with a deadline, and checked for size. What
+// gets sent is this copy: a request built straight on the stored file is what
+// never left Brandon's phone (Chrome on iPhone, Archibald).
+async function readBlobOnce(blob) {
+  if (!blob) throw unreadableError('nothing stored');
+  if (!blob.size) throw unreadableError('empty file');
+  const ab = await withDeadline(blobBytes(blob), TIMING.readMs, 'reading the recording');
+  if (!ab || ab.byteLength !== blob.size) throw unreadableError('read ' + (ab ? ab.byteLength : 0) + ' of ' + blob.size + ' bytes');
+  return ab;
+}
+async function readStoredBytes(id, expect) {
+  const ab = await bytesGet(id);
+  if (!ab || !ab.byteLength) throw unreadableError('stored bytes missing');
+  if (expect && ab.byteLength !== expect) throw unreadableError('stored ' + ab.byteLength + ' of ' + expect + ' bytes');
+  return ab;
+}
+// A recording's audio as plain bytes. Tries the copy in hand, then a fresh
+// copy from phone storage. A read that only timed out comes back as
+// "unreadable (reading timed out)": it counts, but see UNREADABLE_SPREAD_MS.
+async function readAudioBytes(rec) {
+  if (rec && rec.bytesStored && rec.id != null) return readStoredBytes(rec.id, rec.bytesSize);
+  let first;
+  try { return await readBlobOnce(rec && rec.blob); } catch (e) { first = e; }
+  if (rec && rec.id != null) {
+    try {
+      const fresh = await dbGet(rec.id);
+      if (fresh && fresh.bytesStored) return await readStoredBytes(fresh.id, fresh.bytesSize);
+      if (fresh && fresh.blob) return await readBlobOnce(fresh.blob);
+    } catch (e) { if (!(first && first.unreadable) && e && e.unreadable) first = e; }
+  }
+  if (first && first.unreadable) throw first;
+  throw unreadableError(first && first.name === 'TimeoutError' ? 'reading timed out' : errDetail(first));
+}
+// Has audio that can still be sent. A damaged recording keeps its (useless)
+// file but counts as no audio everywhere: the room asks to be recorded again.
+function hasAudio(r) { return !!(r && (r.blob || r.bytesStored) && !r.unreadable); }
+function recSize(r) { return r ? (r.blob ? r.blob.size : (r.bytesSize || 0)) : 0; }
+// Two copies of a recording's error trail, merged (the queue's copy in memory
+// and the one in storage another pass may have added to).
+function mergeErrLog(a, b) {
+  const seen = new Set(), out = [];
+  (a || []).concat(b || []).forEach(x => { const k = x.t + '|' + x.stage + '|' + x.msg; if (!seen.has(k)) { seen.add(k); out.push(x); } });
+  return out.sort((x, y) => x.t - y.t).slice(-8);
+}
+// One failed read. Damaged for good only after three, spread over 10+ minutes.
+function applyUnreadable(r, e) {
+  if (r.unreadable) return false;   // already called (announced once)
+  r.readFails = (r.readFails || 0) + 1;
+  if (!r.readFirstFailAt) r.readFirstFailAt = Date.now();
+  pushErr(r, 'read', e);
+  if (r.readFails < UNREADABLE_TRIES || Date.now() - r.readFirstFailAt < UNREADABLE_SPREAD_MS) return false;
+  r.unreadable = true;
+  r.status = 'failed';
+  r.finalError = 'recording unreadable on this phone';
+  r.lastError = r.finalError;
+  r.autoRetries = AUTO_RETRY_MAX;
+  delete r.nextTryAt; delete r.autoRetryAt; delete r.aaiJob;
+  return true;
+}
+function announceUnreadable(rec) {
+  if (!rec) return;
+  if (sameJob(rec)) { roomAudioFlags[rec.roomId] = 'noaudio'; saveState(); }
+  insertRoughFallback(rec);
+  showToast(`⚠ The ${rec.roomName || 'room'} recording can't be opened on this phone. Please record ${rec.roomName || 'it'} again.`);
+  sendDiag('unreadable', rec, (rec.errLog && rec.errLog.length) ? rec.errLog[rec.errLog.length - 1].msg : '');
+  updatePendingUI();
+}
+// Which phone and browser, in words, for the files and the log.
+function deviceLabel() {
+  const ua = navigator.userAgent || '';
+  const ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const standalone = window.navigator.standalone === true || !!(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  const os = ios ? 'iPhone' : /Android/.test(ua) ? 'Android' : 'computer';
+  const browser = /CriOS/.test(ua) ? 'Chrome' : /FxiOS/.test(ua) ? 'Firefox' : /EdgiOS|Edg\//.test(ua) ? 'Edge'
+    : (/Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : 'browser');
+  return standalone ? os + ' Home Screen app' : browser + ' on ' + os;
+}
+// Tell the dropbox-archive val what went wrong, so it shows in its Val Town log
+// the same day. Fire and forget: at most once per recording and stage every 5
+// minutes, 60 a session, never in the way of anything. A plain-text body, so
+// no extra round trip. (Vals before round 14 just answer 400, harmlessly.)
+const diagSent = {};
+let diagCount = 0;
+function sendDiag(stage, rec, e, extra) {
+  try {
+    if (!cloudArchiveEnabled() || diagCount >= 60) return;
+    const key = stage + '|' + (rec && rec.id != null ? rec.id : '');
+    if (diagSent[key] && Date.now() - diagSent[key] < 5 * 60000) return;
+    diagSent[key] = Date.now();
+    diagCount++;
+    const body = JSON.stringify(Object.assign({
+      app: APP_ROUND, stage, at: new Date().toISOString(),
+      error: e ? errDetail(e) : '',
+      device: deviceLabel(), ua: (navigator.userAgent || '').slice(0, 220), online: navigator.onLine,
+      inspector: state.inspector || '', address: rec ? (rec.address || '') : (state.address || ''),
+      room: rec ? (rec.roomName || rec.roomId || '') : '', recording: rec && rec.id != null ? rec.id : null,
+      status: rec ? (rec.status || '') : '', bytes: rec ? recSize(rec) : 0, stored: rec ? (rec.bytesStored ? 'bytes' : 'file') : '', type: rec ? (rec.type || '') : '',
+      attempts: rec ? (rec.attempts || 0) : 0, errors: rec && rec.errLog ? rec.errLog.slice(-4) : []
+    }, extra || {}));
+    withDeadline(fetch(withKey(ARCHIVE_URL + '?action=log'), { method: 'POST', body, keepalive: body.length < 60000 }), 10000, 'log')
+      .catch(() => {});
+  } catch (x) {}
+}
+// Set (to the time) when this phone's stored files failed a read-back for real;
+// recordings are then saved as plain bytes for 30 days.
+// ROUND 14: a recording's id is chosen by the app before its first save, so a
+// save that times out but goes through late can't leave a second copy.
+function newRecId() { return Date.now() * 1000 + Math.floor(Math.random() * 1000); }
+function storeAsBytes() {
+  try { const v = Number(localStorage.getItem('pa_store_bytes') || 0); return v > 1 && Date.now() - v < 30 * 864e5; } catch (e) { return false; }
+}
+
 // ─── SAFARI TAB vs HOME SCREEN APP ────────────────────────────────────────────
 // On iPhone the two keep separate storage. A job started in one is invisible
 // in the other, and Safari can clear its copy after 7 days without use.
@@ -4833,7 +5245,14 @@ async function persistPartialRecording(session) {
       blob: new Blob(session.chunks, { type }),
       type, status: 'recording', createdAt: session.createdAt
     };
-    if (session.dbId != null) rec.id = session.dbId;
+    if (session.dbId == null) session.dbId = newRecId();   // ROUND 14
+    rec.id = session.dbId;
+    if (storeAsBytes()) {   // ROUND 14: this phone keeps audio as plain bytes
+      await dbPut(rec);
+      if (session.stopped) return;   // the final save has taken over
+      await saveAsBytes(rec, rec.blob);
+    }
+    if (session.stopped) return;
     const id = await dbPut(rec);
     if (session.dbId == null) session.dbId = id;
     storageRecovered();
@@ -4861,7 +5280,10 @@ async function stopAudioRecording(roomId, roughText, announce) {
   });
   // Wait for a partial save already in flight, or it can land after the final
   // save and put the record back to 'recording'.
-  for (let i = 0; i < 20 && session.persisting; i++) await new Promise(r => setTimeout(r, 100));
+  // ROUND 14: a partial save in bytes mode reads and writes the whole clip, so
+  // it gets up to a minute to finish rather than two seconds.
+  const waitSteps = storeAsBytes() ? 600 : 20;
+  for (let i = 0; i < waitSteps && session.persisting; i++) await new Promise(r => setTimeout(r, 100));
   if (stream) { try { stream.getTracks().forEach(t => t.stop()); } catch (e) {} }
   if (micGuardOwner === session) stopMicGuard();   // ROUND 11: not the next room's
   if (!chunks.length) {
@@ -4893,6 +5315,7 @@ async function stopAudioRecording(roomId, roughText, announce) {
   const type = mr.mimeType || (chunks[0] && chunks[0].type) || 'audio/mp4';
   const blob = new Blob(chunks, { type });
   let rec = null;
+  let stored = false;   // ROUND 14: the record itself made it into storage
   try {
     rec = {
       roomId: rid,
@@ -4906,8 +5329,18 @@ async function stopAudioRecording(roomId, roughText, announce) {
       roughText: roughText || '',
       blob, type, status: 'pending', createdAt: session.createdAt, attempts: 0
     };
-    if (session.dbId != null) rec.id = session.dbId;
+    rec.id = session.dbId != null ? session.dbId : newRecId();   // ROUND 14: id chosen before the first save
+    if (storeAsBytes()) {
+      // ROUND 14: this phone keeps audio as plain bytes. The record goes in as
+      // 'recording' first (the queue leaves those alone) until its bytes are in.
+      rec.status = 'recording';
+      await dbPut(rec);
+      await saveAsBytes(rec, blob);
+      rec.status = 'pending';
+    }
     await dbPut(rec);
+    stored = true;
+    await checkSavedRecording(rec, blob);   // ROUND 14
     storageRecovered();
     if (announce) showToast(session.died ? '✓ Saved what was recorded before the mic stopped' : '✓ Recording saved');
     updatePendingUI();
@@ -4921,8 +5354,45 @@ async function stopAudioRecording(roomId, roughText, announce) {
     keepRoughAfterSaveFailure(rid, session.roomName, session, roughText);
     const rough = (roughText || '').trim();
     if (rough) rec.fallbackText = '⚠ AUDIO NOT SAVED (phone storage) — phone dictation only:\n' + rough;
+    if (stored && rec.id != null) {
+      // ROUND 14: the record is in storage; only its audio failed the check.
+      // Never re-save the record over whatever the queue does with it since:
+      // retryUnsaved only tries to store the audio again, as bytes.
+      storedRecs.add(rec);
+      const fb = rec.fallbackText;
+      if (fb) dbUpdate(rec.id, r => { r.fallbackText = fb; }).catch(() => {});
+    }
     holdUnsaved(rec);
   }
+}
+
+// ROUND 14: read every recording back from phone storage straight after Done.
+// Archibald's Entry recording was "saved", then couldn't be played or sent. If
+// the stored copy can't be read back whole, its audio is saved again as plain
+// bytes; a real fault (not just a slow phone) switches this phone to bytes for
+// 30 days. If even that fails, the caller's "NOT saved" path keeps the audio in
+// memory and says so.
+async function checkSavedRecording(rec, blob) {
+  if (!rec || rec.id == null || !blob || rec.bytesStored) return;   // bytes are checked as they're written
+  let why = '', slow = false;
+  try {
+    const back = await dbGet(rec.id);
+    if (!back) why = 'not found after saving';
+    else if (back.bytesStored) {
+      const ab = await bytesGet(rec.id);
+      if (!ab || ab.byteLength !== blob.size) why = 'stored bytes ' + (ab ? ab.byteLength : 0) + ' of ' + blob.size;
+    } else {
+      const ab = await readBlobOnce(back.blob);
+      if (ab.byteLength !== blob.size) why = 'stored ' + ab.byteLength + ' of ' + blob.size + ' bytes';
+    }
+  } catch (e) { why = errDetail(e); slow = !!(e && e.name === 'TimeoutError'); }
+  if (!why) return;
+  pushErr(rec, 'save', 'read-back failed: ' + why);
+  sendDiag('save-readback', rec, why);
+  if (!slow) { try { localStorage.setItem('pa_store_bytes', String(Date.now())); } catch (e) {} }
+  await saveAsBytes(rec, blob);
+  const trail = rec.errLog;
+  try { await dbUpdate(rec.id, r => { r.errLog = mergeErrLog(r.errLog, trail); }); } catch (e) {}
 }
 
 // ROUND 11: recordings the phone refused to save, kept in memory until it can.
@@ -4936,8 +5406,25 @@ async function retryUnsaved() {
   if (!unsavedRecs.length) return;
   for (const rec of unsavedRecs.slice()) {
     try {
-      const id = await dbPut(rec);
-      if (rec.id == null) rec.id = id;
+      if (storedRecs.has(rec)) {
+        // ROUND 14: the record is already stored; only put its audio in, as
+        // bytes. If it was called damaged meanwhile, it has good audio now.
+        await saveAsBytes(rec, rec.blob);
+        await dbUpdate(rec.id, r => {
+          if (r.status === 'recording') r.status = 'pending';
+          if (r.unreadable && !r.audioArchived) {
+            delete r.unreadable; delete r.finalError; delete r.readFirstFailAt;
+            r.readFails = 0; r.autoRetries = 0; r.archived = false;
+            if (r.status === 'failed') r.status = 'pending';
+          }
+        });
+      } else {
+        if (rec.status === 'recording') rec.status = 'pending';   // a bytes-mode save that stopped half way
+        const id = await dbPut(rec);
+        if (rec.id == null) rec.id = id;
+        storedRecs.add(rec);   // from here on, never put the whole record again
+        await checkSavedRecording(rec, rec.blob);   // ROUND 14
+      }
       unsavedRecs = unsavedRecs.filter(r => r !== rec);
       if (sameJob(rec) && roomAudioFlags[rec.roomId] === 'noaudio') { delete roomAudioFlags[rec.roomId]; saveState(); }
       storageRecovered();
@@ -4965,6 +5452,29 @@ async function saveUnsavedAudio() {
 //   'orphaned'  — stranded by an older build's Finish & Clear. No queue ever
 //                 looked at those again, so they sat on the phone forever even
 //                 though the dialog promised they'd keep trying. Revive them.
+// ROUND 14: a recording called damaged gets one more read each time the app
+// opens. If it reads now, the fault was passing: it goes back in the queue.
+async function retryDamagedOnce() {
+  let recs = [];
+  try { recs = await dbAll(); } catch (e) { return; }
+  for (const rec of recs) {
+    if (!rec.unreadable || rec.audioArchived || !(rec.blob || rec.bytesStored)) continue;
+    if (Date.now() - (rec.createdAt || 0) > KEEP_AFTER_SYNC_MS) continue;
+    try {
+      const probe = Object.assign({}, rec);
+      delete probe.unreadable;
+      await readAudioBytes(probe);
+      await dbUpdate(rec.id, r => {
+        delete r.unreadable; delete r.finalError; delete r.readFirstFailAt;
+        r.readFails = 0; r.attempts = 0; r.autoRetries = 0; r.status = 'pending'; r.archived = false;
+        pushErr(r, 'read', 'read fine on reopening, sending again');
+      });
+      if (sameJob(rec) && roomAudioFlags[rec.roomId] === 'noaudio') { delete roomAudioFlags[rec.roomId]; saveState(); }
+    } catch (e) {}
+  }
+  updatePendingUI();
+  if (navigator.onLine) processQueue();
+}
 async function recoverCrashedRecordings() {
   try {
     const recs = await dbAll();
@@ -4997,10 +5507,10 @@ async function processQueue() {
     const recs = (await dbAll()).filter(r => r.status === 'pending' && !(r.nextTryAt > now));
     for (const rec of recs) {
       if (!live()) break;
-      if (!rec.blob) { rec.status = 'failed'; rec.noAudio = true; try { await dbPut(rec); } catch (e) {} continue; }
+      if (!rec.blob && !rec.bytesStored) { rec.status = 'failed'; rec.noAudio = true; try { await dbPut(rec); } catch (e) {} continue; }
       // Some failures will never succeed, however often they're tried. Re-sending
       // a 70 MB file every 20 seconds used mobile data and held the Finish lock.
-      if (rec.blob.size > MAX_TRANSCRIBE_BYTES) { await failForGood(rec, 'too large to transcribe (over ' + Math.round(MAX_TRANSCRIBE_BYTES / 1e6) + ' MB)'); continue; }
+      if (recSize(rec) > MAX_TRANSCRIBE_BYTES) { await failForGood(rec, 'too large to transcribe (over ' + Math.round(MAX_TRANSCRIBE_BYTES / 1e6) + ' MB)'); continue; }
       try {
         rec.status = 'uploading'; rec.uploadStartedAt = Date.now(); await dbPut(rec); updatePendingUI();
         queueStartedAt = Date.now();   // the watchdog times each room, not the whole pass
@@ -5008,24 +5518,33 @@ async function processQueue() {
         // recording in Dropbox — Engler's kitchen had neither.
         if (cloudArchiveEnabled() && !rec.audioArchived && !rec.audioTooLarge) {
           try { if (await archiveAudio(rec)) { delete rec.audioError; await dbPut(rec); } updatePendingUI(); }
-          catch (e) { rec.audioError = describeError(e); /* the archive pass retries it */ }
+          catch (e) {
+            rec.audioError = describeError(e);   // the archive pass retries it
+            if (!(e && e.unreadable)) { pushErr(rec, 'dropbox', e); sendDiag('dropbox', rec, e); }
+          }
         }
         if (!live()) break;
+        queueStartedAt = Date.now();   // ROUND 14: the watchdog times each step, not the room
         // Cap each upload so one stalled request can't hang the queue forever.
         // Deepgram answers in one round trip; AssemblyAI uploads the file, waits
         // for the job and then answers, so it gets a longer leash. Either way the
         // recording stays on the phone and the queue retries it.
         const engineAtUpload = ENGINE;
-        const controller = new AbortController();
-        queueController = controller;
-        const timer = setTimeout(() => { try { controller.abort(); } catch (e) {} }, uploadTimeout(engineDef(engineAtUpload).timeoutMs || 60000, rec.blob && rec.blob.size));
-        let res;
         // ROUND 11: AssemblyAI still working on this room from the last try? Ask
         // for that job instead of uploading and paying for it all over again.
         const resume = engineAtUpload === 'assemblyai' && !rec.noResume && rec.aaiJob && rec.aaiJob.id
           && (Date.now() - (rec.aaiJob.at || 0) < 6 * 3600000) ? rec.aaiJob.id : '';
+        // ROUND 14: the audio is read into memory first (with a deadline) and
+        // that copy is sent, with its size so the val can spot a short body.
+        const audioBody = resume ? null : await readAudioBytes(rec);
+        if (!live()) break;
+        const controller = new AbortController();
+        queueController = controller;
+        const limit = uploadTimeout(engineDef(engineAtUpload).timeoutMs || 60000, bodySize(audioBody || rec.blob));
+        const timer = setTimeout(() => { try { controller.abort(); } catch (e) {} }, limit);
+        let res;
         try {
-          res = await fetch(withKey(TRANSCRIBE_URL), resume ? {
+          res = await withDeadline(fetch(withKey(TRANSCRIBE_URL) + (audioBody ? '&size=' + audioBody.byteLength : ''), resume ? {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: resume }),
@@ -5033,12 +5552,12 @@ async function processQueue() {
           } : {
             method: 'POST',
             headers: { 'Content-Type': rec.type || 'application/octet-stream' },
-            body: rec.blob,
+            body: audioBody,
             signal: controller.signal
-          });
+          }), limit + TIMING.grace, 'transcription');
         } finally { clearTimeout(timer); }
         if (res.status === 504 && engineAtUpload === 'assemblyai' && !rec.noResume) {
-          let d = null; try { d = await res.clone().json(); } catch (e) {}
+          let d = null; try { d = await withDeadline(res.clone().json(), TIMING.jsonMs, 'reading the answer'); } catch (e) {}
           if (d && d.id && d.retry) {
             const id = String(d.id).slice(0, 80);
             rec.aaiJob = { id, at: (rec.aaiJob && rec.aaiJob.id === id && rec.aaiJob.at) || Date.now() };
@@ -5049,7 +5568,8 @@ async function processQueue() {
         if (resume && res.status === 404) { delete rec.aaiJob; throw new Error('resume refused'); }   // job gone
         if (res.status === 413) throw new Error('too large');
         if (!res.ok) throw new Error('http ' + res.status);
-        const data = await res.json();
+        const data = await withDeadline(res.json(), TIMING.jsonMs, 'reading the transcript');
+        queueStartedAt = Date.now();   // ROUND 14: the cleanup step gets its own time
         const transcript = ((data && (data.transcript || data.text)) || '').trim();
         // An empty answer for a real recording is a failure, not a finished room.
         // It used to be marked done, with nothing to show for it.
@@ -5061,6 +5581,7 @@ async function processQueue() {
         // Keep the audio blob (backup the VA/typist can play back) until Finish & Clear,
         // which deletes 'done' records that are backed up. Storage is reclaimed on finish.
         delete rec.nextTryAt; delete rec.netFails;
+        delete rec.readFails; delete rec.readFirstFailAt;   // ROUND 14: it read fine after all
         rec.status = 'done'; rec.transcript = transcript;
         delete rec.aaiJob;
         // Which engine produced this text. Goes into the Dropbox file so the
@@ -5082,6 +5603,29 @@ async function processQueue() {
         updatePendingUI();
       } catch (e) {
         if (!live()) break;   // abandoned by the watchdog — the record is reset there
+        // ROUND 14: the stored recording couldn't be read. Two more goes (it
+        // can be a passing fault), then it's damaged and the room says so.
+        // Written onto a fresh read, so a count the Dropbox pass added meanwhile
+        // isn't lost, and a recording already called damaged stays damaged.
+        if (e && e.unreadable) {
+          let final = false;
+          const trail = rec.errLog, audioErr = rec.audioError;
+          const upd = await dbUpdate(rec.id, r => {
+            r.errLog = mergeErrLog(r.errLog, trail);
+            if (audioErr) r.audioError = audioErr;
+            final = applyUnreadable(r, e);
+            if (!r.unreadable) {
+              r.status = 'pending';
+              r.lastError = 'recording unreadable, checking again';
+              r.nextTryAt = Date.now() + retryDelay(r.readFails);   // reads count in readFails, not attempts
+            }
+          }).catch(() => null);
+          if (final && upd) announceUnreadable(upd); else { sendDiag('read', upd || rec, e); updatePendingUI(); }
+          continue;
+        }
+        // ROUND 14: the Dropbox pass may have called it damaged while this
+        // pass was busy. Don't put it back in the queue over that.
+        try { const cur = await dbGet(rec.id); if (cur && cur.unreadable) { updatePendingUI(); continue; } } catch (e2) {}
         if (/too large/.test(String(e && e.message))) { await failForGood(rec, 'too large to transcribe'); continue; }
         const emsg = String((e && e.message) || '');
         // ROUND 11: a job still running isn't a failure, for up to 20 minutes.
@@ -5097,6 +5641,8 @@ async function processQueue() {
           continue;
         }
         rec.lastError = describeError(e);
+        pushErr(rec, 'transcribe', e);   // ROUND 14: the exact error, kept and reported
+        sendDiag('transcribe', rec, e);
         // Keep a running job's id through a signal drop; anything else (or a job
         // over 20 minutes) starts again from the audio, and counts as a try.
         if (!/no connection|timed out/.test(rec.lastError)) delete rec.aaiJob;
@@ -5177,7 +5723,7 @@ async function sweepOldJobs() {
     for (const rec of await dbAll()) {
       if (sameJob(rec) || savedJob(rec) || rec.archived !== true) continue;
       if (!pastKeepPeriod(rec)) continue;   // kept 14 days after it reached Dropbox
-      if (rec.blob && !rec.audioArchived) continue;   // ROUND 11: only once the audio itself is confirmed
+      if (hasAudio(rec) && !rec.audioArchived) continue;   // ROUND 11: only once the audio itself is confirmed
       const finished = rec.status === 'done'
         || (rec.status === 'failed' && (rec.noAudio || (rec.autoRetries || 0) >= AUTO_RETRY_MAX));
       if (finished) { await dbDelete(rec.id); n++; }
@@ -5195,7 +5741,7 @@ async function autoRetryFailed() {
   try {
     const now = Date.now();
     for (const rec of await dbAll()) {
-      if (rec.status !== 'failed' || !rec.blob || rec.noAudio) continue;
+      if (rec.status !== 'failed' || !hasAudio(rec) || rec.noAudio) continue;
       if ((rec.autoRetries || 0) >= AUTO_RETRY_MAX) continue;
       if (!rec.autoRetryAt || rec.autoRetryAt > now) continue;
       rec.autoRetries = (rec.autoRetries || 0) + 1;
@@ -5214,6 +5760,8 @@ async function autoRetryFailed() {
 function describeError(e) {
   const m = String((e && (e.name === 'AbortError' ? 'timed out' : e.message)) || e || 'failed');
   if (/too large/i.test(m)) return 'too large';
+  if (/unreadable/i.test(m)) return 'recording unreadable on this phone';   // ROUND 14
+  if (/incomplete/i.test(m)) return 'incomplete upload';
   if (/timed out|abort/i.test(m)) return 'timed out';
   if (/failed to fetch|network|load failed/i.test(m)) return 'no connection';
   const h = m.match(/http (\d{3})/);
@@ -5223,6 +5771,7 @@ function describeError(e) {
 
 async function queueWatchdog() {
   if (queueRunning && Date.now() - queueStartedAt > QUEUE_STUCK_MS) {
+    sendDiag('queue-stuck', null, 'transcription pass ran over ' + Math.round((Date.now() - queueStartedAt) / 60000) + ' min');
     queueRunId++;                       // the stuck pass stops writing when it wakes
     try { if (queueController) queueController.abort(); } catch (e) {}
     queueController = null;
@@ -5235,6 +5784,7 @@ async function queueWatchdog() {
       if (rec.status === 'uploading') {
         rec.status = 'pending';
         rec.attempts = (rec.attempts || 0) + 1;
+        pushErr(rec, 'queue', 'left on sending with nothing working on it');   // ROUND 14
         await dbPut(rec);
       }
     }
@@ -5279,8 +5829,8 @@ async function checkCleanupReady() {
   const ctrl = new AbortController();
   const t = setTimeout(() => { try { ctrl.abort(); } catch (e) {} }, 8000);
   try {
-    const res = await fetch(withKey(CLEANUP_URL), { method: 'GET', signal: ctrl.signal });
-    const out = await res.json().catch(() => null);
+    const res = await withDeadline(fetch(withKey(CLEANUP_URL), { method: 'GET', signal: ctrl.signal }), 8000 + TIMING.grace, 'cleanup check');
+    const out = await withDeadline(res.json(), 8000, 'cleanup check').catch(() => null);
     cleanupReady = !!(res.ok && out && out.ok === true);
   } catch (e) { cleanupReady = false; }
   finally { clearTimeout(t); }
@@ -5494,7 +6044,7 @@ async function runCleanup(rec) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => { try { ctrl.abort(); } catch (e) {} }, CLEANUP_TIMEOUT_MS);
   try {
-    const res = await fetch(withKey(CLEANUP_URL), {
+    const res = await withDeadline(fetch(withKey(CLEANUP_URL), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -5504,9 +6054,9 @@ async function runCleanup(rec) {
         address: rec.address || ''
       }),
       signal: ctrl.signal
-    });
+    }), CLEANUP_TIMEOUT_MS + TIMING.grace, 'cleanup');
     if (!res.ok) throw new Error('http ' + res.status);
-    const out = await res.json();
+    const out = await withDeadline(res.json(), TIMING.jsonMs, 'reading the cleanup');
     if (!out || out.ok !== true) throw new Error((out && out.error) || 'cleanup declined');
     // ROUND 12: a stray brace the model left (Freshwater bathroom "…functional]}")
     // is dropped, and so is a row that only repeats its own name or an added
@@ -5639,20 +6189,32 @@ function uploadTimeout(baseMs, bytes) {
   return Math.min(10 * 60000, baseMs + Math.round(((bytes || 0) / 1e6) * 8000));
 }
 async function archivePut(relPath, body, contentType, timeoutMs) {
+  // ROUND 14: a file from phone storage (photo, Word file, details) is read
+  // into memory first, with a deadline, and that copy is sent. Text goes as is.
+  if (body && typeof Blob !== 'undefined' && body instanceof Blob) body = await readBlobOnce(body);
+  const binary = typeof body !== 'string';
+  const size = binary ? bodySize(body) : 0;
   const ctrl = new AbortController();
-  const limit = timeoutMs || (/^audio|^image|octet/.test(contentType || '') ? uploadTimeout(120000, body && body.size) : 30000);
+  const limit = timeoutMs || (/^audio|^image|octet/.test(contentType || '') ? uploadTimeout(TIMING.archiveBaseMs, size) : 30000);
   const timer = setTimeout(() => { try { ctrl.abort(); } catch (e) {} }, limit);
   try {
     // mode=overwrite: sending the same file again replaces it instead of adding
     // a "(1)" copy. (Needs the updated dropbox-archive val; older vals ignore it.)
-    const res = await fetch(withKey(ARCHIVE_URL + '?path=' + encodeURIComponent(relPath) + '&mode=overwrite'), {
+    // size: the round 14 val refuses a body that arrives short.
+    const res = await withDeadline(fetch(withKey(ARCHIVE_URL + '?path=' + encodeURIComponent(relPath) + '&mode=overwrite' + (binary ? '&size=' + size : '')), {
       method: 'POST',
       headers: { 'Content-Type': contentType },
       body,
       signal: ctrl.signal
-    });
+    }), limit + TIMING.grace, 'Dropbox upload');
     if (res.status === 413) throw new Error('too large');
     if (!res.ok) throw new Error('archive http ' + res.status);
+    // The round 14 val says how many bytes Dropbox stored. Short = not safe.
+    if (binary) {
+      let out = null;
+      try { out = await withDeadline(res.clone().json(), 15000, 'reading the Dropbox answer'); } catch (e) {}
+      if (out && typeof out.size === 'number' && out.size !== size) throw new Error('Dropbox got an incomplete file (' + out.size + ' of ' + size + ' bytes)');
+    }
     return res;
   } finally { clearTimeout(timer); }
 }
@@ -5661,11 +6223,17 @@ async function archivePut(relPath, body, contentType, timeoutMs) {
 // Dropbox whether or not a transcript ever comes back. Safe to call twice: the
 // flag and the in-flight set stop a second copy going up.
 async function archiveAudio(rec) {
-  if (!cloudArchiveEnabled() || !rec || !rec.blob || rec.audioArchived) return false;
+  if (!cloudArchiveEnabled() || !rec || !hasAudio(rec) || rec.audioArchived) return false;
   // ROUND 11: already going up from another pass? Wait for that upload and take
   // its answer. Returning straight away let the caller carry on and mark the
   // room as in Dropbox even when that upload then failed.
-  const running = audioInFlight.get(rec.id);
+  // ROUND 14: unless it has been going longer than any upload can, in which
+  // case it's dead (Archibald) and this pass starts again.
+  let running = audioInFlight.get(rec.id);
+  if (running && Date.now() - (running.at || 0) > TIMING.readMs * 2 + TIMING.dbMs + uploadTimeout(TIMING.archiveBaseMs, recSize(rec)) + TIMING.grace + 15000 + 60000) {
+    audioInFlight.delete(rec.id);
+    running = null;
+  }
   if (running) {
     const done = await running;   // throws if that upload failed
     rec.audioArchived = true; rec.audioArchivedAt = done.at; delete rec.audioTooLarge;
@@ -5673,13 +6241,15 @@ async function archiveAudio(rec) {
     return false;
   }
   const job = (async () => {
+    const bytes = await readAudioBytes(rec);   // ROUND 14: a plain copy in memory, not the stored file
     const res = await archivePut(`${archiveFolderName(rec)}/${AUDIO_DIR}/${archiveBaseName(rec)}.${audioExt(rec.type)}`,
-      rec.blob, rec.type || 'application/octet-stream');
+      bytes, rec.type || 'application/octet-stream');
     // Where it actually landed, if the val says. The text file names this.
     let path = '';
-    try { const out = await res.clone().json(); const p = out && (out.path || out.path_display); if (p) path = String(p).split('/').pop(); } catch (e) {}
+    try { const out = await withDeadline(res.clone().json(), 15000, 'reading the Dropbox answer'); const p = out && (out.path || out.path_display); if (p) path = String(p).split('/').pop(); } catch (e) {}
     return { at: Date.now(), path };
   })();
+  job.at = Date.now();
   audioInFlight.set(rec.id, job);
   try {
     const done = await job;
@@ -5691,7 +6261,7 @@ async function archiveAudio(rec) {
   } catch (e) {
     if (/too large/.test(String(e && e.message))) rec.audioTooLarge = true;
     throw e;
-  } finally { audioInFlight.delete(rec.id); }
+  } finally { if (audioInFlight.get(rec.id) === job) audioInFlight.delete(rec.id); }
 }
 // The typist's file. Cleaned text, split into the room's subsections, with the
 // full transcript underneath as the source of truth. The archive used to get
@@ -5771,7 +6341,8 @@ function buildRoomJson(rec, clean) {
   const plain = s => String(s).replace(/\s*\[added: [^\]]*\]/g, '').replace(/\s+/g, ' ').trim();
   const clockOf = at => (at != null ? formatClock(at) : null);
   return {
-    format: 'pa-room', version: 1, app: 'PA Inspect round 13',
+    format: 'pa-room', version: 1, app: 'PA Inspect round ' + APP_ROUND,
+    phone: deviceLabel(),
     property: rec.address || '', client: m.client || '', inspector: m.inspector || '',
     state: m.stateCode || '', inspectionType: m.inspType || '',
     inspectionStarted: m.startedAt ? new Date(m.startedAt).toISOString() : null,
@@ -5796,6 +6367,7 @@ function buildRoomJson(rec, clean) {
       resolved: c.resolved || null, fixedTo: c.fixedTo || null
     })),
     fixes: (rec.fixes || []).slice(),
+    syncErrors: (rec.errLog || []).map(x => ({ at: new Date(x.t).toISOString(), stage: x.stage, error: x.msg })),
     serial: thisJob ? (state.serialModels[rec.roomId] || '').trim() : (rec.serialTyped || ''),
     inventory: thisJob ? (state.inventory[rec.roomId] || '').trim() : (rec.inventoryTyped || ''),
     raw: (rec.transcript || '').trim(),
@@ -5806,7 +6378,7 @@ function buildRoomJson(rec, clean) {
 // Upload one recording's audio and its text. Throws on failure so the caller can
 // leave it un-archived and retry later.
 async function archiveToDropbox(rec) {
-  if (!cloudArchiveEnabled() || !rec || !rec.blob) return false;
+  if (!cloudArchiveEnabled() || !rec || !hasAudio(rec)) return false;
   const folder = archiveFolderName(rec);
   const base = archiveBaseName(rec);
   if (!rec.audioArchived) await archiveAudio(rec);   // usually already up — it goes first now
@@ -5839,27 +6411,44 @@ async function archiveToDropbox(rec) {
 // re-sending whole rooms of audio over mobile data while the fault lasted.
 function archiveDelay(n) { return Math.min(30 * 60000, 30000 * Math.pow(2, Math.max(0, (n || 1) - 1))); }
 async function noteArchiveFail(rec, e) {
+  let final = false, updated = null;
   try {
-    await dbUpdate(rec.id, r => {
+    updated = await dbUpdate(rec.id, r => {
+      // ROUND 14: a recording that can't be read counts towards "damaged".
+      if (e && e.unreadable && applyUnreadable(r, e)) { final = true; return; }
+      if (!(e && e.unreadable)) pushErr(r, 'dropbox', e);
       r.archFails = (r.archFails || 0) + 1;
       r.archNextAt = Date.now() + archiveDelay(r.archFails);
       r.archError = describeError(e);
     });
   } catch (e2) {}
+  if (final && updated) announceUnreadable(updated);
+  else sendDiag(e && e.unreadable ? 'read' : 'dropbox', updated || rec, e);
 }
 // Retry pass: back up any transcribed-but-not-archived recording that still has audio.
 let archiveRunning = false;
 async function processArchiveQueue() {
   if (!cloudArchiveEnabled() || !navigator.onLine || !('indexedDB' in window)) return;
-  if (archiveRunning) return;
+  if (archiveRunning) {
+    // ROUND 14: a pass that has run this long is stuck. It used to hold the
+    // lock for the rest of the day, so nothing else ever went to Dropbox.
+    if (Date.now() - archiveStartedAt < TIMING.passStuckMs) return;
+    sendDiag('archive-stuck', null, 'Dropbox pass ran over ' + Math.round((Date.now() - archiveStartedAt) / 60000) + ' min');
+  }
+  const run = ++archiveRunId;
+  const live = () => run === archiveRunId;
   archiveRunning = true;
-  try { await archivePass(); await jobDocPass(); await sweepOldJobs(); } finally { archiveRunning = false; }
+  archiveStartedAt = Date.now();
+  try { await archivePass(live); if (live()) await jobDocPass(); if (live()) await sweepOldJobs(); }
+  finally { if (live()) archiveRunning = false; }
 }
-async function archivePass() {
+async function archivePass(live) {
   let recs = [];
   try { recs = await dbAll(); } catch (e) { return; }
   const now = Date.now();
   for (const rec of recs) {
+    if (live && !live()) return;   // ROUND 14: abandoned by the watchdog
+    if (live) archiveStartedAt = Date.now();   // ROUND 14: the watchdog times each item, not the pass
     if (rec.archNextAt > now) continue;   // ROUND 11: waiting after a failed try
     // ROUND 11: the room .json the round 7 val turned away goes up on its own
     // once the val takes it. The rest of the room is already in Dropbox.
@@ -5878,7 +6467,32 @@ async function archivePass() {
     // the typist's whole safety net, and it used to have a hole exactly where it
     // was needed most: anything that failed transcription reached Dropbox never.
     const archivable = rec.status === 'done' || rec.status === 'failed' || rec.status === 'orphaned';
-    if (archivable && rec.archived !== true && !rec.blob && rec.noAudio) {
+    // ROUND 14: a damaged recording can't go up, so the typist gets a note
+    // saying so (with the phone's text and the errors), like NO AUDIO below.
+    if (archivable && rec.archived !== true && rec.unreadable && rec.audioArchived) {
+      // Its audio reached Dropbox before it went bad: nothing more to send.
+      try { await dbUpdate(rec.id, r => { r.archived = true; r.archivedAt = Date.now(); }); updatePendingUI(); } catch (e) {}
+      continue;
+    }
+    if (archivable && rec.archived !== true && rec.unreadable && !rec.audioArchived) {
+      try {
+        const rough = (rec.roughText || '').trim();
+        const body = detailLines(rec.address, metaFor(rec)).join('\n')
+          + '\n\nRoom: ' + (rec.roomName || rec.roomId || '')
+          + (rec.createdAt ? '\nRecorded: ' + new Date(rec.createdAt).toLocaleString('en-AU') : '')
+          + '\nPhone: ' + deviceLabel()
+          + '\n\nTHE RECORDING FOR THIS ROOM COULD NOT BE READ ON THE PHONE AND WAS NOT SENT.\n'
+          + 'Check whether the room was recorded again. What the phone reported:\n'
+          + (rec.errLog || []).map(x => '  ' + new Date(x.t).toLocaleString('en-AU') + '  ' + x.stage + ': ' + x.msg).join('\n') + '\n\n'
+          + (rough ? 'Phone dictation only, expect mishears:\n' + rough + '\n' : '');
+        await archivePut(`${archiveFolderName(rec)}/${DATA_DIR}/${archiveBaseName(rec)} - AUDIO UNREADABLE.txt`, body, 'text/plain; charset=utf-8');
+        markJobDoc(archiveFolderName(rec), sameJob(rec) ? jobSnapshot() : null);
+        await dbUpdate(rec.id, r => { r.archived = true; r.archivedAt = Date.now(); delete r.archFails; delete r.archNextAt; delete r.archError; });
+        updatePendingUI();
+      } catch (e) { await noteArchiveFail(rec, e); }
+      continue;
+    }
+    if (archivable && rec.archived !== true && !rec.blob && !rec.bytesStored && rec.noAudio) {
       try {
         const body = detailLines(rec.address, metaFor(rec)).join('\n')
           + '\n\nRoom: ' + (rec.roomName || rec.roomId || '')
@@ -5895,7 +6509,7 @@ async function archivePass() {
       } catch (e) { await noteArchiveFail(rec, e); }
       continue;
     }
-    if (!archivable || rec.archived === true || !rec.blob || rec.audioTooLarge) continue;
+    if (!archivable || rec.archived === true || !hasAudio(rec) || rec.audioTooLarge) continue;
     try {
       await archiveToDropbox(rec);
       rec.archived = true;
@@ -5985,13 +6599,18 @@ function markPhotoUploaded(roomId, id) {
 // folder, then delete it from the phone once it belongs to a finished inspection.
 async function processPhotoQueue() {
   if (!cloudArchiveEnabled() || !navigator.onLine || !('indexedDB' in window)) return;
-  if (photoQueueRunning) return;
+  // ROUND 14: a stuck pass is abandoned after passStuckMs instead of holding the lock.
+  if (photoQueueRunning && Date.now() - photoQueueStartedAt < TIMING.passStuckMs) return;
+  const photoRun = ++photoQueueRunId;
   photoQueueRunning = true;
+  photoQueueStartedAt = Date.now();
   try {
     let recs = [];
     try { recs = await photoAll(); } catch (e) { return; }
     const now = Date.now();
     for (const rec of recs) {
+      if (photoRun !== photoQueueRunId) return;
+      photoQueueStartedAt = Date.now();   // ROUND 14: timed per photo
       if (rec.uploaded) continue;
       if (rec.nextTryAt > now) continue;   // ROUND 11: waiting after a failed try
       try {
@@ -6016,7 +6635,7 @@ async function processPhotoQueue() {
       }
     }
   } finally {
-    photoQueueRunning = false;
+    if (photoRun === photoQueueRunId) photoQueueRunning = false;
   }
 }
 
@@ -6133,8 +6752,8 @@ async function updatePendingUI() {
     else if (r.status === 'uploading') { m.uploading++; m.since = Math.max(m.since, r.uploadStartedAt || 0); }
     else if (r.status === 'failed') m.failed++;
     else if (r.status === 'done') { m.done++; if (cloudArchiveEnabled() && r.archived !== true) m.unarchived++; }
-    if (r.blob || r.audioArchived) { m.withAudio++; if (r.audioArchived || r.archived === true) m.audioUp++; }
-    if (r.noAudio) m.noAudio++;
+    if (hasAudio(r) || r.audioArchived) { m.withAudio++; if (r.audioArchived || r.archived === true) m.audioUp++; }
+    if (r.noAudio || r.unreadable) m.noAudio++;
     if (r.status !== 'done') { m.attempts = Math.max(m.attempts, r.attempts || 0); if (r.lastError) m.lastError = r.lastError; }
     if (r.status === 'pending' && r.nextTryAt) m.nextTryAt = Math.max(m.nextTryAt, r.nextTryAt);
     if (r.status === 'failed' && r.finalError) m.finalError = r.finalError;
@@ -6189,19 +6808,21 @@ async function updatePendingUI() {
 function unsentRecordings(recs) {
   return (recs || []).filter(r =>
     r.status === 'pending' || r.status === 'uploading' || r.status === 'recording' ||
-    (cloudArchiveEnabled() && !r.noAudio && !r.audioTooLarge && r.blob && !r.audioArchived && r.archived !== true) ||
+    (cloudArchiveEnabled() && !r.noAudio && !r.audioTooLarge && hasAudio(r) && !r.audioArchived && r.archived !== true) ||
     (cloudArchiveEnabled() && r.status === 'done' && r.archived !== true && !r.audioTooLarge));
 }
 function renderSyncCard(recs) {
   const card = document.getElementById('syncCard');
   if (!card) return;
   const n = cloudEnabled() ? unsentRecordings(recs).length : 0;
+  r15TabBadge(n);
+  renderTodayJobs(recs);
   card.style.display = n ? '' : 'none';
   if (!n) return;
-  document.getElementById('syncCardTitle').textContent = `${n} recording${n === 1 ? '' : 's'} still sending`;
+  document.getElementById('syncCardTitle').textContent = `${n} recording${n === 1 ? '' : 's'} sending`;
   document.getElementById('syncCardText').textContent = navigator.onLine
-    ? 'Keep the app open with signal and they send by themselves.'
-    : 'No signal. They send by themselves once you have signal and the app is open.';
+    ? 'Keep the app open. They send on their own.'
+    : 'No signal. They send once you have signal and the app is open.';
 }
 
 // Rooms whose audio hasn't finished the round trip yet — recording, waiting to
@@ -6241,7 +6862,7 @@ async function computeAreaStatus() {
     const mine = recs.filter(r => r.roomId === room.id);
     const typed = !!(state.roomNotes[room.id] || '').trim();
     let tx, dbx;
-    if (skipped[room.id] && !mine.some(r => r.blob)) {
+    if (skipped[room.id] && !mine.some(r => hasAudio(r))) {
       return { id: room.id, name: room.name, skipped: true, ready: true,
         tx: { label: '— Not here', cls: 'none' }, dbx: { label: '—', cls: 'none' },
         text: 'marked not at this property', why: '' };
@@ -6250,7 +6871,7 @@ async function computeAreaStatus() {
     // file at Finish, so there's nothing to wait for. This used to need "Not
     // here" (which then said the room wasn't at the property) or the override.
     const typedOnly = (state.typedOnly || {})[room.id];
-    if (!mine.some(r => r.blob || r.audioArchived) && typed && typedOnly) {
+    if (!mine.some(r => hasAudio(r) || r.audioArchived) && typed && typedOnly) {
       return { id: room.id, name: room.name, typedOnly: true, ready: true,
         tx: { label: '✎ Typed', cls: 'ok' }, dbx: { label: 'With details', cls: 'ok' },
         text: 'typed only, no audio needed (text is in 00 - Inspection details.txt)', why: '' };
@@ -6266,14 +6887,14 @@ async function computeAreaStatus() {
     const has = st => mine.some(r => r.status === st);
     if (has('uploading')) tx = { label: '⏳ Working', cls: 'wait' };
     else if (has('pending') || has('recording')) tx = online ? { label: '⏳ Queued', cls: 'wait' } : { label: '● No signal', cls: 'wait' };
-    else if (mine.every(r => r.noAudio)) tx = { label: '⚠ No audio', cls: 'bad' };
+    else if (mine.every(r => r.noAudio || r.unreadable)) tx = { label: '⚠ No audio', cls: 'bad' };
     else if (has('failed')) tx = { label: '⚠ Failed', cls: 'bad' };
     else tx = { label: '✓ Done', cls: 'ok' };
     if (!cloudArchiveEnabled()) dbx = { label: 'Off', cls: 'none' };
     else {
       const audioUp = mine.every(r => r.audioArchived || r.archived === true);
       const allUp = mine.every(r => r.archived === true);
-      if (mine.every(r => r.noAudio)) dbx = allUp ? { label: 'Text only', cls: 'bad' } : { label: '⏳ Sending', cls: 'wait' };
+      if (mine.every(r => r.noAudio || r.unreadable)) dbx = allUp ? { label: 'Text only', cls: 'bad' } : { label: '⏳ Sending', cls: 'wait' };
       else if (allUp) dbx = { label: '✓ Saved', cls: 'ok' };
       else if (audioUp) dbx = { label: '✓ Audio', cls: 'ok' };
       else dbx = online ? { label: '⏳ Sending', cls: 'wait' } : { label: '● On phone', cls: 'wait' };
@@ -6283,7 +6904,7 @@ async function computeAreaStatus() {
     // it is still in flight. The transcript is not required: the typist can
     // always work from the audio, but never from a recording left on a phone.
     const inFlight = mine.some(r => r.status === 'recording' || r.status === 'pending' || r.status === 'uploading');
-    const withAudio = mine.filter(r => r.blob || r.audioArchived);
+    const withAudio = mine.filter(r => hasAudio(r) || r.audioArchived);
     const audioSafe = !cloudArchiveEnabled()
       ? mine.some(r => r.status === 'done')
       : withAudio.length > 0 && withAudio.every(r => r.audioArchived || r.archived === true);
@@ -6292,12 +6913,15 @@ async function computeAreaStatus() {
     const sending = !ready && withAudio.length > 0 && !mine.some(r => r.audioTooLarge && !r.audioArchived);
     let why = '';
     if (!ready) {
-      if (!withAudio.length) why = 'no audio was captured — record it again';
+      if (!withAudio.length) why = mine.some(r => r.unreadable) ? 'the recording can\'t be opened on this phone — record it again' : 'no audio was captured — record it again';
       else if (mine.some(r => r.audioTooLarge && !r.audioArchived)) why = 'recording too large to upload — use Send in Recordings to get it to the typist, then a manager can type FINISH';
       else if (!online) why = 'saved on this phone, waiting for signal to upload';
       else why = 'uploading to Dropbox now';
     }
-    return { id: room.id, name: room.name, tx, dbx, text, ready, sending, why, canSkip: !withAudio.length };
+    // ROUND 14: the most recent error for anything of this room not yet in Dropbox.
+    const errs = mine.filter(r => !(r.audioArchived || r.archived === true)).reduce((a, r) => a.concat(r.errLog || []), []).sort((a, b) => a.t - b.t);
+    const lastErr = errs.length ? errs[errs.length - 1] : null;
+    return { id: room.id, name: room.name, tx, dbx, text, ready, sending, why, canSkip: !withAudio.length, lastErr };
   });
 }
 let areaStatusSeq = 0;
@@ -6630,7 +7254,7 @@ async function fixRecordingFor(roomId, c) {
   try { recs = (await dbAll()).filter(r => r.roomId === roomId && sameJob(r)); } catch (e) {}
   return recs.find(r => c.recId != null && r.id === c.recId)
     || recs.find(r => (r.check || []).some(x => x.quote === c.quote))
-    || recs.find(r => r.blob) || null;
+    || recs.find(r => hasAudio(r)) || null;
 }
 async function playFixClip() {
   if (!fixTarget) return;
@@ -6638,8 +7262,9 @@ async function playFixClip() {
   const play = document.getElementById('fixPlay');
   stopFixAudio();
   const rec = c ? await fixRecordingFor(fixTarget.roomId, c) : null;
-  if (!rec || !rec.blob) { play.innerHTML = '<span>No audio on this phone for this room</span>'; play.disabled = true; return; }
-  fixAudioUrl = URL.createObjectURL(rec.blob);
+  const clip = await recBlob(rec);   // ROUND 14: may be kept as bytes
+  if (!clip) { play.innerHTML = '<span>No audio on this phone for this room</span>'; play.disabled = true; return; }
+  fixAudioUrl = URL.createObjectURL(clip);
   fixAudio = new Audio(fixAudioUrl);
   const from = Math.max(0, (c.at != null ? c.at : 0) - 1);
   try {
@@ -6801,6 +7426,7 @@ function buildInspectionSummary(statusRows) {
   lines.push('='.repeat(40));
   lines.push(...detailLines(state.address, inspectionMeta()));
   lines.push('Finished on phone: ' + new Date().toLocaleString('en-AU'));
+  lines.push('Phone: ' + deviceLabel() + ' (app version ' + APP_ROUND + ')');
   lines.push('');
   lines.push('AREA STATUS AT FINISH');
   lines.push('-'.repeat(40));
@@ -6811,6 +7437,14 @@ function buildInspectionSummary(statusRows) {
   }
   (statusRows || []).forEach(r => lines.push(`${r.name}: ${r.text}`));
   lines.push('');
+  // ROUND 14: what the phone said when sending failed, so nobody has to guess.
+  const probs = (statusRows || []).filter(r => r.lastErr && !r.ready);
+  if (probs.length) {
+    lines.push('SENDING PROBLEMS SEEN ON THE PHONE');
+    lines.push('-'.repeat(40));
+    probs.forEach(r => lines.push(`${r.name}: ${r.lastErr.stage}, ${r.lastErr.msg} (${new Date(r.lastErr.t).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })})`));
+    lines.push('');
+  }
   return lines.join('\n') + '\n' + buildReportText().replace(/^PROPERTY INSPECTION REPORT\n=+\n(?:.*\n)*?\n/, '');
 }
 // ─── ROOM WORD FILE ───────────────────────────────────────────────────────────
@@ -6940,13 +7574,18 @@ function markJobDoc(folder, snap) {
 }
 let jobDocRunning = false;
 async function jobDocPass() {
-  if (!cloudArchiveEnabled() || !navigator.onLine || jobDocRunning) return;
+  if (!cloudArchiveEnabled() || !navigator.onLine) return;
+  if (jobDocRunning && Date.now() - jobDocStartedAt < TIMING.passStuckMs) return;   // ROUND 14
+  const docRun = ++jobDocRunId;
   jobDocRunning = true;
+  jobDocStartedAt = Date.now();
   try {
     const m = loadJobDocs();
     const now = Date.now();
     let changed = false;
     for (const folder of Object.keys(m)) {
+      if (docRun !== jobDocRunId) return;   // ROUND 14: abandoned by the watchdog
+      jobDocStartedAt = Date.now();
       const e = m[folder];
       if (now - (e.touched || 0) > JOBDOC_KEEP_MS) { delete m[folder]; changed = true; continue; }
       if ((e.sent || 0) >= (e.rev || 0) || e.nextAt > now) continue;
@@ -6973,7 +7612,7 @@ async function jobDocPass() {
       }
     }
     if (changed) { const fresh = loadJobDocs(); Object.keys(fresh).forEach(k => { if (!(k in m)) delete fresh[k]; }); saveJobDocs(fresh); }
-  } finally { jobDocRunning = false; }
+  } finally { if (docRun === jobDocRunId) jobDocRunning = false; }
 }
 function jobDocsWaiting() {
   const m = loadJobDocs(), now = Date.now();
@@ -7042,7 +7681,7 @@ function buildJobModel(recs, snap) {
     const sr = snapRooms.find(r => r.id === id) || {};
     const name = (rs[0] && rs[0].roomName) || sr.name || id;
     const rows = ((rs[0] && rs[0].subsections && rs[0].subsections.length) ? rs[0].subsections : (sr.subsections || [])).slice();
-    const multi = rs.filter(r => r.blob || r.audioArchived || r.audioPath).length > 1 || rs.length > 1;
+    const multi = rs.filter(r => r.blob || r.bytesStored || r.audioArchived || r.audioPath).length > 1 || rs.length > 1;
     const buckets = new Map();   // row name (lower) -> { name, start, label, sents: [] }
     const notes = [];
     const audio = [];
@@ -7298,6 +7937,11 @@ async function buildJobDocx(j) {
 
 async function queueInspectionSummary(statusRows) {
   if (!cloudArchiveEnabled() || !state.address) return;
+  // ROUND 14: finishing with rooms not in Dropbox goes straight to the val's log.
+  const notSafe = (statusRows || []).filter(r => !r.ready && !r.skipped && !r.typedOnly);
+  if (notSafe.length) sendDiag('finish-unsent', null, notSafe.length + ' room(s) not in Dropbox at Finish', {
+    rooms: notSafe.map(r => ({ room: r.name, status: r.text, why: r.why, last: r.lastErr ? r.lastErr.stage + ': ' + r.lastErr.msg : '' }))
+  });
   const text = buildInspectionSummary(statusRows);
   const rec = {
     kind: 'summary', roomId: '_summary', roomName: 'Inspection details',
@@ -7537,6 +8181,7 @@ function recFilename(rec) {
 }
 // Share one recording's audio (email / AirDrop / messages), falling back to a download.
 async function shareOneRecording(rec) {
+  if (rec && !rec.blob && rec.bytesStored) rec.blob = await recBlob(rec);   // ROUND 14
   if (!rec || !rec.blob) { showToast('Audio no longer stored for this one'); return; }
   const file = new File([rec.blob], recFilename(rec), { type: rec.type || 'audio/mp4' });
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -7545,7 +8190,8 @@ async function shareOneRecording(rec) {
   }
   downloadOneRecording(rec);
 }
-function downloadOneRecording(rec) {
+async function downloadOneRecording(rec) {
+  if (rec && !rec.blob && rec.bytesStored) rec.blob = await recBlob(rec);   // ROUND 14
   if (!rec || !rec.blob) { showToast('Audio no longer stored for this one'); return; }
   const url = URL.createObjectURL(rec.blob);
   const a = document.createElement('a');
@@ -7559,7 +8205,9 @@ function downloadOneRecording(rec) {
 // can't be typed again if a recording is lost.
 async function saveAudioBackup() {
   let recs = [];
-  try { recs = (await dbAll()).filter(r => sameJob(r) && r.blob); } catch (e) {}
+  try { recs = (await dbAll()).filter(r => sameJob(r) && (r.blob || r.bytesStored)); } catch (e) {}
+  for (const r of recs) if (!r.blob) r.blob = await recBlob(r);   // ROUND 14: audio kept as bytes
+  recs = recs.filter(r => r.blob);
   if (!recs.length) { showToast('No audio on this phone for this job yet'); return; }
   recs.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
   const files = recs.map(r => new File([r.blob], recFilename(r), { type: r.type || 'audio/mp4' }));
@@ -7576,6 +8224,7 @@ async function shareAllRecordings() {
   let recs = [];
   try { recs = await dbAll(); } catch (e) {}
   const mine = state.address ? recs.filter(r => sameJob(r)) : recs;
+  for (const r of mine) if (!r.blob && r.bytesStored) r.blob = await recBlob(r);   // ROUND 14
   const withAudio = mine.filter(r => r.blob);
   if (!withAudio.length) { showToast('No stored audio to send'); return; }
   const files = withAudio.map(r => new File([r.blob], recFilename(r), { type: r.type || 'audio/mp4' }));
@@ -7622,7 +8271,9 @@ async function renderRecordings() {
       }
     }
     let backupHtml = '';
-    if (cloudArchiveEnabled() && status === 'failed') {
+    if (rec.unreadable) {
+      backupHtml = '<div class="rec-backup pending">' + ico('alert') + '<span>Unreadable. Please record the room again</span></div>';
+    } else if (cloudArchiveEnabled() && status === 'failed') {
       backupHtml = rec.archived === true
         ? '<div class="rec-backup ok">' + ico('check') + '<span>Audio in Dropbox. Type from the audio</span></div>'
         : '<div class="rec-backup pending"><i class="chip-dot"></i><span>Sending audio to Dropbox</span></div>';
@@ -7651,6 +8302,12 @@ async function renderRecordings() {
         audio.src = url;
         card.appendChild(audio);
       } catch (e) {}
+    } else if (rec.bytesStored) {
+      // ROUND 14: audio kept as bytes, loaded for this card only.
+      const audio = document.createElement('audio');
+      audio.controls = true;
+      card.appendChild(audio);
+      recBlob(rec).then(b => { if (!b) return; rec.blob = b; const url = URL.createObjectURL(b); recObjectUrls.push(url); audio.src = url; }).catch(() => {});
     }
     const row = document.createElement('div');
     row.className = 'rec-actions';
@@ -7666,6 +8323,7 @@ async function renderRecordings() {
             if (r.status === 'done' || r.status === 'uploading') return;   // already moved on
             r.attempts = 0; r.netFails = 0; r.autoRetries = 0;
             delete r.nextTryAt; delete r.autoRetryAt; delete r.finalError;
+            if (r.unreadable) { delete r.unreadable; r.readFails = UNREADABLE_TRIES - 1; }   // ROUND 14: one more read
             delete r.archNextAt; r.archFails = 0;
             r.status = 'pending';
           });
@@ -7683,7 +8341,7 @@ async function renderRecordings() {
       cBtn.onclick = () => copyText(applyCorrections(applyScratch(t)), '✓ Transcript copied');
       row.appendChild(cBtn);
     }
-    if (rec.blob) {
+    if (rec.blob || rec.bytesStored) {
       const actions = row;
       const sBtn = document.createElement('button');
       sBtn.className = 'rec-mini-btn';
@@ -8084,6 +8742,7 @@ function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   document.body.classList.toggle('on-inspection', id === 'screenInspection');
+  r15OnScreen(id);
   window.scrollTo(0, 0);
 }
 
@@ -8095,6 +8754,13 @@ let toastTimer = null;
 // with a symbol at the front still work: plainText() takes symbols out, and
 // the toast shows a tick or a warning icon instead.
 const ICONS = {"mic": "<rect x=\"9\" y=\"3\" width=\"6\" height=\"11\" rx=\"3\"/><path d=\"M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21\"/>", "pause": "<rect x=\"7\" y=\"5\" width=\"3.6\" height=\"14\" rx=\"1.2\"/><rect x=\"13.4\" y=\"5\" width=\"3.6\" height=\"14\" rx=\"1.2\"/>", "play": "<path d=\"M8 5.6v12.8a.8.8 0 0 0 1.2.7l10.2-6.4a.8.8 0 0 0 0-1.4L9.2 4.9A.8.8 0 0 0 8 5.6z\"/>", "stop": "<rect x=\"6.5\" y=\"6.5\" width=\"11\" height=\"11\" rx=\"2.2\"/>", "check": "<path d=\"M5 12.5l4.5 4.5L19 7.5\"/>", "alert": "<path d=\"M10.3 4.6L2.9 17.5A2 2 0 0 0 4.6 20.5h14.8a2 2 0 0 0 1.7-3L13.7 4.6a2 2 0 0 0-3.4 0z\"/><path d=\"M12 9.5v4.2M12 17h.01\"/>", "chevL": "<path d=\"M14.5 5.5L8 12l6.5 6.5\"/>", "chevR": "<path d=\"M9.5 5.5L16 12l-6.5 6.5\"/>", "chevD": "<path d=\"M6 9.5l6 6 6-6\"/>", "arrowR": "<path d=\"M5 12h14M13.5 6.5L19 12l-5.5 5.5\"/>", "plus": "<path d=\"M12 5v14M5 12h14\"/>", "folder": "<path d=\"M3.5 7.2c0-.9.7-1.7 1.7-1.7h3.9l2 2.2h7.7c.9 0 1.7.8 1.7 1.7v7.9c0 .9-.8 1.7-1.7 1.7H5.2c-1 0-1.7-.8-1.7-1.7z\"/>", "download": "<path d=\"M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14\"/>", "share": "<path d=\"M12 14.5V4M8 8l4-4 4 4M5.5 12.5v6c0 .6.4 1 1 1h11c.6 0 1-.4 1-1v-6\"/>", "camera": "<path d=\"M4 8.5c0-.6.4-1 1-1h2.6l1.5-2h5.8l1.5 2H19c.6 0 1 .4 1 1V18c0 .6-.4 1-1 1H5c-.6 0-1-.4-1-1z\"/><circle cx=\"12\" cy=\"13\" r=\"3.3\"/>", "pencil": "<path d=\"M4.5 19.5l1-4.2L15.7 5.1a1.9 1.9 0 0 1 2.7 0l.5.5a1.9 1.9 0 0 1 0 2.7L8.7 18.5z\"/>", "trash": "<path d=\"M4.5 7h15M9.5 7V4.8h5V7M6.5 7l.9 12.2c0 .5.5.8 1 .8h7.2c.5 0 1-.3 1-.8L17.5 7\"/>", "copy": "<rect x=\"8.5\" y=\"8.5\" width=\"11\" height=\"11\" rx=\"2\"/><path d=\"M15.5 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5\"/>", "refresh": "<path d=\"M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5v4h-4\"/>", "lock": "<rect x=\"5.5\" y=\"10.5\" width=\"13\" height=\"9.5\" rx=\"2\"/><path d=\"M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5\"/>", "moveL": "<path d=\"M19 12H5M10.5 6.5L5 12l5.5 5.5\"/>", "moveR": "<path d=\"M5 12h14M13.5 6.5L19 12l-5.5 5.5\"/>", "x": "<path d=\"M6.5 6.5l11 11M17.5 6.5l-11 11\"/>"};
+Object.assign(ICONS, {
+  "order": "<path d=\"M8 4v16M4.5 7.5L8 4l3.5 3.5M16 20V4M12.5 16.5L16 20l3.5-3.5\"/>",
+  "grip": "<path d=\"M5 8h14M5 12h14M5 16h14\"/>",
+  "gear": "<path d=\"M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z\"/><path d=\"M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.5-2-3.4-2.3.9a7.4 7.4 0 0 0-2.6-1.5L14.1 2.5h-4.2l-.4 2.5a7.4 7.4 0 0 0-2.6 1.5l-2.3-.9-2 3.4 2 1.5a7.6 7.6 0 0 0 0 3l-2 1.5 2 3.4 2.3-.9a7.4 7.4 0 0 0 2.6 1.5l.4 2.5h4.2l.4-2.5a7.4 7.4 0 0 0 2.6-1.5l2.3.9 2-3.4z\"/>",
+  "cal": "<rect x=\"4\" y=\"5.5\" width=\"16\" height=\"14\" rx=\"3\"/><path d=\"M4 10h16M8.5 3.5v4M15.5 3.5v4\"/>",
+  "wave": "<path d=\"M4 10v4M8 7v10M12 4v16M16 8v8M20 10.5v3\"/>"
+});
 const SOLID_ICONS = ["pause", "play", "stop"];
 function ico(name, extra) {
   if (!ICONS[name]) return '';
@@ -8157,6 +8823,547 @@ function escapeHtml(s) {
 function escapeAttr(s) {
   return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ROUND 15: Room order (drag and drop), Add room and Settings sheets, the
+// bottom tab bar, Today on this phone, checklist Check all / Uncheck all,
+// swipe between rooms, sheets that drag closed. Screen only: nothing here
+// records, saves audio or sends anything.
+// ═══════════════════════════════════════════════════════════════════════════
+function r15ReduceMotion() { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
+const r15Rubber = (o, d, c = 0.55) => (o * d * c) / (d + c * Math.abs(o));
+const r15Project = (v, d = 0.998) => (v / 1000) * d / (1 - d);
+// Speed of the last 100 ms of a drag, in px/s. A finger that stopped before
+// letting go has no speed.
+function r15Vel(samples, now, key) {
+  if (!samples || samples.length < 2) return 0;
+  const a = samples[0], b = samples[samples.length - 1];
+  if (now - b.t > 60) return 0;
+  const dt = (b.t - a.t) / 1000;
+  return dt > 0 ? (b[key] - a[key]) / dt : 0;
+}
+function r15Sample(list, x, y, t) { list.push({ x, y, t }); while (list.length > 2 && t - list[0].t > 100) list.shift(); }
+
+// Springs: damping 1 = no bounce; response = how quickly it gets there (s).
+// They start from wherever the thing is now, so they can be caught mid-way.
+class R15Spring {
+  constructor(x, onUpdate, eps = 0.3) {
+    this.x = x; this.v = 0; this.target = x; this.onUpdate = onUpdate; this.eps = eps;
+    this.running = false; this.onRest = null; this.tick = this.tick.bind(this);
+  }
+  set(x) { this.running = false; this.x = this.target = x; this.v = 0; this.onUpdate(x); }
+  stop() { this.running = false; }
+  to(target, o = {}) {
+    this.target = target; this.d = o.damping ?? 1; this.r = o.response ?? 0.35;
+    if (o.velocity != null) this.v = o.velocity;
+    this.onRest = o.onRest || null;
+    if (r15ReduceMotion()) { this.running = false; this.x = target; this.v = 0; this.onUpdate(target); this.rest(); return this; }
+    if (!this.running) { this.running = true; this.last = performance.now(); requestAnimationFrame(this.tick); }
+    return this;
+  }
+  rest() { const f = this.onRest; this.onRest = null; if (f) f(); }
+  tick(now) {
+    if (!this.running) return;
+    const dt = Math.min(0.05, Math.max(0, (now - this.last) / 1000)); this.last = now;
+    const k = Math.pow(2 * Math.PI / this.r, 2), c = 4 * Math.PI * this.d / this.r;
+    const n = Math.max(1, Math.ceil(dt / 0.004)), h = dt / n;
+    for (let i = 0; i < n; i++) { const a = -k * (this.x - this.target) - c * this.v; this.v += a * h; this.x += this.v * h; }
+    if (Math.abs(this.v) < this.eps * 4 && Math.abs(this.x - this.target) < this.eps) {
+      this.x = this.target; this.v = 0; this.running = false; this.onUpdate(this.x); this.rest(); return;
+    }
+    this.onUpdate(this.x); requestAnimationFrame(this.tick);
+  }
+}
+
+// A drag or a long press must not also count as a tap on what's underneath.
+let r15SwallowUntil = 0;
+function r15SwallowClick(ms) { r15SwallowUntil = Date.now() + (ms || 400); }
+document.addEventListener('click', e => {
+  if (r15SwallowUntil && Date.now() < r15SwallowUntil) { e.stopPropagation(); e.preventDefault(); }
+  r15SwallowUntil = 0;
+}, true);
+// A pan sends no click, so the window would otherwise eat the next real tap.
+// Every new touch starts clean (registered before the swipe and drag listeners).
+document.addEventListener('pointerdown', () => { r15SwallowUntil = 0; }, true);
+
+// ─── Bottom tab bar: Today | Recordings ─────────────────────────────────────
+// Shown on the Start screen, and on Recordings when it was opened from there.
+// Recordings opened from a room keeps its Back button instead.
+function r15OnScreen(id) {
+  const tabs = id === 'screenSetup' || (id === 'screenRecordings' && recordingsReturnScreen === 'screenSetup');
+  document.body.classList.toggle('r15-tabs', tabs);
+  const t = document.getElementById('tabToday'), r = document.getElementById('tabRecs');
+  if (t) { if (id === 'screenSetup') t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current'); }
+  if (r) { if (id === 'screenRecordings') r.setAttribute('aria-current', 'page'); else r.removeAttribute('aria-current'); }
+}
+function r15GoToday() {
+  const a = document.querySelector('.screen.active');
+  if (a && a.id === 'screenRecordings') closeRecordings();
+}
+function r15GoRecordings() {
+  const a = document.querySelector('.screen.active');
+  if (!a || a.id !== 'screenRecordings') showRecordings();
+}
+function r15TabBadge(n) {
+  try { r15TabBadgeInner(n); } catch (e) {}
+}
+function r15TabBadgeInner(n) {
+  const b = document.getElementById('tabRecBadge'), t = document.getElementById('tabRecs');
+  if (!b) return;
+  b.textContent = String(n);
+  b.hidden = !n;
+  if (t) t.setAttribute('aria-label', n ? `Recordings, ${n} sending` : 'Recordings');
+}
+
+// ─── Today on this phone ────────────────────────────────────────────────────
+// One line per job recorded on this phone today, from the recordings already
+// stored here. Tapping a job opens Recordings.
+function renderTodayJobs(recs) {
+  try { renderTodayJobsInner(recs); } catch (e) {}
+}
+function renderTodayJobsInner(recs) {
+  const box = document.getElementById('todayJobs'), list = document.getElementById('todayList');
+  if (!box || !list) return;
+  const today = new Date().toDateString();
+  const groups = new Map();
+  (recs || []).forEach(r => {
+    if (!r || r.kind === 'summary' || !r.createdAt || new Date(r.createdAt).toDateString() !== today) return;
+    const key = r.jobId || r.address || 'job';
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(r);
+  });
+  if (!groups.size) { box.hidden = true; list.innerHTML = ''; return; }
+  const jobs = [...groups.values()].map(g => ({ g, at: Math.max(...g.map(r => r.createdAt || 0)) })).sort((a, b) => b.at - a.at);
+  list.innerHTML = jobs.map(({ g }) => {
+    const addr = (g.find(r => r.address) || {}).address || 'Inspection';
+    const rooms = new Set(g.map(r => r.roomId || r.roomName)).size;
+    const sending = unsentRecordings(g).length;
+    const bad = g.filter(r => r.unreadable).length;
+    const noAudio = g.filter(r => r.noAudio && !r.unreadable).length;
+    const withAudio = g.filter(r => hasAudio(r) || r.audioArchived || r.unreadable);
+    const allIn = cloudArchiveEnabled() && withAudio.length > 0 && withAudio.every(r => r.audioArchived || r.archived === true);
+    const live = !!(state.rooms && state.rooms.length && g.some(r => sameJob(r)));
+    const first = Math.min(...g.map(r => r.createdAt || Date.now()));
+    const time = new Date(first).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' });
+    const chips = [];
+    if (live) chips.push('<span class="tj-chip live">In progress</span>');
+    if (sending) chips.push(`<span class="tj-chip wait">${sending} sending</span>`);
+    if (bad) chips.push(`<span class="tj-chip bad">${bad} unreadable</span>`);
+    if (noAudio) chips.push(`<span class="tj-chip bad">${noAudio} with no audio</span>`);
+    if (!sending && !bad && !noAudio) chips.push(allIn ? `<span class="tj-chip ok">${ico('check')}All in Dropbox</span>` : '<span class="tj-chip live">On this phone</span>');
+    return `<button type="button" class="today-job" onclick="showRecordings()"><span><span class="tj-addr">${escapeHtml(addr)}</span>`
+      + `<span class="tj-meta">${rooms} room${rooms === 1 ? '' : 's'} · started ${escapeHtml(time)}</span><span class="tj-chips">${chips.join('')}</span></span>`
+      + `<span class="tj-go">${ico('chevR')}</span></button>`;
+  }).join('');
+  box.hidden = false;
+}
+
+// ─── One sheet for Room order, Add room and Settings ───────────────────────
+const R15_PANELS = { order: 'r15Order', add: 'r15Add', settings: 'r15Settings' };
+let r15ReturnFocus = null;
+function r15SheetOpen() { const s = document.getElementById('r15Sheet'); return !!(s && s.classList.contains('open')); }
+function openR15Sheet(mode, title, sub, footHtml) {
+  Object.entries(R15_PANELS).forEach(([m, id]) => { document.getElementById(id).hidden = m !== mode; });
+  document.getElementById('r15Title').textContent = title;
+  document.getElementById('r15Sub').textContent = sub || '';
+  const foot = document.getElementById('r15Foot');
+  foot.innerHTML = footHtml;
+  foot.className = 'r15-foot' + (foot.querySelectorAll('button').length > 1 ? ' two' : '');
+  const sh = document.getElementById('r15Sheet');
+  sh.style.transition = ''; sh.style.transform = '';
+  document.getElementById('r15Body').scrollTop = 0;
+  r15ReturnFocus = document.activeElement;
+  sh.classList.add('open');
+  document.getElementById('r15Backdrop').classList.add('open');
+  document.body.classList.add('sheet-open');
+  const t = document.getElementById('r15Title');
+  t.setAttribute('tabindex', '-1');
+  try { t.focus({ preventScroll: true }); } catch (e) {}
+  requestAnimationFrame(r15EdgeFoot);
+}
+function closeR15Sheet() {
+  const sh = document.getElementById('r15Sheet');
+  if (!sh) return;
+  sh.classList.remove('open');
+  document.getElementById('r15Backdrop').classList.remove('open');
+  const fix = document.getElementById('fixSheet');
+  if (!fix || !fix.classList.contains('open')) document.body.classList.remove('sheet-open');
+  if (ordDrag) { cancelAnimationFrame(ordRaf); ordDrag = null; }
+  const back = r15ReturnFocus; r15ReturnFocus = null;
+  if (back && document.contains(back) && back.focus) { try { back.focus({ preventScroll: true }); } catch (e) {} }
+}
+function r15EdgeFoot() {
+  const b = document.getElementById('r15Body'), f = document.getElementById('r15Foot');
+  if (b && f) f.classList.toggle('edge', b.scrollHeight > b.clientHeight + 1 && b.scrollTop + b.clientHeight < b.scrollHeight - 1);
+}
+document.getElementById('r15Body').addEventListener('scroll', r15EdgeFoot, { passive: true });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && r15SheetOpen()) closeR15Sheet(); });
+
+// Drag a sheet down by its top to close it; a flick closes it too. Let go
+// early and it settles back.
+function r15MakeSheetDraggable(sheet, handleSel, close) {
+  if (!sheet) return;
+  let d = null;
+  sheet.addEventListener('pointerdown', e => {
+    if (e.button !== 0 || !sheet.classList.contains('open')) return;
+    if (!e.target.closest(handleSel) || e.target.closest('.sheet-close, input, textarea, select, a')) return;
+    d = { id: e.pointerId, y0: e.clientY, dy: 0, lock: false, s: [] };
+    r15Sample(d.s, e.clientX, e.clientY, e.timeStamp);
+  });
+  window.addEventListener('pointermove', e => {
+    if (!d || e.pointerId !== d.id) return;
+    const dy = e.clientY - d.y0;
+    if (!d.lock) {
+      if (Math.abs(dy) < 8) return;
+      d.lock = true; d.y0 = e.clientY; sheet.style.transition = 'none';
+      try { sheet.setPointerCapture(d.id); } catch (err) {}
+    }
+    d.dy = e.clientY - d.y0;
+    r15Sample(d.s, e.clientX, e.clientY, e.timeStamp);
+    const y = d.dy >= 0 ? d.dy : -r15Rubber(-d.dy, 400, 0.35);
+    sheet.style.transform = `translateY(${y}px)`;
+    e.preventDefault();
+  }, { passive: false });
+  const end = (e, cancel) => {
+    if (!d || e.pointerId !== d.id) return;
+    const was = d; d = null;
+    if (!was.lock) return;
+    r15SwallowClick();
+    const v = cancel ? 0 : r15Vel(was.s, e.timeStamp, 'y');
+    const shut = was.dy > 0 && (was.dy + r15Project(v) > sheet.offsetHeight * 0.45 || v > 700);
+    if (shut && !r15ReduceMotion()) {
+      const left = Math.max(0, sheet.offsetHeight + 40 - was.dy);
+      const ms = Math.round(Math.min(360, Math.max(180, v > 0 ? left / v * 1000 : 300)));
+      sheet.style.transition = `transform ${ms}ms cubic-bezier(.2,.8,.2,1)`;
+      sheet.style.transform = 'translateY(calc(100% + 40px))';
+      setTimeout(() => { close(); sheet.style.transition = ''; sheet.style.transform = ''; }, ms);
+    } else if (shut) {
+      sheet.style.transition = ''; sheet.style.transform = ''; close();
+    } else {
+      sheet.style.transition = 'transform 0.32s cubic-bezier(.2,.8,.2,1)'; sheet.style.transform = '';
+      setTimeout(() => { if (!d) sheet.style.transition = ''; }, 340);
+    }
+  };
+  window.addEventListener('pointerup', e => end(e, false));
+  window.addEventListener('pointercancel', e => end(e, true));
+}
+r15MakeSheetDraggable(document.getElementById('r15Sheet'), '#r15Top', closeR15Sheet);
+r15MakeSheetDraggable(document.getElementById('fixSheet'), '.sheet-grab, .sheet-head', () => closeFixSheet());
+
+// ─── Settings (gear) ────────────────────────────────────────────────────────
+function openSettings() {
+  if (r15SheetOpen()) return;
+  // Service settings only between jobs: changing them mid-job would send the
+  // rest of this job's rooms somewhere else.
+  const a = document.querySelector('.screen.active');
+  const adm = document.getElementById('adminSettings');
+  if (adm) { adm.hidden = !(a && a.id === 'screenSetup'); if (adm.hidden) adm.open = false; }
+  openR15Sheet('settings', 'Settings', '', '<button type="button" class="btn-primary" onclick="closeR15Sheet()">Done</button>');
+  applyTheme();
+}
+
+// ─── Add room ───────────────────────────────────────────────────────────────
+let r15AddMode = 'setup';
+function r15ExistingNames(mode) {
+  const names = mode === 'room'
+    ? (state.rooms || []).map(r => r.name)
+    : [...document.querySelectorAll('#roomsSelect .room-toggle')].map(d => d.textContent);
+  return new Set(names.map(n => String(n).trim().toLowerCase()));
+}
+function openAddRoom(mode) {
+  if (r15SheetOpen()) return;
+  if (mode === 'room' && listeningRoom) { showToast('Tap Done first, then add the room.'); return; }
+  r15AddMode = mode === 'room' ? 'room' : 'setup';
+  const inp = document.getElementById('newRoomName');
+  inp.value = '';
+  document.getElementById('newRoomErr').hidden = true;
+  // On a room, offer the app's other rooms that aren't in this job yet. The
+  // Start screen already lists them all.
+  const have = r15ExistingNames(r15AddMode);
+  const picks = r15AddMode === 'room' ? ROOM_LIBRARY.filter(r => !have.has(r.name.toLowerCase())) : [];
+  document.getElementById('newRoomPicks').innerHTML = picks.length
+    ? '<div class="r15-picks-head">Quick pick</div>' + picks.map(r => `<button type="button" class="r15-pick" data-pick="${escapeAttr(r.name)}">${escapeHtml(r.name)}</button>`).join('')
+    : '';
+  openR15Sheet('add', 'Add room', r15AddMode === 'room' ? 'It goes after this room.' : 'It is added to the list, ticked.',
+    '<button type="button" class="btn-export secondary" onclick="closeR15Sheet()">Cancel</button><button type="button" class="btn-primary" onclick="submitAddRoom()">Add room</button>');
+  try { inp.focus({ preventScroll: true }); } catch (e) {}   // inside the tap, so iPhone shows the keyboard
+}
+function r15AddErr(msg) {
+  const err = document.getElementById('newRoomErr');
+  err.textContent = msg; err.hidden = false;
+  try { document.getElementById('newRoomName').focus(); } catch (e) {}
+}
+function submitAddRoom() {
+  const name = document.getElementById('newRoomName').value.trim().replace(/\s+/g, ' ');
+  if (!name) return r15AddErr('Type a room name.');
+  if (r15AddMode === 'setup') {
+    // Already on the Start list: tick it rather than adding a copy.
+    const same = [...document.querySelectorAll('#roomsSelect .room-toggle')].find(d => d.textContent.trim().toLowerCase() === name.toLowerCase());
+    if (same) { same.classList.add('selected'); closeR15Sheet(); showToast('✓ ' + same.textContent + ' ticked'); return; }
+    closeR15Sheet(); addCustomSetupRoomNamed(name); showToast('✓ ' + name + ' added'); return;
+  }
+  if (r15ExistingNames('room').has(name.toLowerCase())) return r15AddErr('That room is already on the list.');
+  closeR15Sheet(); addRoomNamed(name); showToast('✓ ' + name + ' added');
+}
+document.getElementById('newRoomPicks').addEventListener('click', e => {
+  const b = e.target.closest('[data-pick]'); if (!b) return;
+  document.getElementById('newRoomName').value = b.dataset.pick;
+  document.getElementById('newRoomErr').hidden = true;
+});
+document.getElementById('newRoomName').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submitAddRoom(); } });
+document.getElementById('newRoomName').addEventListener('input', () => { document.getElementById('newRoomErr').hidden = true; });
+
+// ─── Room order: drag and drop ─────────────────────────────────────────────
+// From the Start screen (the ticked rooms) or from a room (this job's rooms).
+// The row follows the finger; the others spring out of the way; the order is
+// applied the moment a row is dropped.
+const ORD_H = 54;
+let ordItems = [], ordRows = [], ordSprings = [], ordMode = 'setup', ordDrag = null, ordRaf = 0;
+function openRoomOrder(mode) {
+  if (r15SheetOpen()) return;
+  if (mode === 'room' && listeningRoom) { showToast('Tap Done first, then change the order.'); return; }
+  ordMode = mode === 'room' ? 'room' : 'setup';
+  ordItems = ordMode === 'setup'
+    ? [...document.querySelectorAll('#roomsSelect .room-toggle.selected')].map(d => ({ id: d.dataset.id, name: d.textContent }))
+    : (state.rooms || []).map(r => ({ id: r.id, name: r.name }));
+  if (ordItems.length < 2) { showToast(ordMode === 'setup' ? 'Tick at least two rooms first.' : 'Add another room first.'); return; }
+  const cur = ordMode === 'room' && state.rooms[state.currentRoomIdx] ? state.rooms[state.currentRoomIdx].id : null;
+  const list = document.getElementById('ordList');
+  list.style.height = (ordItems.length * ORD_H) + 'px';
+  list.innerHTML = ordItems.map((it, i) => `<div class="ord-row${i === ordItems.length - 1 ? ' last' : ''}" data-id="${escapeAttr(it.id)}">`
+    + `<span class="ord-n">${i + 1}</span><span class="ord-name">${escapeHtml(it.name)}</span>${it.id === cur ? '<span class="ord-here">Current</span>' : ''}`
+    + `<button type="button" class="ord-grip" aria-label="Move ${escapeAttr(it.name)}. Arrow keys move it up or down.">${ico('grip')}</button></div>`).join('');
+  ordRows = [...list.children];
+  ordSprings = ordRows.map((row, i) => { const sp = new R15Spring(i * ORD_H, y => { row.style.transform = `translate3d(0,${y}px,0)`; }); sp.set(i * ORD_H); return sp; });
+  openR15Sheet('order', 'Room order', 'Drag the lines to move a room.', '<button type="button" class="btn-primary" onclick="closeR15Sheet()">Done</button>');
+}
+function ordSlots(from, to) {
+  return ordRows.map((_, j) => j === from ? to : (from < to && j > from && j <= to) ? j - 1 : (from > to && j >= to && j < from) ? j + 1 : j);
+}
+function ordNumbers(slots) {
+  ordRows.forEach((row, j) => { row.querySelector('.ord-n').textContent = slots[j] + 1; row.classList.toggle('last', slots[j] === ordRows.length - 1); });
+}
+function ordCommit(from, to) {
+  if (from === to) return;
+  const mv = a => { const [x] = a.splice(from, 1); a.splice(to, 0, x); };
+  mv(ordRows); mv(ordSprings); mv(ordItems);
+  ordNumbers(ordRows.map((_, j) => j));
+  // Keep the page order the same as the screen, for keyboards and screen readers.
+  const list = document.getElementById('ordList');
+  ordRows.forEach(r => list.appendChild(r));
+  const live = document.getElementById('ordLive');
+  if (live) live.textContent = `${ordItems[to].name} moved to ${to + 1} of ${ordItems.length}`;
+  r15ApplyOrder(ordItems.map(x => x.id));
+}
+function r15ApplyOrder(ids) {
+  if (ordMode === 'setup') {
+    // The ticked rooms swap places among themselves; unticked rooms stay put.
+    const box = document.getElementById('roomsSelect');
+    const all = [...box.children];
+    const slots = all.map((d, i) => (d.classList.contains('selected') && ids.includes(d.dataset.id)) ? i : -1).filter(i => i >= 0);
+    const nodes = ids.map(id => all.find(d => d.dataset.id === id)).filter(Boolean);
+    if (nodes.length !== slots.length) return;
+    const out = all.slice();
+    slots.forEach((slot, k) => { out[slot] = nodes[k]; });
+    out.forEach(n => box.appendChild(n));
+    return;
+  }
+  if (listeningRoom) return;   // never while a recording is open
+  const curId = state.rooms[state.currentRoomIdx] && state.rooms[state.currentRoomIdx].id;
+  const byId = new Map(state.rooms.map(r => [r.id, r]));
+  const next = ids.map(id => byId.get(id)).filter(Boolean);
+  if (next.length !== state.rooms.length) return;
+  state.rooms = next;
+  state.currentRoomIdx = Math.max(0, state.rooms.findIndex(r => r.id === curId));
+  saveState();
+  renderInspection();
+}
+function ordMove() {
+  if (!ordDrag) return;
+  const { from } = ordDrag, n = ordRows.length, max = (n - 1) * ORD_H;
+  const lr = document.getElementById('ordList').getBoundingClientRect();
+  let y = ordDrag.y - lr.top - ordDrag.grab;
+  if (y < 0) y = -r15Rubber(-y, ORD_H * 2); else if (y > max) y = max + r15Rubber(y - max, ORD_H * 2);
+  ordSprings[from].set(y);
+  const to = Math.max(0, Math.min(n - 1, Math.round(y / ORD_H)));
+  if (to !== ordDrag.to) {
+    ordDrag.to = to;
+    const slots = ordSlots(from, to);
+    ordRows.forEach((_, j) => { if (j !== from) ordSprings[j].to(slots[j] * ORD_H, { damping: 1, response: 0.25 }); });
+    ordNumbers(slots);
+  }
+}
+document.getElementById('ordList').addEventListener('pointerdown', e => {
+  const grip = e.target.closest('.ord-grip');
+  if (!grip || e.button !== 0 || ordDrag) return;
+  e.preventDefault();
+  const row = grip.closest('.ord-row'), from = ordRows.indexOf(row);
+  if (from < 0) return;
+  const lr = document.getElementById('ordList').getBoundingClientRect();
+  ordDrag = { id: e.pointerId, from, to: from, grab: e.clientY - lr.top - ordSprings[from].x, y: e.clientY, s: [] };
+  r15Sample(ordDrag.s, e.clientX, e.clientY, e.timeStamp);
+  try { grip.setPointerCapture(e.pointerId); } catch (err) {}
+  ordSprings[from].stop();
+  row.classList.add('lifted');
+  // Near the top or bottom edge of the sheet, the list scrolls by itself.
+  const loop = () => {
+    if (!ordDrag) return;
+    const body = document.getElementById('r15Body'), b = body.getBoundingClientRect(), z = 52;
+    let dv = 0;
+    if (ordDrag.y < b.top + z) dv = -(b.top + z - ordDrag.y) / z * 9;
+    else if (ordDrag.y > b.bottom - z) dv = (ordDrag.y - (b.bottom - z)) / z * 9;
+    if (dv) { body.scrollTop += dv; ordMove(); }
+    ordRaf = requestAnimationFrame(loop);
+  };
+  ordRaf = requestAnimationFrame(loop);
+});
+window.addEventListener('pointermove', e => {
+  if (!ordDrag || e.pointerId !== ordDrag.id) return;
+  ordDrag.y = e.clientY;
+  r15Sample(ordDrag.s, e.clientX, e.clientY, e.timeStamp);
+  ordMove();
+  e.preventDefault();
+}, { passive: false });
+function ordEnd(e, cancel) {
+  if (!ordDrag || e.pointerId !== ordDrag.id) return;
+  cancelAnimationFrame(ordRaf);
+  const { from, to } = ordDrag, v = cancel ? 0 : r15Vel(ordDrag.s, e.timeStamp, 'y');
+  ordDrag = null;
+  ordRows[from].classList.remove('lifted');
+  if (cancel) {
+    // Interrupted (a call, the system taking the touch): everything goes back.
+    ordRows.forEach((_, j) => ordSprings[j].to(j * ORD_H, { damping: 1, response: 0.3 }));
+    ordNumbers(ordRows.map((_, j) => j));
+    return;
+  }
+  ordSprings[from].to(to * ORD_H, { velocity: v, damping: 0.85, response: 0.3 });
+  ordCommit(from, to);
+}
+window.addEventListener('pointerup', e => ordEnd(e, false));
+window.addEventListener('pointercancel', e => ordEnd(e, true));
+document.getElementById('ordList').addEventListener('keydown', e => {
+  const g = e.target.closest('.ord-grip');
+  if (!g || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+  e.preventDefault();
+  const from = ordRows.indexOf(g.closest('.ord-row'));
+  const to = Math.max(0, Math.min(ordRows.length - 1, from + (e.key === 'ArrowUp' ? -1 : 1)));
+  if (from === to) return;
+  const slots = ordSlots(from, to);
+  ordRows.forEach((_, j) => ordSprings[j].to(slots[j] * ORD_H, { damping: 1, response: 0.25 }));
+  ordCommit(from, to);
+  g.focus();
+});
+
+// Press and hold a room tab: Room order.
+(function r15TabHold() {
+  const nav = document.getElementById('roomNav');
+  if (!nav) return;
+  let timer = null, hold = null, firedFor = null;
+  const cancel = () => { clearTimeout(timer); hold = null; };
+  nav.addEventListener('pointerdown', e => {
+    const tab = e.target.closest('.room-tab');
+    if (!tab || e.button !== 0) return;
+    hold = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    clearTimeout(timer);
+    timer = setTimeout(() => { if (!hold) return; firedFor = hold.id; hold = null; openRoomOrder('room'); }, 500);
+  });
+  nav.addEventListener('pointermove', e => { if (hold && (Math.abs(e.clientX - hold.x) > 10 || Math.abs(e.clientY - hold.y) > 10)) cancel(); });
+  window.addEventListener('pointerup', e => { if (firedFor !== null && e.pointerId === firedFor) { firedFor = null; r15SwallowClick(); } cancel(); });
+  window.addEventListener('pointercancel', () => { firedFor = null; cancel(); });
+  nav.addEventListener('contextmenu', e => { if (e.target.closest('.room-tab')) e.preventDefault(); });
+})();
+
+// ─── Checklist: Check all / Uncheck all ─────────────────────────────────────
+// A guide for what to look at. Ticks stay on the phone; they aren't in the report.
+function checkAllRows(on) {
+  const room = state.rooms[state.currentRoomIdx];
+  if (!room) return;
+  state.checked[room.id] = {};
+  if (on) (room.subsections || []).forEach(s => { state.checked[room.id][s] = true; });
+  (room.subsections || []).forEach((s, i) => { const el = document.getElementById(`chk-${room.id}-${i}`); if (el) el.classList.toggle('done', !!on); });
+  renderNextSub();
+  saveState();
+}
+
+// ─── Swipe between rooms ────────────────────────────────────────────────────
+// Sideways on the room: the page follows the finger and a flick carries it to
+// the next or previous room. Not while recording (it pulls back and says why),
+// and never starting from the transcript box or a field, so text can still be
+// selected.
+(function r15RoomSwipe() {
+  const rc = () => document.getElementById('roomContent');
+  let g = null;
+  const settle = el => {
+    el.style.transition = 'transform 0.32s cubic-bezier(.2,.8,.2,1)'; el.style.transform = '';
+    setTimeout(() => { if (!g) { el.style.transition = ''; el.style.willChange = ''; } }, 340);
+  };
+  document.addEventListener('pointerdown', e => {
+    if (e.button !== 0 || document.body.classList.contains('sheet-open')) return;
+    const el = rc();
+    if (!el || !el.contains(e.target) || !document.getElementById('screenInspection').classList.contains('active')) return;
+    if (e.target.closest('textarea, input, select, audio, .checklist')) return;
+    if (!state.rooms || state.rooms.length < 2) return;
+    g = { id: e.pointerId, x0: e.clientX, y0: e.clientY, lock: null, x: 0, s: [] };
+    r15Sample(g.s, e.clientX, e.clientY, e.timeStamp);
+  }, true);
+  document.addEventListener('pointermove', e => {
+    if (!g || e.pointerId !== g.id) return;
+    const el = rc();
+    if (!g.lock) {
+      const dx = e.clientX - g.x0, dy = e.clientY - g.y0;
+      if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
+      if (Math.abs(dx) < Math.abs(dy) * 1.3) { g = null; return; }   // up/down: leave it to the page
+      g.lock = 'h'; g.x0 = e.clientX;
+      try { const sel = window.getSelection(); if (sel && !sel.isCollapsed) sel.removeAllRanges(); } catch (err) {}
+      el.style.transition = 'none'; el.style.willChange = 'transform';
+      try { el.setPointerCapture(e.pointerId); } catch (err) {}
+    }
+    r15Sample(g.s, e.clientX, e.clientY, e.timeStamp);
+    const W = window.innerWidth, i = state.currentRoomIdx, last = state.rooms.length - 1;
+    let x = e.clientX - g.x0;
+    if (listeningRoom) x = r15Rubber(x, W, 0.3);
+    else if ((i === 0 && x > 0) || (i === last && x < 0)) x = r15Rubber(x, W);
+    g.x = x;
+    el.style.transform = `translate3d(${x}px,0,0)`;
+    e.preventDefault();
+  }, { passive: false, capture: true });
+  const end = (e, cancel) => {
+    if (!g || e.pointerId !== g.id) return;
+    const was = g; g = null;
+    if (was.lock !== 'h') return;
+    r15SwallowClick();
+    const el = rc(), W = window.innerWidth;
+    const v = cancel ? 0 : r15Vel(was.s, e.timeStamp, 'x');
+    const proj = was.x + r15Project(v);
+    const i = state.currentRoomIdx, last = state.rooms.length - 1;
+    let dir = 0;
+    if (!listeningRoom) { if (proj < -W * 0.3 && i < last) dir = 1; else if (proj > W * 0.3 && i > 0) dir = -1; }
+    else if (Math.abs(was.x) > 24) showToast('Tap Done first, then move on.');
+    if (!dir) { settle(el); return; }
+    if (r15ReduceMotion()) { el.style.transition = ''; el.style.transform = ''; el.style.willChange = ''; dir > 0 ? nextRoom() : prevRoom(); return; }
+    el.style.transition = 'transform 0.2s cubic-bezier(.3,.7,.4,1), opacity 0.2s';
+    el.style.transform = `translate3d(${-dir * W}px,0,0)`; el.style.opacity = '0.4';
+    setTimeout(() => {
+      dir > 0 ? nextRoom() : prevRoom();
+      el.style.transition = 'none'; el.style.transform = `translate3d(${dir * W * 0.35}px,0,0)`; el.style.opacity = '0.4';
+      void el.offsetWidth;
+      el.style.transition = 'transform 0.34s cubic-bezier(.2,.8,.2,1), opacity 0.25s'; el.style.transform = ''; el.style.opacity = '';
+      setTimeout(() => { el.style.transition = ''; el.style.willChange = ''; }, 360);
+    }, 200);
+  };
+  document.addEventListener('pointerup', e => end(e, false), true);
+  document.addEventListener('pointercancel', e => end(e, true), true);
+  // A drag of selected text would cancel the swipe; there is nothing to drag out of a room.
+  document.addEventListener('dragstart', e => { const el = rc(); if (el && el.contains(e.target) && !e.target.closest('textarea, input')) e.preventDefault(); }, true);
+})();
+
+// Today's date on the Start screen, and the tab bar for whichever screen is up.
+(function r15Init() {
+  const dc = document.getElementById('dateChip');
+  if (dc) dc.textContent = new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
+  const a = document.querySelector('.screen.active');
+  r15OnScreen(a ? a.id : 'screenSetup');
+})();
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
 initSetup();

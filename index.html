@@ -2460,7 +2460,7 @@
     <!-- Service settings. Inspectors never need these, and a stray tap here
          used to be able to break uploads, so they're tucked away. -->
     <details class="admin-settings" id="adminSettings">
-      <summary>Admin settings <span class="app-ver">· app version 16</span></summary>
+      <summary>Admin settings <span class="app-ver">· app version 17</span></summary>
       <p class="admin-warn">For Daphne / admin only. Changing these can stop recordings reaching Dropbox.</p>
     <div class="field-group">
       <label>Transcription engine</label>
@@ -3201,7 +3201,7 @@ let photoQueueRunning = false; // guard so the serial-photo upload queue runs on
 // every read of a stored recording now has a hard deadline (a send that never
 // answers, or ignores its abort, can no longer hold a queue), and every pass
 // has a watchdog. The numbers live here so the tests can shorten them.
-const APP_ROUND = 16;
+const APP_ROUND = 17;
 const TIMING = {
   grace: 5000,              // added to a request's own time limit before giving up on it outright
   readMs: 20000,            // reading one stored recording into memory
@@ -5978,12 +5978,15 @@ function findPhraseFrom(words, phrase, from) {
   };
   const c = Math.max(0, from || 0);
   let best = -1, bestScore = 0, bestDist = Infinity;
+  let near = -1, nearScore = 0;   // ROUND 17: best match in the next 25 words
   for (let i = 0; i < words.length; i++) {
     const r = scoreAt(i);
     if (r.hits < need) continue;
     const dist = i >= c ? i - c : words.length + (c - i);   // after the cursor first
     if (r.score > bestScore || (r.score === bestScore && dist < bestDist)) { best = i; bestScore = r.score; bestDist = dist; }
+    if (i >= c && i - c <= 25 && r.score > nearScore) { near = i; nearScore = r.score; }
   }
+  if (near >= 0 && near !== best && nearScore >= bestScore - 2.5) best = near;
   return best < 0 ? null : { at: words[best].s, idx: best };
 }
 
@@ -6807,7 +6810,7 @@ async function updatePendingUI() {
     if (r.status === 'pending' || r.status === 'recording') m.pending++;
     else if (r.status === 'uploading') { m.uploading++; m.since = Math.max(m.since, r.uploadStartedAt || 0); }
     else if (r.status === 'failed') m.failed++;
-    else if (r.status === 'done') { m.done++; if (cloudArchiveEnabled() && r.archived !== true) m.unarchived++; }
+    else if (r.status === 'done') { m.done++; if (cloudArchiveEnabled() && r.archived !== true) m.unarchived++; if (!(r.sections && r.sections.length)) m.unsorted = (m.unsorted || 0) + 1; }
     if (hasAudio(r) || r.audioArchived) { m.withAudio++; if (r.audioArchived || r.archived === true) m.audioUp++; }
     if (r.noAudio || r.unreadable) m.noAudio++;
     if (r.status !== 'done') { m.attempts = Math.max(m.attempts, r.attempts || 0); if (r.lastError) m.lastError = r.lastError; }
@@ -7130,6 +7133,15 @@ function showReview() {
     if (hits.length) notes.push(`Words to avoid in ${room.name}: ${hits.join(', ')}`);
     const mm = roomMismatches[room.id];
     if (mm) notes.push(`${room.name}: you said “${mm.said}”. Check it's under the right room.`);
+    // ROUND 17: nothing for the first rows while later rows are full.
+    const secs = (state.roomSections || {})[room.id];
+    const rm = roomRecMap[room.id] || {};
+    const allIn = !rm.pending && !rm.uploading && !rm.failed && !rm.noAudio && !rm.unsorted;
+    if (allIn && secs && secs.length && room.subsections && room.subsections.length) {
+      const have = new Set(secs.filter(x => (x.text || '').trim()).map(x => String(x.name).toLowerCase()));
+      const lead = leadingEmptyRows(room.subsections, n => have.has(String(n).toLowerCase()));
+      if (lead) notes.push(`${room.name}: nothing for ${room.subsections[0]} to ${room.subsections[lead - 1]}. Record it if you missed it.`);
+    }
   });
   const failedRooms = state.rooms.filter(r => { const m = roomRecMap[r.id]; return m && m.failed && !m.done; }).map(r => r.name);
   if (failedRooms.length) notes.push(`No transcript for ${failedRooms.join(', ')}. The audio is saved for the typist.`);
@@ -7714,6 +7726,63 @@ function highlightSpans(sentence, checks) {
   return merged;
 }
 
+// ROUND 17: phrases that came through earlier rounds' sorting as plain text but
+// were mishears (Stirling Street, Barrack Square). They are always highlighted
+// in the Word file, whatever the AI flagged, so a garbled row can't say
+// "nothing to check".
+const SUSPECT_PHRASES = [
+  /\b(?:corner|lock|handle|panel|door|circle panel)\s+skirting\b/gi,
+  /\bskirting\s+(?:on\s+)?(?:both sides|the ceiling|to the ceiling|to the wall|to the flooring)\b/gi,
+  /\bonce\s+(?:over|of|the)\b/gi, /\bone sort of\b/gi,
+  /\b(?:7|seven)[- ]?(?:way|meter|metre)\b/gi,
+  /\b(?:foxhole|foxtail|box top)\b/gi,
+  /\bpress[- ](?:in|and)\s+light/gi, /\bfossil\b/gi,
+  /\b(?:two|three|four|five|six|\d+)\s+up and down\b/gi, /\bdown skirting\b/gi,
+  /\btwin handle\b/gi, /\bsecured neither\b/gi, /\baddress burns\b/gi,
+  /\bspider ?webs?\b/gi, /\bcobwebs?\b/gi, /\bbug screen\b/gi, /\bcalcium etched\b/gi, /\brutted\b/gi,
+  /\bset of wooden seat\b/gi, /\bwind ledge\b/gi, /\bsmart architrave\b/gi,
+  /\bwhich means the\b/gi, /\bnote the little frame\b/gi, /\bno digital frame\b/gi,
+  /\bsinks? white plastic\b/gi, /\bwhite middle\b/gi, /\bmiddle base\b/gi,
+  /\bcolou?r rack\b/gi, /\b\d+ blows\b/gi, /\bgloves\b/gi,
+  /\blincolns?\b/gi, /\bpanama\b/gi, /\bsteering materials\b/gi, /\bfish glass\b/gi, /\btriplets\b/gi, /\bunderhangers\b/gi,
+  // "no …" then a condition in the same breath: says it's not there, then
+  // describes it ("once of no detachable showerhead in good condition"). A comma
+  // in between ("no handles, in good condition") is ordinary wording.
+  /\bno\s(?!marks|damage|visible)[^.;:,]{1,30}?\s(?:in good condition|in clean condition|secured and functional)\b/gi
+];
+function suspectSpans(sentence) {
+  const t = String(sentence || '').replace(/\[added: [^\]]*\]/g, m => ' '.repeat(m.length));
+  const spans = [];
+  SUSPECT_PHRASES.forEach(re => { re.lastIndex = 0; let m; while ((m = re.exec(t))) { spans.push([m.index, m.index + m[0].length]); if (!m[0].length) re.lastIndex++; } });
+  return spans;
+}
+function mergeSpans(a, b) {
+  const all = (a || []).concat(b || []).map(x => x.slice()).sort((x, y) => x[0] - y[0]);
+  const out = [];
+  all.forEach(sp => { const l = out[out.length - 1]; if (l && sp[0] <= l[1]) l[1] = Math.max(l[1], sp[1]); else out.push(sp); });
+  return out;
+}
+// Model, serial and (ROUND 17) type numbers the AI wrote out.
+function plateFrom(text) {
+  const t = String(text || '');
+  // Words separated by single spaces, so a long run of spaces can't make the
+  // match crawl; whatever label follows ("/ Serial Numbers") is trimmed off.
+  const mm = t.match(/Model Numbers?:[ \t]*([A-Za-z0-9\-\/.]+(?: [A-Za-z0-9\-\/.]+)*)/i);
+  const ss = t.match(/Serial Numbers?:[ \t]*([A-Za-z0-9\-\/.]+(?: [A-Za-z0-9\-\/.]+)*)/i);
+  if (!mm && !ss) return null;
+  const ty = t.match(/\bType:[ \t]*([A-Za-z0-9\-\/.]*[A-Za-z0-9])/i);
+  const tidy = v => v ? v[1].replace(/\s*\/?\s*(?:Type|Model Numbers?|Serial Numbers?)\s*$/i, '').replace(/\s*\/\s*$/, '').trim() : '';
+  return { model: tidy(mm), serial: tidy(ss), type: ty ? ty[1].trim() : '' };
+}
+// ROUND 17: the first rows of a room with nothing said, while later rows are
+// full (Stirling kitchen: part 1 was never recorded). Returns how many.
+function leadingEmptyRows(rowNames, filled) {
+  let lead = 0;
+  while (lead < rowNames.length && !filled(rowNames[lead])) lead++;
+  const after = rowNames.slice(lead).filter(filled).length;
+  return (lead >= 4 && after >= 4) ? lead : 0;
+}
+
 // Everything the Word file shows, worked out from the recordings on the phone.
 function buildJobModel(recs, snap) {
   snap = snap || {};
@@ -7759,13 +7828,18 @@ function buildJobModel(recs, snap) {
       const checks = (r.check || []);
       layout.buckets.forEach(b => {
         const key = String(b.subarea || '').toLowerCase();
-        if (!buckets.has(key)) buckets.set(key, { name: b.subarea, start: null, label: '', sents: [] });
+        if (!buckets.has(key)) buckets.set(key, { name: b.subarea, start: null, label: '', sents: [], parts: [] });
         const bk = buckets.get(key);
+        const partNo = r.part || (rs.indexOf(r) + 1);
+        if (b.sents.length && !bk.parts.includes(partNo)) bk.parts.push(partNo);
+        // ROUND 17: the row starts where its first sentence was said (a later
+        // sentence matched to an earlier moment no longer drags the time back).
+        const first = b.sents.find(x => x.at != null);
+        if (first && (bk.start == null || bk.firstPart > partNo)) {
+          bk.start = first.at; bk.firstPart = partNo; bk.label = pt + formatClock(first.at);
+        }
         b.sents.forEach(x => {
-          bk.sents.push({ text: x.sentence, at: x.at, spans: highlightSpans(x.sentence, checks) });
-          if (x.at != null && (bk.start == null || bk.firstPart > (r.part || 1) || (bk.firstPart === (r.part || 1) && x.at < bk.start))) {
-            bk.start = x.at; bk.firstPart = r.part || 1; bk.label = pt + formatClock(x.at);
-          }
+          bk.sents.push({ text: x.sentence, at: x.at, spans: mergeSpans(highlightSpans(x.sentence, checks), suspectSpans(x.sentence)) });
         });
       });
       const serial = (r.serialTyped || (snap.serials || {})[id] || '').trim();
@@ -7781,16 +7855,30 @@ function buildJobModel(recs, snap) {
     buckets.forEach(b => { if (!rowNames.some(n => n.toLowerCase() === b.name.toLowerCase())) rowNames.push(b.name); });
     const tableRows = rowNames.map(n => {
       const b = buckets.get(n.toLowerCase());
-      return b && b.sents.length ? { name: n, label: b.label, sents: b.sents } : { name: n, empty: true };
+      return b && b.sents.length ? { name: n, label: b.label, sents: b.sents, parts: b.parts.slice().sort((a, c) => a - c) } : { name: n, empty: true };
     });
     const said = tableRows.filter(r => !r.empty).length;
-    const toCheck = tableRows.reduce((k, r) => k + (r.sents || []).reduce((a, x) => a + x.spans.length, 0), 0);
-    // Model and serial numbers the AI wrote out, pulled into their own table.
+    // ROUND 17: rows described in more than one recording of the room. Three or
+    // more usually means a later part is a different room (Stirling: a second
+    // store room recorded as Balcony part 1), so each one is counted to check.
+    const repeated = multi ? tableRows.filter(r => r.parts && r.parts.length > 1) : [];
+    const twoRooms = repeated.length >= 3;
+    repeated.forEach(r => { r.repeat = true; r.repeatCounts = twoRooms; });
+    if (twoRooms) {
+      const ps = [...new Set(repeated.reduce((a, r) => a.concat(r.parts), []))].sort((a, c) => a - c);
+      notes.push('Parts ' + (ps.length > 2 ? ps.slice(0, -1).join(', ') + ' and ' + ps[ps.length - 1] : ps.join(' and ')) + (ps.length > 2 ? ' all describe ' : ' both describe ') + repeated.map(r => r.name).join(', ')
+        + '. One part may be a different room, for example a second store room. Check the audio before typing these rows.');
+    }
+    // ROUND 17: nothing for the first rows, while later rows are full.
+    const lead = (rs.length && !pending && !rs.some(r => r.noAudio || !(r.transcript || '').trim() || r.cleanupError)) ? leadingEmptyRows(tableRows.map(r => r.name), n => !(tableRows.find(r => r.name === n) || {}).empty) : 0;
+    if (lead) notes.push('Nothing for the first ' + lead + ' rows (' + tableRows[0].name + ' to ' + tableRows[lead - 1].name + '). The start of this room may not have been recorded. Check the photos.');
+    const toCheck = tableRows.reduce((k, r) => k + (r.sents || []).reduce((a, x) => a + x.spans.length, 0), 0)
+      + (twoRooms ? repeated.length : 0);
+    // Model, serial and type numbers the AI wrote out, pulled into their own table.
     const plates = [];
     tableRows.forEach(r => (r.sents || []).forEach(x => {
-      const mm = x.text.match(/Model Numbers?:\s*([A-Za-z0-9\-\/. ]+?)(?=\s*Serial Numbers?:|$)/i);
-      const ss = x.text.match(/Serial Numbers?:\s*([A-Za-z0-9\-\/. ]+)/i);
-      if (mm || ss) plates.push({ row: r.name, model: mm ? mm[1].trim() : '', serial: ss ? ss[1].trim() : '' });
+      const p = plateFrom(x.text);
+      if (p) plates.push(Object.assign({ row: r.name }, p));
     }));
     return { no: i + 1, id, name, rows: tableRows, total: tableRows.length, said, toCheck, notes, audio, raws, plates, hasRec: rs.length > 0 };
   });
@@ -7912,7 +8000,8 @@ function buildJobDocXml(j) {
     key(jR('highlighted', { b: true, hl: true, sz: 18 }), 'The engine may have misheard this word', 'Listen and fix'),
     key(jR('grey italic', { i: true, color: JD_ADD, sz: 18 }), 'Added by the AI, the inspector didn’t say it', 'Keep or delete'),
     key(jR('Not mentioned', { color: JD_NM, sz: 18 }), 'Nothing said for this template row', 'Leave blank or check photos'),
-    key(jR('0:45', { b: true, sz: 18 }), 'Where this row starts in the room’s audio', 'Skip to it in the audio')
+    key(jR('0:45', { b: true, sz: 18 }), 'Where this row starts in the room’s audio', 'Skip to it in the audio'),
+    key(jR('pt 1 + pt 2', { b: true, hl: true, sz: 16 }), 'Said in two recordings of the room. One may be a different room', 'Check, move if needed')
   ]));
   out.push(jP(jR('Rooms follow the WA PCR template rows in the same order, so you can paste row by row. Audio is in the Audio folder.', { sz: 18, color: JD_MUTED }), { before: 100 }));
   // The rooms.
@@ -7926,14 +8015,16 @@ function buildJobDocXml(j) {
     if (r.rows.length && r.hasRec) {
       out.push(jTable([3000, 6906], ['Template row', 'Notes'], r.rows.map(row => {
         const name = jP(jR(row.name, { b: true, sz: 19, color: row.empty ? JD_NM : JD_INK }), { after: 0 })
-          + (row.label ? jP(jR(row.label, { sz: 16, color: JD_MUTED }), { after: 0 }) : '');
+          + (row.label ? jP(jR(row.label, { sz: 16, color: JD_MUTED }), { after: 0 }) : '')
+          + (row.repeat ? jP(jR('pt ' + row.parts.join(' + pt '), row.repeatCounts ? { sz: 16, b: true, hl: true } : { sz: 16, color: JD_MUTED }), { after: 0 }) : '');
         if (row.empty) return { fill: JD_NMBG, cells: [name, jP(jR('Not mentioned', { color: JD_NM }), { after: 0 })] };
         return { cells: [name, jP(row.sents.map(x => jSentence(x, 20)).join(jR(' ')), { after: 0 })] };
       })));
     }
     if (r.plates.length) {
       out.push(jH2('Model and serial numbers'));
-      out.push(jTable([4306, 2800, 2800], ['Row', 'Model', 'Serial'], r.plates.map(p => ({ cells: [val(p.row), val(p.model), val(p.serial)] }))));
+      if (r.plates.some(p => p.type)) out.push(jTable([3306, 2200, 2200, 2200], ['Row', 'Model', 'Serial', 'Type'], r.plates.map(p => ({ cells: [val(p.row), val(p.model), val(p.serial), val(p.type)] }))));
+      else out.push(jTable([4306, 2800, 2800], ['Row', 'Model', 'Serial'], r.plates.map(p => ({ cells: [val(p.row), val(p.model), val(p.serial)] }))));
     }
   });
   // Raw transcript at the back.

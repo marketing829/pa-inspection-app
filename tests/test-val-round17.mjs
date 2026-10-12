@@ -69,7 +69,7 @@ check('Stirling test needs the key', res.status === 403);
 // 17.1: an answer stuck repeating itself inside one check entry (live Stirling Bathroom 1).
 res = await handler(new Request('https://x.web.val.run/'));
 j = await res.json();
-check('17.1: GET reports version 17.1 (round still 17)', j.round === 17 && j.version === '17.1', j);
+check('17.2: GET reports version 17.2 (round still 17)', j.round === 17 && j.version === '17.2', j);
 const post = () => handler(new Request('https://x.web.val.run/?k=k1', { method: 'POST', body: JSON.stringify({ transcript: 'doors painted white metal chip to the frame shower screen black vinyl framing', room: 'Bathroom 1', subsections: ['Door', 'Shower', 'Additional'] }) }));
 const goodRoom = { sections: [{ name: 'Door', text: 'Doors painted white {+in good condition+}. Metal chip to the frame.' }, { name: 'Shower', text: 'Shower screen black vinyl framing.' }],
   check: [{ quote: 'Metal chip to the frame.', words: 'Metal chip', why: 'garbled' }, { quote: 'Shower screen black vinyl framing.', words: 'vinyl', why: 'garbled' }] };
@@ -143,6 +143,27 @@ reply = () => { calls++; skew += 31000; return tool(stuck); };
 j = await (await post()).json();
 Date.now = realNow;
 check('Review: no second try when the first answer took over 30 s; marked cut short instead', calls === 1 && j.ok && j.cut_short === true && j.retried === undefined, { calls, j });
+
+// 17.2: a long room with nothing to check is asked again (live Stirling Bedroom 1).
+const longT = 'walls painted white with scuff marks near the door and spiderwebs present on the ceiling '.repeat(9);
+const postLong = () => handler(new Request('https://x.web.val.run/?k=k1', { method: 'POST', body: JSON.stringify({ transcript: longT, room: 'Bedroom 1', subsections: ['Walls', 'Additional'] }) }));
+const longSecs = [{ name: 'Walls', text: longT }];
+calls = 0;
+reply = () => { calls++; return tool({ sections: longSecs, check: calls === 1 ? [] : [{ quote: 'Spiderwebs present on the ceiling.', words: 'spiderwebs', why: 'unusual condition word' }] }); };
+j = await (await postLong()).json();
+check('17.2: a long room with an empty check list is asked again and the second, fuller list is used', calls === 2 && j.ok && j.retried === true && !j.cut_short && j.check.length === 1 && j.check[0].words === 'spiderwebs', { calls, c: j.check });
+calls = 0;
+reply = () => { calls++; return tool({ sections: longSecs, check: [] }); };
+j = await (await postLong()).json();
+check('17.2: still empty the second time: the answer is kept, not marked cut short (the room may be clean)', calls === 2 && j.ok && !j.cut_short && j.check.length === 0, { calls, j });
+calls = 0;
+reply = () => { calls++; return tool(goodRoom.check ? { ...goodRoom, check: [] } : goodRoom); };
+j = await (await post()).json();
+check('17.2: a short room with nothing to check is not asked again', calls === 1 && j.ok && j.retried === undefined, { calls });
+calls = 0;
+reply = () => { calls++; return calls === 1 ? tool({ sections: longSecs, check: [] }) : tool({ sections: [{ name: 'Walls', text: 'Walls.' }], check: [{ quote: 'Walls.', words: 'Walls', why: 'x' }] }); };
+j = await (await postLong()).json();
+check('17.2: a second answer that drops words does not replace the first', calls === 2 && j.ok && j.text.length > 500, { calls, len: j.text && j.text.length });
 
 console.log(out.join('\n') + `\n\n${pass} of ${pass + fail} checks pass`);
 process.exit(fail ? 1 : 0);

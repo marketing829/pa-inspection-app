@@ -33,6 +33,8 @@
 //     "why" is kept to a few words, a stuck answer is asked again once (if
 //     there's time), and if it's still stuck the room gets a "check list cut
 //     short" entry for the VA.
+//   - 17.2: a long room (120+ words) whose check list comes back empty is asked
+//     again too, and the second answer is used only if it lists something.
 //
 // Contract (the app already speaks this — don't change field names):
 //   POST { transcript, room, subsections: string[], address }
@@ -185,7 +187,7 @@ export default async function (req: Request): Promise<Response> {
     const t = new URL(req.url).searchParams.get("test");
     if (t === "1") return await selfTest(req);
     if (t === "stirling") return await stirlingTest(req);
-    return json({ ok: !!KEY, round: 17, version: "17.1", provider: "anthropic", model: MODEL, key_required: !!PA_KEY, note: KEY ? "ready" : "ANTHROPIC_API_KEY is not set" });
+    return json({ ok: !!KEY, round: 17, version: "17.2", provider: "anthropic", model: MODEL, key_required: !!PA_KEY, note: KEY ? "ready" : "ANTHROPIC_API_KEY is not set" });
   }
   if (req.method !== "POST") return json({ ok: false, error: "POST only" }, 405);
   if (PA_KEY && new URL(req.url).searchParams.get("k") !== PA_KEY) return json({ ok: false, error: "not allowed" }, 403);
@@ -220,8 +222,12 @@ async function fileRoom(transcript: string, room: string, subsections: string[],
   // (Stirling Bathroom 1: "Ok. Done. Ok. End." until it ran out of room), and
   // the rest of the room's check list is lost. Ask once more if there is time
   // inside the app's 60-second wait.
+  // Also when a long room comes back with nothing at all to check (live
+  // Stirling Bedroom 1, 12 Oct: "spiderwebs" and a garbled windows sentence,
+  // check list empty). A clean short room may truly have none.
   let retried = false;
-  if (ranAway(asked.data) && Date.now() - started < RETRY_IF_UNDER_MS) {
+  const silentFirst = !ranAway(asked.data) && flaggedNothing(asked.data, transcript);
+  if ((ranAway(asked.data) || silentFirst) && Date.now() - started < RETRY_IF_UNDER_MS) {
     // Only the time left before ANSWER_BY_MS; if the second try can't finish,
     // the first answer is kept and marked "check list cut short".
     const again = await askClaude(user, think, ANSWER_BY_MS - (Date.now() - started));
@@ -229,7 +235,10 @@ async function fileRoom(transcript: string, room: string, subsections: string[],
     // Use the second answer only if it is a real, unstuck answer that keeps the
     // words; a second answer in plain text or that drops words must not replace
     // a first answer that could still be used.
-    if (!again.error && usable(again.data, transcript) && (!ranAway(again.data) || !usable(asked.data, transcript))) asked = again;
+    if (silentFirst) {
+      // Take the second only if it is sound and actually lists something.
+      if (!again.error && usable(again.data, transcript) && !ranAway(again.data) && !flaggedNothing(again.data, transcript)) asked = again;
+    } else if (!again.error && usable(again.data, transcript) && (!ranAway(again.data) || !usable(asked.data, transcript))) asked = again;
   }
   const data = asked.data;
   const cutShort = ranAway(data);
@@ -323,6 +332,13 @@ const RUNAWAY_WORDS_CHARS = 600;
 const RETRY_IF_UNDER_MS = 30000;
 const ANSWER_BY_MS = 50000; // Val Town stops a request at 60 s (seen live 12 Oct); answer before that
 
+const SILENT_MIN_WORDS = 120; // a room this long with nothing to check is asked again
+// The model's own check list is empty (plates the val adds don't count) on a
+// room long enough that a few doubtful words are all but certain.
+function flaggedNothing(data: any, transcript: string) {
+  const check = toolBlock(data)?.input?.check;
+  return !!toolBlock(data) && (!Array.isArray(check) || check.length === 0) && wordCount(transcript) >= SILENT_MIN_WORDS;
+}
 // A real file_room answer whose sections keep enough of the transcript's words.
 function usable(data: any, transcript: string) {
   const secs = toolBlock(data)?.input?.sections;
@@ -511,7 +527,7 @@ async function stirlingTest(req: Request): Promise<Response> {
   }));
   const main = runs[0];
   return json({
-    ok: main.passed === main.total, model: MODEL, round: 17, version: "17.1", took_ms: Date.now() - started,
+    ok: main.passed === main.total, model: MODEL, round: 17, version: "17.2", took_ms: Date.now() - started,
     passed: main.passed + " of " + main.total, in_use: THINK,
     compare: runs.map((r) => ({ thinking: r.mode, passed: r.passed + " of " + r.total, slowest_room_seconds: r.slowest_room_seconds,
       fails: r.results.filter((x) => x.result !== "PASS").map((x) => x.room + ": " + x.expect) })),

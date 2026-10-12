@@ -1,4 +1,4 @@
-const CACHE = 'pa-inspect-v22';
+const CACHE = 'pa-inspect-v23';
 const ASSETS = ['./', './index.html', './manifest.webmanifest'];
 // JSZip builds each room's Word file, which may happen with poor signal. Cached separately so a missing file can never stop the app installing.
 const OPTIONAL = ['./jszip.min.js', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
@@ -36,6 +36,8 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
-  // Cache-first for static assets (manifest, icons).
-  event.respondWith(caches.match(req).then((cached) => cached || fetch(req).then((res) => cacheIfOk(req, res)).catch(() => caches.match('./index.html'))));
+  // Cache-first for static assets (manifest, icons, the Word file builder). A
+  // missing one fails as itself: answering with the app page made the Word file
+  // builder "load" as a page that does nothing (round 19).
+  event.respondWith(caches.match(req).then((cached) => cached || fetch(req).then((res) => cacheIfOk(req, res)).catch(() => Response.error())));
 });

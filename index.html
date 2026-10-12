@@ -6134,11 +6134,15 @@ async function runCleanup(rec) {
       }))
       .filter(c => c.quote);
     timestampChecks(rec);
+    // ROUND 17: the cleanup val says when Claude got stuck and the check list
+    // is incomplete; the Word file then tells the VA at the top of the room.
+    if (out.cut_short) rec.checkCutShort = true; else delete rec.checkCutShort;
     rec.cleanedBy = out.model || 'cleanup';
     delete rec.cleanupError;
   } catch (e) {
     rec.sections = null;
     rec.check = null;
+    delete rec.checkCutShort;
     rec.cleanupError = (e && e.message) ? String(e.message).slice(0, 120) : 'failed';
   } finally {
     clearTimeout(timer);
@@ -7822,6 +7826,7 @@ function buildJobModel(recs, snap) {
         else pending = true;
         return;
       }
+      if (r.checkCutShort && r.sections) notes.push('Check list cut short' + (multi ? ' for part ' + (r.part || (rs.indexOf(r) + 1)) : '') + '. The AI stopped before listing everything to check. Check the whole ' + (multi ? 'part' : 'room') + ' against the audio.');
       const clean = punctuateBySubarea({ subsections: r.subsections || [] }, applyCorrections(applyScratch(raw)));
       const layout = roomLayout(r, clean);
       raws.push({ part: multi ? (r.part || 1) : 0, audio: audioName, text: layout.raw });

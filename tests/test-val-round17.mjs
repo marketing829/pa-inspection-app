@@ -82,7 +82,7 @@ check('17.1: a stuck answer is asked again once and the good second answer is us
 calls = 0;
 reply = () => { calls++; return tool(stuck); };
 j = await (await post()).json();
-check('17.1: stuck twice keeps the sorted text and adds "check list cut short" first', calls === 2 && j.ok && j.cut_short === true && j.sections.length === 2 && /check list cut short/.test(j.check[0].why) && j.check[0].quote === 'Doors painted white in good condition.', { calls, c: j.check });
+check('17.1: stuck twice keeps the sorted text and adds "check list cut short" first (quote without the added phrase, as the app shows it)', calls === 2 && j.ok && j.cut_short === true && j.sections.length === 2 && /check list cut short/.test(j.check[0].why) && j.check[0].quote === 'Doors painted white.', { calls, c: j.check });
 check('17.1: the runaway "why" is cut to its first sentence', j.check[1].why === 'garbled, unclear.' , j.check[1]);
 calls = 0;
 reply = () => { calls++; return { ...tool(goodRoom), stop_reason: calls === 1 ? 'max_tokens' : 'tool_use' }; };
@@ -118,11 +118,31 @@ check('17.1: a reason that runs across lines counts as stuck and is asked again'
 bodies.length = 0;
 reply = (body) => { bodies.push(body); const room = /Room: (.*)\n/.exec(body.messages[0].content)[1]; const t = /"""\n([\s\S]*)\n"""/.exec(body.messages[0].content)[1]; return tool(pad(good[room], t)); };
 j = await (await handler(new Request('https://x.web.val.run/?test=stirling&k=k1'))).json();
-check('17.1: Stirling test without &compare runs only the way the app works (stays under a minute)', bodies.length === 4 && bodies.every(b => b.thinking.type === 'between_tools') && j.compare.length === 1 && j.passed === '19 of 19', { n: bodies.length, c: j.compare });
+check('17.1: Stirling test without &compare asks only 4 rooms, the way the app works', bodies.length === 4 && bodies.every(b => b.thinking.type === 'between_tools') && j.compare.length === 1 && j.passed === '19 of 19', { n: bodies.length, c: j.compare });
 calls = 0;
 reply = () => { calls++; if (calls === 2) throw new Error('slow'); return tool(stuck); };
 j = await (await post()).json();
-check('17.1: if asking again fails or runs out of time, the first answer is kept, marked cut short', calls === 2 && j.ok && j.cut_short === true && j.sections.length === 2 && /check list cut short/.test(j.check[0].why), { calls, j });
+check('17.1: if asking again fails (error or no answer), the first answer is kept, marked cut short', calls === 2 && j.ok && j.cut_short === true && j.sections.length === 2 && /check list cut short/.test(j.check[0].why), { calls, j });
+
+// Review fixes (12 Oct).
+reply = () => tool({ sections: [{ name: 'Door', text: 'Doors painted white, metal chip to the frame.' }, { name: 'Shower', text: 'One grey plastic cutlery rack. Model Numbers: FSE73700P\nModel Numbers: HAF 2000 / Serial Numbers: 8001128 / Type: Not present' }], check: [] });
+j = await (await post()).json();
+const plates = j.check.filter(c => c.why === 'check against the photo').map(c => c.quote);
+check('Review: a plate partway through a line is flagged; " / " plates and spaced models too; "Not present" is not', plates.join('|') === 'Model Numbers: FSE73700P|Model Numbers: HAF 2000|Serial Numbers: 8001128', plates);
+calls = 0;
+reply = () => { calls++; return calls === 1 ? tool(stuck) : { model: 'claude-sonnet-5-5', stop_reason: 'end_turn', content: [{ type: 'text', text: 'Here is the room.' }] }; };
+j = await (await post()).json();
+check('Review: a second answer in plain words does not replace a usable first answer', calls === 2 && j.ok && j.cut_short === true && j.sections.length === 2, { calls, j });
+calls = 0;
+reply = () => { calls++; return calls === 1 ? tool(stuck) : tool({ sections: [{ name: 'Door', text: 'Doors.' }], check: [] }); };
+j = await (await post()).json();
+check('Review: a second answer that drops words does not replace a first answer that keeps them', calls === 2 && j.ok && j.cut_short === true && /Shower screen black vinyl framing/.test(j.text), { calls, j });
+const realNow = Date.now; let skew = 0; Date.now = () => realNow() + skew;
+calls = 0;
+reply = () => { calls++; skew += 31000; return tool(stuck); };
+j = await (await post()).json();
+Date.now = realNow;
+check('Review: no second try when the first answer took over 30 s; marked cut short instead', calls === 1 && j.ok && j.cut_short === true && j.retried === undefined, { calls, j });
 
 console.log(out.join('\n') + `\n\n${pass} of ${pass + fail} checks pass`);
 process.exit(fail ? 1 : 0);

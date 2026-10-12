@@ -226,7 +226,10 @@ async function fileRoom(transcript: string, room: string, subsections: string[],
     // the first answer is kept and marked "check list cut short".
     const again = await askClaude(user, think, ANSWER_BY_MS - (Date.now() - started));
     retried = true;
-    if (!again.error && (!ranAway(again.data) || !toolBlock(asked.data))) asked = again;
+    // Use the second answer only if it is a real, unstuck answer that keeps the
+    // words; a second answer in plain text or that drops words must not replace
+    // a first answer that could still be used.
+    if (!again.error && usable(again.data, transcript) && (!ranAway(again.data) || !usable(asked.data, transcript))) asked = again;
   }
   const data = asked.data;
   const cutShort = ranAway(data);
@@ -286,19 +289,26 @@ async function fileRoom(transcript: string, room: string, subsections: string[],
     .concat(extraChecks);
   // Model, serial and type numbers are always checked against the photo, even
   // when the model leaves them off the list (live Stirling kitchen: none listed).
+  // A plate can sit mid-line ("… cutlery rack. Model Numbers: FSE73700P") or
+  // share a line ("Model Numbers: X / Serial Numbers: Y"); a value needs a digit.
   for (const s of sections) {
-    for (const line of s.text.split("\n")) {
-      const plate = line.trim();
-      if (!/^(Model Numbers?|Serial Numbers?|Type):\s*\S*\d/i.test(plate)) continue;
-      if (check.some((c: any) => c.quote.includes(plate) || (/\d{4,}/.test(c.words) && plate.includes(c.words)))) continue;
-      check.push({ quote: plate, words: "", heard: plate, why: "check against the photo" });
+    for (const m of s.text.matchAll(/\b(Model Numbers?|Serial Numbers?|Type)\s*:\s*([^\n]*?)(?=\s+\/\s+|\.(?:\s|$)|\n|$)/gi)) {
+      const value = m[2].trim();
+      if (!/\d/.test(value)) continue;
+      const plate = `${m[1]}: ${value}`;
+      if (check.some((c: any) => c.quote.includes(value) || c.words.includes(value))) continue;
+      check.push({ quote: plate, words: value, heard: plate, why: "check against the photo" });
     }
   }
   // Still stuck after asking again: keep the sorted text (it passed the word
   // check) but tell the VA the check list is incomplete, so the room never
   // reads as having little to check.
   if (cutShort) {
-    const first = (sections[0].text.replace(/\{\+|\+\}/g, "").match(/^.*?[.!?](?=\s|$)/) || [sections[0].text.replace(/\{\+|\+\}/g, "")])[0].trim();
+    // The app reads cut_short and puts a note at the top of the room. This entry
+    // also lists it with the checks; its quote leaves out added phrases so it
+    // matches the sentence the app shows ("… [added: …]" is ignored there).
+    const plain = sections[0].text.replace(/\{\+[^}]*\+\}/g, "").replace(/\s+([.,])/g, "$1").replace(/\s+/g, " ");
+    const first = (plain.match(/^.*?[.!?](?=\s|$)/) || [plain])[0].trim();
     check.unshift({ quote: first, words: "", heard: first, why: "check list cut short — check the whole room against the audio" });
   }
 
@@ -313,6 +323,13 @@ const RUNAWAY_WORDS_CHARS = 600;
 const RETRY_IF_UNDER_MS = 30000;
 const ANSWER_BY_MS = 50000; // Val Town stops a request at 60 s (seen live 12 Oct); answer before that
 
+// A real file_room answer whose sections keep enough of the transcript's words.
+function usable(data: any, transcript: string) {
+  const secs = toolBlock(data)?.input?.sections;
+  if (!Array.isArray(secs) || !secs.length) return false;
+  const text = secs.map((x: any) => String(x?.text || "")).join(" ");
+  return wordCount(text) / Math.max(1, wordCount(transcript)) >= MIN_KEEP_RATIO;
+}
 function toolBlock(data: any) {
   return (data?.content || []).find((b: any) => b.type === "tool_use" && b.name === "file_room");
 }
@@ -326,7 +343,7 @@ function ranAway(data: any) {
 }
 // The model sometimes runs on into the next field ('… may be door.",\n "heard":"…').
 function trimRunOn(why: string) {
-  return why.split(/"\s*,?\s*"?(?:heard|words|quote|why)"?\s*:/)[0].replace(/["\s]+$/, "").trim();
+  return why.slice(0, 2000).split(/"\s*,?\s*"?(?:heard|words|quote|why)"?\s*:/)[0].replace(/["\s]+$/, "").trim();
 }
 // Keep a runaway "why" readable: its first sentence, at most 120 characters.
 function shortWhy(why: string) {

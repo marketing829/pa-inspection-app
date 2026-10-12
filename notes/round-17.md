@@ -134,3 +134,25 @@ ROUND 17 SPEECH-TO-TEXT VAL (inspectionapp-assemblyai, version 17)
 
 CONFIRMED 12 Oct: the round 14 vals were live (assemblyai and dropbox-archive
 both showed "version": 14).
+
+INDEPENDENT REVIEW (12 Oct, fresh agent, after the val changes)
+  No audio-loss risk, no secrets or personal data. Fixed what it found:
+  1. The "check list cut short" warning could miss the VA's job Word file:
+     its quote kept the added words ("in good condition"), so it matched no
+     sentence, and the app ignored cut_short. Now the app keeps cut_short on
+     the recording and the Word file puts "Check list cut short. The AI
+     stopped before listing everything to check. Check the whole room
+     against the audio." at the top of the room (per part for two-part
+     rooms). The val's warning quote leaves added phrases out.
+     THIS CHANGES index.html (still app version 17, cache v21, not yet live),
+     so the repo index.html is now newer than the Downloads round 17 copy
+     and patch-round17.py no longer rebuilds it. Upload the repo copy.
+  2. Model, serial and type numbers partway through a line, on a shared
+     " / " line, or with a space ("HAF 2000") are now flagged too.
+  3. A second answer in plain words, or one that drops words, no longer
+     replaces a usable first answer.
+  4. Trade-off to know: a very long room that used to answer in 50-58 s now
+     stops at 50 s and uses the app's keyword split (better than being cut
+     off by Val Town at 60 s).
+  5. Reason clean-up is capped at 2,000 characters; test labels made honest.
+  Tests: test-round17.js 400 of 400 (397 + 3); test-val-round17.mjs 34 of 34.

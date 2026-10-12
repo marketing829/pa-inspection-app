@@ -29,7 +29,7 @@ Back end is Val Town (account `propertyassist`). Paste-ready copies of the val c
 | `inspectionapp-proofread` | Claude check for the editor; `mode: "rooms"` finds where each room starts in one long recording | not yet |
 | `dropbox-archive` | Writes everything to Dropbox; also the phone problem log (`?action=log`) and editor reads | `vals/dropbox-archive.ts` (round 14) |
 
-Every val checks `PA_KEY`. A GET on a val URL shows its config, `key_required`, and its round/version.
+Every val checks `PA_KEY`. A GET on a val URL shows its config, `key_required`, and its round/version (12 Oct: cleanup `"version": "17.1"`, assemblyai `17`, dropbox-archive `14`).
 
 ## Current state
 
@@ -88,8 +88,9 @@ These came from real field failures. Treat them as hard requirements.
 - **Branch per round** (`round-18`, etc.). Commit small. The commit message says what changed for the inspector in plain words. Merge to `main` (which publishes on GitHub Pages) only when Daphne says so.
 - **Bump the service worker cache version** in `sw.js` on every app change, and `APP_ROUND` plus the "app version N" text in Admin settings. Phones only pick up a new build after force-quit and reopen.
 - **Test before every commit.**
-  - App: `tests/test-round17.js` (397 checks, headless Playwright, 375×667). Serve the repo root with `python3 -m http.server 8767 --bind 127.0.0.1`, then `node tests/test-round17.js` (it reads `index.html` and `sw.js` from the folder it's run against; adjust `__dirname` paths if you move it). Copy it to `test-round18.js` for the next round, update version checks, add checks for every fix.
-  - Cleanup val: `node tests/test-val-round17.mjs` (15 mocked checks; needs `esbuild` installed globally).
+  - App: `tests/test-round17.js` (400 checks, headless Playwright, 375×667). Serve the repo root with `python3 -m http.server 8767 --bind 127.0.0.1`, then `node tests/test-round17.js` (it reads `index.html` and `sw.js` from the folder it's run against; adjust `__dirname` paths if you move it). Copy it to `test-round18.js` for the next round, update version checks, add checks for every fix.
+  - Cleanup val: `node tests/test-val-round17.mjs` (34 mocked checks; needs `esbuild` installed globally).
+  - A real-data copy of the app test lives in `tests/private/` (not committed). Make every app-test change in both copies.
   - Mock the vals and Dropbox in tests. Never call live services from tests.
 - **iPhone Safari is the real target.** Things that pass in Chromium can still fail there (IndexedDB dropped after backgrounding, no Background Sync, keyboard and swipe behaviour). List what needs a real iPhone check in the round notes.
 - **Val changes**: edit the file in `vals/`, bump its round/version, and tell Daphne to paste the whole file into Val Town. No new environment variable without saying so in the round notes.

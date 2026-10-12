@@ -1311,6 +1311,24 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     check('R12: rows that only repeat their name or an added phrase are dropped', s5.names.join('|') === 'Heating/Exhaust Fan/Vent|Windows/Screens', s5.names);
     check('R12: stray brace removed', s5.fan === 'Exhaust fan is a white plastic Brightco, [added: secured and functional].', s5.fan);
     check('R12: the doubtful words come through from the cleanup', s5.words === 'parliament', s5.words);
+    // R17 review: the cleanup val's cut_short is kept on the recording, and cleared on a clean answer.
+    const s5b = await page.evaluate(async () => {
+      const rec = { id: 9002, roomId: 'x', roomName: 'Bathroom Laundry', address: state.address, jobId: state.jobId, subsections: templateRowsForName('Bathroom Laundry'),
+        transcript: 'ceiling walls exhaust fan is a white plastic brightco secured and functional two frosted glass panes sliding door has a parliament lockable handle', words: [], createdAt: Date.now(), type: 'audio/webm' };
+      cleanupReady = true;
+      await runCleanup(rec);
+      return rec.checkCutShort;
+    });
+    cleanOut = Object.assign({}, cleanOut, { cut_short: true });
+    const s5c = await page.evaluate(async () => {
+      const rec = { id: 9003, roomId: 'x', roomName: 'Bathroom Laundry', address: state.address, jobId: state.jobId, subsections: templateRowsForName('Bathroom Laundry'),
+        transcript: 'ceiling walls exhaust fan is a white plastic brightco secured and functional two frosted glass panes sliding door has a parliament lockable handle', words: [], createdAt: Date.now(), type: 'audio/webm' };
+      cleanupReady = true;
+      await runCleanup(rec);
+      const first = rec.checkCutShort;
+      return first;
+    });
+    check('R17 review: cut_short from the cleanup val is kept on the recording (and absent on a normal answer)', s5c === true && s5b === undefined, { s5b, s5c });
 
     // 6. Timecodes: the bathroom tapware case.
     const s6 = await page.evaluate(() => {
@@ -2495,6 +2513,20 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     });
     check('R17: Review "Before you finish" asks about a room with nothing for its first rows', t5b.txt.includes(t5b.want), t5b);
     check('R17: …but not while a recording of that room has failed or is still sending', !t5b.txt2.includes(t5b.want), t5b);
+
+    // 6. Review fix: a cut-short check list gets a note at the top of the room in the Word file.
+    const t6 = await page.evaluate(() => {
+      const subs = templateRowsForName('Lounge');
+      const secs = [{ name: subs[1], text: 'Ceiling painted white.' }, { name: subs[3], text: 'Walls painted white.' }];
+      const one = buildJobModel([__rec({ roomName: 'Lounge', roomId: 'c1', subsections: subs, words: [], transcript: 'lounge', sections: secs, checkCutShort: true })], {}).rooms[0].notes;
+      const none = buildJobModel([__rec({ roomName: 'Lounge', roomId: 'c2', subsections: subs, words: [], transcript: 'lounge', sections: secs })], {}).rooms[0].notes;
+      const two = buildJobModel([__rec({ roomName: 'Lounge', roomId: 'c3', subsections: subs, part: 1, words: [], transcript: 'a', sections: secs }),
+        __rec({ roomName: 'Lounge', roomId: 'c3', subsections: subs, part: 2, words: [], transcript: 'b', sections: [{ name: subs[5], text: 'One roller blind.' }], checkCutShort: true })], {}).rooms[0].notes;
+      const m = buildJobModel([__rec({ roomName: 'Lounge', roomId: 'c4', subsections: subs, words: [], transcript: 'lounge', sections: secs, checkCutShort: true })], {});
+      return { one, none, two, inDoc: /Check list cut short/.test(buildJobDocXml(m)) };
+    });
+    check('R17 review: Word file notes "Check list cut short" at the top of the room', t6.one.includes('Check list cut short. The AI stopped before listing everything to check. Check the whole room against the audio.') && t6.inDoc, t6);
+    check('R17 review: no note on a normal room; a two-part room names the part', !t6.none.some(n => /cut short/.test(n)) && t6.two.some(n => n === 'Check list cut short for part 2. The AI stopped before listing everything to check. Check the whole part against the audio.'), t6);
 
     check('R17: no script errors', page.__errors.length === 0, page.__errors);
     await page.close();

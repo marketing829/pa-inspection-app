@@ -28,6 +28,11 @@
 //   - Browser check of the Stirling rooms: open this val's address with
 //     ?test=stirling&k=<PA_KEY>. It runs four short Stirling rooms through the
 //     model and lists each expectation as PASS or FAIL.
+//   - 17.1: the first live Stirling run got stuck repeating itself inside one
+//     Bathroom 1 check entry and lost the rest of that room's check list. Now
+//     "why" is kept to a few words, a stuck answer is asked again once (if
+//     there's time), and if it's still stuck the room gets a "check list cut
+//     short" entry for the VA.
 //
 // Contract (the app already speaks this — don't change field names):
 //   POST { transcript, room, subsections: string[], address }
@@ -123,7 +128,7 @@ The typist uses the check list to find the words most likely to be wrong. A wron
 - any condition or damage word that is not one of the usual ones. The usual ones: marks, scuff marks, smudge marks, sticky residue, chips, chipping, paint chipping, scratches, scratching, dents, cracks, cracking, holes, discolouration, staining, oil staining, water marks, tarnishing, rust, rusting, dust, dust build-up, dust marks, grease, grease marks, calcium build-up, mould, debris, leaf debris, bug debris, wear, peeling, lifting. Anything else used as a condition ("spiderwebs present", "bug screen to the cover", "calcium etched", "discoloured and rutted") is often a mis-hearing of a usual one: keep the words as heard and flag them with why "unusual condition word";
 - a statement that something is present where the usual wording is that it is absent, or the other way round, when the words around it are garbled ("two set of wooden seat and wind ledge" where "no windowsill or window ledge" is usual);
 - numbers that matter (quantities of fittings, meter readings) where the audio may differ, every brand name you were not sure of, and every model, serial and type number.
-Do NOT flag sentences that read normally and use the usual words, or words you fixed with full confidence from the lists above. Flag as many entries as the room needs: a clean room may have none, a garbled room may need ten or more. Never leave a garbled sentence unflagged. quote = the WHOLE sentence exactly as it now reads in your output, without the braces. words = only the doubtful words, copied exactly as they appear inside quote (a few words, never the whole sentence). heard = the original words from the transcript (so the typist can find them in the audio). why = a few plain words. If nothing is doubtful, return an empty list.
+Do NOT flag sentences that read normally and use the usual words, or words you fixed with full confidence from the lists above. Flag as many entries as the room needs: a clean room may have none, a garbled room may need ten or more. Never leave a garbled sentence unflagged. quote = the WHOLE sentence exactly as it now reads in your output, without the braces. words = only the doubtful words, copied exactly as they appear inside quote (a few words, never the whole sentence). heard = the original words from the transcript (so the typist can find them in the audio). why = two to eight plain words, written once ("mis-heard brand", "unusual condition word"). Never explain your thinking in why and never repeat yourself; when an entry is done, go on to the next one. If nothing is doubtful, return an empty list.
 
 Always answer by calling the file_room tool, never in plain text.`;
 
@@ -177,7 +182,7 @@ export default async function (req: Request): Promise<Response> {
     const t = new URL(req.url).searchParams.get("test");
     if (t === "1") return await selfTest(req);
     if (t === "stirling") return await stirlingTest(req);
-    return json({ ok: !!KEY, round: 17, provider: "anthropic", model: MODEL, key_required: !!PA_KEY, note: KEY ? "ready" : "ANTHROPIC_API_KEY is not set" });
+    return json({ ok: !!KEY, round: 17, version: "17.1", provider: "anthropic", model: MODEL, key_required: !!PA_KEY, note: KEY ? "ready" : "ANTHROPIC_API_KEY is not set" });
   }
   if (req.method !== "POST") return json({ ok: false, error: "POST only" }, 405);
   if (PA_KEY && new URL(req.url).searchParams.get("k") !== PA_KEY) return json({ ok: false, error: "not allowed" }, 403);
@@ -205,11 +210,23 @@ async function fileRoom(transcript: string, room: string, subsections: string[])
   const json = (body: unknown, status = 200) => ({ status, body });
   const user = `Room: ${room || "(not named)"}\n\nSubareas, in order:\n${subsections.map((s) => "- " + s).join("\n")}\n\nTranscript:\n"""\n${transcript}\n"""`;
 
-  const asked = await askClaude(user);
+  const started = Date.now();
+  let asked = await askClaude(user);
   if (asked.error) return json({ ok: false, error: asked.error }, 502);
+  // ROUND 17.1: the model can get stuck repeating itself inside one check entry
+  // (Stirling Bathroom 1: "Ok. Done. Ok. End." until it ran out of room), and
+  // the rest of the room's check list is lost. Ask once more if there is time
+  // inside the app's 60-second wait.
+  let retried = false;
+  if (ranAway(asked.data) && Date.now() - started < RETRY_IF_UNDER_MS) {
+    const again = await askClaude(user);
+    retried = true;
+    if (!again.error && (!ranAway(again.data) || !toolBlock(asked.data))) asked = again;
+  }
   const data = asked.data;
+  const cutShort = ranAway(data);
 
-  const block = (data?.content || []).find((b: any) => b.type === "tool_use" && b.name === "file_room");
+  const block = toolBlock(data);
   // With tool_choice auto the model could answer in words instead; that room
   // then falls back to the app's keyword split, like any other failure.
   if (!block) return json({ ok: false, error: "no file_room call (stop: " + (data?.stop_reason || "?") + ")" }, 502);
@@ -258,12 +275,39 @@ async function fileRoom(transcript: string, room: string, subsections: string[])
       quote: String(c?.quote || "").trim(),
       words: String(c?.words || "").trim(),
       heard: String(c?.heard || c?.quote || "").trim(),
-      why: String(c?.why || "").trim(),
+      why: shortWhy(String(c?.why || "").trim()),
     }))
     .filter((c: any) => c.quote)
     .concat(extraChecks);
+  // Still stuck after asking again: keep the sorted text (it passed the word
+  // check) but tell the VA the check list is incomplete, so the room never
+  // reads as having little to check.
+  if (cutShort) {
+    const first = (sections[0].text.replace(/\{\+|\+\}/g, "").match(/^.*?[.!?](?=\s|$)/) || [sections[0].text.replace(/\{\+|\+\}/g, "")])[0].trim();
+    check.unshift({ quote: first, words: "", heard: first, why: "check list cut short — check the whole room against the audio" });
+  }
 
-  return json({ ok: true, model: data?.model || MODEL, sections, text, check });
+  return json({ ok: true, model: data?.model || MODEL, sections, text, check, ...(retried ? { retried: true } : {}), ...(cutShort ? { cut_short: true } : {}) });
+}
+
+const RUNAWAY_WHY_CHARS = 300; // a "why" is a few words; longer means the model got stuck
+const RUNAWAY_WORDS_CHARS = 600;
+const RETRY_IF_UNDER_MS = 20000; // a second try takes up to ~25 s; the app waits 60 s
+
+function toolBlock(data: any) {
+  return (data?.content || []).find((b: any) => b.type === "tool_use" && b.name === "file_room");
+}
+function ranAway(data: any) {
+  if (data?.stop_reason === "max_tokens") return true;
+  const check = toolBlock(data)?.input?.check;
+  return Array.isArray(check) && check.some((c: any) =>
+    String(c?.why || "").length > RUNAWAY_WHY_CHARS || String(c?.words || "").length > RUNAWAY_WORDS_CHARS);
+}
+// Keep a runaway "why" readable: its first sentence, at most 120 characters.
+function shortWhy(why: string) {
+  if (why.length <= 120) return why;
+  const first = (why.match(/^.*?[.;](?=\s)/) || [why])[0];
+  return (first.length <= 120 ? first : first.slice(0, 117) + "…").trim();
 }
 
 // The request, in whichever shape the model takes.
@@ -394,7 +438,7 @@ async function stirlingTest(req: Request): Promise<Response> {
   const rooms: Record<string, unknown> = {};
   STIRLING.forEach((r, i) => {
     const o = outs[i].body;
-    rooms[r.room] = o.ok ? { check: o.check, sections: o.sections } : { error: o.error };
+    rooms[r.room] = o.ok ? { retried: !!o.retried, cut_short: !!o.cut_short, check: o.check, sections: o.sections } : { error: o.error };
     r.expect.forEach(([label, fn]) => {
       let ok = false;
       try { ok = !!o.ok && fn(o); } catch { ok = false; }
@@ -403,7 +447,7 @@ async function stirlingTest(req: Request): Promise<Response> {
   });
   const passed = results.filter((x) => x.result === "PASS").length;
   return json({
-    ok: passed === results.length, model: MODEL, round: 17, took_ms: Date.now() - started,
+    ok: passed === results.length, model: MODEL, round: 17, version: "17.1", took_ms: Date.now() - started,
     passed: passed + " of " + results.length, results, rooms,
   });
 }

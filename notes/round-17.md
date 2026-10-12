@@ -82,3 +82,15 @@ FILES
   patch-round17.py rebuilds round 17 from round 16:
     python3 patch-round17.py <round16 index.html> <round16 sw.js> <out folder>
   round16-to-round17.diff and cleanup-round12-to-round17.diff show every change.
+
+ROUND 17.1 (cleanup val only, same day)
+  The first live ?test=stirling run passed 15 of 19. All 4 fails were Bathroom 1:
+  Claude got stuck repeating "Ok. Done. End." inside its first check entry and
+  the rest of that room's check list was lost (the sorted text was fine).
+  The val now asks for short reasons, asks Claude again once if an answer gets
+  stuck (when there is time inside the app's 60-second wait), and if it is still
+  stuck it keeps the sorted text and puts "check list cut short — check the
+  whole room against the audio" first in that room's check list.
+  The val address now shows "version": "17.1". The Stirling test shows, per
+  room, whether it was asked again (retried) or cut short.
+  test-val-round17.mjs: 22 of 22 (15 before, plus 7 for 17.1).

@@ -66,5 +66,32 @@ check('Stirling test: an unsorted, unflagged answer fails (round 16 behaviour is
 res = await handler(new Request('https://x.web.val.run/?test=stirling'));
 check('Stirling test needs the key', res.status === 403);
 
+// 17.1: an answer stuck repeating itself inside one check entry (live Stirling Bathroom 1).
+res = await handler(new Request('https://x.web.val.run/'));
+j = await res.json();
+check('17.1: GET reports version 17.1 (round still 17)', j.round === 17 && j.version === '17.1', j);
+const post = () => handler(new Request('https://x.web.val.run/?k=k1', { method: 'POST', body: JSON.stringify({ transcript: 'doors painted white metal chip to the frame shower screen black vinyl framing', room: 'Bathroom 1', subsections: ['Door', 'Shower', 'Additional'] }) }));
+const goodRoom = { sections: [{ name: 'Door', text: 'Doors painted white {+in good condition+}. Metal chip to the frame.' }, { name: 'Shower', text: 'Shower screen black vinyl framing.' }],
+  check: [{ quote: 'Metal chip to the frame.', words: 'Metal chip', why: 'garbled' }, { quote: 'Shower screen black vinyl framing.', words: 'vinyl', why: 'garbled' }] };
+const stuck = { sections: goodRoom.sections, check: [{ quote: 'Metal chip to the frame.', words: 'Metal chip', why: 'garbled, unclear. Check audio. ' + 'Ok. Done. End. '.repeat(60) }] };
+check('Rules: why is kept to a few words, never repeated', /two to eight plain words/.test(sys()) && /never repeat yourself/.test(sys()));
+let calls = 0;
+reply = () => (++calls === 1 ? tool(stuck) : tool(goodRoom));
+j = await (await post()).json();
+check('17.1: a stuck answer is asked again once and the good second answer is used', calls === 2 && j.ok && j.retried === true && !j.cut_short && j.check.length === 2 && j.check[1].words === 'vinyl', { calls, j });
+calls = 0;
+reply = () => { calls++; return tool(stuck); };
+j = await (await post()).json();
+check('17.1: stuck twice keeps the sorted text and adds "check list cut short" first', calls === 2 && j.ok && j.cut_short === true && j.sections.length === 2 && /check list cut short/.test(j.check[0].why) && j.check[0].quote === 'Doors painted white in good condition.', { calls, c: j.check });
+check('17.1: the runaway "why" is cut to its first sentence', j.check[1].why === 'garbled, unclear.' , j.check[1]);
+calls = 0;
+reply = () => { calls++; return { ...tool(goodRoom), stop_reason: calls === 1 ? 'max_tokens' : 'tool_use' }; };
+j = await (await post()).json();
+check('17.1: an answer that ran out of room (max_tokens) is asked again too', calls === 2 && j.ok && j.retried === true && !j.cut_short, { calls, j });
+calls = 0;
+reply = () => { calls++; return tool(goodRoom); };
+j = await (await post()).json();
+check('17.1: a normal answer is asked once, with no retried or cut_short flag', calls === 1 && j.ok && j.retried === undefined && j.cut_short === undefined, { calls, j });
+
 console.log(out.join('\n') + `\n\n${pass} of ${pass + fail} checks pass`);
 process.exit(fail ? 1 : 0);

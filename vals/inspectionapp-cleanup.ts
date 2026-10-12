@@ -307,7 +307,10 @@ async function fileRoom(transcript: string, room: string, subsections: string[],
 
 const RUNAWAY_WHY_CHARS = 160; // a "why" is a few words; longer means the model got stuck
 const RUNAWAY_WORDS_CHARS = 600;
-const RETRY_IF_UNDER_MS = 20000; // a second try takes up to ~25 s; the app waits 60 s
+// Ask again only if the first answer came back within 30 s. A second try takes
+// ~15-25 s; ANSWER_BY_MS stops it in time if it runs long (was 20 s before the
+// 50 s limit existed; a stuck Lounge at 23 s was not asked again).
+const RETRY_IF_UNDER_MS = 30000;
 const ANSWER_BY_MS = 50000; // Val Town stops a request at 60 s (seen live 12 Oct); answer before that
 
 function toolBlock(data: any) {

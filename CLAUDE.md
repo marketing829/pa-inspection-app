@@ -23,9 +23,9 @@ Back end is Val Town (account `propertyassist`). Paste-ready copies of the val c
 
 | Val | Job | Copy in repo |
 |---|---|---|
-| `inspectionapp-assemblyai` | Default speech-to-text engine. Supports `{url}` (Dropbox link) and resume by `{id}` after a 504 | `vals/inspectionapp-assemblyai.ts` (round 14) |
+| `inspectionapp-assemblyai` | Default speech-to-text engine. Supports `{url}` (Dropbox link) and resume by `{id}` after a 504 | `vals/inspectionapp-assemblyai.ts` (version 17: Stirling words added) |
 | `inspectionapp` | Deepgram engine (`main.ts`), kept as the alternative | not yet |
-| `inspectionapp-cleanup` | Claude sorts a room's transcript into its subareas, fixes mishears and lists words to check (`file_room` tool) | `vals/inspectionapp-cleanup.ts` (round 17) |
+| `inspectionapp-cleanup` | Claude sorts a room's transcript into its subareas, fixes mishears and lists words to check (`file_room` tool) | `vals/inspectionapp-cleanup.ts` (round 17, version 17.1) |
 | `inspectionapp-proofread` | Claude check for the editor; `mode: "rooms"` finds where each room starts in one long recording | not yet |
 | `dropbox-archive` | Writes everything to Dropbox; also the phone problem log (`?action=log`) and editor reads | `vals/dropbox-archive.ts` (round 14) |
 
@@ -34,8 +34,8 @@ Every val checks `PA_KEY`. A GET on a val URL shows its config, `key_required`, 
 ## Current state
 
 - Inspector app: **round 16 live** (cache v20). **Round 17 built, not uploaded** (cache v21, Admin settings shows "app version 17"). Round 17 notes: `notes/round-17.md`.
-- Cleanup val: `PA_MODEL` is set to `claude-sonnet-5-5` (12 Oct). **Round 17 cleanup val built, not pasted.** After pasting, its URL shows `"round": 17`. `?test=stirling&k=<PA_KEY>` runs four Stirling Street rooms through Claude and lists 19 PASS/FAIL checks. Not yet run against the live API.
-- Round 14 vals: built, **not confirmed pasted**. Check each URL shows `"version": 14`.
+- Cleanup val: `PA_MODEL` is set to `claude-sonnet-5-5` (12 Oct). **Round 17 cleanup val 17.1 is live** (`"version": "17.1"`). It answers without thinking first (short thinking was tested and left out a sentence), asks again when an answer gets stuck, and always answers within 50 s (Val Town stops requests at 60 s). See `notes/round-17.md`. `?test=stirling&k=<PA_KEY>` runs four Stirling Street rooms through Claude and lists 19 PASS/FAIL checks.
+- Round 14 vals: **confirmed live** 12 Oct (`"version": 14`). The assemblyai val has a version 17 in `vals/` (ten more expected words).
 - Typist editor: **v3.4.2 is in this repo and live on GitHub Pages** (New job from audio). It needs the v3.4 proofread val pasted too; until then New job from audio may not work.
 - The project "INSPECTION APP" on claude.ai holds every round doc and the VA comparisons. `claude/pa-start-here-handoff.md` is the source of truth for status and open items. If this file and that doc disagree, the doc wins; update this file.
 
@@ -105,13 +105,12 @@ Compare the app's Word file for a real job against the VA's final report, room b
 
 ## Open items (from the start-here doc, 12 Oct)
 
-1. Paste the round 17 cleanup val; open `?test=stirling&k=<PA_KEY>`; fix anything that fails.
+1. Cleanup val 17.1 pasted 12 Oct. Paste the latest copy (30 s cut-off), run `?test=stirling&k=<PA_KEY>` once more. Paste the assemblyai val version 17.
 2. Upload round 17 `index.html` + `sw.js`; phones show "app version 17".
 3. Re-run the Stirling walk-through (Kitchen part 1 included, second store room as "Store Room 2") and score it against the VA.
-4. Confirm the round 14 vals are pasted (`"version": 14`).
-5. iPhone check of round 16: mandatory card → Review edit, inventory camera tile, Recordings day folds, Camera mid-job while a room is sending.
-6. Watch dropbox-archive logs for `PHONE PROBLEM` after real jobs.
-7. Chrome-on-iPhone sending test.
-8. Typist editor v3.4.2 is uploaded. Paste the v3.4 proofread val and check its "not verified yet" list.
-9. Decide the Dropbox name pattern for serial photos.
-10. On hold: Chrome-on-iPhone warning, send errors on room cards, Add saved recording, Background Sync for Android, a second transcription engine to cross-check words.
+4. iPhone check of round 16: mandatory card → Review edit, inventory camera tile, Recordings day folds, Camera mid-job while a room is sending.
+5. Watch dropbox-archive logs for `PHONE PROBLEM` after real jobs.
+6. Chrome-on-iPhone sending test.
+7. Typist editor v3.4.2 is uploaded. Paste the v3.4 proofread val and check its "not verified yet" list.
+8. Decide the Dropbox name pattern for serial photos.
+9. On hold: Chrome-on-iPhone warning, send errors on room cards, Add saved recording, Background Sync for Android, a second transcription engine to cross-check words.

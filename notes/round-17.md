@@ -118,3 +118,19 @@ ROUND 17.1 (cleanup val only, same day)
   finish in time, it keeps the first answer marked "check list cut short".
   The Stirling test now runs only the app's way; add &compare=1 for both.
   test-val-round17.mjs: 30 of 30 (15 before, plus 15 for 17.1).
+  Fourth live run (with the 50 s limit): 17 of 19 in 25 s. Bathroom 1 and
+  Kitchen got stuck and were rescued by asking again; the Lounge got stuck
+  after 23 s, past the 20 s cut-off, so it kept its first answer marked
+  "check list cut short". The cut-off is now 30 s (the 50 s limit still
+  stops a slow second try in time).
+
+ROUND 17 SPEECH-TO-TEXT VAL (inspectionapp-assemblyai, version 17)
+  Ten Stirling mishears added to the words AssemblyAI is told to expect:
+  Foxtel, windowsill, window ledge, cutlery rack, fluorescent, frosted,
+  shower screen, lockable handle, doorstop, Mitsubishi Electric (101 terms).
+  Nothing else changed. Paste vals/inspectionapp-assemblyai.ts into the
+  inspectionapp-assemblyai val; its address then shows "version": 17 and
+  "keyterms": 101.
+
+CONFIRMED 12 Oct: the round 14 vals were live (assemblyai and dropbox-archive
+both showed "version": 14).

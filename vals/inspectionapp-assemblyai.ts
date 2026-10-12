@@ -26,6 +26,8 @@
  * Optional: PA_MAX_WAIT_MS (default 50000) — how long to wait for a job before
  * giving up and letting the app retry. Val Town kills a request at 60s on the
  * free plan and 10 min on Pro, so raise this only if the account is on Pro.
+ * Round 17 (version 17): ten more words in the keyterms list, from the Stirling
+ * Street mishears. Nothing else changed.
  */
 
 const API = "https://api.assemblyai.com";
@@ -138,6 +140,18 @@ const KEYTERMS = [
   "sprinkler",
   "nib wall",
   "kickboard",
+  // Round 17: words AssemblyAI got wrong at Stirling Street (12 Oct) — "foxhole",
+  // "wind ledge", "colour rack", "which means the aircon", "sub" and others.
+  "Foxtel",
+  "windowsill",
+  "window ledge",
+  "cutlery rack",
+  "fluorescent",
+  "frosted",
+  "shower screen",
+  "lockable handle",
+  "doorstop",
+  "Mitsubishi Electric",
 ];
 // A few terms appear twice above (cistern, towel rail, kickboard); each is sent once.
 const TERMS = [...new Set(KEYTERMS)];
@@ -203,7 +217,7 @@ export default async function (req: Request): Promise<Response> {
       key_required: !!PA_KEY,
       max_mb: 60,
       resume: true, // round 11
-      version: 14,
+      version: 17,
       size_check: true,
     });
   }

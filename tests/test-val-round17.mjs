@@ -106,14 +106,23 @@ check('17.1: run-on text after "why" is trimmed', j.check[0].why === 'garbled, m
 // 17.1: the Stirling test runs no-thinking and short-thinking side by side; the app keeps no-thinking.
 const bodies = [];
 reply = (body) => { bodies.push(body); const room = /Room: (.*)\n/.exec(body.messages[0].content)[1]; const t = /"""\n([\s\S]*)\n"""/.exec(body.messages[0].content)[1]; return tool(pad(good[room], t)); };
-j = await (await handler(new Request('https://x.web.val.run/?test=stirling&k=k1'))).json();
+j = await (await handler(new Request('https://x.web.val.run/?test=stirling&k=k1&compare=1'))).json();
 const offB = bodies.filter(b => b.thinking.type === 'between_tools'), lowB = bodies.filter(b => b.thinking.type === 'adaptive');
-check('17.1: Stirling test compares no thinking and short thinking (4 rooms each)', offB.length === 4 && lowB.length === 4 && lowB.every(b => b.output_config.effort === 'low' && b.max_tokens === 16000) && offB.every(b => !b.output_config && b.max_tokens === 8192), bodies.map(b => b.thinking));
+check('17.1: Stirling test with &compare=1 runs no thinking and short thinking (4 rooms each)', offB.length === 4 && lowB.length === 4 && lowB.every(b => b.output_config.effort === 'low' && b.max_tokens === 16000) && offB.every(b => !b.output_config && b.max_tokens === 8192), bodies.map(b => b.thinking));
 check('17.1: comparison lists both, the app still uses no thinking', j.in_use === 'off' && j.compare.length === 2 && j.compare[0].thinking === 'off' && j.compare[1].thinking === 'low' && j.compare.every(c => c.passed === '19 of 19') && j.results.length === 19, j.compare);
 calls = 0;
 reply = () => { calls++; return tool(calls === 1 ? { ...goodRoom, check: [{ quote: 'Metal chip to the frame.', words: '', why: 'mis-heard handle description, fixed and flagged.\nunclear garbled words' }] } : goodRoom); };
 j = await (await post()).json();
 check('17.1: a reason that runs across lines counts as stuck and is asked again', calls === 2 && j.retried === true && j.check.length === 2, { calls, j });
+
+bodies.length = 0;
+reply = (body) => { bodies.push(body); const room = /Room: (.*)\n/.exec(body.messages[0].content)[1]; const t = /"""\n([\s\S]*)\n"""/.exec(body.messages[0].content)[1]; return tool(pad(good[room], t)); };
+j = await (await handler(new Request('https://x.web.val.run/?test=stirling&k=k1'))).json();
+check('17.1: Stirling test without &compare runs only the way the app works (stays under a minute)', bodies.length === 4 && bodies.every(b => b.thinking.type === 'between_tools') && j.compare.length === 1 && j.passed === '19 of 19', { n: bodies.length, c: j.compare });
+calls = 0;
+reply = () => { calls++; if (calls === 2) throw new Error('slow'); return tool(stuck); };
+j = await (await post()).json();
+check('17.1: if asking again fails or runs out of time, the first answer is kept, marked cut short', calls === 2 && j.ok && j.cut_short === true && j.sections.length === 2 && /check list cut short/.test(j.check[0].why), { calls, j });
 
 console.log(out.join('\n') + `\n\n${pass} of ${pass + fail} checks pass`);
 process.exit(fail ? 1 : 0);

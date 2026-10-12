@@ -108,4 +108,13 @@ ROUND 17.1 (cleanup val only, same day)
   no thinking (what the app uses) and a short think first ("low" effort),
   with pass counts and the slowest room's time for each. The app keeps
   no thinking until we choose.
-  test-val-round17.mjs: 28 of 28 (15 before, plus 13 for 17.1).
+  Side-by-side runs: no thinking passed 19 of 19 twice (slowest room 27 s and
+  23 s; the "ask again" step rescued Bathroom 1 once). Short thinking was
+  quicker (13-17 s) but passed 18 of 19 both times, and once left out the
+  Bedroom 1 downlights sentence entirely. The app stays on no thinking.
+  The third run hit Val Town's 1-minute limit ("Val timed out after 1m"):
+  every val request is stopped at 60 s on the current plan. The val now
+  gives up on Claude at 50 s so it always answers; if asking again can't
+  finish in time, it keeps the first answer marked "check list cut short".
+  The Stirling test now runs only the app's way; add &compare=1 for both.
+  test-val-round17.mjs: 30 of 30 (15 before, plus 15 for 17.1).

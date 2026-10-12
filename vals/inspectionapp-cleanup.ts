@@ -222,7 +222,9 @@ async function fileRoom(transcript: string, room: string, subsections: string[],
   // inside the app's 60-second wait.
   let retried = false;
   if (ranAway(asked.data) && Date.now() - started < RETRY_IF_UNDER_MS) {
-    const again = await askClaude(user, think);
+    // Only the time left before ANSWER_BY_MS; if the second try can't finish,
+    // the first answer is kept and marked "check list cut short".
+    const again = await askClaude(user, think, ANSWER_BY_MS - (Date.now() - started));
     retried = true;
     if (!again.error && (!ranAway(again.data) || !toolBlock(asked.data))) asked = again;
   }
@@ -306,6 +308,7 @@ async function fileRoom(transcript: string, room: string, subsections: string[],
 const RUNAWAY_WHY_CHARS = 160; // a "why" is a few words; longer means the model got stuck
 const RUNAWAY_WORDS_CHARS = 600;
 const RETRY_IF_UNDER_MS = 20000; // a second try takes up to ~25 s; the app waits 60 s
+const ANSWER_BY_MS = 50000; // Val Town stops a request at 60 s (seen live 12 Oct); answer before that
 
 function toolBlock(data: any) {
   return (data?.content || []).find((b: any) => b.type === "tool_use" && b.name === "file_room");
@@ -343,17 +346,22 @@ function requestBody(user: string, think: Think = THINK) {
     max_tokens: think === "off" ? 8192 : 16000,
     tools: [{ ...TOOL, strict: true }],
     tool_choice: { type: "auto" },
-    // "off": no thinking before the answer (fast). "low"/"medium": a short think
-    // first (adaptive thinking at that effort), which may flag more steadily but
-    // takes longer. The Stirling test runs "off" and "low" side by side.
+    // "off": no thinking before the answer. "low"/"medium": a short think first
+    // (adaptive thinking at that effort). Live Stirling runs, 12 Oct: "low" was
+    // quicker but twice left out a Bedroom 1 sentence, so the app stays "off".
+    // ?test=stirling&compare=1 runs both side by side.
     ...(think === "off" ? { thinking: { type: "between_tools" } } : { thinking: { type: "adaptive" }, output_config: { effort: think } }),
   };
 }
 
-async function askClaude(user: string, think: Think = THINK): Promise<{ data?: any; error?: string }> {
+async function askClaude(user: string, think: Think = THINK, waitMs = ANSWER_BY_MS): Promise<{ data?: any; error?: string }> {
+  // Val Town stops any request at 1 minute, so give up in time to answer.
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), Math.max(1000, waitMs));
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
+      signal: ctrl.signal,
       headers: {
         "x-api-key": KEY,
         "anthropic-version": "2023-06-01",
@@ -365,7 +373,9 @@ async function askClaude(user: string, think: Think = THINK): Promise<{ data?: a
     if (!res.ok) return { error: "anthropic " + res.status + ": " + String(data?.error?.message || "").slice(0, 160) };
     return { data };
   } catch {
-    return { error: "anthropic unreachable" };
+    return { error: ctrl.signal.aborted ? "anthropic took too long" : "anthropic unreachable" };
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -455,7 +465,8 @@ async function stirlingTest(req: Request): Promise<Response> {
   if (!KEY) return json({ ok: false, error: "ANTHROPIC_API_KEY is not set" }, 500);
   const started = Date.now();
   // Each way of working (no thinking, short thinking) on the four rooms, all at once.
-  const modes: Think[] = LEGACY ? ["off"] : ["off", "low"];
+  // &compare=1 also runs short thinking side by side (twice the rooms; can pass a minute).
+  const modes: Think[] = !LEGACY && new URL(req.url).searchParams.get("compare") === "1" ? ["off", "low"] : [THINK];
   const runs = await Promise.all(modes.map(async (mode) => {
     const outs = await Promise.all(STIRLING.map(async (r) => {
       const t0 = Date.now();

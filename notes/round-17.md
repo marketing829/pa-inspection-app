@@ -170,3 +170,17 @@ CLEANUP VAL 17.2 (after the merge, val only)
   highlight list still marks known mishears in the Word file either way.
   Paste vals/inspectionapp-cleanup.ts; the address then shows
   "version": "17.2". test-val-round17.mjs: 38 of 38.
+
+17.2 LIVE TEST (12 Oct): 12 of 19, version 17.2 confirmed. Bedroom 1 and
+  Bathroom 1 were asked again and came back nearly empty both times.
+  More serious: in Bedroom 1 Claude LEFT OUT "2 up and down secured at front
+  door" (no Light Fittings row at all) and quietly reworded garbled phrases
+  ("second black under framing" -> "black aluminium framing", "one twin
+  handle is going to go side" -> "One silver metal handle secured") with no
+  flag. That breaks rule 9 and the 75% word check can't catch one sentence.
+  The words are still in the Word file's "Raw transcript (as heard)" pages at
+  the back, but nothing points the VA to them.
+  Proposed for round 18: an app-side check that compares each transcript
+  sentence with the sorted text and puts "Possibly left out: '…' (time)" at
+  the top of the room, so it doesn't depend on Claude behaving. Optionally
+  try Claude Opus 5.5 for the cleanup (slower, about twice the cost).

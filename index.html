@@ -2460,7 +2460,7 @@
     <!-- Service settings. Inspectors never need these, and a stray tap here
          used to be able to break uploads, so they're tucked away. -->
     <details class="admin-settings" id="adminSettings">
-      <summary>Admin settings <span class="app-ver">· app version 17</span></summary>
+      <summary>Admin settings <span class="app-ver">· app version 18</span></summary>
       <p class="admin-warn">For Daphne / admin only. Changing these can stop recordings reaching Dropbox.</p>
     <div class="field-group">
       <label>Transcription engine</label>
@@ -3201,7 +3201,7 @@ let photoQueueRunning = false; // guard so the serial-photo upload queue runs on
 // every read of a stored recording now has a hard deadline (a send that never
 // answers, or ignores its abort, can no longer hold a queue), and every pass
 // has a watchdog. The numbers live here so the tests can shorten them.
-const APP_ROUND = 17;
+const APP_ROUND = 18;
 const TIMING = {
   grace: 5000,              // added to a request's own time limit before giving up on it outright
   readMs: 20000,            // reading one stored recording into memory
@@ -7780,6 +7780,66 @@ function plateFrom(text) {
 }
 // ROUND 17: the first rows of a room with nothing said, while later rows are
 // full (Stirling kitchen: part 1 was never recorded). Returns how many.
+// ROUND 18 (after the Stirling tests, where the AI left out "2 up and down
+// secured at front door" and rewrote "once of no address burns" as "no dual
+// flush button"): phrases the inspector said that are not in the AI's sorted text
+// (left out, or changed into different words). Compares each spoken phrase
+// (split at . , ;) with the sorted sentence that shares most of its words.
+const MISS_STOP = new Set(('a an the and or but of to is are was were be been am we have has had there theres its it this that these those ' +
+  'in on at as with for from by our your their my here also just so then which would very got do does did can will all any ' +
+  'um uh er erm ah oh okay ok well like sorry yeah yes actually basically').split(' '));
+const MISS_NUM = { 0: 'zero', 1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five', 6: 'six', 7: 'seven', 8: 'eight', 9: 'nine', 10: 'ten',
+  11: 'eleven', 12: 'twelve', 13: 'thirteen', 14: 'fourteen', 15: 'fifteen', 16: 'sixteen', 17: 'seventeen', 18: 'eighteen', 19: 'nineteen', 20: 'twenty' };
+function missWords(t) {
+  return String(t || '').toLowerCase().replace(/\[added: [^\]]*\]/g, ' ').replace(/\{\+[^}]*\+\}/g, ' ').replace(/['’]/g, '')
+    .split(/[^a-z0-9]+/).filter(Boolean)
+    .map(w => MISS_NUM[w] || w)
+    .map(w => (w.length > 4 && /s$/.test(w) && !/ss$/.test(w)) ? w.slice(0, -1) : w)
+    .filter(w => !MISS_STOP.has(w));
+}
+// Walk-through phrases the cleanup drops on purpose ("coming into the bedroom").
+const MISS_WALK = /^(?:(?:uh|um|so|okay|ok|and|now)\s+)*(?:coming|moving|heading|going|walking|stepping)\s+(?:in|into|to|through|out|back)\b/i;
+function missingPhrases(transcript, sections) {
+  const outSents = (sections || []).map(s => String(s.text || '')).join('\n')
+    .replace(/([.!?])\s+/g, '$1\n').split(/\n+/).map(missWords).filter(w => w.length).map(w => new Set(w));
+  if (!outSents.length) return [];
+  const missing = [];
+  // No look-behind in these patterns: older iPhone Safari can't parse it.
+  String(transcript || '').replace(/([.!?])\s+/g, '$1\n').split('\n').forEach(sentence => {
+    sentence.split(/[,;]\s*|\s+[—–-]\s+|—\s*/).forEach(raw => {
+      missChunks(raw.replace(/^[\s,.;—–-]+|[\s,.;—–-]+$/g, '')).forEach(phrase => {
+      const w = missWords(phrase);
+      if (w.length < 3 || MISS_WALK.test(phrase.replace(/^(?:uh|um),?\s*/i, ''))) return;
+      let best = 0;
+      for (const o of outSents) {
+        const hit = w.filter(x => o.has(x)).length / w.length;
+        if (hit > best) best = hit;
+        if (best >= 0.5) break;
+      }
+      if (best < 0.5) missing.push(phrase);
+      });
+    });
+  });
+  return missing;
+}
+// A long run with no commas or full stops (an unpunctuated transcript) is
+// checked about six key words at a time, so it isn't one big "missing" phrase.
+function missChunks(phrase) {
+  if (missWords(phrase).length <= 10) return [phrase];
+  const out = [];
+  let cur = [], n = 0;
+  phrase.split(/\s+/).forEach(tok => {
+    cur.push(tok);
+    n += missWords(tok).length;
+    if (n >= 6) { out.push(cur.join(' ')); cur = []; n = 0; }
+  });
+  if (cur.length) {
+    if (n < 3 && out.length) out[out.length - 1] += ' ' + cur.join(' ');
+    else out.push(cur.join(' '));
+  }
+  return out;
+}
+
 function leadingEmptyRows(rowNames, filled) {
   let lead = 0;
   while (lead < rowNames.length && !filled(rowNames[lead])) lead++;
@@ -7814,6 +7874,7 @@ function buildJobModel(recs, snap) {
     const notes = [];
     const audio = [];
     const raws = [];
+    let missCount = 0;
     let pending = false;
     rs.forEach(r => {
       const pt = multi ? 'pt ' + (r.part || (rs.indexOf(r) + 1)) + ' · ' : '';
@@ -7829,6 +7890,15 @@ function buildJobModel(recs, snap) {
       if (r.checkCutShort && r.sections) notes.push('Check list cut short' + (multi ? ' for part ' + (r.part || (rs.indexOf(r) + 1)) : '') + '. The AI stopped before listing everything to check. Check the whole ' + (multi ? 'part' : 'room') + ' against the audio.');
       const clean = punctuateBySubarea({ subsections: r.subsections || [] }, applyCorrections(applyScratch(raw)));
       const layout = roomLayout(r, clean);
+      // ROUND 18: what was said but isn't in the AI's sorted text, with its time.
+      if (layout.cleaned) {
+        const miss = missingPhrases(raw, r.sections);
+        if (miss.length) {
+          missCount += miss.length;
+          const shown = miss.slice(0, 8).map(p => { const at = findPhraseTime(r.words, p); return '“' + p + '”' + (at != null ? ' (' + formatClock(at) + ')' : ''); });
+          notes.push('Said but not in the sorted text' + (multi ? ' (part ' + (r.part || (rs.indexOf(r) + 1)) + ')' : '') + ', left out or changed by the AI: ' + shown.join('; ') + (miss.length > 8 ? '; and ' + (miss.length - 8) + ' more' : '') + '. Check against the audio and the raw transcript.');
+        }
+      }
       raws.push({ part: multi ? (r.part || 1) : 0, audio: audioName, text: layout.raw });
       const checks = (r.check || []);
       layout.buckets.forEach(b => {
@@ -7878,7 +7948,7 @@ function buildJobModel(recs, snap) {
     const lead = (rs.length && !pending && !rs.some(r => r.noAudio || !(r.transcript || '').trim() || r.cleanupError)) ? leadingEmptyRows(tableRows.map(r => r.name), n => !(tableRows.find(r => r.name === n) || {}).empty) : 0;
     if (lead) notes.push('Nothing for the first ' + lead + ' rows (' + tableRows[0].name + ' to ' + tableRows[lead - 1].name + '). The start of this room may not have been recorded. Check the photos.');
     const toCheck = tableRows.reduce((k, r) => k + (r.sents || []).reduce((a, x) => a + x.spans.length, 0), 0)
-      + (twoRooms ? repeated.length : 0);
+      + (twoRooms ? repeated.length : 0) + missCount;
     // Model, serial and type numbers the AI wrote out, pulled into their own table.
     const plates = [];
     tableRows.forEach(r => (r.sents || []).forEach(x => {

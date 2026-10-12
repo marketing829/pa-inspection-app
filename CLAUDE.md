@@ -33,7 +33,7 @@ Every val checks `PA_KEY`. A GET on a val URL shows its config, `key_required`, 
 
 ## Current state
 
-- Inspector app: **round 16 live** (cache v20). **Round 17 live 12 Oct** (cache v21, Admin settings shows "app version 17"). Round 17 notes: `notes/round-17.md`.
+- Inspector app: **round 17 live 12 Oct** (cache v21, "app version 17"). **Round 18 built, not uploaded** (cache v22, "app version 18"): the Word file lists what was said but isn't in the AI's sorted text. Notes: `notes/round-17.md`, `notes/round-18.md`.
 - Cleanup val: `PA_MODEL` is set to `claude-sonnet-5-5` (12 Oct). **Round 17 cleanup val 17.1 is live** (`"version": "17.1"`; 17.2 in `vals/`, asks again when a long room comes back with nothing to check). It answers without thinking first (short thinking was tested and left out a sentence), asks again when an answer gets stuck, and always answers within 50 s (Val Town stops requests at 60 s). See `notes/round-17.md`. `?test=stirling&k=<PA_KEY>` runs four Stirling Street rooms through Claude and lists 19 PASS/FAIL checks.
 - Round 14 vals: **confirmed live** 12 Oct (`"version": 14`). The assemblyai val has a version 17 in `vals/` (ten more expected words).
 - Typist editor: **v3.4.2 is in this repo and live on GitHub Pages** (New job from audio). It needs the v3.4 proofread val pasted too; until then New job from audio may not work.
@@ -52,7 +52,7 @@ These came from real field failures. Treat them as hard requirements.
 7. **Report problems** to `dropbox-archive?action=log` (shows as `PHONE PROBLEM` in Val Town logs), at most once per 5 min per recording.
 8. **The phone app sends only while open.** iPhone has no Background Sync. Don't design anything that assumes background uploads.
 9. **Claude cleanup never invents, omits or softens.** Only real subarea names come back. If it keeps under 75% of the words, the app falls back to its keyword split. (Both checks live in the `inspectionapp-cleanup` val, not `index.html`: `MIN_KEEP_RATIO = 0.75` refuses the output, and the app falls back when the val fails, declines, or returns no usable sections.) Model, serial and type numbers are always flagged "check against the photo".
-10. **A wrong statement that reads normally is the worst outcome.** Since round 17 the cleanup prompt flags unusual condition words, self-contradictions and garbled phrases with no per-room cap, and the app always highlights `SUSPECT_PHRASES` in the Word file. Never reintroduce a cap on flags. Never let a garbled room show "nothing to check".
+10. **A wrong statement that reads normally is the worst outcome.** Since round 18 the app also lists, at the top of each room in the Word file, what was said but isn't in the AI's sorted text (`missingPhrases`); don't remove it, and keep it quiet on fixed mishears and walk-through phrases. Since round 17 the cleanup prompt flags unusual condition words, self-contradictions and garbled phrases with no per-room cap, and the app always highlights `SUSPECT_PHRASES` in the Word file. Never reintroduce a cap on flags. Never let a garbled room show "nothing to check".
 11. **No secrets in commits.** Keys live in Val Town environment variables (`PA_KEY`, `ANTHROPIC_API_KEY`, `ASSEMBLYAI_API_KEY`, Dropbox tokens, `EDITOR_KEY`). Don't paste key values into code, docs or this file. Exception, on purpose: the shared `PA_KEY` value is written into `index.html` and `editor.html` (sent as `?k=`), so anyone who can open the public site can read it. Treat it as a lock on the door, not a safe. If it leaks, change it in both files and in every val's `PA_KEY`.
 
 ## Product decisions (Marie, carry into every round)
@@ -69,6 +69,7 @@ These came from real field failures. Treat them as hard requirements.
 - Finish returns to the Start screen and doesn't wait for Dropbox.
 - The approved correction list is applied automatically. The team phrase list is suggestions only.
 - Native app (Expo) decision comes after the typist editor is finished.
+- Cleanup model stays Claude Sonnet 5.5 for budget (Daphne, 12 Oct). If it still isn't good enough after round 18, look at other options, including the OpenAI API.
 - Priority order: accurate audio and clean text on screen first, then categorisation in the app and Dropbox files.
 
 ## Domain notes
@@ -88,7 +89,7 @@ These came from real field failures. Treat them as hard requirements.
 - **Branch per round** (`round-18`, etc.). Commit small. The commit message says what changed for the inspector in plain words. Merge to `main` (which publishes on GitHub Pages) only when Daphne says so.
 - **Bump the service worker cache version** in `sw.js` on every app change, and `APP_ROUND` plus the "app version N" text in Admin settings. Phones only pick up a new build after force-quit and reopen.
 - **Test before every commit.**
-  - App: `tests/test-round17.js` (400 checks, headless Playwright, 375×667). Serve the repo root with `python3 -m http.server 8767 --bind 127.0.0.1`, then `node tests/test-round17.js` (it reads `index.html` and `sw.js` from the folder it's run against; adjust `__dirname` paths if you move it). Copy it to `test-round18.js` for the next round, update version checks, add checks for every fix.
+  - App: `tests/test-round18.js` (408 checks, headless Playwright, 375×667). Serve the repo root with `python3 -m http.server 8767 --bind 127.0.0.1`, then `node tests/test-round18.js` from the repo root. Copy it to `test-round19.js` for the next round, update version checks, add checks for every fix.
   - Cleanup val: `node tests/test-val-round17.mjs` (38 mocked checks; needs `esbuild` installed globally).
   - A real-data copy of the app test lives in `tests/private/` (not committed). Make every app-test change in both copies.
   - Mock the vals and Dropbox in tests. Never call live services from tests.

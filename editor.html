@@ -1867,6 +1867,11 @@ if (typeof module !== 'undefined') {
 <script>
 'use strict';
 // ═══ PA Typist Editor v3 ═══════════════════════════════════════════════════
+// v3.4.3 (13 Oct 2026, round 19): the room .json's notes from the phone (said but not
+// in the sorted text, check list cut short, not sorted by the AI) show at the top of
+// the room; separate rooms with the same name in one recording stay separate; word
+// times right for recordings over 2 hours; old jobs-from-audio cleared after 60 days;
+// Dropbox reads have a time limit.
 // v3.4 (9 Oct 2026): New job from audio (partG): upload a recording or paste a Dropbox
 // link, AssemblyAI transcribes it, Claude finds the rooms and sorts each into its rows.
 // v3.3 (8 Oct 2026): review fixes (undo per job, whole-word fixes, no markup in the
@@ -2039,7 +2044,11 @@ function roomFromJson(j) {
     roomId: str(j.roomId),
     meta: { property: j.property, client: j.client, inspector: j.inspector, state: j.state, type: j.inspectionType,
       started: j.inspectionStarted, recordedAt: j.recordedAt },
-    transcribedBy: str(j.transcribedBy), sortedBy: str(j.sortedBy), audioName: j.audioFile ? str(j.audioFile).split('/').pop() : ''
+    transcribedBy: str(j.transcribedBy), sortedBy: str(j.sortedBy), audioName: j.audioFile ? str(j.audioFile).split('/').pop() : '',
+    // v3.4.3 (round 19): the phone's own notes on this room. Older .json files have none.
+    missing: arr(j.missing).filter(m => m && typeof m === 'object' && str(m.phrase).trim())
+      .map(m => ({ phrase: str(m.phrase).trim(), at: num(m.at) != null ? num(m.at) : parseClock(str(m.clock)) })),
+    cutShort: j.cutShort === true, sortError: j.sortError ? str(j.sortError) : ''
   };
 }
 
@@ -2185,25 +2194,32 @@ async function buildJob(id, files, progress) {
 const DBX = {
   conf: LS.get('pa-ed:dbx', null),
   linkCache: new Map(),
-  async call(params) {
+  // v3.4.3: every read has a time limit (45 s, answer included), so a call that never
+  // answers can't leave a job loading forever. as: 'json' or 'text'.
+  async call(params, as) {
     if (!this.conf) throw new Error('Not connected');
     const u = new URL(this.conf.url);
     Object.entries(params).forEach(([k, v]) => u.searchParams.set(k, v));
     u.searchParams.set('k', this.conf.key);
-    let r;
-    try { r = await fetch(u.toString()); } catch (e) { throw new Error('Could not reach the Dropbox service. Check your internet connection and try again. If it keeps happening, check the service address and editor key with Marie.'); }
-    if (!r.ok) {
-      let msg = ''; try { msg = (await r.json()).error || ''; } catch (e) {}
-      throw new Error(msg || ('The Dropbox service answered ' + r.status));
-    }
-    return r;
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), DBX_TIMEOUT_MS);
+    const slow = 'The Dropbox service took too long to answer. Check your internet connection and try again.';
+    try {
+      let r;
+      try { r = await fetch(u.toString(), { signal: ctl.signal }); } catch (e) { throw new Error(ctl.signal.aborted ? slow : 'Could not reach the Dropbox service. Check your internet connection and try again. If it keeps happening, check the service address and editor key with Marie.'); }
+      if (!r.ok) {
+        let msg = ''; try { msg = (await r.json()).error || ''; } catch (e) {}
+        throw new Error(ctl.signal.aborted ? slow : (msg || ('The Dropbox service answered ' + r.status)));
+      }
+      try { return as === 'json' ? await r.json() : await r.text(); }
+      catch (e) { throw new Error(ctl.signal.aborted ? slow : 'The Dropbox service\'s answer could not be read. Try again.'); }
+    } finally { clearTimeout(t); }
   },
-  async list(path) { return (await (await this.call({ action: 'list', path })).json()).entries || []; },
-  async text(path) { return (await this.call({ action: 'get', path })).text(); },
+  async list(path) { return (await this.call({ action: 'list', path }, 'json')).entries || []; },
+  async text(path) { return this.call({ action: 'get', path }, 'text'); },
   async link(path, fresh) {
     const c = this.linkCache.get(path);
     if (!fresh && c && c.until > Date.now()) return c.link;
-    const d = await (await this.call({ action: 'link', path })).json();
+    const d = await this.call({ action: 'link', path }, 'json');
     this.linkCache.set(path, { link: d.link, until: Date.now() + 3.5 * 3600 * 1000 });
     return d.link;
   },
@@ -2224,6 +2240,7 @@ const DBX = {
   }
 };
 const JOB_SUBDIRS = new Set(['Audio', 'App data', 'Photos']);
+const DBX_TIMEOUT_MS = 45000;
 function localFile(file) {
   let u = null;
   return { name: file.name, size: file.size, text: () => file.text(), url: () => (u = u || URL.createObjectURL(file)) };
@@ -2834,18 +2851,20 @@ async function downloadDocx(force) {
 // Everything still open across the job, for the export check.
 function preflight() {
   const j = App.job, items = [];
-  let open = 0, grey = 0, notDone = 0, sp = 0, cl = 0, first = null;
+  let open = 0, grey = 0, notDone = 0, sp = 0, cl = 0, notes = 0, first = null;
   j.rooms.forEach((r, k) => {
     const c = roomCounts(r), rs = roomState(r);
     const iss = roomIssues(r).list;
     const nsp = iss.filter(x => x.kind !== 'claude').length, ncl = iss.length - nsp;
     open += c.open; grey += c.added; sp += nsp; cl += ncl;
     if (!rs.done) notDone++;
+    if (!rs.done && hasPhoneNotes(r)) notes++;   // v3.4.3: a done room has been checked
     if (first == null && (c.open || !rs.done || nsp || ncl)) first = k;
   });
   if (open) items.push({ label: 'Words to check (yellow)', n: open });
   if (sp) items.push({ label: 'Spelling, grammar and style notes', n: sp });
   if (cl) items.push({ label: 'Claude suggestions not decided', n: cl });
+  if (notes) items.push({ label: 'Rooms with a note from the phone to check (top of the room)', n: notes });
   if (notDone) items.push({ label: 'Rooms not marked done', n: notDone });
   if (grey) items.push({ label: 'Grey phrases not decided', n: grey });
   if (!SP.dict) items.push({ label: 'Spelling was not checked (the dictionary did not load)', n: '!' });
@@ -3125,6 +3144,18 @@ function openRoom(k, first) {
   if (!first) { window.scrollTo({ top: 0 }); $('docBody').scrollTop = 0; }
   else $('docBody').scrollTop = 0;
 }
+// v3.4.3 (round 19): what the phone found when it sorted the room. Yellow, like the app's flags.
+const hasPhoneNotes = room => !!(room.sortError || room.cutShort || (room.missing && room.missing.length));
+function phoneNotesHtml(room) {
+  let h = '';
+  if (room.sortError) h += '<div class="banner">Not sorted by the AI. Rows were split by keyword: check the whole room against the audio.</div>';
+  if (room.cutShort) h += '<div class="banner">The AI check list was cut short. Check the whole room against the audio.</div>';
+  const miss = room.missing || [];
+  const one = m => `“${esc(m.phrase)}”` + (m.at != null ? ` <button class="clock" data-play="${m.at}" title="Play from here">▶ ${clock(m.at)}</button>` : '');
+  if (miss.length === 1) h += `<div class="banner">Said but not in the sorted text: ${one(miss[0])}. Check against the audio.</div>`;
+  else if (miss.length) h += `<div class="banner">Said but not in the sorted text. Check each against the audio:<br>${miss.map(m => '· ' + one(m)).join('<br>')}</div>`;
+  return h;
+}
 function heardFor(room, s) {
   const c = room.checks.find(c => c.heard && sentenceMatches(s.text, c.quote) && findWord(s.text, c.heard) >= 0);
   return c ? c.heard : '';
@@ -3158,6 +3189,7 @@ function renderRoom() {
       + ` <button class="btn btn-sm btn-ghost" data-act="seen">OK</button></div>`;
   }
   if (room.readError) h += `<div class="banner bad">${esc(room.readError)}</div>`;
+  h += phoneNotesHtml(room);
   if (room.partial) h += `<div class="banner">This is a crash-recovery fragment. The full recording of this room is usually the next one in the list.</div>`;
   if (room.source === 'txt') h += `<div class="banner">Read from the room's .txt (no .json for this recording). Times and checks come from the text file.</div>`;
   if (isTypeRoom(room)) {
@@ -5034,6 +5066,16 @@ async function manualJob(id) {
   const rooms = d.rooms.map(r => Object.assign(roomFromJson(r.json), {
     key: r.key, base: r.key, hhmm: '', part: 1, rec: null, partial: false, audio, docx: null, readError: '', startAt: num(r.at)
   }));
+  // v3.4.3: two rooms with the same name in one recording are separate rooms (mnRanges
+  // keys the second "Bedroom (2)"). Name it "Bedroom 2", so the Word file and Copy all
+  // don't join them into one room. Its typing is kept: that is saved by key.
+  const used = new Set(rooms.filter(r => r.key === r.name).map(r => r.name.toLowerCase()));
+  rooms.forEach(r => {
+    const m = String(r.key).match(/^(.*) \((\d+)\)$/), b = r.name.trim() || 'Room';
+    if (r.key === r.name || !m || m[1].toLowerCase() !== b.toLowerCase()) return;
+    let n = +m[2], name; while (used.has((name = b + ' ' + n).toLowerCase())) n++;
+    used.add(name.toLowerCase()); r.name = name;
+  });
   const seen = {};
   rooms.forEach(r => { const k = r.name.toLowerCase(); seen[k] = (seen[k] || 0) + 1; r.take = seen[k]; });
   rooms.forEach(r => { r.takes = seen[r.name.toLowerCase()]; });
@@ -5048,10 +5090,13 @@ function mnJobId(d) {
 }
 
 // ── transcript → sentences with times ────────────────────────────────────
-function mnWords(raw) {
+function mnWords(raw, audioSec) {
   const pairs = (Array.isArray(raw) ? raw : []).map(it => Array.isArray(it) ? [it[0], it[1]] : [it && (it.word || it.text), it && (it.start != null ? it.start : it.start_time)])
     .map(([w, s]) => [String(w || '').toLowerCase().replace(/[^a-z0-9']/g, ''), Number(s)]).filter(([w, s]) => w && s != null && isFinite(s) && s >= 0);
-  const last = pairs.reduce((m, p) => Math.max(m, p[1]), 0), sc = last > 7200 ? 0.001 : 1;   // milliseconds from an older val
+  // Milliseconds from an older val. v3.4.3: judged from the recording's length when the val
+  // gives it (times past 1.5× the length are ms), so a recording over 2 hours keeps its seconds.
+  const last = pairs.reduce((m, p) => Math.max(m, p[1]), 0), len = num(audioSec);
+  const sc = len > 0 ? (last > len * 1.5 ? 0.001 : 1) : (last > 7200 ? 0.001 : 1);
   return pairs.map(([w, s]) => [w, Math.round(s * sc * 10) / 10]);
 }
 const MN_SENT_RE = /[^.!?]+(?:[.!?]+["')\]]*|$)\s*/g;
@@ -5221,7 +5266,7 @@ async function mnTranscribe(resume) {
     }
     const o = res.out;
     if (!o.transcript.trim()) throw new Error('No speech was found in the recording.');
-    d.transcript = { text: o.transcript.trim(), words: mnWords(o.words), engine: 'AssemblyAI', model: o.model || '', seconds: num(o.audio_seconds), id: o.id || '', at: Date.now() };
+    d.transcript = { text: o.transcript.trim(), words: mnWords(o.words, o.audio_seconds), engine: 'AssemblyAI', model: o.model || '', seconds: num(o.audio_seconds), id: o.id || '', at: Date.now() };
     d.pending = null; d.pendingAt = null; d.split = null; d.splitBy = '';
     MN.file = null; MN.sc = null;
     mnSetStatus('', ''); mnSave(true);
@@ -5823,6 +5868,17 @@ function init() {
   LS.keys().filter(k => k.startsWith('pa-ed:job:')).forEach(k => {
     const st = LS.get(k, null);
     if (st && st.total && st.done >= st.total && (st.updated || 0) < cut) { try { localStorage.removeItem(k); } catch (e) {} }
+  });
+  // v3.4.3: jobs made from audio too. One goes when neither it nor its typing was touched
+  // for 60 days and the typing is finished (or never started). The audio in Dropbox isn't touched.
+  LS.keys().filter(k => k.startsWith('pa-ed:mjob:')).forEach(k => {
+    const d = LS.get(k, null), t = d && num(d.updated || d.created);
+    if (!d || !d.id || t == null || t >= cut) return;   // no date: leave it
+    const st = d.jobId ? LS.get(storeKey(d.jobId), null) : null;
+    if (st && ((st.updated || st.opened || Date.now()) >= cut || !(st.total && st.done >= st.total))) return;
+    try { localStorage.removeItem(k); if (st) localStorage.removeItem(storeKey(d.jobId)); } catch (e) { return; }
+    LS.set('pa-ed:manual', mnIds().filter(x => x !== d.id));
+    IDB.del(d.id).catch(() => {});
   });
   renderDbxCard(); renderJobs(); renderPhrases(); renderWho();
   if (DBX.conf) connectDropbox();

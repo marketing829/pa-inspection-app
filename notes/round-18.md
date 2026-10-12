@@ -18,8 +18,9 @@ WHAT CHANGED IN THE APP (the VA's Word file only)
      “2 up and down secured at front door” (0:52); “…” (1:10). Check against
      the audio and the raw transcript."
   - Times come from the engine's word timings, like the other notes.
-  - Up to 8 phrases are shown, then "and N more". Each counts to check.
-  - Two-part rooms say which part.
+  - Up to 8 phrases are shown, then "and N more". The shown ones count to
+    check (at most 8 per recording).
+  - Two-part rooms say which part ("for part 2").
   - Not listed: fixed mishears ("foxhole" → Foxtel), digits written as words,
     fillers, and "coming into the …" walk-through phrases.
   - Rooms the AI did not sort (keyword split) get no note.
@@ -27,7 +28,7 @@ WHAT CHANGED IN THE APP (the VA's Word file only)
   Nothing changes on the phone screens, in recording, saving or sending.
 
   On the last Stirling run it lists: Bedroom 1 "one twin handle is going to go
-  side", "2 up and down secured at front door", "1 handy person"; Lounge "4
+  side", "2 up and down secured at front door"; Lounge "4
   white metal down skirting box door"; Bathroom 1 "tap is once overmowed and
   mixed up", "once of no address burns"; Kitchen nothing. It stays silent when
   the sorted text keeps everything (checked on all four Stirling rooms, with
@@ -43,9 +44,20 @@ WHAT TO UPLOAD
   GitHub: publish the round-18 branch and merge it into main (GitHub Desktop,
   same steps as round 17). Nothing to paste into Val Town.
 
+INDEPENDENT REVIEW (fresh agent): no audio or data-loss risk; the Word file
+  can't fail because of it (a problem would only delay it, and it is retried).
+  Works on older iPhones; about 0.3 s at worst on an old phone. Fixed:
+  1. "Going to note the oven door is cracked" was skipped as walk-through
+     talk; now only a phrase that is nothing but "coming into the …" is.
+  2. It compared the raw words, so words the inspector cancelled with
+     "scratch that" were listed. It now compares the text the AI was given.
+  3. Everyday words ("let me see", "I can see some"), "batteries"/"battery",
+     "down lights"/"downlights" and "25"/"twenty-five" caused false alarms.
+  4. An unpunctuated room could add hundreds to "to check"; now at most 8.
+
 TESTS
-  tests/test-round18.js: 408 of 408 (all 400 round 17 checks, 6 updated for
-  the new version numbers, plus 8 new). The private copy also 408 of 408.
+  tests/test-round18.js: 412 of 412 (all 400 round 17 checks, 6 updated for
+  the new version numbers, plus 12 new). The private copy also 412 of 412.
   tests/test-val-round17.mjs: 38 of 38.
 
 TO CHECK ON A PHONE

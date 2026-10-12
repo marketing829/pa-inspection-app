@@ -7787,21 +7787,32 @@ function plateFrom(text) {
 // (split at . , ;) with the sorted sentence that shares most of its words.
 const MISS_STOP = new Set(('a an the and or but of to is are was were be been am we have has had there theres its it this that these those ' +
   'in on at as with for from by our your their my here also just so then which would very got do does did can will all any ' +
-  'um uh er erm ah oh okay ok well like sorry yeah yes actually basically').split(' '));
+  'um uh er erm ah oh okay ok well like sorry yeah yes actually basically ' +
+  'i im me you let lets see some what else think look note noted gonna want need probably').split(' '));
 const MISS_NUM = { 0: 'zero', 1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five', 6: 'six', 7: 'seven', 8: 'eight', 9: 'nine', 10: 'ten',
   11: 'eleven', 12: 'twelve', 13: 'thirteen', 14: 'fourteen', 15: 'fifteen', 16: 'sixteen', 17: 'seventeen', 18: 'eighteen', 19: 'nineteen', 20: 'twenty' };
+const MISS_TENS = { 2: 'twenty', 3: 'thirty', 4: 'forty', 5: 'fifty', 6: 'sixty', 7: 'seventy', 8: 'eighty', 9: 'ninety' };
+function missNumber(w) {
+  if (MISS_NUM[w]) return MISS_NUM[w];
+  if (/^[2-9][0-9]$/.test(w)) return MISS_TENS[w[0]] + (w[1] !== '0' ? ' ' + MISS_NUM[w[1]] : '');
+  return w;
+}
 function missWords(t) {
   return String(t || '').toLowerCase().replace(/\[added: [^\]]*\]/g, ' ').replace(/\{\+[^}]*\+\}/g, ' ').replace(/['’]/g, '')
     .split(/[^a-z0-9]+/).filter(Boolean)
-    .map(w => MISS_NUM[w] || w)
-    .map(w => (w.length > 4 && /s$/.test(w) && !/ss$/.test(w)) ? w.slice(0, -1) : w)
+    .map(missNumber).join(' ').split(' ')
+    .map(w => (w.length > 4 && /ies$/.test(w)) ? w.slice(0, -3) + 'y' : (w.length > 4 && /s$/.test(w) && !/ss$/.test(w)) ? w.slice(0, -1) : w)
     .filter(w => !MISS_STOP.has(w));
 }
 // Walk-through phrases the cleanup drops on purpose ("coming into the bedroom").
-const MISS_WALK = /^(?:(?:uh|um|so|okay|ok|and|now)\s+)*(?:coming|moving|heading|going|walking|stepping)\s+(?:in|into|to|through|out|back)\b/i;
+// Only a phrase that is nothing but the walk-through ("coming into the master
+// bedroom"); "going to note the oven door is cracked" is still checked.
+const MISS_WALK = /^(?:(?:uh|um|so|okay|ok|and|now)\s+)*(?:coming|moving|heading|walking|stepping|going)\s+(?:into|through|back\s+(?:in)?to|out\s+to|over\s+to|in\s+to)\s+(?:the\s+|this\s+|our\s+)?[a-z0-9]+(?:\s+[a-z0-9]+){0,3}\s*[.!?]?$/i;
 function missingPhrases(transcript, sections) {
   const outSents = (sections || []).map(s => String(s.text || '')).join('\n')
-    .replace(/([.!?])\s+/g, '$1\n').split(/\n+/).map(missWords).filter(w => w.length).map(w => new Set(w));
+    .replace(/([.!?])\s+/g, '$1\n').split(/\n+/).map(missWords).filter(w => w.length)
+    // Joined pairs too, so "down lights" and "downlights" match either way round.
+    .map(w => new Set(w.concat(w.slice(1).map((x, i) => w[i] + x))));
   if (!outSents.length) return [];
   const missing = [];
   // No look-behind in these patterns: older iPhone Safari can't parse it.
@@ -7812,7 +7823,7 @@ function missingPhrases(transcript, sections) {
       if (w.length < 3 || MISS_WALK.test(phrase.replace(/^(?:uh|um),?\s*/i, ''))) return;
       let best = 0;
       for (const o of outSents) {
-        const hit = w.filter(x => o.has(x)).length / w.length;
+        const hit = w.filter((x, i) => o.has(x) || (i + 1 < w.length && o.has(x + w[i + 1])) || (i > 0 && o.has(w[i - 1] + x))).length / w.length;
         if (hit > best) best = hit;
         if (best >= 0.5) break;
       }
@@ -7892,11 +7903,12 @@ function buildJobModel(recs, snap) {
       const layout = roomLayout(r, clean);
       // ROUND 18: what was said but isn't in the AI's sorted text, with its time.
       if (layout.cleaned) {
-        const miss = missingPhrases(raw, r.sections);
+        // The text the AI was given ("scratch that" already applied), not the raw.
+        const miss = missingPhrases(applyCorrections(applyScratch(raw)), r.sections);
         if (miss.length) {
-          missCount += miss.length;
+          missCount += Math.min(miss.length, 8);
           const shown = miss.slice(0, 8).map(p => { const at = findPhraseTime(r.words, p); return '“' + p + '”' + (at != null ? ' (' + formatClock(at) + ')' : ''); });
-          notes.push('Said but not in the sorted text' + (multi ? ' (part ' + (r.part || (rs.indexOf(r) + 1)) + ')' : '') + ', left out or changed by the AI: ' + shown.join('; ') + (miss.length > 8 ? '; and ' + (miss.length - 8) + ' more' : '') + '. Check against the audio and the raw transcript.');
+          notes.push('Said but not in the sorted text' + (multi ? ' for part ' + (r.part || (rs.indexOf(r) + 1)) : '') + ', left out or changed by the AI: ' + shown.join('; ') + (miss.length > 8 ? '; and ' + (miss.length - 8) + ' more' : '') + '. Check against the audio and the raw transcript.');
         }
       }
       raws.push({ part: multi ? (r.part || 1) : 0, audio: audioName, text: layout.raw });

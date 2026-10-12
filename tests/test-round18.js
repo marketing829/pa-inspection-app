@@ -2559,13 +2559,35 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     check('R18: fixed mishears, digits as words and walk-through phrases are not listed', !/foxhole|power points|coming into|Ceiling|Walls/.test(t8.note), t8.note);
     check('R18: each listed phrase is counted to check', t8.toCheck >= 2, t8.toCheck);
     check('R18: nothing listed when nothing was left out, or when the AI did not sort the room', t8.ok.length === 0 && t8.kw.length === 0, t8);
-    check('R18: a two-part room names the part', t8.two.length === 1 && /^Said but not in the sorted text \(part 2\)/.test(t8.two[0]), t8.two);
+    check('R18: a two-part room names the part', t8.two.length === 1 && /^Said but not in the sorted text for part 2,/.test(t8.two[0]), t8.two);
     check('R18: a long list shows 8 and says how many more', t8.many.length === 1 && (t8.many[0].match(/“/g) || []).length === 8 && /and 3 more\./.test(t8.many[0]), t8.many);
     const t8b = await page.evaluate(() => ({
       same: missingPhrases('ceiling painted white walls painted grey sliding door has a parliament lockable handle the door has a owl symbol present', [{ text: 'Ceiling painted white. Walls painted grey. Sliding door has a parliament lockable handle. The door has a owl symbol present.' }]),
       gone: missingPhrases('ceiling painted white walls painted grey two up and down secured at the front door near the entry the door has a owl symbol present', [{ text: 'Ceiling painted white. Walls painted grey. The door has a owl symbol present.' }])
     }));
     check('R18: an unpunctuated transcript is checked in short pieces (nothing listed when all is there; the left-out piece listed)', t8b.same.length === 0 && t8b.gone.length === 1 && /up and down secured/.test(t8b.gone[0]), t8b);
+    // From the round 18 review.
+    const t8c = await page.evaluate(() => {
+      const one = (said, out) => missingPhrases(said, [{ text: out }]);
+      const subs = templateRowsForName('Kitchen');
+      const scratch = __rec({ roomName: 'Kitchen', roomId: 'k18', subsections: subs, words: [], transcript: 'Carpet is stained near the door. Scratch that. Carpet is clean near the door.',
+        sections: [{ name: subs[8], text: 'Carpet is clean near the door.' }] });
+      const big = Array.from({ length: 30 }, (_, i) => 'zebra' + i + ' quartz marble lantern').join(', ');
+      const bigRec = __rec({ roomName: 'Kitchen', roomId: 'k19', subsections: subs, words: [], transcript: big + '. Ceiling painted white.', sections: [{ name: subs[1], text: 'Ceiling painted white.' }] });
+      return {
+        goingTo: one('Going to note the oven door is cracked.', 'Oven clean.'),
+        walk: one('Coming into the master bedroom, ceiling painted white.', 'Ceiling painted white.'),
+        everyday: one('Let me see, I can see some batteries missing from the smoke alarm.', 'Smoke alarm battery missing.'),
+        joined: one('Two down lights secured.', 'Two downlights secured.'),
+        big: one('25 white cupboard doors.', 'Twenty-five white cupboard doors.'),
+        scratch: buildJobModel([scratch], {}).rooms[0].notes.filter(n => /^Said but not/.test(n)),
+        count: buildJobModel([bigRec], {}).rooms[0].toCheck
+      };
+    });
+    check('R18 review: "going to note the oven door is cracked" is checked (not taken for walk-through talk)', t8c.goingTo.length === 1 && t8c.walk.length === 0, t8c);
+    check('R18 review: words cancelled with "scratch that" are not listed', t8c.scratch.length === 0, t8c.scratch);
+    check('R18 review: everyday words, "batteries"/"battery", "down lights"/"downlights" and "25"/"twenty-five" are not listed', t8c.everyday.length === 0 && t8c.joined.length === 0 && t8c.big.length === 0, t8c);
+    check('R18 review: a long list adds at most 8 to the room\'s count', t8c.count === 8, t8c.count);
 
     check('R17: no script errors', page.__errors.length === 0, page.__errors);
     await page.close();

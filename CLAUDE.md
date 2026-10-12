@@ -89,7 +89,7 @@ These came from real field failures. Treat them as hard requirements.
 - **Branch per round** (`round-18`, etc.). Commit small. The commit message says what changed for the inspector in plain words. Merge to `main` (which publishes on GitHub Pages) only when Daphne says so.
 - **Bump the service worker cache version** in `sw.js` on every app change, and `APP_ROUND` plus the "app version N" text in Admin settings. Phones only pick up a new build after force-quit and reopen.
 - **Test before every commit.**
-  - App: `tests/test-round18.js` (408 checks, headless Playwright, 375×667). Serve the repo root with `python3 -m http.server 8767 --bind 127.0.0.1`, then `node tests/test-round18.js` from the repo root. Copy it to `test-round19.js` for the next round, update version checks, add checks for every fix.
+  - App: `tests/test-round18.js` (412 checks, headless Playwright, 375×667). Serve the repo root with `python3 -m http.server 8767 --bind 127.0.0.1`, then `node tests/test-round18.js` from the repo root. Copy it to `test-round19.js` for the next round, update version checks, add checks for every fix.
   - Cleanup val: `node tests/test-val-round17.mjs` (38 mocked checks; needs `esbuild` installed globally).
   - A real-data copy of the app test lives in `tests/private/` (not committed). Make every app-test change in both copies.
   - Mock the vals and Dropbox in tests. Never call live services from tests.

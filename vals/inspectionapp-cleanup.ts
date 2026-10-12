@@ -279,6 +279,16 @@ async function fileRoom(transcript: string, room: string, subsections: string[])
     }))
     .filter((c: any) => c.quote)
     .concat(extraChecks);
+  // Model, serial and type numbers are always checked against the photo, even
+  // when the model leaves them off the list (live Stirling kitchen: none listed).
+  for (const s of sections) {
+    for (const line of s.text.split("\n")) {
+      const plate = line.trim();
+      if (!/^(Model Numbers?|Serial Numbers?|Type):\s*\S*\d/i.test(plate)) continue;
+      if (check.some((c: any) => c.quote.includes(plate) || (/\d{4,}/.test(c.words) && plate.includes(c.words)))) continue;
+      check.push({ quote: plate, words: "", heard: plate, why: "check against the photo" });
+    }
+  }
   // Still stuck after asking again: keep the sorted text (it passed the word
   // check) but tell the VA the check list is incomplete, so the room never
   // reads as having little to check.
@@ -305,6 +315,8 @@ function ranAway(data: any) {
 }
 // Keep a runaway "why" readable: its first sentence, at most 120 characters.
 function shortWhy(why: string) {
+  // The model sometimes runs on into the next field ('… may be door.",\n "heard":"…').
+  why = why.split(/"\s*,?\s*"?(?:heard|words|quote|why)"?\s*:/)[0].replace(/["\s]+$/, "").trim();
   if (why.length <= 120) return why;
   const first = (why.match(/^.*?[.;](?=\s)/) || [why])[0];
   return (first.length <= 120 ? first : first.slice(0, 117) + "…").trim();

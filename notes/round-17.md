@@ -93,4 +93,11 @@ ROUND 17.1 (cleanup val only, same day)
   whole room against the audio" first in that room's check list.
   The val address now shows "version": "17.1". The Stirling test shows, per
   room, whether it was asked again (retried) or cut short.
-  test-val-round17.mjs: 22 of 22 (15 before, plus 7 for 17.1).
+  Second live run (old code still pasted) passed 17 of 19. It also showed:
+  the Kitchen came back with nothing to check, not even the oven's serial and
+  type numbers; and some Bathroom reasons had stray text stuck on the end.
+  17.1 now adds every model, serial and type number to the check list itself
+  ("check against the photo") and trims that stray text. The Lounge misses
+  ("wooden seat and wind ledge", "small smart architrave") are still
+  highlighted in the Word file by the app's own list.
+  test-val-round17.mjs: 25 of 25 (15 before, plus 10 for 17.1).

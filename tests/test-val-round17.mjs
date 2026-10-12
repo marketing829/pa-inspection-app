@@ -93,5 +93,15 @@ reply = () => { calls++; return tool(goodRoom); };
 j = await (await post()).json();
 check('17.1: a normal answer is asked once, with no retried or cut_short flag', calls === 1 && j.ok && j.retried === undefined && j.cut_short === undefined, { calls, j });
 
+// 17.1: plates always on the check list; run-on "why" text trimmed (second live Stirling run).
+reply = () => tool({ sections: [{ name: 'Door', text: 'Doors painted white, metal chip to the frame.' }, { name: 'Shower', text: 'Oven shower vinyl framing.\nModel Numbers: Not present\nType: 71ADC01AD\nSerial Numbers: 82897294' }],
+  check: [{ quote: 'Doors painted white, metal chip to the frame.', words: 'metal chip', why: 'garbled, may be door."\n\t\t\t,"heard":"doors painted white' },
+    { quote: 'Serial Numbers: 82897294', words: '82897294', why: 'check against the photo' }] });
+j = await (await post()).json();
+const whys = j.check.map(c => c.quote + ' | ' + c.why);
+check('17.1: type number added to the check list when the model left it off', whys.includes('Type: 71ADC01AD | check against the photo'), whys);
+check('17.1: a plate already listed is not listed twice; "Not present" is not listed', whys.filter(w => /82897294/.test(w)).length === 1 && !whys.some(w => /Not present/.test(w)), whys);
+check('17.1: run-on text after "why" is trimmed', j.check[0].why === 'garbled, may be door.', j.check[0].why);
+
 console.log(out.join('\n') + `\n\n${pass} of ${pass + fail} checks pass`);
 process.exit(fail ? 1 : 0);

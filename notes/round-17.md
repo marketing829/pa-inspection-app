@@ -156,3 +156,17 @@ INDEPENDENT REVIEW (12 Oct, fresh agent, after the val changes)
      off by Val Town at 60 s).
   5. Reason clean-up is capped at 2,000 characters; test labels made honest.
   Tests: test-round17.js 400 of 400 (397 + 3); test-val-round17.mjs 34 of 34.
+
+ROUND 17 LIVE (12 Oct): merged to main (pull request 1). The site serves
+cache v21 and "app version 17".
+
+CLEANUP VAL 17.2 (after the merge, val only)
+  The last Stirling run passed 16 of 19: Bedroom 1 came back with an empty
+  check list ("spiderwebs" and the garbled windows sentence not flagged),
+  without getting stuck. Now a room of 120+ words whose check list comes
+  back empty is asked again (same 30 s / 50 s limits), and the second answer
+  is used only if it is sound and lists something. If it is empty again,
+  the answer is kept as is (the room may really be clean). The app's own
+  highlight list still marks known mishears in the Word file either way.
+  Paste vals/inspectionapp-cleanup.ts; the address then shows
+  "version": "17.2". test-val-round17.mjs: 38 of 38.

@@ -141,7 +141,7 @@ ADDED PHRASES (the typists' house style)
 - First read everything the inspector said about the item, including later sentences and anything said when they came back to it.
 - If the inspector says nothing about marks, dirt or damage for an item, end that item's description with {+in clean condition+} for surfaces and floor coverings (ceiling, walls, skirtings, flooring) or {+in good condition+} for doors, frames, windows, cupboards, shelves and benchtops.
 - For a working fixture (power points, light switches, light fittings, taps, exhaust fans, smoke alarms, appliances) where the inspector does not say whether it is secured or working, add {+secured and functional+} only (never "in good condition" as well). If the inspector already said "secured", "functional" or "working", add nothing.
-- Never add a phrase when the inspector mentions ANY mark, chip, crack, stain, dust, damage, wear or fault for that item, or says it was not tested or not working. Never add one to a sentence that names a condition.
+- Never add a phrase when the inspector mentions ANY mark, chip, crack, stain, dust, damage, wear or fault for that item, or says it was not tested or not working. Never add one to a sentence that names damage, dirt or a fault ("no marks" is not damage).
 - Always write the braces exactly: {+in clean condition+}. Never put braces around anything the inspector said. Do not add these phrases to the check list; they are already highlighted.
 - Keep "wood" or "timber" exactly as the inspector said it.
 

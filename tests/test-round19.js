@@ -2792,6 +2792,44 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     });
     check('R19: room .json lists what was said but left out, and a cut-short check list, for the typist editor', s11.missing.length === 1 && /2 up and down secured at front door/.test(s11.missing[0].phrase) && s11.cut === true && s11.err === null, s11);
     check('R19: room .json says when the AI sort did not run', s11.err2 === 'anthropic took too long' && s11.missing2.length === 0 && s11.cut2 === false, s11);
+    // 12. Independent review fixes.
+    const s12 = await page.evaluate(() => {
+      const one = (said, out) => missingPhrases(said, [{ text: out }]);
+      const hl = t => suspectSpans(t).map(([a, b]) => t.slice(a, b));
+      return {
+        sc: [applyScratch('Marks near the window, scratch that, near the door.'), applyScratch('Tap is loose, scratch that, is secured and functional.'),
+          applyScratch('Benchtop is white laminate. Scratch that\'s about 10 centimetres long.'), applyScratch('Door is white painted timber. Scratch that runs along the bottom edge.')],
+        added: [markUnbracedAdded('Two silver hanging rods secured underneath, in good condition.', '2 silver hanging rods secured neither, in good condition'),
+          markUnbracedAdded('Two downlights secured and functional.', '2 down lights secured and functional'),
+          markUnbracedAdded('Exhaust fan secured and functional.', 'exhaust fan screw and functional')],
+        noMarks: addedNextToDamage([{ text: 'Walls are white painted, no marks [added: in clean condition]. Glass has no cracks or chips [added: in good condition]. Fan not working [added: secured and functional].' }]),
+        lock: hl('One single lock on the skirting on both sides.'),
+        type: [hl('Floor type is 2 tone grey tile.'), hl('Power point type is 3 pin.'), hl('Oven type is 71ADC01AD.')],
+        blows: hl('Two blows present.'),
+        miss: [one('One 7-way skirting bottom with 2 silver metal pull cords.', 'One silver metal weight secured to the bottom with two silver metal pull cords.'),
+          one('1 single box top point data point combination.', 'One single Foxtel point and data point combination.'),
+          one('Red mark to the skirting in front of the left— sorry, in front of the right side of the wardrobe.', 'Red mark to the skirting in front of the right side of the wardrobe.'),
+          one('two picture hooks on the right wall ceiling is white painted with cobwebs', 'Two picture hooks on the right wall. Ceiling is white painted with cobwebs.')]
+      };
+    });
+    check('R19 review: "scratch that" after a comma is the command; "scratch that\'s" and "Scratch that runs along…" are damage', s12.sc[0] === 'near the door.' && s12.sc[1] === 'is secured and functional.' && /Scratch that's about 10/.test(s12.sc[2]) && /timber\. Scratch that runs along/.test(s12.sc[3]), s12.sc);
+    check('R19 review: the inspector\'s own "in good condition" / "secured and functional" are not marked added (mishears and digits too)', s12.added.every(t => !/\[added:/.test(t)), s12.added);
+    check('R19 review: "no marks", "no cracks or chips" next to an added phrase are not flagged; "not working" still is', s12.noMarks.length === 1 && /Fan not working/.test(s12.noMarks[0].quote), s12.noMarks);
+    check('R19 review: "lock on the skirting on both sides" (Stirling mishear) is still highlighted', s12.lock.length >= 1, s12.lock);
+    check('R19 review: "type is 2 tone" / "3 pin" are not highlighted as plates; a type code is', !s12.type[0].length && !s12.type[1].length && s12.type[2].includes('71ADC01AD'), s12.type);
+    check('R19 review: "two blows" (globes) is highlighted with the count as a word', s12.blows.length === 1, s12.blows);
+    check('R19 review: correct AI fixes of "7-way", "box top", a self-corrected side and a run-on split are not listed as missing', s12.miss.every(m => m.length === 0), s12.miss);
+    const s13 = await page.evaluate(async () => {
+      // A partial save kept 10 bytes; Done brings the whole 50-byte recording.
+      const id = await dbAdd({ roomId: 'r19_part', roomName: 'Study', address: state.address, jobId: state.jobId, blob: new Blob([new Uint8Array(10)], { type: 'audio/webm' }), type: 'audio/webm', status: 'recording', createdAt: Date.now() });
+      await saveAsBytes({ id }, new Blob([new Uint8Array(10)], { type: 'audio/webm' }));
+      const full = { id, roomId: 'r19_part', roomName: 'Study', address: state.address, jobId: state.jobId, blob: new Blob([new Uint8Array(50)], { type: 'audio/webm' }), type: 'audio/webm', status: 'pending', createdAt: Date.now() };
+      await dbPut(full);
+      const stored = await dbGet(id);
+      const read = await readAudioBytes(full);
+      return { mark: !!full.bytesStored, storedBlob: stored.blob ? stored.blob.size : 0, read: read.byteLength };
+    });
+    check('R19 review: Done after a partial save keeps the whole recording, not the partial bytes', !s13.mark && s13.storedBlob === 50 && s13.read === 50, s13);
     check('R19: no script errors', page.__errors.length === 0, page.__errors);
     await page.close();
   }

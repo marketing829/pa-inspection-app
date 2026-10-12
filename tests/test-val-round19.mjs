@@ -177,7 +177,7 @@ check('R19 rules: Australian English; wood and timber never swapped', /Australia
 check('R19 rules: counts as words, the number never changed', /"3 double power points" becomes "three double power points"/.test(sys()) && /Never change the number itself/.test(sys()));
 check('R19 rules: "a deep scratch that runs…" is damage, not the command', /"a deep scratch that runs along the door"/.test(sys()));
 check('R19 rules: every self-correction is flagged with what was first said', /Every self-correction goes in check with why "self-correction"/.test(sys()));
-check('R19 rules: read the whole item before adding a phrase; fixtures get only "secured and functional"', /First read everything the inspector said about the item/.test(sys()) && /only \(never "in good condition" as well\)/.test(sys()) && /Never add one to a sentence that names a condition/.test(sys()));
+check('R19 rules: read the whole item before adding a phrase; fixtures get only "secured and functional"', /First read everything the inspector said about the item/.test(sys()) && /only \(never "in good condition" as well\)/.test(sys()) && /Never add one to a sentence that names damage, dirt or a fault/.test(sys()));
 
 const roomOf = (sections, check = []) => () => tool({ sections, check });
 const postRoom = (subsections, transcript) => handler(new Request('https://x.web.val.run/?k=k1', { method: 'POST', body: JSON.stringify({ transcript, room: 'Bedroom 1', subsections }) }));

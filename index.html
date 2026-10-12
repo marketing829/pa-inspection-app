@@ -4337,7 +4337,7 @@ function cleanupInput(raw) {
 // wipe the whole note. Instead we delete the command plus up to SCRATCH_MAX_WORDS
 // words before it, stopping at any sentence end — bounded, so it can never clear
 // everything. Tune SCRATCH_MAX_WORDS if inspectors want a longer/shorter cut.
-const SCRATCH_CMD = /\b(?:scratch|scrap|strike|cancel|delete)\s+(?:that|all\s+that|all\s+of\s+that)\b[.,!?]*/gi;
+const SCRATCH_CMD = /\b(?:scratch|scrap|strike|cancel|delete)\s+(?:that|all\s+that|all\s+of\s+that)\b(?!['’])[.,!?]*/gi;
 const SCRATCH_MAX_WORDS = 8;
 // ROUND 19: "scratch" is also damage. "There is one deep scratch that runs along
 // the door" is a condition note, not the command, and used to be deleted before
@@ -4348,11 +4348,13 @@ const SCRATCH_DESCRIBED_BEFORE = /\b(?:a|an|one|the|this|that|another|any|some|n
 const SCRATCH_DESCRIBED_AFTER = /^\s*(?:is|was|runs|run|goes|go|going|extends|extending|measures|measuring|appears|looks|sits|starts|covers|can|could|may|might|needs|requires|approximately|about|across|along|on|to|near|at|in|which)\b/i;
 function scratchIsCommand(out, m) {
   if (!/^scratch/i.test(m[0])) return true;
-  const before = out.slice(0, m.index);
-  if (/(?:^|[.!?])\s*$/.test(before)) return true;                 // "… induction. Scratch that."
+  const before = out.slice(0, m.index), after = out.slice(m.index + m[0].length);
+  const marked = /[.,!?]/.test(m[0]);
+  // "… induction. Scratch that." / not "… timber. Scratch that runs along the edge."
+  if (/(?:^|[.!?])\s*$/.test(before)) return marked || !SCRATCH_DESCRIBED_AFTER.test(after);
   if (SCRATCH_DESCRIBED_BEFORE.test(before)) return false;         // "a deep scratch that …"
-  if (/[.!?]/.test(m[0])) return true;                             // "… frame scratch that. Door …"
-  return !SCRATCH_DESCRIBED_AFTER.test(out.slice(m.index + m[0].length));
+  if (marked || /[,;]\s*$/.test(before)) return true;              // "… loose, scratch that, is secured"
+  return !SCRATCH_DESCRIBED_AFTER.test(after);
 }
 function applyScratch(text) {
   if (!text) return text;
@@ -4823,7 +4825,9 @@ function dbPut(rec) {
     const g = s.get(rec.id);
     g.onsuccess = () => {
       const was = g.result;
-      if (was && was.bytesStored && !rec.bytesStored) { rec.bytesStored = true; rec.bytesSize = was.bytesSize; }
+      // Only an older copy of the same audio: a record carrying more audio than
+      // the bytes kept (Done after a partial save) keeps its own file.
+      if (was && was.bytesStored && !rec.bytesStored && (!rec.blob || rec.blob.size <= (was.bytesSize || 0))) { rec.bytesStored = true; rec.bytesSize = was.bytesSize; }
       const r = s.put(storedForm(rec));
       r.onsuccess = () => set(r.result);
     };
@@ -5216,7 +5220,7 @@ async function readAudioBytes(rec) {
     // ROUND 19: good bytes saved after a failed read-back, whose mark was lost.
     try {
       const kept = await bytesGet(rec.id);
-      if (kept && kept.byteLength) { rec.bytesStored = true; rec.bytesSize = kept.byteLength; return kept; }
+      if (kept && kept.byteLength && (!rec.blob || kept.byteLength >= rec.blob.size)) { rec.bytesStored = true; rec.bytesSize = kept.byteLength; return kept; }
     } catch (e) {}
   }
   if (first && first.unreadable) throw first;
@@ -6082,12 +6086,18 @@ function markAdded(t) {
 // and functional"), so one said in the room doesn't cover the AI adding it
 // elsewhere.
 const ADDED_PHRASES = [/\bin clean condition\b/gi, /\bin good condition\b/gi, /\bsecured? and functional\b/gi];
+// As said, mishears included ("screw and functional").
+const SAID_PHRASES = [/\bclean condition\b/g, /\bgood condition\b/g, /\b(?:secured?|screw(?:ed)?|skin|good on|skid(?:ded)? on)\s+and\s+functional\b/g];
 function markUnbracedAdded(text, said) {
   const heard = ' ' + String(said || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ') + ' ';
   let out = String(text || '');
-  ADDED_PHRASES.forEach(re => {
+  const plain = out.replace(/\[added: [^\]]*\]/g, ' ');
+  ADDED_PHRASES.forEach((re, k) => {
+    // Said at least as often as written: all the inspector's own.
+    const saidN = (heard.match(SAID_PHRASES[k]) || []).length;
+    if (saidN && saidN >= (plain.match(re) || []).length) return;
     re.lastIndex = 0;
-    if (!re.test(heard)) {   // never said in this recording: every one is added
+    if (!saidN) {   // never said in this recording: every one is added
       out = out.replace(/\[added: [^\]]*\]|[^\[]+|\[/g, part => part.startsWith('[added: ') ? part : part.replace(re, m => '[added: ' + m + ']'));
       return;
     }
@@ -6102,12 +6112,15 @@ function markUnbracedAdded(text, said) {
 }
 // ROUND 19: a condition the inspector named. An added "in clean condition" in the
 // same sentence goes against the house style and goes on the check list.
-const DAMAGE_WORDS = /\b(?:marks?|marked|scuff(?:s|ed)?|smudges?|residue|chip(?:s|ped|ping)?|scratch(?:es|ed|ing)?|dents?|dented|cracks?|cracked|cracking|holes?|discolou?r(?:ation|ed)?|stain(?:s|ed|ing)?|tarnish(?:ed|ing)?|rust(?:y|ed|ing)?|dust|dusty|grease|greasy|calcium|mould|mouldy|mold|debris|wear|worn|peeling|lifting|damaged?|broken|missing|loose|torn|ripped|faded|burn(?:s|t)?|leak(?:s|ing)?|not working|not functional|not tested|untested|faulty|dirty|dirt|cobwebs?|spider ?webs?)\b/i;
+const DAMAGE_ALT = '(?:marks?|marked|scuff(?:s|ed)?|smudges?|residue|chip(?:s|ped|ping)?|scratch(?:es|ed|ing)?|dents?|dented|cracks?|cracked|cracking|holes?|discolou?r(?:ation|ed)?|stain(?:s|ed|ing)?|tarnish(?:ed|ing)?|rust(?:y|ed|ing)?|dust|dusty|grease|greasy|calcium|mould|mouldy|mold|debris|wear|worn|peeling|lifting|damaged?|broken|missing|loose|torn|ripped|faded|burn(?:s|t)?|leak(?:s|ing)?|not working|not functional|not tested|untested|faulty|dirty|dirt|cobwebs?|spider ?webs?)';
+const DAMAGE_WORDS = new RegExp('\\b' + DAMAGE_ALT + '\\b', 'i');
+// "no marks", "no stains or damage", "globes not missing": a condition that isn't there.
+const NO_DAMAGE = new RegExp('\\b(?:no|not|without|nil|free of)\\s+(?:any\\s+|visible\\s+|obvious\\s+|major\\s+)?' + DAMAGE_ALT + '(?:\\s*(?:,|or|and|nor)\\s*(?:no\\s+)?' + DAMAGE_ALT + ')*\\b', 'gi');
 function addedNextToDamage(sections) {
   const out = [];
   (sections || []).forEach(s => {
     (String(s.text || '').match(/[^.!?]*\[added: [^\]]*\][^.!?]*[.!?]?/g) || []).forEach(sent => {
-      const body = sent.replace(/\[added: [^\]]*\]/g, ' ');
+      const body = sent.replace(/\[added: [^\]]*\]/g, ' ').replace(NO_DAMAGE, m => /not (?:working|functional|tested)/i.test(m) ? m : ' ');
       if (DAMAGE_WORDS.test(body)) out.push({ quote: sent.replace(/\s*\[added: [^\]]*\]/g, '').replace(/\s+/g, ' ').trim(), words: '', heard: '', why: 'added phrase next to a condition note' });
     });
   });
@@ -7897,23 +7910,29 @@ const SUSPECT_PHRASES = [
   /\bset of wooden seat\b/gi, /\bwind ledge\b/gi, /\bsmart architrave\b/gi,
   /\bwhich means the\b/gi, /\bnote the little frame\b/gi, /\bno digital frame\b/gi,
   /\bsinks? white plastic\b/gi, /\bwhite middle\b/gi, /\bmiddle base\b/gi,
-  /\bcolou?r rack\b/gi, /\b\d+ blows\b/gi, /\bgloves\b/gi,
+  /\bcolou?r rack\b/gi, /\b(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten) blows\b/gi, /\bgloves\b/gi,
   /\blincolns?\b/gi, /\bpanama\b/gi, /\bsteering materials\b/gi, /\bfish glass\b/gi, /\btriplets\b/gi, /\bunderhangers\b/gi,
   // "no …" then a condition in the same breath: says it's not there, then
   // describes it ("once of no detachable showerhead in good condition"). A comma
   // in between ("no handles, in good condition") is ordinary wording.
   /\bno\s(?!marks|damage|visible)[^.;:,]{1,30}?\s(?:in good condition|in clean condition|secured and functional)\b/gi
 ];
-// ROUND 19: "skirting" after "the" is the real skirting board ("chip to the
-// corner skirting housing into bedroom 1", "scuff marks to the skirting on both
-// sides"), and so is "Skirting …" at the start of a sentence. Those aren't
-// highlighted; "one black metal corner skirting both sides" still is.
+// ROUND 19: "corner skirting" after "the" is the real skirting board ("chip to
+// the corner skirting housing into bedroom 1"); so is "Skirting …" starting a
+// sentence, and "skirting on both sides" right after a mark ("scuff marks to
+// the skirting on both sides"). Those aren't highlighted; "one black metal
+// corner skirting both sides" still is.
 const SKIRTING_REAL_BEFORE = /(?:^|[.!?:]\s*|\bthe\s+|\bto\s+|\bof\s+)$/i;
 function suspectSpans(sentence) {
   const t = String(sentence || '').replace(/\[added: [^\]]*\]/g, m => ' '.repeat(m.length));
   const spans = [];
   SUSPECT_PHRASES.forEach((re, k) => { re.lastIndex = 0; let m; while ((m = re.exec(t))) {
-    if (k < 2 && SKIRTING_REAL_BEFORE.test(t.slice(0, m.index))) { if (!m[0].length) re.lastIndex++; continue; }
+    const pre = t.slice(0, m.index);
+    // "the corner skirting" is the board; "lock on the skirting on both sides"
+    // is still the mishear unless a mark is described just before it.
+    const real = k === 0 ? SKIRTING_REAL_BEFORE.test(pre)
+      : k === 1 ? (/(?:^|[.!?:]\s*)$/.test(pre) || DAMAGE_WORDS.test(pre.slice(-40))) : false;
+    if (real) { if (!m[0].length) re.lastIndex++; continue; }
     spans.push([m.index, m.index + m[0].length]); if (!m[0].length) re.lastIndex++;
   } });
   return spans.concat(plateSpans(t));
@@ -7927,7 +7946,8 @@ function plateSpans(t) {
   let m;
   while ((m = PLATE_VALUE.exec(t))) {
     const v = m[1].replace(/[.\/-]+$/, '');
-    if (/\d/.test(v)) { const at = m.index + m[0].length - m[1].length; spans.push([at, at + v.length]); }
+    // A type is a code ("71ADC01AD"), not "type is 3 pin".
+    if (/\d/.test(v) && (!/^type/i.test(m[0]) || (v.length >= 4 && /[a-z]/i.test(v)))) { const at = m.index + m[0].length - m[1].length; spans.push([at, at + v.length]); }
   }
   return spans;
 }
@@ -7998,18 +8018,27 @@ function missingPhrases(transcript, sections) {
     // Joined pairs too, so "down lights" and "downlights" match either way round.
     .map(w => new Set(w.concat(w.slice(1).map((x, i) => w[i] + x))));
   if (!outSents.length) return [];
+  // ROUND 19: for a long run-on phrase (7+ key words) the AI split at a full
+  // stop, two sorted sentences side by side count as one.
+  const pairs = outSents.concat(outSents.slice(1).map((o, i) => new Set([...outSents[i], ...o])));
   const missing = [];
   // No look-behind in these patterns: older iPhone Safari can't parse it.
   String(transcript || '').replace(/([.!?])\s+/g, '$1\n').split('\n').forEach(sentence => {
-    sentence.split(/[,;]\s*|\s+[—–-]\s+|—\s*/).forEach(raw => {
+    const pieces = sentence.split(/[,;]\s*|\s+[—–-]\s+|—\s*/);
+    pieces.forEach((raw, pi) => {
+      // ROUND 19: "in front of the left— sorry, … right": the AI keeps only the
+      // correction and flags it, so the cancelled side isn't a missing word.
+      const corrected = /^\s*(?:oh,?\s+)?sorry\b/i.test(pieces[pi + 1] || '') || /\bsorry\s*$/i.test(raw);
       missChunks(raw.replace(/^[\s,.;—–-]+|[\s,.;—–-]+$/g, '')).forEach(phrase => {
       const w = missWords(phrase);
       if (w.length < 3) return;
       if (MISS_WALK.test(phrase.replace(/^(?:uh|um),?\s*/i, '')) && !w.some(x => MISS_KEY.has(x) && !/^(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)$/.test(x))) return;
       const has = (o, x, i) => o.has(x) || (i + 1 < w.length && o.has(x + w[i + 1])) || (i > 0 && o.has(w[i - 1] + x));
-      const keys = w.map((x, i) => i).filter(i => MISS_KEY.has(w[i]));
+      // Words inside a known mishear ("7-way", "box top") are the AI's to fix.
+      const misheard = new Set(missWords(suspectSpans(phrase).map(([a, b]) => phrase.slice(a, b)).join(' ')));
+      const keys = corrected ? [] : w.map((x, i) => i).filter(i => MISS_KEY.has(w[i]) && !misheard.has(w[i]));
       const rest = w.map((x, i) => i).filter(i => !MISS_KEY.has(w[i]));
-      const kept = outSents.some(o => {
+      const kept = (w.length >= 7 ? pairs : outSents).some(o => {
         const hit = w.filter((x, i) => has(o, x, i)).length / w.length;
         if (hit < 0.5) return false;
         if (!keys.every(i => has(o, w[i], i))) return false;

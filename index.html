@@ -3354,6 +3354,8 @@ function onAppReturn() {
   showAwayNotice();
   // Anything that was mid-upload when the phone froze gets picked up now,
   // rather than on the next 20-second tick.
+  // ROUND 16: away 15 s or more, everything starts sending again at once.
+  if (awayLongEnough()) { resumeSendingAfterAway(); return; }
   queueWatchdog().then(() => {
     updatePendingUI();
     if (navigator.onLine) { processQueue(); processPhotoQueue(); }
@@ -5703,7 +5705,7 @@ async function processQueue() {
         // Only a real answer from the server counts as a try. An iPhone says
         // "online" with no data at all, and every blip used to burn one of the
         // five — all five gone in about a minute on a bad street.
-        if (rec.lastError === 'no connection') rec.netFails = (rec.netFails || 0) + 1;
+        if (rec.lastError === 'no connection' || sendCutOffByApp()) rec.netFails = (rec.netFails || 0) + 1;   // ROUND 16: also when the app was in the background
         else rec.attempts = (rec.attempts || 0) + 1;
         rec.nextTryAt = Date.now() + retryDelay((rec.attempts || 0) + (rec.netFails || 0));
         if (rec.attempts >= 5) {
@@ -9800,6 +9802,53 @@ function invItemNameForPhoto(rec) {
     if (row && (row.item || '').trim()) return row.item.trim();
   }
   return (rec && rec.item) || '';
+}
+
+// ─── 4. BACK FROM ANOTHER APP: SENDING STARTS AGAIN AT ONCE ──────────────────
+// A Home Screen app is paused soon after the inspector switches to another app
+// (Camera, a call, messages). A send that was going at the time is usually cut
+// off. Before, it sat until its time limit and then waited out a back-off, up to
+// a few minutes, before trying again. Now, back in the app after 15 seconds or
+// more: anything cut off is dropped and started again straight away, nothing
+// waits out a back-off, and a failure caused by the pause doesn't count as a try.
+var appHiddenAt = 0, appReturnedAt = 0, lastAwayMs = 0;
+function sendCutOffByApp() {
+  return document.visibilityState === 'hidden' || (appReturnedAt && Date.now() - appReturnedAt < 5000);
+}
+// Registered before the app's own handler (onAppReturn), which reads lastAwayMs.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') { appHiddenAt = Date.now(); return; }
+  lastAwayMs = appHiddenAt ? Date.now() - appHiddenAt : 0;
+  appHiddenAt = 0;
+  appReturnedAt = Date.now();
+});
+function awayLongEnough() { const a = lastAwayMs; lastAwayMs = 0; return a >= 15000; }
+async function resumeSendingAfterAway() {
+  // Passes that were mid-send when the phone paused the app stop writing; fresh ones start.
+  if (queueRunning) {
+    queueRunId++;
+    try { if (queueController) queueController.abort(); } catch (e) {}
+    queueController = null;
+    queueRunning = false;
+  }
+  archiveRunId++; archiveRunning = false;
+  photoQueueRunId++; photoQueueRunning = false;
+  jobDocRunId++; jobDocRunning = false;
+  audioInFlight.clear();
+  try {
+    for (const r of await dbAll()) {
+      let changed = false;
+      if (r.status === 'uploading') { r.status = 'pending'; changed = true; }
+      if (r.status === 'pending' && r.nextTryAt) { delete r.nextTryAt; changed = true; }
+      if (r.archived !== true && r.archNextAt) { delete r.archNextAt; changed = true; }
+      if (changed) await dbPut(r);
+    }
+    for (const p of await photoAll()) {
+      if (!p.uploaded && p.nextTryAt) { delete p.nextTryAt; await photoPut(p); }
+    }
+  } catch (e) {}
+  updatePendingUI();
+  if (navigator.onLine) { processQueue(); processPhotoQueue(); processArchiveQueue(); }
 }
 
 // ─── WIRING ───────────────────────────────────────────────────────────────────

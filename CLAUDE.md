@@ -2,6 +2,14 @@
 
 Read this before every change. It holds the rules and decisions that are not obvious from the code. Last updated 12 October 2026, from the round 16 build.
 
+## Working with Daphne
+
+- Daphne is not a coder. Explain everything in plain words, no jargon.
+- Don't show code or diffs unless she asks.
+- When you need a decision, give 2–3 options with your recommendation first.
+- Do the git work yourself (branches, commits) and tell her when it's ready to push with GitHub Desktop.
+- At the end of every round, write short round notes she can paste into the claude.ai project.
+
 ## What this is
 
 An internal web app for Property Assist (WA) entry inspections (PCR only). Inspectors record a voice note per room on their phone. The audio is transcribed, sorted into the room's subareas by Claude, and archived to Dropbox. Overseas typists (Jess and the VA team) then turn it into the PA master WA PCR Word report.

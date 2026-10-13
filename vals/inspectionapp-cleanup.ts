@@ -52,6 +52,22 @@
 //     Cornice"), so they are no longer flagged as unclear; "model number is …"
 //     written out in words is checked against the photo too.
 //
+// Round 21 (13 Oct 2026), from the Stirling replay beside the VA's report:
+//   - More mishears: "skidder" (secured), "window down skidder" (metal
+//     downlights secured), "Walmart Classic" (white plastic), "decanter"
+//     (indicators), "once a big" (one silver metal), "grabber" (grey metal),
+//     "drawer is a glass pane" on an oven (door), "12-volt and data point"
+//     (Foxtel), "island tops" (isolation tap), "person" (fluorescent),
+//     "security function" (secured and functional), "clothes" (globes),
+//     "discretion" (discolouration), "tall" (tile), "serum/motor number"
+//     (serial/model number). Words that read normally but were wrong ("red"
+//     sliding doors, "walnut" shelves, "black vinyl" framing, a dishwasher
+//     "sensor", "along a section" of wall) are always flagged.
+//   - A dash with no "sorry" before a different item is not a correction:
+//     "circle panel to keep the ceiling— one white plastic smoke detector"
+//     keeps the circle panel too.
+//   - A cut-short answer says why (cut_reason), for the room's data file.
+//
 // Contract (the app already speaks this — don't change field names):
 //   POST { transcript, room, subsections: string[], address }
 //   →    { ok, model, sections: [{name, text}], text, check: [{quote, heard, why, words}] }
@@ -124,12 +140,15 @@ FILING
 FIXING
 - Fix mis-heard words only when the context makes the right word obvious. Common ones in this work: "similar" / "submetal" / "once-off" / "simple" for "silver metal"; "screw" / "skin" / "good on" / "skid on" for "secured"; "pool cord" for "pull cord"; "pinch plate" for "pinch pleat"; "glass paint" for "glass pane"; "hanging road" for "hanging rod"; "tile rail" for "towel rail"; "light fangs" for "light fittings"; "cinnamon cornices" for "ceiling/cornices"; "kennel" for "fan"; "egg" for "AEG"; "iPhone" for "Aiphone" (intercom); "NBN coax" for "NBN Co box"; "Undermount" when the context is "underbench".
 - More mis-hearings to fix when the context makes them obvious: "up and down" / "down skirting" / "downlight skirting" for "downlights secured"; "skirting" right after an item and before "both sides", "to the wall", "to the ceiling" or "to the flooring" for "secured" ("handle skirting both sides" → "handle secured to both sides"); "7-way" / "7-meter" / "seven metre" for "silver metal" (as in "one silver metal weight secured to the bottom" of a blind); "foxhole" / "foxtail" / "box top" for "Foxtel"; "press-in light" / "press and light" for "fluorescent light"; "fossil plastic" for "frosted plastic"; "blows" / "gloves" (of a light) for "globes"; "white middle" / "middle base" (drawers, cupboards) for "white metal" / "metal and base"; "colour rack" (dishwasher) for "cutlery rack"; "secured neither" for "secured underneath"; "address burns" / "dual flash" for "dual flush button"; "Lincoln(s) present" for "indicators present"; "dustbin at present" for "dust build-up present"; "triplets" for "trivets"; "fish glass" for "fixed glass"; "pencil curtains" for "pencil pleat curtains"; "underhangers" for "no handles".
-- FIX AND FLAG (fix it, then put it in check): "once over" / "once of" / "once the" / "one sort of" before a metal fitting for "one silver metal"; "single" before a metal fitting (drain, sink, handle, mixer, tap, towel rail, cooking rack) for "silver metal" (but "single" is correct before power point, light switch, data point, Foxtel point and bed); "one side of the … is good" for "one silver metal … secured"; "twin handle" for "silver metal handle"; "lock winder head" / "corner skirting" (of a door or window) for "lockable handle(s)"; "sinks white plastic" (toilet) for "seat and cover are white plastic"; "which means the aircon" for "Mitsubishi Electric aircon"; "note the little frame" / "no digital frame" at the start of a garage for "No door or door frame".
+- Round 21 mis-hearings, fix when the context makes them obvious: "skidder" for "secured" ("handle skidder both sides" → "handle secured to both sides"); "secure to functional" / "secured to functional" / "security function" for "secured and functional"; "discretion" (grout) for "discolouration"; "serum number" for "serial number"; "motor number" (before a code) for "model number".
+- FIX AND FLAG (fix it, then put it in check): "once over" / "once of" / "once the" / "one sort of" before a metal fitting for "one silver metal"; "single" before a metal fitting (drain, sink, handle, mixer, tap, towel rail, cooking rack) for "silver metal" (but "single" is correct before power point, light switch, data point, Foxtel point and bed); "one side of the … is good" for "one silver metal … secured"; "twin handle" for "silver metal handle"; "lock winder head" / "corner skirting" (of a door or window) for "lockable handle(s)"; "sinks white plastic" (toilet) for "seat and cover are white plastic"; "which means the aircon" for "Mitsubishi Electric aircon"; "note the little frame" / "no digital frame" at the start of a garage for "No door or door frame"; "once a big" / "once a" before a fitting (towel rail, shower head, set of indicators) for "one silver metal"; "Walmart Classic" for "white plastic"; "grabber" (oven trays) for "grey metal"; "decanter" (a tap) for "indicators"; an oven's "Drawer is a glass pane" for "Door is a glass pane"; "12-volt and data point" for "Foxtel and data point"; "island tops present" (bathroom, near the toilet) for "isolation tap present", under the toilet subarea; "person" (a light fitting) for "fluorescent"; "clothes" (of a light) for "globes"; "window down skidder" / "white window down" (start of a lounge or bedroom, before the walls) for "white metal downlights secured", under Light Fittings; "grey tall" / "white tall" (flooring, walls, not a tallboy) for "grey tile" / "white tile".
+- ALWAYS FLAG, do not change (these read normally but were wrong before): "red" sliding doors (often "mirrored"); "walnut" laminate (often "one white"); "vinyl" framing (often "metal"); a dishwasher's "sensor" (often "soap dispenser"); "along a section" / "along sections" of a wall (often "lower section"); "zip closures" (often "globes"); "blenders" (often "buttons"); "in-wall" speaker (often "inbuilt").
 - Write counts as words, the way the report does: "two white tilt cords" stays as it is, and "3 double power points" becomes "three double power points". Never change the number itself. Write numerals only for model numbers, serial numbers, measurements and meter readings.
 - Australian English spelling: grey, colour, discolouration, centre, metre, mould, aluminium, fibre, licence. Keep "wood" or "timber" exactly as the inspector said it; never swap one for the other.
 - Hyphenation: build-up, self-closer, wood-look, stone-look, marble-look, doorstop.
 - Remove fillers (um, uh, er, sorry) and any leftover "scratch that" / "delete that" command together with the words it was cancelling. But "scratch" is also damage: "a deep scratch that runs along the door" or "one scratch that is about 10 centimetres long" describes a scratch and stays word for word.
 - A self-correction keeps only the corrected words: "sand— sorry, dust" → "dust"; "left— sorry, right side" → "right side"; "Door is a— oh, sorry. Door frame is…" → "Door frame is…". When the inspector abandons a description and starts it again ("The original frame is a black painted metal with chipping. Door is a— sorry. Door frame is a grey painted metal with chipping."), keep only the restarted version. Every self-correction goes in check with why "self-correction", and heard = the words as first said, so the typist can confirm it in the audio.
+- A dash with no "sorry", "I mean" or "no" before it is not always a correction. When the words after the dash describe a different item ("one white plastic circle panel to keep the ceiling— one white plastic smoke detector"), keep both items and flag the garbled words; drop the first words only when the second words describe the same item again.
 - A restart ("one one double power point") becomes the intended phrase ("one double power point") — and goes in check.
 - Every section's text: sentences start with a capital and end with a full stop.
 - Never change a model or serial number. Copy it exactly and always add it to check with why "check against the photo".
@@ -206,7 +225,7 @@ export default async function (req: Request): Promise<Response> {
     const t = new URL(req.url).searchParams.get("test");
     if (t === "1") return await selfTest(req);
     if (t === "stirling") return await stirlingTest(req);
-    return json({ ok: !!KEY, round: 19, version: "19", provider: "anthropic", model: MODEL, key_required: !!PA_KEY, note: KEY ? "ready" : "ANTHROPIC_API_KEY is not set" });
+    return json({ ok: !!KEY, round: 21, version: "21", provider: "anthropic", model: MODEL, key_required: !!PA_KEY, note: KEY ? "ready" : "ANTHROPIC_API_KEY is not set" });
   }
   if (req.method !== "POST") return json({ ok: false, error: "POST only" }, 405);
   if (PA_KEY && new URL(req.url).searchParams.get("k") !== PA_KEY) return json({ ok: false, error: "not allowed" }, 403);
@@ -261,6 +280,7 @@ async function fileRoom(transcript: string, room: string, subsections: string[],
   }
   const data = asked.data;
   const cutShort = ranAway(data);
+  const cutReason = cutShort ? whyRanAway(data) + (retried ? " (asked twice)" : " (no time to ask again)") : "";
 
   const block = toolBlock(data);
   // With tool_choice auto the model could answer in words instead; that room
@@ -354,7 +374,7 @@ async function fileRoom(transcript: string, room: string, subsections: string[],
     check.unshift({ quote: first, words: "", heard: first, why: "check list cut short — check the whole room against the audio" });
   }
 
-  return json({ ok: true, model: data?.model || MODEL, sections, text, check, ...(retried ? { retried: true } : {}), ...(cutShort ? { cut_short: true } : {}) });
+  return json({ ok: true, model: data?.model || MODEL, sections, text, check, ...(retried ? { retried: true } : {}), ...(cutShort ? { cut_short: true, cut_reason: cutReason } : {}) });
 }
 
 const RUNAWAY_WHY_CHARS = 160; // a "why" is a few words; longer means the model got stuck
@@ -381,6 +401,14 @@ function usable(data: any, transcript: string) {
 }
 function toolBlock(data: any) {
   return (data?.content || []).find((b: any) => b.type === "tool_use" && b.name === "file_room");
+}
+// ROUND 21: which sign of a stuck answer was seen, for the room's data file.
+function whyRanAway(data: any) {
+  if (data?.stop_reason === "max_tokens") return "answer hit the length limit";
+  const check = toolBlock(data)?.input?.check;
+  const bad = Array.isArray(check) ? check.find((c: any) => String(c?.why || "").length > RUNAWAY_WHY_CHARS || /\n/.test(trimRunOn(String(c?.why || "")))) : null;
+  if (bad) return "a check reason ran on (" + String(bad.why).length + " characters)";
+  return "a check entry's words ran on";
 }
 function ranAway(data: any) {
   if (data?.stop_reason === "max_tokens") return true;
@@ -560,7 +588,7 @@ async function stirlingTest(req: Request): Promise<Response> {
   }));
   const main = runs[0];
   return json({
-    ok: main.passed === main.total, model: MODEL, round: 19, version: "19", took_ms: Date.now() - started,
+    ok: main.passed === main.total, model: MODEL, round: 21, version: "21", took_ms: Date.now() - started,
     passed: main.passed + " of " + main.total, in_use: THINK,
     compare: runs.map((r) => ({ thinking: r.mode, passed: r.passed + " of " + r.total, slowest_room_seconds: r.slowest_room_seconds,
       fails: r.results.filter((x) => x.result !== "PASS").map((x) => x.room + ": " + x.expect) })),

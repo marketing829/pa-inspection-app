@@ -2177,6 +2177,11 @@
   #checklistBox .checklist-item { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 6px 8px; border: 0; background: transparent;
     border-radius: 12px; font-size: 15px; font-weight: 500; color: var(--ink); text-decoration: none; }
   #checklistBox .checklist-item.done { color: var(--ink-2); background: transparent; }
+  /* ROUND 21: Discard sits under Finish as a plain link, so it isn't tapped by mistake */
+  .discard-link { align-self: center; margin-top: 4px; font-size: 13px; color: var(--ink-2); background: none; border: 0; text-decoration: underline; }
+  /* ROUND 21: long row names wrap after a "/" instead of running off the screen */
+  #checklistBox .cl-text { min-width: 0; flex: 1 1 auto; overflow-wrap: anywhere; line-height: 1.3; }
+  .next-sub .ns-text strong { overflow-wrap: anywhere; }
   .cl-box { width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid var(--line-2); display: inline-flex; align-items: center; justify-content: center;
     flex: 0 0 auto; font-style: normal; }
   .cl-box .ico { width: 15px; height: 15px; stroke-width: 2.6; opacity: 0; }
@@ -2402,6 +2407,7 @@
     <div class="finish-status" id="finishStatus"></div>
     <a class="btn-export" id="btnDropbox" href="#" target="_blank" rel="noopener"><svg class="ico ico-folder" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.2c0-.9.7-1.7 1.7-1.7h3.9l2 2.2h7.7c.9 0 1.7.8 1.7 1.7v7.9c0 .9-.8 1.7-1.7 1.7H5.2c-1 0-1.7-.8-1.7-1.7z"/></svg><span>Check it in Dropbox</span></a>
     <button class="btn-export secondary" id="btnFinish" onclick="finishAndClear()"><svg class="ico ico-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>Finish inspection</span></button>
+    <button class="btn-link discard-link" id="btnDiscard" onclick="discardInspection()"><span>Discard this inspection</span></button>
     <button class="btn-link" onclick="saveAudioBackup()"><svg class="ico ico-download" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14"/></svg><span>Save the audio to this phone</span></button>
   </div>
 </div>
@@ -2414,7 +2420,6 @@
   </div>
   <div class="review-body" id="recordingsBody"></div>
   <div class="export-actions">
-    <button class="btn-export" onclick="shareAllRecordings()"><svg class="ico ico-share" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14.5V4M8 8l4-4 4 4M5.5 12.5v6c0 .6.4 1 1 1h11c.6 0 1-.4 1-1v-6"/></svg><span>Send this property's audio to the VA</span></button>
     <button class="btn-export secondary rec-back" onclick="closeRecordings()"><svg class="ico ico-chevL" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg><span>Back</span></button>
   </div>
 </div>
@@ -2467,7 +2472,7 @@
     <!-- Service settings. Inspectors never need these, and a stray tap here
          used to be able to break uploads, so they're tucked away. -->
     <details class="admin-settings" id="adminSettings">
-      <summary>Admin settings <span class="app-ver">· app version 20</span></summary>
+      <summary>Admin settings <span class="app-ver">· app version 21</span></summary>
       <p class="admin-warn">For Daphne / admin only. Changing these can stop recordings reaching Dropbox.</p>
     <div class="field-group">
       <label>Transcription engine</label>
@@ -3278,7 +3283,7 @@ let photoQueueRunning = false; // guard so the serial-photo upload queue runs on
 // every read of a stored recording now has a hard deadline (a send that never
 // answers, or ignores its abort, can no longer hold a queue), and every pass
 // has a watchdog. The numbers live here so the tests can shorten them.
-const APP_ROUND = 20;
+const APP_ROUND = 21;
 const TIMING = {
   grace: 5000,              // added to a request's own time limit before giving up on it outright
   readMs: 20000,            // reading one stored recording into memory
@@ -3678,8 +3683,11 @@ function startInspection() {
   state.beds = kept.filter(id => /^bedroom/.test(id)).length;
   state.baths = kept.filter(id => /^bathroom|^ensuite$/.test(id)).length;
 
+  // ROUND 21: the library's main bathroom is "Bathroom 2" (the ensuite is the
+  // first). With no other bathroom picked it's just "Bathroom", as in the PCR.
+  const onlyBath = kept.includes('bathroom2') && !kept.some(id => id !== 'bathroom2' && /^bathroom|^ensuite$/.test(id));
   state.rooms = kept
-    .map(id => { const s = ROOM_LIBRARY.find(r => r.id === id); return s ? { id: s.id, name: s.name, subsections: [...s.subsections] } : null; })
+    .map(id => { const s = ROOM_LIBRARY.find(r => r.id === id); return s ? { id: s.id, name: (s.id === 'bathroom2' && onlyBath) ? 'Bathroom' : s.name, subsections: [...s.subsections] } : null; })
     .filter(Boolean);
   state.currentRoomIdx = 0;
   state.startedAt = Date.now();
@@ -3807,7 +3815,7 @@ function renderRoomContent() {
   let chips = '';
   room.subsections.forEach((sub, i) => {
     const done = !!(state.checked[room.id] && state.checked[room.id][sub]);
-    chips += `<span class="checklist-item ${done ? 'done' : ''}" id="chk-${room.id}-${i}" onclick="toggleCheck('${room.id}', ${i})"><i class="cl-box">${ico('check')}</i>${escapeHtml(sub)}</span>`;
+    chips += `<span class="checklist-item ${done ? 'done' : ''}" id="chk-${room.id}-${i}" onclick="toggleCheck('${room.id}', ${i})"><i class="cl-box">${ico('check')}</i><span class="cl-text">${rowLabelHTML(sub)}</span></span>`;
   });
 
   const flagged = findForbidden(val);
@@ -3880,6 +3888,15 @@ function onInventoryEdit(roomId) {
   saveState();
 }
 
+// ROUND 21: a long row name ("Wardrobe/Doors/ceiling/wall/skirting/flooring/Shelves")
+// has no spaces, so it ran off the edge of the phone. On screen it can break
+// after each "/", and each part starts with a capital. The name itself (Word
+// file, Dropbox, AI) is unchanged.
+function rowLabelHTML(sub) {
+  const tidy = String(sub || '').split('/').map(p => p.replace(/^(\s*)([a-z])/, (m, sp, c) => sp + c.toUpperCase())).join('/');
+  return escapeHtml(tidy).replace(/\//g, '/<wbr>');
+}
+
 // ─── RUNNING ORDER PROMPT ─────────────────────────────────────────────────────
 // Inspectors shouldn't have to remember the room's order or which subsection
 // comes next. This shows the next unticked one and asks for it to be announced,
@@ -3895,7 +3912,7 @@ function renderNextSub() {
   const sub = nextSubsection(room);
   box.classList.add('show');
   box.innerHTML = (sub
-      ? `<span class="ns-text"><span class="ns-label">Next · ${(room.subsections || []).filter(x => (state.checked[room.id] || {})[x]).length} of ${(room.subsections || []).length}</span><strong>${escapeHtml(sub)}</strong></span>`
+      ? `<span class="ns-text"><span class="ns-label">Next · ${(room.subsections || []).filter(x => (state.checked[room.id] || {})[x]).length} of ${(room.subsections || []).length}</span><strong>${rowLabelHTML(sub)}</strong></span>`
         + `<button type="button" class="next-sub-btn" onclick="tickAndAdvance()" aria-label="Done, next row">${ico('check')}</button>`
       : `<span class="ns-text"><span class="ns-label">All rows</span><strong>covered</strong></span>`)
     + `<button type="button" class="next-sub-more${checklistOpen ? ' up' : ''}" id="checklistToggle" onclick="toggleChecklist()" aria-label="${checklistOpen ? 'Hide' : 'Show'} all rows">${ico('chevD')}</button>`;
@@ -4863,6 +4880,7 @@ function dbAll() {
 function dbGet(id) {
   return dbTx(AUDIO_STORE, 'readonly', (s, set) => { const r = s.get(id); r.onsuccess = () => set(r.result || null); }).then(v => v || null);
 }
+const FINISH_MARKS = ['closed', 'discarded', 'serialTyped', 'inventoryTyped'];
 function dbPut(rec) {
   if (!rec || rec.id == null) return dbTx(AUDIO_STORE, 'readwrite', (s, set) => { const r = s.put(storedForm(rec)); r.onsuccess = () => set(r.result); });
   // ROUND 19: a pass holding an older copy of the record must not wipe the
@@ -4876,6 +4894,9 @@ function dbPut(rec) {
       // Only an older copy of the same audio: a record carrying more audio than
       // the bytes kept (Done after a partial save) keeps its own file.
       if (was && was.bytesStored && !rec.bytesStored && (!rec.blob || rec.blob.size <= (was.bytesSize || 0))) { rec.bytesStored = true; rec.bytesSize = was.bytesSize; }
+      // ROUND 21: nor the marks Finish and Discard set (finished, discarded, and
+      // the serial and inventory typed on the phone). Nothing ever clears them.
+      if (was) FINISH_MARKS.forEach(k => { if (was[k] && !rec[k]) rec[k] = was[k]; });
       const r = s.put(storedForm(rec));
       r.onsuccess = () => set(r.result);
     };
@@ -6321,12 +6342,14 @@ async function runCleanup(rec) {
     // ROUND 17: the cleanup val says when Claude got stuck and the check list
     // is incomplete; the Word file then tells the VA at the top of the room.
     if (out.cut_short) rec.checkCutShort = true; else delete rec.checkCutShort;
+    // ROUND 21: the val (version 21) says why; kept for the room's data file.
+    if (out.cut_short && out.cut_reason) rec.checkCutReason = String(out.cut_reason).slice(0, 200); else delete rec.checkCutReason;
     rec.cleanedBy = out.model || 'cleanup';
     delete rec.cleanupError;
   } catch (e) {
     rec.sections = null;
     rec.check = null;
-    delete rec.checkCutShort;
+    delete rec.checkCutShort; delete rec.checkCutReason;
     rec.cleanupError = (e && e.message) ? String(e.message).slice(0, 120) : 'failed';
   } finally {
     clearTimeout(timer);
@@ -6566,6 +6589,8 @@ function buildArchiveText(rec, clean) {
   } else if (cleaned) {
     checkBlock = (doneChecks.length ? 'Nothing left to check in this room.' : 'Nothing flagged for checking in this room.') + '\n\n';
   }
+  const reps = repeatRuns(rec.words, rec.transcript);
+  if (reps.length) checkBlock = 'LISTEN HERE: THE RECORDING MAY HAVE BEEN SKIPPED\n  ' + repeatNote(reps) + '\n\n' + checkBlock;
   if (cleaned && doneChecks.length) {
     checkBlock += 'ALREADY CHECKED BY THE INSPECTOR (' + doneChecks.length + ')\n'
       + doneChecks.map(c => '  ' + (c.clock ? '[' + c.clock + '] ' : '[ - ] ') + '"' + c.quote + '"'
@@ -6634,6 +6659,10 @@ function buildRoomJson(rec, clean) {
       return { phrase: p, at: at != null ? at : null, clock: at != null ? formatClock(at) : null };
     }) : [],
     cutShort: !!(layout.cleaned && rec.checkCutShort),
+    // ROUND 21: why the check list was cut short (from the cleanup val), and
+    // where the same words repeat (the engine may have skipped audio there).
+    cutReason: (layout.cleaned && rec.checkCutShort && rec.checkCutReason) ? String(rec.checkCutReason) : null,
+    repeats: repeatRuns(rec.words, rec.transcript).map(x => ({ phrase: x.phrase, from: x.from, to: x.to, clock: x.from != null ? formatClock(x.from) : null })),
     sortError: (!layout.cleaned && rec.cleanupError) ? String(rec.cleanupError) : null,
     syncErrors: (rec.errLog || []).map(x => ({ at: new Date(x.t).toISOString(), stage: x.stage, error: x.msg })),
     serial: thisJob ? (state.serialModels[rec.roomId] || '').trim() : (rec.serialTyped || ''),
@@ -6905,7 +6934,7 @@ async function processPhotoQueue() {
         const folder = archiveFolderName(rec);
         const base = archiveBaseName(rec);
         const rel = rec.kind === 'summary'
-          ? `${folder}/${DATA_DIR}/00 - Inspection details.txt`
+          ? `${folder}/${DATA_DIR}/00 - Inspection details${rec.discardedAt ? ' - DISCARDED ' + new Date(rec.discardedAt).toTimeString().slice(0, 5).replace(':', '') : ''}.txt`
           : rec.kind === 'pcr'
             ? `${folder}/${rec.fileName || 'PCR.docx'}`
             : rec.kind === 'mandatory'
@@ -7381,7 +7410,7 @@ function showReview() {
     const card = document.createElement('div');
     card.className = 'attn-card';
     card.innerHTML = '<div class="attn-title">Before you finish</div>'
-      + notes.map(n => `<div class="attn-row"${/^Not filled in: /.test(n) ? ' id="attnMandatory"' : ''}>${ico('alert')}<span>${escapeHtml(n)}</span></div>`).join('');
+      + notes.map(n => `<div class="attn-row"${/^(?:Mandatory items still needed|Not filled in): /.test(n) ? ' id="attnMandatory"' : ''}>${ico('alert')}<span>${escapeHtml(n)}</span></div>`).join('');
     body.appendChild(card);
   }
 
@@ -7705,7 +7734,9 @@ function buildReportText() {
     const inv = (state.inventory[room.id] || '').trim();
     if ((val && val.trim()) || serial || inv) {
       report += `\n\n${room.name.toUpperCase()}\n${'-'.repeat(30)}\n`;
-      if (val && val.trim()) report += `${val.trim()}\n`;
+      // ROUND 21: a model, serial or type number ends its line ("Serial Numbers:
+      // 82897294 We have pantry" ran on in the details file).
+      if (val && val.trim()) report += `${val.trim().replace(/^((?:Model Numbers?|Serial Numbers?|Type):[ \t]*[A-Za-z0-9][A-Za-z0-9\-\/.]*\d[A-Za-z0-9\-\/.]*)[ \t]+(?=[A-Z][a-z])/gm, '$1\n')}\n`;
       if (inv) report += `Inventory: ${inv}\n`;
       if (serial) report += `Serial / model: ${serial}\n`;
     }
@@ -7731,7 +7762,8 @@ function buildInspectionSummary(statusRows) {
   lines.push('INSPECTION DETAILS');
   lines.push('='.repeat(40));
   lines.push(...detailLines(state.address, inspectionMeta()));
-  lines.push('Finished on phone: ' + new Date().toLocaleString('en-AU'));
+  if (statusRows && statusRows.discarded) lines.push('DISCARDED ON THE PHONE: the inspector closed this inspection without finishing it (usually to start again). Don\'t type it unless told to.');
+  lines.push((statusRows && statusRows.discarded ? 'Discarded on phone: ' : 'Finished on phone: ') + new Date().toLocaleString('en-AU'));
   lines.push('Phone: ' + deviceLabel() + ' (app version ' + APP_ROUND + ')');
   lines.push('');
   lines.push('AREA STATUS AT FINISH');
@@ -7865,7 +7897,7 @@ function jobSnapshot() {
   const typed = {};
   Object.keys(state.typedOnly || {}).forEach(id => { if (state.typedOnly[id]) typed[id] = (state.roomNotes[id] || '').trim(); });
   return {
-    address: state.address, jobId: state.jobId || '', meta: inspectionMeta(),
+    address: state.address, jobId: state.jobId || '', meta: inspectionMeta(), discarded: false,
     mandatory: Object.assign({}, state.mandatory || {}),
     mandPhotos: JSON.parse(JSON.stringify(state.mandPhotos || {})),
     notes: (state.propertyNotes || '').trim(),
@@ -7881,9 +7913,22 @@ function markJobDoc(folder, snap) {
   e.rev = (e.rev || 0) + 1;
   e.touched = Date.now();
   delete e.nextAt; e.fails = 0;
-  if (snap) e.snap = Object.assign({}, e.snap || {}, snap);
+  if (snap) e.snap = mergeJobSnap(e.snap, snap);
   m[folder] = e;
   saveJobDocs(m);
+}
+// ROUND 21: a job discarded and started again at the same address the same day
+// shares the folder. The Word file is the folder's newest job (its snapshot),
+// built from that job's recordings only; the discarded job's audio and files
+// stay in the folder. A discarded job's own Word file says so.
+function mergeJobSnap(was, snap) {
+  if (was && was.jobId && snap.jobId && was.jobId !== snap.jobId) return Object.assign({}, snap);
+  return Object.assign({}, was || {}, snap);
+}
+function jobDocRecs(recs, snap) {
+  if (snap && snap.jobId) return { recs: recs.filter(r => !r.jobId || r.jobId === snap.jobId), discarded: !!snap.discarded };
+  const kept = recs.filter(r => !r.discarded);
+  return { recs: kept.length ? kept : recs, discarded: !kept.length && recs.length > 0 };
 }
 let jobDocRunning = false;
 async function jobDocPass() {
@@ -7908,10 +7953,18 @@ async function jobDocPass() {
         try { recs = (await dbAll()).filter(r => r.kind !== 'summary' && archiveFolderName(r) === folder); } catch (er) {}
         // The open job's live details beat the copy taken when the room landed.
         const live = jobSnapshot();
-        const snap = (live && recs.some(r => sameJob(r))) ? Object.assign({}, e.snap || {}, live) : (e.snap || null);
+        const liveHere = !!(live && archiveFolderName({ address: live.address, meta: live.meta }) === folder);
+        const snap = liveHere ? mergeJobSnap(e.snap, live) : (e.snap || null);
         if (!recs.length && !snap) { delete m[folder]; changed = true; continue; }
         const address = (snap && snap.address) || (recs[0] && recs[0].address) || '';
-        const blob = await buildJobDocx(buildJobModel(recs, snap));
+        // ROUND 21: an inspection discarded and started again at the same address
+        // the same day shares this folder. The Word file is the new one's; the
+        // discarded rooms' audio and files stay in the folder, out of the Word
+        // file. If only discarded rooms are here, the Word file says so.
+        const pick = jobDocRecs(recs, snap);
+        const model = buildJobModel(pick.recs, snap);
+        model.discarded = pick.discarded;
+        const blob = await buildJobDocx(model);
         await archivePut(`${folder}/${jobDocName(address)}`, blob, DOCX_TYPE, 90000);
         const fresh = loadJobDocs();
         if (fresh[folder]) { fresh[folder].sent = Math.max(fresh[folder].sent || 0, rev); fresh[folder].sentAt = Date.now(); delete fresh[folder].nextAt; fresh[folder].fails = 0; delete fresh[folder].error; }
@@ -7948,11 +8001,21 @@ function highlightSpans(sentence, checks) {
     const head = q.split(' ').slice(0, 5).join(' ');
     return head.split(' ').length >= 4 && ns.startsWith(head);
   };
+  // ROUND 21: the AI quoted two sentences as one ("No island tops present. Toilet
+  // holders secured to the wall."). Each of them is matched on its own; only the
+  // one holding the doubtful words is highlighted.
+  const isPart = c => {
+    // No lookbehind here: older iPhones (before iOS 16.4) can't read it, and the whole app would stop loading.
+    const qs = String(c.quote || '').replace(/([.!?])\s+/g, '$1\n').split('\n').map(checkNorm).filter(x => x.split(' ').length >= 2);
+    return qs.length > 1 && qs.includes(ns);
+  };
   (checks || []).forEach(c => {
     if (c.resolved === 'fixed') return;
-    if (!isThis(c)) return;
+    const part = !isThis(c) && isPart(c);
+    if (!isThis(c) && !part) return;
     const w = String(c.words || '').trim();
     let at = w ? plain.toLowerCase().indexOf(w.toLowerCase()) : -1;
+    if (part && w && at < 0 && !w.split(/\s+/).filter(x => x.length > 2).some(x => plain.toLowerCase().includes(x.toLowerCase()))) return;
     if (at < 0 && w) {
       // The words may have lost or gained punctuation; try them one by one.
       const parts = w.split(/\s+/).filter(x => x.length > 2);
@@ -7991,6 +8054,18 @@ const SUSPECT_PHRASES = [
   /\bsinks? white plastic\b/gi, /\bwhite middle\b/gi, /\bmiddle base\b/gi,
   /\bcolou?r rack\b/gi, /\b(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten) blows\b/gi, /\bgloves\b/gi,
   /\blincolns?\b/gi, /\bpanama\b/gi, /\bsteering materials\b/gi, /\bfish glass\b/gi, /\btriplets\b/gi, /\bunderhangers\b/gi,
+  // ROUND 21 (Stirling, 13 Oct, VA report beside it): real words that read
+  // normally but were wrong. Door, soap dispenser, Foxtel, mirrored, one white,
+  // black metal, isolation tap, lower section, secured, metal downlights,
+  // globes, buttons, indicators, white plastic, grey metal, one silver metal;
+  // and from an older store room: fluorescent, secured and functional, globes,
+  // discolouration, tile, model number, serial number.
+  /\bdrawers? (?:is|are) (?:a )?glass\b/gi, /\bplastic sensor\b/gi, /\b(?:12|twelve)[- ]?volts?(?: and)? data\b/gi,
+  /\bred sliding\b/gi, /\bwalnut\b/gi, /\bvinyl (?:framing|frame|here)\b/gi, /\bisland tops?\b/gi,
+  /\balong (?:a |the )?sections? of (?:the )?walls?\b/gi, /\bgot to be a\b/gi, /\bskidder\b/gi, /\bwindow down\b/gi,
+  /\bzip closures?\b/gi, /\bblenders?\b/gi, /\bdecanters?\b/gi, /\bwalmart\b/gi, /\bgrabber\b/gi, /\bonce a\b/gi,
+  /\bperson\b/gi, /\bsecurity function(?:al)?\b/gi, /\b(?:one|two|three|four|\d+) clothes\b(?!\s*(?:lines?|hooks?|rails?|rods?|airers?|dryers?))/gi, /\bdiscretion\b/gi,
+  /\b(?:grey|white|black) tall\b(?!\s*(?:boy|cupboard|unit|cabinet|pantry))/gi, /\bserum number\b/gi, /\bmotor numbers? (?:is|:)/gi,
   // "no …" then a condition in the same breath: says it's not there, then
   // describes it ("once of no detachable showerhead in good condition"). A comma
   // in between ("no handles, in good condition") is ordinary wording.
@@ -8048,6 +8123,44 @@ function plateFrom(text) {
   const tidy = v => v ? v[1].replace(/\s*\/?\s*(?:Type|Model Numbers?|Serial Numbers?)\s*$/i, '').replace(/\s*\/\s*$/, '').trim() : '';
   return { model: tidy(mm), serial: tidy(ss), type: ty ? ty[1].trim() : '' };
 }
+// ROUND 21: the speech engine can get stuck on unclear audio, write the same
+// words over and over, and skip what was said next (an older Stirling store
+// room: "Doorframe is a grey painted metal with chipping" three and a half
+// times, then the door's chips and scuff marks were missing). Nothing later can
+// highlight words that never reached the transcript, so the typist is sent to
+// listen there. Finds 4+ words said three times or more in a row. Returns
+// [{ phrase, from, to }] (seconds, or null without word timings).
+const REPEAT_FILLERS = new Set(['uh', 'um', 'er', 'erm', 'ah']);
+function repeatRuns(words, transcript) {
+  let arr = (words || []).map(x => ({ w: String(x.w || '').toLowerCase().replace(/[^a-z0-9]/g, ''), t: x.s != null ? x.s : null, raw: String(x.w || '') }));
+  if (!arr.length) arr = String(transcript || '').split(/\s+/).map(x => ({ w: x.toLowerCase().replace(/[^a-z0-9]/g, ''), t: null, raw: x }));
+  arr = arr.filter(x => x.w && !REPEAT_FILLERS.has(x.w));
+  const out = [];
+  const n = arr.length;
+  for (let i = 0; i < n; i++) {
+    let found = 0;
+    for (let L = 4; L <= 20 && i + 2 * L <= n; L++) {
+      let same = true;
+      for (let k = 0; k < L; k++) if (arr[i + k].w !== arr[i + L + k].w) { same = false; break; }
+      if (same) { found = L; break; }
+    }
+    if (!found) continue;
+    let j = i + 2 * found;
+    while (j < n && arr[j].w === arr[i + ((j - i) % found)].w) j++;
+    // Said twice is often just the inspector starting again ("the walls are
+    // white painted— the walls are white painted plaster"). The engine loops
+    // on and on (three and a half times at Stirling): three times or more.
+    if (j - i < 3 * found) continue;
+    const phrase = arr.slice(i, i + found).map(x => x.raw).join(' ').replace(/[.,;:!?—–-]+$/, '');
+    out.push({ phrase, from: arr[i].t, to: j < n ? arr[j].t : arr[n - 1].t });
+    i = j - 1;
+  }
+  return out;
+}
+function repeatNote(runs) {
+  return 'The same words repeat: ' + runs.map(x => '“' + x.phrase + '”' + (x.from != null ? ' (' + formatClock(x.from) + (x.to != null && x.to > x.from ? '–' + formatClock(x.to) : '') + ')' : '')).join('; ')
+    + '. The speech engine may have got stuck and skipped what was said there. Listen to ' + (runs.length > 1 ? 'these parts' : 'this part') + ' of the audio.';
+}
 // ROUND 17: the first rows of a room with nothing said, while later rows are
 // full (Stirling kitchen: part 1 was never recorded). Returns how many.
 // ROUND 18 (after the Stirling tests, where the AI left out "2 up and down
@@ -8078,7 +8191,7 @@ function missWordsRaw(t) {
 // Walk-through phrases the cleanup drops on purpose ("coming into the bedroom").
 // Only a phrase that is nothing but the walk-through ("coming into the master
 // bedroom"); "going to note the oven door is cracked" is still checked.
-const MISS_WALK = /^(?:(?:uh|um|so|okay|ok|and|now)\s+)*(?:coming|moving|heading|walking|stepping|going)\s+(?:into|through|back\s+(?:in)?to|out\s+to|over\s+to|in\s+to)\s+(?:the\s+|this\s+|our\s+)?[a-z0-9]+(?:\s+[a-z0-9]+){0,3}\s*[.!?]?$/i;
+const MISS_WALK = /^(?:(?:uh|um|so|okay|ok|and|now)\s+)*(?:coming|moving|heading|walking|stepping|going)\s+(?:into|through|back\s+(?:in)?to|out\s+to|over\s+to|in\s+to)\s+(?:the\s+|this\s+|our\s+)?[a-z0-9]+(?:(?:\s+|\s*\/\s*)[a-z0-9]+){0,3}\s*[.!?]?$/i;   // ROUND 21: "entry/kitchen"
 // ROUND 19: the words that carry the meaning of a phrase: a condition, a count,
 // "no / not", and which side. A sorted sentence only counts as keeping the
 // phrase when it has all of them, and (when the phrase has other words too) at
@@ -8198,6 +8311,8 @@ function buildJobModel(recs, snap) {
         notSorted++;
         notes.push('Not sorted by the AI' + (multi ? ' for part ' + (r.part || (rs.indexOf(r) + 1)) : '') + '. The rows were split by keyword, so a sentence can sit in the wrong row and nothing was flagged. Check the whole ' + (multi ? 'part' : 'room') + ' against the audio.');
       }
+      const reps = repeatRuns(r.words, raw);
+      if (reps.length) notes.push((multi ? 'Part ' + (r.part || (rs.indexOf(r) + 1)) + ': ' : '') + repeatNote(reps));
       if (r.checkCutShort && r.sections) notes.push('Check list cut short' + (multi ? ' for part ' + (r.part || (rs.indexOf(r) + 1)) : '') + '. The AI stopped before listing everything to check. Check the whole ' + (multi ? 'part' : 'room') + ' against the audio.');
       const clean = punctuateBySubarea({ subsections: r.subsections || [] }, applyCorrections(applyScratch(raw)));
       const layout = roomLayout(r, clean);
@@ -8237,7 +8352,10 @@ function buildJobModel(recs, snap) {
         const lost = checks.filter(c => c.resolved !== 'fixed' && c.quote && !allSents.some(x => highlightSpans(x, [c]).length));
         if (lost.length) {
           unmatched += lost.length;
-          notes.push('Also to check' + (multi ? ' in part ' + (r.part || (rs.indexOf(r) + 1)) : '') + ', the AI flagged words it could not place: ' + lost.map(c => '“' + c.quote + '”' + (c.why ? ' (' + c.why + (c.clock ? ', ' + c.clock : '') + ')' : (c.clock ? ' (' + c.clock + ')' : ''))).join('; ') + '.');
+          // ROUND 21: one entry per sentence, with every reason given for it.
+          const byQuote = new Map();
+          lost.forEach(c => { const k = checkNorm(c.quote); if (!byQuote.has(k)) byQuote.set(k, { quote: c.quote, whys: [], clock: c.clock }); const e = byQuote.get(k); if (c.why && !e.whys.includes(c.why)) e.whys.push(c.why); if (!e.clock) e.clock = c.clock; });
+          notes.push('Also to check' + (multi ? ' in part ' + (r.part || (rs.indexOf(r) + 1)) : '') + ', the AI flagged words it could not place: ' + [...byQuote.values()].map(e => '“' + e.quote + '”' + (e.whys.length || e.clock ? ' (' + e.whys.concat(e.clock ? [e.clock] : []).join('; ') + ')' : '')).join('; ') + '.');
         }
       }
       const serial = (r.serialTyped || (snap.serials || {})[id] || '').trim();
@@ -8354,6 +8472,7 @@ function buildJobDocXml(j) {
   const tm = d => d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' });
   out.push(jP(jR('PROPERTY ASSIST · INSPECTION NOTES FOR TYPING', { sz: 16, b: true, color: JD_MUTED }), { after: 60 }));
   out.push(jH1(j.address || 'Inspection'));
+  if (j.discarded) out.push(jP(jR('Discarded on the phone. The inspector closed this inspection without finishing it, usually to start again. Don\'t type it unless told to.', { sz: 18, b: true, hl: true }), { box: true, after: 140 }));
   out.push(jP(jR('AI transcribed and sorted. It may not be 100% accurate, so check everything against the audio, especially the ', { sz: 18 })
     + jR('highlighted', { sz: 18, b: true, hl: true }) + jR(' words.', { sz: 18 }), { box: true, after: 140 }));
   const lab = s => jP(jR(s, { color: JD_MUTED }), { after: 0 });
@@ -8485,7 +8604,8 @@ async function queueInspectionSummary(statusRows) {
   if (!cloudArchiveEnabled() || !state.address) return;
   // ROUND 14: finishing with rooms not in Dropbox goes straight to the val's log.
   const notSafe = (statusRows || []).filter(r => !r.ready && !r.skipped && !r.typedOnly);
-  if (notSafe.length) sendDiag('finish-unsent', null, notSafe.length + ' room(s) not in Dropbox at Finish', {
+  const discarded = !!(statusRows && statusRows.discarded);
+  if (notSafe.length && !discarded) sendDiag('finish-unsent', null, notSafe.length + ' room(s) not in Dropbox at Finish', {
     rooms: notSafe.map(r => ({ room: r.name, status: r.text, why: r.why, last: r.lastErr ? r.lastErr.stage + ': ' + r.lastErr.msg : '' }))
   });
   const text = buildInspectionSummary(statusRows);
@@ -8496,6 +8616,9 @@ async function queueInspectionSummary(statusRows) {
     blob: new Blob([text], { type: 'text/plain;charset=utf-8' }),
     type: 'text/plain; charset=utf-8', uploaded: false
   };
+  // ROUND 21: a discarded job's details get their own name, so they can never
+  // replace a restarted job's at the same address.
+  if (discarded) rec.discardedAt = Date.now();
   await photoAdd(rec);   // ROUND 11: a failure goes back to Finish, which stops
 }
 
@@ -8584,7 +8707,13 @@ function downloadCSV() {
   showToast('✓ CSV downloaded');
 }
 
-async function finishAndClear() {
+// ROUND 21: Discard closes the inspection without the Finish checks (every room
+// recorded, mandatory items), so an inspector can start again. Nothing is
+// deleted: what was recorded stays under Recordings and still goes to Dropbox,
+// and the details file and Word file say it was discarded.
+function discardInspection() { return finishAndClear(true); }
+async function finishAndClear(discard) {
+  discard = discard === true;
   // Push anything waiting before judging, so a room that's one upload away
   // doesn't show as still sending.
   if (navigator.onLine) { try { await queueWatchdog(); processQueue(); processArchiveQueue(); } catch (e) {} }
@@ -8604,7 +8733,7 @@ async function finishAndClear() {
   renderFinishGate(statusRows);
   // Round 10: only rooms with nothing recorded stop Finish. Audio still on its
   // way to Dropbox stays on the phone and keeps sending.
-  const blocking = statusRows.filter(r => !r.ready && !r.sending);
+  const blocking = discard ? [] : statusRows.filter(r => !r.ready && !r.sending);
   let override = false;
   if (blocking.length) {
     const list = blocking.map(r => `• ${r.name}: ${r.why}`).join('\n');
@@ -8617,6 +8746,7 @@ async function finishAndClear() {
     override = true;
   }
   statusRows.override = override;
+  statusRows.discarded = discard;
   let recs = [];
   let unsentPhotos = 0;
   try { recs = (await dbAll()).filter(r => sameJob(r)); } catch (e) {}
@@ -8632,7 +8762,12 @@ async function finishAndClear() {
     (r.status === 'failed' && (!cloudArchiveEnabled() || !audioUp(r))) ||
     (cloudArchiveEnabled() && r.status === 'done' && r.archived !== true));
   // One question only. The typed manager override already said yes.
-  if (!override) {
+  if (discard) {
+    const n = recs.filter(r => !r.noAudio).length;
+    if (!confirm('Discard this inspection and start again?\n\n'
+      + (n ? `${n} recording${n === 1 ? '' : 's'} from it stay${n === 1 ? 's' : ''} under Recordings and still go${n === 1 ? 'es' : ''} to Dropbox, marked "discarded". Nothing is deleted.`
+           : 'Nothing has been recorded yet.'))) return;
+  } else if (!override) {
     let msg;
     if (notSafe.length || unsentPhotos) {
       const parts = [];
@@ -8669,6 +8804,7 @@ async function finishAndClear() {
     try {
       await dbUpdate(rec.id, r => {
         r.closed = true;               // belongs to a finished job
+        if (discard) r.discarded = true;   // ROUND 21: left out of a restarted job's Word file
         // ROUND 11: keep what was typed for this room; its files may be written after Finish.
         const sm = (state.serialModels[r.roomId] || '').trim(); if (sm) r.serialTyped = sm;
         const iv = (state.inventory[r.roomId] || '').trim(); if (iv) r.inventoryTyped = iv;
@@ -8681,7 +8817,7 @@ async function finishAndClear() {
   // the phone, and again by itself as any room still sending lands.
   try {
     const snap = jobSnapshot();
-    if (snap) { snap.finishedAt = Date.now(); markJobDoc(archiveFolderName({ address: state.address, meta: inspectionMeta(), createdAt: state.startedAt }), snap); }
+    if (snap) { snap.finishedAt = Date.now(); snap.discarded = discard; markJobDoc(archiveFolderName({ address: state.address, meta: inspectionMeta(), createdAt: state.startedAt }), snap); }
     if (cloudArchiveEnabled() && navigator.onLine) processArchiveQueue();
   } catch (e) {}
   clearSaved();
@@ -8704,6 +8840,7 @@ async function finishAndClear() {
   document.getElementById('headerTitle').textContent = '';
   showScreen('screenSetup');
   updatePendingUI();
+  if (discard) { showToast('Discarded. Ready to start again.'); return; }
   showToast(notSafe.length
     ? `Finished. ${notSafe.length} recording${notSafe.length === 1 ? ' is' : 's are'} still sending. Keep the app open with signal.`
     : 'Finished. Ready for the next property.');
@@ -8793,24 +8930,28 @@ async function saveAudioBackup() {
   for (const r of recs) { downloadOneRecording(r); await new Promise(res => setTimeout(res, 400)); }
 }
 
-// Send every stored recording for THIS property to the VA in one share sheet.
-async function shareAllRecordings() {
-  let recs = [];
-  try { recs = await dbAll(); } catch (e) {}
-  const mine = state.address ? recs.filter(r => sameJob(r)) : recs;
-  for (const r of mine) if (!r.blob && r.bytesStored) r.blob = await recBlob(r);   // ROUND 14
-  const withAudio = mine.filter(r => r.blob);
-  if (!withAudio.length) { showToast('No stored audio to send'); return; }
-  const files = withAudio.map(r => new File([r.blob], recFilename(r), { type: r.type || 'audio/mp4' }));
-  if (navigator.canShare && navigator.canShare({ files })) {
-    try { await navigator.share({ files, title: 'Inspection recordings — ' + (state.address || ''), text: buildReportText() }); return; }
-    catch (e) {
-      if (e && e.name === 'AbortError') return;
-      showToast('Could not send them all at once — try Send on each recording');
-      return;
-    }
-  }
-  showToast('Sharing audio isn\'t supported here — use Save on each recording');
+// ROUND 21: "Send this property's audio to the VA" is gone. It tried to share
+// every recording in one go, which Android refused (and after Finish it took
+// every job's audio). Each recording keeps its own Send and Save.
+
+// ROUND 21: an Android recording (.webm) doesn't say how long it is, so the
+// player put its bar at the end and showed only the time played. Asking for a
+// far-off point makes the browser read the file through once and learn the
+// length; then it goes back to the start.
+function fixAudioLength(audio) {
+  audio.preload = 'metadata';
+  audio.addEventListener('loadedmetadata', () => {
+    if (isFinite(audio.duration)) return;
+    const done = () => {
+      if (!isFinite(audio.duration)) return;
+      audio.removeEventListener('durationchange', done);
+      audio.removeEventListener('timeupdate', done);
+      try { audio.currentTime = 0; } catch (e) {}
+    };
+    audio.addEventListener('durationchange', done);
+    audio.addEventListener('timeupdate', done);
+    try { audio.currentTime = 1e101; } catch (e) {}
+  }, { once: true });
 }
 
 async function renderRecordings(force) {
@@ -8897,6 +9038,7 @@ async function renderRecordings(force) {
         recObjectUrls.push(url);
         const audio = document.createElement('audio');
         audio.controls = true;
+        fixAudioLength(audio);
         audio.src = url;
         card.appendChild(audio);
       } catch (e) {}
@@ -8904,6 +9046,7 @@ async function renderRecordings(force) {
       // ROUND 14: audio kept as bytes, loaded for this card only.
       const audio = document.createElement('audio');
       audio.controls = true;
+      fixAudioLength(audio);
       card.appendChild(audio);
       recBlob(rec).then(b => { if (!b) return; rec.blob = b; const url = URL.createObjectURL(b); recObjectUrls.push(url); audio.src = url; }).catch(() => {});
     }

@@ -2472,7 +2472,7 @@
     <!-- Service settings. Inspectors never need these, and a stray tap here
          used to be able to break uploads, so they're tucked away. -->
     <details class="admin-settings" id="adminSettings">
-      <summary>Admin settings <span class="app-ver">· app version 21</span></summary>
+      <summary>Admin settings <span class="app-ver">· app version 22</span></summary>
       <p class="admin-warn">For Daphne / admin only. Changing these can stop recordings reaching Dropbox.</p>
     <div class="field-group">
       <label>Transcription engine</label>
@@ -3283,7 +3283,7 @@ let photoQueueRunning = false; // guard so the serial-photo upload queue runs on
 // every read of a stored recording now has a hard deadline (a send that never
 // answers, or ignores its abort, can no longer hold a queue), and every pass
 // has a watchdog. The numbers live here so the tests can shorten them.
-const APP_ROUND = 21;
+const APP_ROUND = 22;
 const TIMING = {
   grace: 5000,              // added to a request's own time limit before giving up on it outright
   readMs: 20000,            // reading one stored recording into memory
@@ -3594,6 +3594,9 @@ function initSetup() {
       if (cloudArchiveEnabled() && !archiveRunning && jobDocsWaiting()) processArchiveQueue();
     } catch (e) {}
   }, 20000);
+  // ROUND 22: AI sorts that failed (no connection, Claude credits used up) are
+  // tried again on their own clock, so a long upload doesn't hold them back.
+  setInterval(() => { cleanupRetryPass().catch(() => {}); }, 30000);
 
   // iOS throws the page away when the Camera app needs the memory. If there's an
   // inspection from the last 12 hours, go straight back into it on the same room
@@ -6298,8 +6301,115 @@ function timestampChecks(rec) {
   });
 }
 
+// ROUND 22: trying the AI sort again. 1, 2, 5, 10, 20, 30, 60, 60 minutes apart
+// (about three hours), while the app is open with signal. The audio is never
+// touched: only the room's text files go to Dropbox again, and the Word file.
+const CLEANUP_MAX_TRIES = 9;
+const CLEANUP_DELAYS_MIN = [1, 2, 5, 10, 20, 30, 60, 60];
+function cleanupDelay(n) { return CLEANUP_DELAYS_MIN[Math.min(CLEANUP_DELAYS_MIN.length, Math.max(1, n || 1)) - 1] * 60000; }
+function cleanupWillRetry(r) { return !!(r && r.cleanupError && (r.cleanupTries || 0) < CLEANUP_MAX_TRIES); }
+// In plain words, for the Word file and the problem log.
+function cleanupReason(err) {
+  const e = String(err || '');
+  if (/credit balance|billing|insufficient.*credit|quota/i.test(e)) return 'Claude credits used up';
+  if (/failed to fetch|load failed|networkerror|unreachable|network/i.test(e)) return 'no connection to the AI';
+  if (/took too long|timed out|timeout|abort/i.test(e)) return 'the AI took too long';
+  if (/overloaded|529|http 5\d\d|anthropic 5\d\d/i.test(e)) return 'the AI service was busy';
+  return e.slice(0, 80) || 'unknown error';
+}
+let cleanupRetryRunning = false, cleanupRetryStartedAt = 0;
+let cleanupReadyCheckedAt = 0;
+async function cleanupRetryPass() {
+  if (!CLEANUP_URL || !navigator.onLine || !('indexedDB' in window)) return;
+  // One at a time; a pass can't hold the lock longer than one sort (60 s) and a bit.
+  if (cleanupRetryRunning && Date.now() - cleanupRetryStartedAt < CLEANUP_TIMEOUT_MS + 3 * TIMING.grace + TIMING.dbMs) return;
+  cleanupRetryRunning = true;
+  const run = cleanupRetryStartedAt = Date.now();
+  try {
+    let recs = [];
+    try { recs = await withDeadline(dbAll(), TIMING.dbMs, 'reading recordings'); } catch (e) { return; }
+    const now = Date.now();
+    const due = recs.filter(r => r.kind !== 'summary' && r.status === 'done' && (r.transcript || '').trim()
+      && !(Array.isArray(r.sections) && r.sections.length) && cleanupWillRetry(r) && !(r.cleanupNextAt > now))
+      .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    if (!due.length) return;
+    // Not known to be ready (no signal when the app opened): ask again, at most every 2 minutes.
+    if (!cleanupReady && Date.now() - cleanupReadyCheckedAt > 120000) { cleanupReadyCheckedAt = Date.now(); await checkCleanupReady(); }
+    for (const r of due.slice(0, 3)) {
+      if (cleanupRetryStartedAt !== run || !navigator.onLine) return;
+      if (!cleanupEnabled()) {
+        // Still not reachable: this counts as a try, so it ends after about three hours.
+        try { await dbUpdate(r.id, x => { x.cleanupTries = (x.cleanupTries || 0) + 1; x.cleanupNextAt = Date.now() + cleanupDelay(x.cleanupTries); }); } catch (e) {}
+        continue;
+      }
+      const copy = Object.assign({}, r);
+      await runCleanup(copy);
+      const sorted = Array.isArray(copy.sections) && copy.sections.length;
+      let fresh = null, took = false;
+      try {
+        fresh = await dbUpdate(r.id, x => {
+          if (Array.isArray(x.sections) && x.sections.length) return;   // sorted another way meanwhile
+          if (sorted) {
+            took = true;
+            x.sections = copy.sections; x.check = copy.check; x.cleanedBy = copy.cleanedBy;
+            if (copy.checkCutShort) x.checkCutShort = true; else delete x.checkCutShort;
+            if (copy.checkCutReason) x.checkCutReason = copy.checkCutReason; else delete x.checkCutReason;
+            delete x.cleanupError; delete x.cleanupNextAt;
+            x.cleanupSortedLate = Date.now();
+            // Its text files go to Dropbox again (never the audio: it's up, or
+            // goes first as always). rev stops an upload already running from
+            // marking the room done with the old text.
+            x.rev = (x.rev || 0) + 1;
+            x.archived = false; x.resendFiles = true;
+            delete x.archNextAt; x.archFails = 0;
+          } else {
+            x.cleanupError = copy.cleanupError;
+            x.cleanupTries = copy.cleanupTries;
+            x.cleanupNextAt = copy.cleanupNextAt;
+          }
+        });
+      } catch (e) { continue; }
+      if (took && fresh) {
+        resortedRoomNote(fresh);
+        if (cloudArchiveEnabled() && navigator.onLine) processArchiveQueue();
+        updatePendingUI();
+      }
+    }
+  } finally {
+    if (cleanupRetryStartedAt === run) cleanupRetryRunning = false;
+  }
+}
+// The open job's room shows the AI's sorted text in place of the keyword
+// split, if the note still holds that split as it was added. A note the
+// inspector has typed into is left as it is (the Word file is right either way).
+function resortedRoomNote(rec) {
+  if (!sameJob(rec)) return;
+  const id = rec.roomId;
+  const split = punctuateBySubarea({ subsections: rec.subsections || [] }, applyCorrections(applyScratch((rec.transcript || '').trim())));
+  const cur = state.roomNotes[id] || '';
+  if (split && cur.includes(split)) {
+    state.roomNotes[id] = cur.replace(split, sectionsToNote(rec.sections));
+    const ta = document.getElementById(`roomta-${id}`);
+    if (ta) ta.value = state.roomNotes[id];
+  }
+  state.roomSections[id] = mergeSections(state.roomSections[id], rec.sections);
+  state.roomSectionParts = state.roomSectionParts || {};
+  (state.roomSectionParts[id] = state.roomSectionParts[id] || []).push(rec.sections.map(x => ({ name: x.name, text: x.text })));
+  if (rec.check && rec.check.length) state.roomChecks[id] = (state.roomChecks[id] || []).concat(rec.check.map(c => Object.assign({}, c, { recId: rec.id })));
+  saveState();
+}
 async function runCleanup(rec) {
-  if (!cleanupEnabled() || !rec || !(rec.transcript || '').trim()) return;
+  if (!rec || !(rec.transcript || '').trim()) return;
+  if (!cleanupEnabled()) {
+    // ROUND 22: the app opened with no signal (or the val didn't answer its
+    // check), so it didn't know the AI sort was there. The room used to stay
+    // split by keyword for good; now it's marked and tried again.
+    if (CLEANUP_URL && !(Array.isArray(rec.sections) && rec.sections.length)) {
+      rec.cleanupError = 'AI sort not reachable from the phone yet';
+      if (!(rec.cleanupNextAt > Date.now())) rec.cleanupNextAt = Date.now() + 60000;
+    }
+    return;
+  }
   const ctrl = new AbortController();
   const timer = setTimeout(() => { try { ctrl.abort(); } catch (e) {} }, CLEANUP_TIMEOUT_MS);
   try {
@@ -6314,7 +6424,12 @@ async function runCleanup(rec) {
       }),
       signal: ctrl.signal
     }), CLEANUP_TIMEOUT_MS + TIMING.grace, 'cleanup');
-    if (!res.ok) throw new Error('http ' + res.status);
+    if (!res.ok) {
+      // ROUND 22: the val says why ("anthropic 400: Your credit balance is too low…").
+      let why = '';
+      try { const j = await withDeadline(res.json(), TIMING.jsonMs, 'reading the cleanup'); why = j && j.error ? String(j.error) : ''; } catch (e2) {}
+      throw new Error(why || 'http ' + res.status);
+    }
     const out = await withDeadline(res.json(), TIMING.jsonMs, 'reading the cleanup');
     if (!out || out.ok !== true) throw new Error((out && out.error) || 'cleanup declined');
     // ROUND 12: a stray brace the model left (Freshwater bathroom "…functional]}")
@@ -6345,12 +6460,18 @@ async function runCleanup(rec) {
     // ROUND 21: the val (version 21) says why; kept for the room's data file.
     if (out.cut_short && out.cut_reason) rec.checkCutReason = String(out.cut_reason).slice(0, 200); else delete rec.checkCutReason;
     rec.cleanedBy = out.model || 'cleanup';
-    delete rec.cleanupError;
+    delete rec.cleanupError; delete rec.cleanupNextAt;
   } catch (e) {
     rec.sections = null;
     rec.check = null;
     delete rec.checkCutShort; delete rec.checkCutReason;
-    rec.cleanupError = (e && e.message) ? String(e.message).slice(0, 120) : 'failed';
+    rec.cleanupError = (e && e.message) ? String(e.message).slice(0, 160) : 'failed';
+    // ROUND 22: it used to be one try only. A dropped connection or Claude
+    // credits running out left the room split by keyword for good (Stirling
+    // replay, 13 Oct). Now the phone tries again by itself (cleanupRetryPass).
+    rec.cleanupTries = (rec.cleanupTries || 0) + 1;
+    rec.cleanupNextAt = Date.now() + cleanupDelay(rec.cleanupTries);
+    sendDiag('cleanup', rec, e, { reason: cleanupReason(rec.cleanupError), tries: rec.cleanupTries });
   } finally {
     clearTimeout(timer);
   }
@@ -6564,7 +6685,7 @@ function buildArchiveText(rec, clean) {
     'Audio: ' + (rec.audioPath || (archiveBaseName(rec) + '.' + audioExt(rec.type))),
     rec.engine ? 'Transcribed by: ' + engineLabel(rec.engine) : '',
     cleaned ? 'Sorted into subareas by: ' + rec.cleanedBy
-      : (rec.cleanupError ? 'AI sort did not run (' + rec.cleanupError + ') — subareas split by keyword' : 'Subareas split by keyword'),
+      : (rec.cleanupError ? 'AI sort did not run (' + cleanupReason(rec.cleanupError) + ': ' + rec.cleanupError + ') — subareas split by keyword' + (cleanupWillRetry(rec) ? '. The phone is trying again; this file is replaced when it works' : '') : 'Subareas split by keyword'),
     'Timecodes: ' + (rec.words && rec.words.length
       ? 'on — [m:ss] is where it was said in the audio'
       : 'not available (the transcription service did not send word timings)'),
@@ -8066,6 +8187,12 @@ const SUSPECT_PHRASES = [
   /\bzip closures?\b/gi, /\bblenders?\b/gi, /\bdecanters?\b/gi, /\bwalmart\b/gi, /\bgrabber\b/gi, /\bonce a\b/gi,
   /\bperson\b/gi, /\bsecurity function(?:al)?\b/gi, /\b(?:one|two|three|four|\d+) clothes\b(?!\s*(?:lines?|hooks?|rails?|rods?|airers?|dryers?))/gi, /\bdiscretion\b/gi,
   /\b(?:grey|white|black) tall\b(?!\s*(?:boy|cupboard|unit|cabinet|pantry))/gi, /\bserum number\b/gi, /\bmotor numbers? (?:is|:)/gi,
+  // ROUND 22 (third Stirling replay): "in poor condition" was "plug combination"
+  // on a wash basin; "silver metal light switch" was "single"; "triple" was
+  // "single"; "small" was "silver metal"; "American handles" was "no handles".
+  /\bin poor condition\b/gi, /\bsilver metal (?:light switch(?:es)?|power points?)\b/gi, /\btriple light switch(?:es)?\b/gi,
+  /\b(?:one|two) small (?:lockable handle|handle|doorstop|door stopper|drain|mixer|towel rail)s?\b/gi, /\bone simple\b/gi,
+  /\bamerican handles?\b/gi, /\b(?:\d+|one|two|three|four) glows\b/gi, /\bcolli rack\b/gi,
   // "no …" then a condition in the same breath: says it's not there, then
   // describes it ("once of no detachable showerhead in good condition"). A comma
   // in between ("no handles, in good condition") is ordinary wording.
@@ -8309,7 +8436,8 @@ function buildJobModel(recs, snap) {
       }
       if (r.cleanupError && !(r.sections && r.sections.length)) {
         notSorted++;
-        notes.push('Not sorted by the AI' + (multi ? ' for part ' + (r.part || (rs.indexOf(r) + 1)) : '') + '. The rows were split by keyword, so a sentence can sit in the wrong row and nothing was flagged. Check the whole ' + (multi ? 'part' : 'room') + ' against the audio.');
+        notes.push('Not sorted by the AI' + (multi ? ' for part ' + (r.part || (rs.indexOf(r) + 1)) : '') + ' (' + cleanupReason(r.cleanupError) + '). The rows were split by keyword, so a sentence can sit in the wrong row and nothing was flagged. '
+          + (cleanupWillRetry(r) ? 'The phone is trying again and this file updates by itself when it works. If it doesn\'t, check' : 'Check') + ' the whole ' + (multi ? 'part' : 'room') + ' against the audio.');
       }
       const reps = repeatRuns(r.words, raw);
       if (reps.length) notes.push((multi ? 'Part ' + (r.part || (rs.indexOf(r) + 1)) + ': ' : '') + repeatNote(reps));

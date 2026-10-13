@@ -68,6 +68,14 @@
 //     keeps the circle panel too.
 //   - A cut-short answer says why (cut_reason), for the room's data file.
 //
+// Round 22 (13 Oct 2026), third Stirling replay:
+//   - "simple" before a light switch, power point or data point is "single",
+//     not "silver metal" (the store room came back "one silver metal light
+//     switch"); before a metal fitting it is still "silver metal".
+//   - More mishears: "American handles" (no handles), "glows" (globes),
+//     "colli rack" (cutlery rack); "in poor condition" next to a basin's
+//     drain, "triple light switch" and "small" before a fitting are flagged.
+//
 // Contract (the app already speaks this — don't change field names):
 //   POST { transcript, room, subsections: string[], address }
 //   →    { ok, model, sections: [{name, text}], text, check: [{quote, heard, why, words}] }
@@ -138,11 +146,13 @@ FILING
 - Drop walk-through phrases that only say where the inspector is ("Coming into the bedroom.", "coming into the car bay area", "no additional present coming into the storeroom" keeps "No additional present." only). They belong to no subarea.
 
 FIXING
-- Fix mis-heard words only when the context makes the right word obvious. Common ones in this work: "similar" / "submetal" / "once-off" / "simple" for "silver metal"; "screw" / "skin" / "good on" / "skid on" for "secured"; "pool cord" for "pull cord"; "pinch plate" for "pinch pleat"; "glass paint" for "glass pane"; "hanging road" for "hanging rod"; "tile rail" for "towel rail"; "light fangs" for "light fittings"; "cinnamon cornices" for "ceiling/cornices"; "kennel" for "fan"; "egg" for "AEG"; "iPhone" for "Aiphone" (intercom); "NBN coax" for "NBN Co box"; "Undermount" when the context is "underbench".
+- Fix mis-heard words only when the context makes the right word obvious. Common ones in this work: "similar" / "submetal" / "once-off" / "simple" (before a metal fitting, not a switch or power point) for "silver metal"; "screw" / "skin" / "good on" / "skid on" for "secured"; "pool cord" for "pull cord"; "pinch plate" for "pinch pleat"; "glass paint" for "glass pane"; "hanging road" for "hanging rod"; "tile rail" for "towel rail"; "light fangs" for "light fittings"; "cinnamon cornices" for "ceiling/cornices"; "kennel" for "fan"; "egg" for "AEG"; "iPhone" for "Aiphone" (intercom); "NBN coax" for "NBN Co box"; "Undermount" when the context is "underbench".
 - More mis-hearings to fix when the context makes them obvious: "up and down" / "down skirting" / "downlight skirting" for "downlights secured"; "skirting" right after an item and before "both sides", "to the wall", "to the ceiling" or "to the flooring" for "secured" ("handle skirting both sides" → "handle secured to both sides"); "7-way" / "7-meter" / "seven metre" for "silver metal" (as in "one silver metal weight secured to the bottom" of a blind); "foxhole" / "foxtail" / "box top" for "Foxtel"; "press-in light" / "press and light" for "fluorescent light"; "fossil plastic" for "frosted plastic"; "blows" / "gloves" (of a light) for "globes"; "white middle" / "middle base" (drawers, cupboards) for "white metal" / "metal and base"; "colour rack" (dishwasher) for "cutlery rack"; "secured neither" for "secured underneath"; "address burns" / "dual flash" for "dual flush button"; "Lincoln(s) present" for "indicators present"; "dustbin at present" for "dust build-up present"; "triplets" for "trivets"; "fish glass" for "fixed glass"; "pencil curtains" for "pencil pleat curtains"; "underhangers" for "no handles".
 - Round 21 mis-hearings, fix when the context makes them obvious: "skidder" for "secured" ("handle skidder both sides" → "handle secured to both sides"); "secure to functional" / "secured to functional" / "security function" for "secured and functional"; "discretion" (grout) for "discolouration"; "serum number" for "serial number"; "motor number" (before a code) for "model number".
+- Round 22: "simple" before a light switch, power point, data point or Foxtel point is "single" ("one simple light switch" → "one single light switch"), never "silver metal". "glows" (of a light or range hood) for "globes"; "colli rack" (dishwasher) for "cutlery rack".
 - FIX AND FLAG (fix it, then put it in check): "once over" / "once of" / "once the" / "one sort of" before a metal fitting for "one silver metal"; "single" before a metal fitting (drain, sink, handle, mixer, tap, towel rail, cooking rack) for "silver metal" (but "single" is correct before power point, light switch, data point, Foxtel point and bed); "one side of the … is good" for "one silver metal … secured"; "twin handle" for "silver metal handle"; "lock winder head" / "corner skirting" (of a door or window) for "lockable handle(s)"; "sinks white plastic" (toilet) for "seat and cover are white plastic"; "which means the aircon" for "Mitsubishi Electric aircon"; "note the little frame" / "no digital frame" at the start of a garage for "No door or door frame"; "once a big" / "once a" before a fitting (towel rail, shower head, set of indicators) for "one silver metal"; "Walmart Classic" for "white plastic"; "grabber" (oven trays) for "grey metal"; "decanter" (a tap) for "indicators"; an oven's "Drawer is a glass pane" for "Door is a glass pane"; "12-volt and data point" for "Foxtel and data point"; "island tops present" (bathroom, near the toilet) for "isolation tap present", under the toilet subarea; "person" (a light fitting) for "fluorescent"; "clothes" (of a light) for "globes"; "window down skidder" / "white window down" (start of a lounge or bedroom, before the walls) for "white metal downlights secured", under Light Fittings; "grey tall" / "white tall" (flooring, walls, not a tallboy) for "grey tile" / "white tile".
-- ALWAYS FLAG, do not change (these read normally but were wrong before): "red" sliding doors (often "mirrored"); "walnut" laminate (often "one white"); "vinyl" framing (often "metal"); a dishwasher's "sensor" (often "soap dispenser"); "along a section" / "along sections" of a wall (often "lower section"); "zip closures" (often "globes"); "blenders" (often "buttons"); "in-wall" speaker (often "inbuilt").
+- FIX AND FLAG, round 22: "American handles are present" (cupboards, pantry) for "no handles are present".
+- ALWAYS FLAG, do not change (these read normally but were wrong before): "in poor condition" (a wash basin's drain was "plug combination"); "triple light switch" (was "single"); "small" before a handle, doorstop, drain or mixer (often "silver metal"); "red" sliding doors (often "mirrored"); "walnut" laminate (often "one white"); "vinyl" framing (often "metal"); a dishwasher's "sensor" (often "soap dispenser"); "along a section" / "along sections" of a wall (often "lower section"); "zip closures" (often "globes"); "blenders" (often "buttons"); "in-wall" speaker (often "inbuilt").
 - Write counts as words, the way the report does: "two white tilt cords" stays as it is, and "3 double power points" becomes "three double power points". Never change the number itself. Write numerals only for model numbers, serial numbers, measurements and meter readings.
 - Australian English spelling: grey, colour, discolouration, centre, metre, mould, aluminium, fibre, licence. Keep "wood" or "timber" exactly as the inspector said it; never swap one for the other.
 - Hyphenation: build-up, self-closer, wood-look, stone-look, marble-look, doorstop.
@@ -225,7 +235,7 @@ export default async function (req: Request): Promise<Response> {
     const t = new URL(req.url).searchParams.get("test");
     if (t === "1") return await selfTest(req);
     if (t === "stirling") return await stirlingTest(req);
-    return json({ ok: !!KEY, round: 21, version: "21", provider: "anthropic", model: MODEL, key_required: !!PA_KEY, note: KEY ? "ready" : "ANTHROPIC_API_KEY is not set" });
+    return json({ ok: !!KEY, round: 22, version: "22", provider: "anthropic", model: MODEL, key_required: !!PA_KEY, note: KEY ? "ready" : "ANTHROPIC_API_KEY is not set" });
   }
   if (req.method !== "POST") return json({ ok: false, error: "POST only" }, 405);
   if (PA_KEY && new URL(req.url).searchParams.get("k") !== PA_KEY) return json({ ok: false, error: "not allowed" }, 403);
@@ -588,7 +598,7 @@ async function stirlingTest(req: Request): Promise<Response> {
   }));
   const main = runs[0];
   return json({
-    ok: main.passed === main.total, model: MODEL, round: 21, version: "21", took_ms: Date.now() - started,
+    ok: main.passed === main.total, model: MODEL, round: 22, version: "22", took_ms: Date.now() - started,
     passed: main.passed + " of " + main.total, in_use: THINK,
     compare: runs.map((r) => ({ thinking: r.mode, passed: r.passed + " of " + r.total, slowest_room_seconds: r.slowest_room_seconds,
       fails: r.results.filter((x) => x.result !== "PASS").map((x) => x.room + ": " + x.expect) })),

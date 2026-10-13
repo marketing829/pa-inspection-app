@@ -3400,7 +3400,8 @@ function resumeSaved() {
       .filter(Boolean);
   }
   if (state.currentRoomIdx >= state.rooms.length) state.currentRoomIdx = 0;
-  attachSetupMandPhotos();   // ROUND 20: photos taken on the Start screen join this job (only once the job is fully loaded)
+  attachSetupMandPhotos(true);   // ROUND 20: photos taken on the Start screen join this job if the inspector says so (only once the job is fully loaded)
+  refreshMandPhotoMarks();      // ROUND 20 review: photos sent while the job was closed show as sent
   document.getElementById('headerTitle').textContent = state.address || 'Inspection';
   showScreen('screenInspection');
   renderInspection();
@@ -6814,13 +6815,14 @@ function photoExt(type) {
   if (t.includes('webp')) return 'webp';
   return 'jpg';
 }
-// ROUND 20: "00 Mandatory - Water Meter 1 - 0912.jpg". 00 lists them first in
-// Photos/; the number counts that item's photos; the time keeps two jobs at one
-// address on one day from sharing a name.
+// ROUND 20: "00 Mandatory - Water Meter 1 - 0912 - 57.jpg". 00 lists them first
+// in Photos/; 1 counts that item's photos; then the time; 57 is the photo's
+// number on the phone, so two photos never share a name.
 function mandPhotoFileName(rec) {
   const d = new Date(rec.createdAt || Date.now());
   const hhmm = d.toTimeString().slice(0, 5).replace(':', '');
-  return `00 Mandatory - ${safeSeg(rec.label || mandPhotoLabel(rec.field)) || 'Item'} ${rec.n || 1} - ${hhmm}.${photoExt(rec.type)}`;
+  // The phone's photo number at the end makes the name its own (round 20 review).
+  return `00 Mandatory - ${safeSeg(rec.label || mandPhotoLabel(rec.field)) || 'Item'} ${rec.n || 1} - ${hhmm} - ${rec.id}.${photoExt(rec.type)}`;
 }
 function serialPhotoStatusText(roomId) {
   const arr = (state.serialPhotos && state.serialPhotos[roomId]) || [];
@@ -6891,9 +6893,13 @@ async function processPhotoQueue() {
       // ROUND 20: a mandatory photo taken on the Start screen waits for its job.
       if (rec.kind === 'mandatory' && rec.setup) {
         const m = state.address ? mandMark(rec.id) : null;
-        if (!m) continue;
-        stampMandRec(rec, m);
-        delete m.pending;
+        const left = m ? null : mandLeftList().find(x => x.id === rec.id);
+        if (!m && !left) continue;
+        stampMandRec(rec, m || left, left ? left.job : null);
+        // Saved with its job before it's sent; until then it stays "pending".
+        try { await photoPut(rec); } catch (e) { continue; }
+        if (m) delete m.pending;
+        else saveMandLeft(mandLeftList().filter(x => x.id !== rec.id));
       }
       try {
         const folder = archiveFolderName(rec);
@@ -8614,6 +8620,7 @@ async function finishAndClear() {
   let recs = [];
   let unsentPhotos = 0;
   try { recs = (await dbAll()).filter(r => sameJob(r)); } catch (e) {}
+  try { await stampMandPhotos(); } catch (e) {}   // ROUND 20: Start-screen photos count as this job's
   if (cloudArchiveEnabled()) {
     try { unsentPhotos = (await photoAll()).filter(p => sameJob(p) && !p.uploaded && p.kind !== 'summary' && p.kind !== 'pcr').length; } catch (e) {}
   }
@@ -8653,6 +8660,7 @@ async function finishAndClear() {
   stopListening();
   // ROUND 20: Start-screen photos get the job's details before the job closes.
   try { await stampMandPhotos(); } catch (e) {}
+  keepPendingMandPhotos();   // any the phone couldn't stamp still go, with this job's details
   // Everything of this job stays on the phone. Records still on their way keep
   // trying; records already in Dropbox are cleared 14 days after they got there
   // (sweepOldJobs). Nothing can bleed into the next inspection: applyTranscript()
@@ -9025,10 +9033,12 @@ function checkSpokenRoom(rec, text) {
   const room = (state.rooms || []).find(r => r.id === rec.roomId);
   // The ids only line up when the recording was made against a template room.
   if (!room || spoken.roomId === rec.roomId) return null;
-  // ROUND 20: "bathroom" or "laundry" said in the Bathroom/Laundry is the right room.
-  if (rec.roomId === 'bathroom_laundry' && /^(?:bathroom2|laundry|ensuite)$/.test(spoken.roomId)) return null;
+  // ROUND 20: "bathroom" in the Bathroom/Laundry, "pool area" in the Rear Exterior
+  // (and the other way round) are not the wrong room.
+  const fam = id => /^(?:bathroom_laundry|bathroom2|laundry|ensuite)$/.test(id) ? 'wet' : /^(?:pool|rear_exterior)$/.test(id) ? 'yard' : id;
+  if ((rec.roomId === 'bathroom_laundry' || rec.roomId === 'pool' || spoken.roomId === 'bathroom_laundry' || spoken.roomId === 'pool') && fam(rec.roomId) === fam(spoken.roomId)) return null;
   const named = (state.rooms || []).find(r => r.id === spoken.roomId);
-  const mismatch = { said: spoken.phrase, saidRoom: named ? named.name : spoken.roomId, filedUnder: room.name };
+  const mismatch = { said: spoken.phrase, saidRoom: named ? named.name : ((ALL_ROOMS.find(r => r.id === spoken.roomId) || {}).name || spoken.roomId), filedUnder: room.name };
   roomMismatches[rec.roomId] = mismatch;
   saveState();
   return mismatch;
@@ -10152,10 +10162,18 @@ function saveSetupMandPhotos() {
 // Start-screen photos join the open job (at Start, or when a job is resumed).
 // Each keeps "pending" until its record on the phone carries the job's details;
 // the Dropbox pass and Finish both finish that step if it hasn't happened yet.
-function attachSetupMandPhotos() {
+function attachSetupMandPhotos(resuming) {
   const sp = setupMandPhotos || {};
   const keys = Object.keys(sp).filter(k => (sp[k] || []).length);
   if (!keys.length || !state.address) return Promise.resolve();
+  // ROUND 20 review: resuming a saved job, or photos more than 12 hours old,
+  // may belong to another property. Ask; Cancel leaves them on the Start screen.
+  const all = keys.reduce((a, k) => a.concat(sp[k]), []);
+  const oldest = Math.min(...all.map(p => p.ts || 0));
+  if (resuming || Date.now() - oldest > 12 * 3600 * 1000) {
+    const n = all.length;
+    if (!confirm(`${n} mandatory item photo${n === 1 ? ' was' : 's were'} taken on the Start screen${resuming ? '' : ' on ' + new Date(oldest).toLocaleDateString('en-AU')}. Add ${n === 1 ? 'it' : 'them'} to ${state.address}?\n\nCancel keeps ${n === 1 ? 'it' : 'them'} on the Start screen.`)) return Promise.resolve();
+  }
   const list = mandPhotoList('review');
   keys.forEach(k => {
     const arr = list[k] || (list[k] = []);
@@ -10164,6 +10182,7 @@ function attachSetupMandPhotos() {
   // The job is written first: if the app closes right here, the photo is still
   // listed on the Start screen or in the job, never in neither.
   flushSaveState();
+  if (stateSaveFailed) return Promise.resolve();   // not saved with the job: they stay listed on the Start screen too
   setupMandPhotos = {};
   saveSetupMandPhotos();
   const box = document.getElementById('setupMandFields');
@@ -10177,9 +10196,33 @@ function mandMark(id) {
   }
   return null;
 }
-function stampMandRec(rec, m) {
-  Object.assign(rec, { address: state.address, jobId: state.jobId || '', client: state.client || '', meta: inspectionMeta(), n: m.n });
+function mandJobInfo() { return { address: state.address, jobId: state.jobId || '', client: state.client || '', meta: inspectionMeta() }; }
+function stampMandRec(rec, m, job) {
+  Object.assign(rec, job || mandJobInfo(), { n: m.n });
   delete rec.setup;
+}
+// ROUND 20 review: a Start-screen photo still not stamped when its job finishes
+// keeps its job's details here, so the Dropbox pass can still send it.
+var MAND_LEFT_KEY = 'pa_mand_photos_left';
+function mandLeftList() { try { return JSON.parse(localStorage.getItem(MAND_LEFT_KEY) || '[]') || []; } catch (e) { return []; } }
+function saveMandLeft(a) { try { if (a.length) localStorage.setItem(MAND_LEFT_KEY, JSON.stringify(a)); else localStorage.removeItem(MAND_LEFT_KEY); } catch (e) {} }
+function keepPendingMandPhotos() {
+  const left = mandLeftList(), job = mandJobInfo();
+  Object.keys(state.mandPhotos || {}).forEach(k => (state.mandPhotos[k] || []).forEach(m => {
+    if (m.pending && !left.some(x => x.id === m.id)) left.push({ id: m.id, n: m.n, job });
+  }));
+  saveMandLeft(left);
+}
+// Marks of photos sent while the job was closed (or long gone from the phone).
+async function refreshMandPhotoMarks() {
+  let changed = false;
+  for (const k of Object.keys(state.mandPhotos || {})) {
+    for (const m of state.mandPhotos[k]) {
+      if (m.uploaded || m.pending) continue;
+      try { const p = await photoGet(m.id); if (!p || p.uploaded) { m.uploaded = true; changed = true; } } catch (e) {}
+    }
+  }
+  if (changed) { saveState(); MAND_PHOTOS.forEach(([k]) => { if (document.getElementById('mandph-review-' + k)) repaintMandPhoto('review', k); }); }
 }
 async function stampMandPhotos() {
   for (const k of Object.keys(state.mandPhotos || {})) {

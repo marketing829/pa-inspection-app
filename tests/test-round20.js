@@ -2902,6 +2902,11 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
       const app = await page.evaluate(() => ALL_ROOMS.map(r => [r.id, r.subsections.join('|')]));
       const diff = app.filter(([id, rows]) => T[id] !== rows).map(([id]) => id);
       check('R20: the typist editor\'s rows match the app for every room', diff.length === 0, diff);
+      const so = ed.slice(ed.indexOf('const rowKey'), ed.indexOf('const liveSents'));
+      const sheet = new Function('templateRows', so + '; return sheetRows;')(() => ['Ceiling', 'Flooring/Drains', 'Skirting/Kickboards', 'Additional']);
+      const rowsOld = sheet({}, { secs: [{ name: 'Flooring' }, { name: 'Skirting' }, { name: 'Ceiling' }] });
+      const rowsNew = sheet({}, { secs: [{ name: 'Flooring/Drains' }, { name: 'Flooring' }] });
+      check('R20 review: in the typist editor, a job from before round 20 fills renamed rows ("Flooring" → Flooring/Drains), no "not a template row" copy', rowsOld.map(r => r.name + ':' + r.i).join(',') === 'Ceiling:2,Flooring/Drains:0,Skirting/Kickboards:1,Additional:null' && rowsNew.filter(r => r.extra).map(r => r.name).join(',') === 'Flooring', { rowsOld, rowsNew });
     }
 
     // 2. Start screen: Gas Meter instead of Smoke Alarms, a photo tile under each item.
@@ -2947,12 +2952,12 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
       const after = m[0] ? await photoGet(m[0].id) : null;
       return { n: m.length, setupLeft: localStorage.getItem('pa_setup_mand_photos'), stamped: !!rec && !rec.setup && rec.jobId === state.jobId && rec.address === '20 Palm Card St',
         uploaded: !!(after && after.uploaded) && m[0].uploaded === true, gas: state.mandatory.gasMeter, smoke: 'smokeAlarms' in state.mandatory,
-        folder: archiveFolderName({ address: state.address, meta: inspectionMeta(), createdAt: state.startedAt }), hhmm: new Date(rec.createdAt).toTimeString().slice(0, 5).replace(':', '') };
+        folder: archiveFolderName({ address: state.address, meta: inspectionMeta(), createdAt: state.startedAt }), hhmm: new Date(rec.createdAt).toTimeString().slice(0, 5).replace(':', ''), id: m[0].id };
     });
     check('R20: at Start the photo joins the job (job and address on the phone record); the Start screen is cleared', r4.n === 1 && r4.stamped && r4.setupLeft === '{}' , r4);
     check('R20: Gas Meter Reading typed on Start goes into the job; no smoke alarm field', r4.gas === '01234.5 m3' && !r4.smoke, r4);
-    const p1 = r4.folder + '/Photos/00 Mandatory - Water Meter 1 - ' + r4.hhmm + '.jpg';
-    check('R20: in Dropbox as "<date> - <address>/Photos/00 Mandatory - Water Meter 1 - <hhmm>.jpg"', puts.some(p => p.path === p1 && p.type === 'image/jpeg' && p.size === JPG.length), { want: p1, got: puts.map(p => p.path) });
+    const p1 = r4.folder + '/Photos/00 Mandatory - Water Meter 1 - ' + r4.hhmm + ' - ' + r4.id + '.jpg';
+    check('R20: in Dropbox as "<date> - <address>/Photos/00 Mandatory - Water Meter 1 - <hhmm> - <photo no>.jpg"', puts.some(p => p.path === p1 && p.type === 'image/jpeg' && p.size === JPG.length), { want: p1, got: puts.map(p => p.path) });
     check('R20: marked sent once Dropbox has it', r4.uploaded, r4);
 
     // 5. Review: more photos, numbered per item; Finish asks about what is missing.
@@ -2968,7 +2973,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
       return { missing: checkMandatory(), wm: state.mandPhotos.waterMeter.map(p => p.n).join(','), note: document.querySelector('#mandph-review-waterMeter .mand-ph-note').textContent,
         report: buildReportText(), csv: buildCSVString(), sub: document.getElementById('reviewMandSub').textContent };
     });
-    check('R20: a second water meter photo is number 2; the RCD box photo is number 1', puts.some(p => /\/Photos\/00 Mandatory - Water Meter 2 - \d{4}\.jpg$/.test(p.path)) && puts.some(p => /\/Photos\/00 Mandatory - RCD Box 1 - \d{4}\.jpg$/.test(p.path)) && r5b.wm === '1,2', puts.map(p => p.path));
+    check('R20: a second water meter photo is number 2; the RCD box photo is number 1', puts.some(p => /\/Photos\/00 Mandatory - Water Meter 2 - \d{4} - \d+\.jpg$/.test(p.path)) && puts.some(p => /\/Photos\/00 Mandatory - RCD Box 1 - \d{4} - \d+\.jpg$/.test(p.path)) && r5b.wm === '1,2', puts.map(p => p.path));
     check('R20: every mandatory photo is in the job\'s folder (never "Unknown property")', puts.filter(p => /Mandatory/.test(p.path)).every(p => p.path.startsWith(r4.folder + '/Photos/')), puts.map(p => p.path));
     check('R20: still needed: the readings not typed, and the gas meter and NBN photos', r5b.missing.join('|') === 'Water Meter Reading|RCD Box|NBN Box|Gas Meter photo|NBN Box photo' && r5b.sub === '5 still needed', r5b);
     check('R20: details file lists Gas Meter and the photo count per item', /Gas Meter: 01234\.5 m3/.test(r5b.report) && /Photos \(in Photos, named "00 Mandatory"\): Water Meter 2, RCD Box 1, Gas Meter none, NBN Box none/.test(r5b.report) && !/Smoke Alarms/.test(r5b.report), r5b.report.slice(0, 700));
@@ -2982,7 +2987,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
       const rec = await photoGet(id);
       return { up: !!rec.uploaded, job: rec.jobId === state.jobId, mark: state.mandPhotos.nbnBox[0].uploaded === true && !state.mandPhotos.nbnBox[0].pending };
     });
-    check('R20: a Start-screen photo not yet joined is joined and sent by the Dropbox pass', r6.up && r6.job && r6.mark && puts.some(p => /\/Photos\/00 Mandatory - NBN Box 1 - \d{4}\.jpg$/.test(p.path)), r6);
+    check('R20: a Start-screen photo not yet joined is joined and sent by the Dropbox pass', r6.up && r6.job && r6.mark && puts.some(p => /\/Photos\/00 Mandatory - NBN Box 1 - \d{4} - \d+\.jpg$/.test(p.path)), r6);
     const r6b = await page.evaluate(async () => {
       flushSaveState();
       // A photo taken on the Start screen while this job is saved, then the job is resumed.
@@ -2990,6 +2995,8 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
       localStorage.setItem('pa_setup_mand_photos', JSON.stringify({ gasMeter: [{ id, n: 1, ts: Date.now() }] }));
       return id;
     });
+    const resumeAsked = [];
+    page.once('dialog', d => { resumeAsked.push(d.message()); d.accept(); });
     await page.reload(); await wait(500);
     await page.evaluate(() => { cloudArchiveEnabled = () => true; });
     // The app resumes a recent job by itself on reload.
@@ -2998,7 +3005,40 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
       const rec = await photoGet(id);
       return { listed: (state.mandPhotos.gasMeter || []).some(p => p.id === id), stamped: !!rec && !rec.setup && rec.jobId === state.jobId, rooms: state.rooms.length, others: (state.mandPhotos.waterMeter || []).length };
     }, r6b);
-    check('R20: resuming a job takes in the Start-screen photo; the job\'s rooms and other photos are kept', r6c.listed && r6c.stamped && r6c.rooms > 0 && r6c.others === 2, r6c);
+    check('R20 review: resuming asks before a Start-screen photo joins the job', resumeAsked.length === 1 && /1 mandatory item photo was taken on the Start screen\. Add it to 20 Palm Card St\?/.test(resumeAsked[0]), resumeAsked);
+    check('R20: resuming a job takes in the Start-screen photo once accepted; the job\'s rooms and other photos are kept', r6c.listed && r6c.stamped && r6c.rooms > 0 && r6c.others === 2, r6c);
+    const r6d = await page.evaluate(async () => {
+      // Review fixes: old photos ask at Start; Cancel keeps them on the Start screen; a photo left unstamped at Finish still goes;
+      // marks of photos sent while the job was closed show as sent; wrong-room warnings for the new rooms.
+      const was = { address: state.address, jobId: state.jobId };
+      const id = await photoAdd({ kind: 'mandatory', field: 'rcdBox', label: 'RCD Box', n: 1, roomId: '_mandatory', roomName: 'Mandatory items', createdAt: Date.now(), blob: new Blob([new Uint8Array(12)], { type: 'image/jpeg' }), type: 'image/jpeg', uploaded: false, setup: true });
+      setupMandPhotos = { rcdBox: [{ id, n: 1, ts: Date.now() - 13 * 3600 * 1000 }] };
+      const oc = window.confirm; let q = ''; window.confirm = (m) => { q = m; return false; };
+      const before = (state.mandPhotos.rcdBox || []).length;
+      await attachSetupMandPhotos(false);
+      const kept = (setupMandPhotos.rcdBox || []).length === 1 && (state.mandPhotos.rcdBox || []).length === before;
+      window.confirm = oc;
+      setupMandPhotos = {}; saveSetupMandPhotos();
+      saveMandLeft([{ id, n: 7, job: { address: 'Old Job St', jobId: 'old-job', client: 'C', meta: { startedAt: Date.now() } } }]);
+      await processPhotoQueue();
+      const sent = await photoGet(id);
+      const leftAfter = mandLeftList().length;
+      state.mandPhotos.rcdBox.push({ id: 987654, n: 9, ts: Date.now(), uploaded: false });
+      await refreshMandPhotoMarks();
+      const refreshed = state.mandPhotos.rcdBox.find(p => p.id === 987654).uploaded === true;
+      state.mandPhotos.rcdBox = state.mandPhotos.rcdBox.filter(p => p.id !== 987654);
+      const keepRooms = state.rooms;
+      state.rooms = [{ id: 'bathroom_laundry', name: 'Bathroom/Laundry', subsections: [] }, { id: 'pool', name: 'Pool/Spa', subsections: [] }, { id: 'rear_exterior', name: 'Rear Exterior', subsections: [] }, { id: 'laundry', name: 'Laundry', subsections: [] }];
+      const w = [checkSpokenRoom({ roomId: 'laundry' }, 'Coming into the bathroom and laundry.'), checkSpokenRoom({ roomId: 'pool' }, 'Now in the rear pool area.'), checkSpokenRoom({ roomId: 'rear_exterior' }, 'Coming into the pool area.')];
+      const real = checkSpokenRoom({ roomId: 'pool' }, 'Coming into the kitchen.');
+      state.rooms = keepRooms; roomMismatches = {};
+      return { q, kept, sent: sent === null,   // another job's photo is cleared from the phone once Dropbox has it
+ leftAfter, refreshed, w, real: real && real.saidRoom, was };
+    });
+    check('R20 review: Start-screen photos older than 12 hours ask first; Cancel keeps them on the Start screen', /taken on the Start screen on .+ Add it to 20 Palm Card St\?/.test(r6d.q) && r6d.kept, r6d);
+    check('R20 review: a Start-screen photo not stamped before Finish is still sent, into its own job\'s folder', r6d.sent && r6d.leftAfter === 0 && puts.some(p => /^\d{4}-\d{2}-\d{2} - Old Job St\/Photos\/00 Mandatory - RCD Box 7 - \d{4} - \d+\.jpg$/.test(p.path)), { r6d, got: puts.map(p => p.path) });
+    check('R20 review: after Resume, a photo sent while the job was closed shows as sent', r6d.refreshed, r6d);
+    check('R20 review: no wrong-room warning between Bathroom/Laundry and Laundry, or Pool/Spa and Rear Exterior; a real one names the room', r6d.w.every(x => x === null) && r6d.real === 'Kitchen', r6d);
 
     // 7. Finish asks about missing items, and Start-screen photos left over still go.
     const asked = [];

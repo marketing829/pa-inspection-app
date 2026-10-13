@@ -2418,12 +2418,20 @@ function templateRows(room) { return (room.roomId && rowsOf(room.roomId)) || tem
 const rowKey = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
 // The room as the Word file shows it: template rows in template order, then
 // anything the AI filed under another name.
+// Round 20 renamed some rows ("Flooring" became "Flooring/Drains"); a job made
+// before then still fills the row its section starts the name of.
+const oldRowOf = (sec, row) => String(row).toLowerCase().startsWith(String(sec).toLowerCase().trim() + '/');
 function sheetRows(room, rs) {
   const used = new Set();
   const out = templateRows(room).map(name => {
     const i = rs.secs.findIndex((s, k) => !used.has(k) && rowKey(s.name) === rowKey(name));
     if (i >= 0) used.add(i);
     return { name, i: i >= 0 ? i : null, extra: false };
+  });
+  out.forEach(r => {
+    if (r.i !== null) return;
+    const i = rs.secs.findIndex((s, k) => !used.has(k) && !out.some(o => rowKey(o.name) === rowKey(s.name)) && oldRowOf(s.name, r.name));
+    if (i >= 0) { used.add(i); r.i = i; }
   });
   rs.secs.forEach((s, k) => { if (!used.has(k)) out.push({ name: s.name, i: k, extra: true }); });
   return out;

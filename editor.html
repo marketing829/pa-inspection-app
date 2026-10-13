@@ -2365,13 +2365,13 @@ function roomCounts(room) {
 
 // ═══ v3 ════════════════════════════════════════════════════════════════
 // ── WA PCR template rows: same list and order as the inspector app ──────
-const ROWS_BED = 'Door/Doorway Frames/Handles|Ceiling/cornice|Light Fittings|Walls/Hooks/door stoppers|Windows/Screens|Blinds/Curtains|Power Points/Light Switches|Skirting|Flooring|Ceiling Fan/Air Conditioner|Wardrobe/Doors/ceiling/wall/skirting/flooring/Shelves|Additional';
+const ROWS_BED = 'Door/Doorway Frames/Handles|Screen Door/Handles|Ceiling/cornice|Light Fittings|Walls/Hooks/door stoppers|Windows/Screens|Blinds/Curtains|Power Points/Light Switches|Skirting|Flooring|Ceiling Fan/Air Conditioner|Wardrobe/Doors/ceiling/wall/skirting/flooring/Shelves|Additional';
 const ROWS_GEN = 'Door/Doorway Frames/Handles|Ceiling/cornice|Light Fittings|Walls/Hooks/door stoppers|Windows/Screens|Blinds/Curtains|Power Points/Light Switches|Skirting|Flooring|Ceiling Fan/Air Conditioner|Additional';
-const ROWS_BATH = 'Door/Doorway Frames/Handles|Ceiling|Heating/Exhaust Fan/Vent|Light Fittings|Walls/Picture Hooks|Windows/Screens|Blinds/Curtains|Power Points/Light Switches|Skirting|Flooring|Wash Basin|Tapware|Benchtop|Splash Back|Mirror|Underbench Cupboards/Drawers|Shower/Screen/Curtain|Shower Tiles|Shower Tapware|Towel Rails|%TOILET%|Toilet Roll Holder|Bath|Bath Tiles|Bath Tapware|Additional';
-const ROWS_WC = 'Door/Doorway Frames/Handles|Ceiling|Heating/Exhaust Fan/Vent|Light Fitting|Walls/Picture Hooks|Windows/Screens|Blinds/Curtains|Power Points/Light Switches|Skirting|Flooring|Toilet/Cistern/Seat|Toilet Roll Holder|Additional';
+const ROWS_BATH = 'Door/Doorway Frames/Handles|Ceiling|Heating/Exhaust Fan/Vent|Light Fittings|Walls/Picture Hooks|Windows/Screens|Blinds/Curtains|Power Points/Light Switches|Skirting|Flooring/Drains|Wash Basin|Tapware|Benchtop|Splash Back|Mirror|Underbench Cupboards/Drawers|Shower/Screen/Curtain|Shower Tiles|Shower Tapware|Towel Rails|%TOILET%|Toilet Roll Holder|Bath|Bath Tiles|Bath Tapware|Additional';
+const ROWS_WC = 'Door/Doorway Frames/Handles|Ceiling|Heating/Exhaust Fan/Vent|Light Fitting|Walls/Picture Hooks|Windows/Screens|Blinds/Curtains|Power Points/Light Switches|Skirting|Flooring/Drains|Toilet/Cistern/Seat|Toilet Roll Holder|Additional';
 const T_ROWS = {
-  front_gardens: 'Exterior Walls|Light Fittings|Eaves|Gutters/Downpipes|Flooring|Garden Beds|Reticulation|Lawn/Edges|Taps/Hoses|Driveway|Letterbox/Street Number|Fences & Gates|Garbage Bins|Power Points/Light Switches|Electrical Meter Box|Gas Meter Box|Verandah/Portico|Additional',
-  garage: 'Door/Door Frames/Handles|Ceiling|Light Fittings|Walls/Shelves|Power Points/Light Switches|Flooring|Automatic Door/Roller Door|Automatic Door Motor|Additional',
+  front_gardens: 'Exterior Walls|Light Fittings|Eaves|Gutters/Downpipes|Flooring|Garden Beds|Reticulation|Lawn/Edges|Taps/Hoses|Driveway|Letterbox/Street Number|Fences & Gates|Garbage Bins|Power Points/Light Switches|Electrical Meter Box|Gas Meter Box|Verandah/Portico|Aircon Motor|Additional',
+  garage: 'Door/Door Frames/Handles|Ceiling|Light Fittings|Walls/Shelves/Hooks|Power Points/Light Switches|Flooring|Automatic Door/Roller Door|Automatic Door Motor|Garbage Bins|Additional',
   entry: 'Front Door/Frames/Handles|Screen Door/Security Door/Handles|Ceiling/Cornice|Light Fittings|Walls/Hooks/Door stopper|Windows/Screens|Blinds/Curtains|Power Points/Light Switches|Skirting|Flooring|Ceiling Fan/Air Conditioner|Cupboard Door and frame/ceiling/wall/skirting/flooring/shelves|Additional',
   lounge: 'Door/Doorway Frames/Handles|Ceiling/cornice|Light Fittings|Walls/Hooks/door stoppers|Windows/Screens|Blinds/Curtains|TV/Power Points/Light Switches|Skirting|Flooring|Ceiling Fan/Air Conditioner|Additional',
   passage: 'Door/Doorway Frames/Handles|Ceiling/cornice|Light Fittings|Walls/Hooks/door stoppers|Windows/Screens|Blinds/Curtains|Power Points/Light Switches|Skirting|Flooring|Cupboard Door and frame/ceiling/wall/skirting/flooring/shelves|Additional',
@@ -2379,13 +2379,15 @@ const T_ROWS = {
   bedroom1: ROWS_BED, bedroom2: ROWS_BED, bedroom3: ROWS_BED, bedroom4: ROWS_BED, study: ROWS_BED,
   ensuite: ROWS_BATH.replace('%TOILET%', 'Toilet Bowl/Cistern/Seat/Cover'), bathroom2: ROWS_BATH.replace('%TOILET%', 'Toilet/Cistern/Seat'),
   ensuite_toilet: ROWS_WC, toilet: ROWS_WC,
-  kitchen: 'Door/Doorway Frames/Handles|Ceiling|Light Fittings|Walls/Picture Hooks|Windows/Window Safety Devices|Blinds/Curtains|Power Points/Light Switches|Skirting|Flooring|Overhead Cupboards|Drawers|Underbench Cupboards|Bench Tops|Splash Back/Tiling|Sink|Tapware|Exhaust Fan/Range Hood|Stove Top/Hot Plates|Oven/Griller|Pantry|Dishwasher|Fridge Recess Cabinetry|Additional',
+  kitchen: 'Door/Doorway Frames/Handles|Ceiling|Light Fittings|Walls/Picture Hooks|Windows/Window Safety Devices|Blinds/Curtains|Power Points/Light Switches|Skirting/Kickboards|Flooring|Overhead Cupboards|Drawers|Underbench Cupboards|Bench Tops|Splash Back/Tiling|Sink|Tapware|Exhaust Fan/Range Hood|Stove Top/Hot Plates|Oven/Griller|Pantry|Dishwasher|Fridge Recess Cabinetry|Additional',
   dining: ROWS_GEN, family: ROWS_GEN, theatre: ROWS_GEN,
-  powder_room: 'Door/Doorway Frames/Handles|Ceiling/Cornice|Heating/Exhaust Fan/Vent|Light Fitting|Walls/Hooks/Door stopper|Windows/Screens|Blinds/Curtains|Power Points/Light Switches|Skirting|Flooring|Basin|Basin Tapware|Splash Back|Benchtop|Cupboards|Mirror|Hand Towel Rail|Toilet Bowl/Cistern/Seat/Cover|Toilet Roll Holder|Additional',
-  laundry: 'Door/Doorway Frames/Handles|Outside Door|Ceiling/Cornice|Heating/Exhaust Fan/Vents|Light Fittings|Walls/Hooks/door stopper|Windows/Screens|Blinds/Curtains|Power Points/Light Switches|Skirting|Flooring|Washing Machine Taps|Trough/Washing Tub|Trough Cabinet|Tapware|Benchtops|Splash Back|Underbench Cupboards|Overhead Cupboards|Linen Cupboards|Additional',
-  balcony: 'Ceiling|Exterior Walls|Light Fittings|Eaves|Power Points/Light Switches|Skirting|Flooring|Balustrading/Railing|Water Tap|Additional',
+  powder_room: 'Door/Doorway Frames/Handles|Ceiling/Cornice|Heating/Exhaust Fan/Vent|Light Fitting|Walls/Hooks/Door stopper|Windows/Screens|Blinds/Curtains|Power Points/Light Switches|Skirting|Flooring/Drains|Basin|Basin Tapware|Splash Back|Benchtop|Cupboards|Mirror|Hand Towel Rail|Toilet Bowl/Cistern/Seat/Cover|Toilet Roll Holder|Additional',
+  laundry: 'Door/Doorway Frames/Handles|Outside Door|Ceiling/Cornice|Heating/Exhaust Fan/Vents|Light Fittings|Walls/Hooks/door stopper|Windows/Screens|Blinds/Curtains|Power Points/Light Switches|Skirting|Flooring/Drains|Washing Machine Taps|Trough/Washing Tub|Trough Cabinet|Tapware|Benchtops|Splash Back|Underbench Cupboards|Overhead Cupboards|Linen Cupboards|Additional',
+  bathroom_laundry: 'Door/Doorway Frames/Handles|Ceiling|Heating/Exhaust Fan/Vents|Light Fittings|Walls/Hooks/Door Stoppers|Windows/Screens|Blinds/Curtains|Power Points/Light Switches|Skirting|Flooring/Drains|Wash Basin|Tapware|Benchtop|Splash Back|Mirror|Underbench Cupboards/Drawers|Shower/Screen/Curtain|Shower Tiles|Shower Tapware|Towel Rails|Toilet/Cistern/Seat|Toilet Roll Holder|Bath|Bath Tiles|Bath Tapware|Washing Machine Taps|Trough/Washing Tub|Trough Cabinet|Laundry Tapware|Laundry Benchtops|Laundry Splash Back|Laundry Underbench Cupboards|Overhead Cupboards|Linen Cupboards|Additional',
+  pool: 'Fences/Gate|Garden Beds|Reticulation|Pool/Spa/Water Condition|Pool/Spa Pumps|Taps & Hoses|Additional',
+  balcony: 'Ceiling|Exterior Walls|Light Fittings|Eaves|Power Points/Light Switches|Skirting|Flooring/Drains|Balustrading/Railing|Water Tap|Additional',
   shed: 'Doors/Handles|Ceiling|Light Fittings|Walls/Frame Work|Shelves|Power Points/Light Switches|Flooring|Additional',
-  rear_exterior: 'Exterior Walls|Light Fittings|Power Points/Light Switches|Gutters/Downpipes|Eaves|Fences/Gates|Taps & Hoses|Lawn/Edges|Garden Beds|Reticulation|Patio/Pergola|Clothesline|Exterior Flooring|Hot Water System|Pool|Additional'
+  rear_exterior: 'Exterior Walls|Light Fittings|Power Points/Light Switches|Gutters/Downpipes|Eaves|Fences/Gates|Taps & Hoses|Lawn/Edges|Garden Beds|Reticulation|Patio/Pergola|Clothesline|Exterior Flooring/Drains|Hot Water System|Aircon Motor|Garbage Bins|Additional'
 };
 // Same rules the app uses for a room the inspector named ("Bathroom Laundry").
 const ROOM_NAME_RULES = [
@@ -2393,7 +2395,7 @@ const ROOM_NAME_RULES = [
   [/\bkitchen(?:ette)?\b/, 'kitchen'], [/\blaundry\b/, 'laundry'], [/\b(?:entry|entrance|foyer)\b/, 'entry'],
   [/\b(?:bed(?:room)?|study|office|nursery)\b/, 'bedroom1'], [/\b(?:stair|stairs|staircase|landing)\b/, 'staircase'],
   [/\b(?:passage|hallway|hall|corridor)\b/, 'passage'], [/\b(?:garage|carport)\b/, 'garage'], [/\b(?:balcony|alfresco|deck|courtyard)\b/, 'balcony'],
-  [/\b(?:shed|store\s?room|storeroom|storage)\b/, 'shed'], [/\b(?:rear|back\s?yard|backyard)\b/, 'rear_exterior'],
+  [/\b(?:shed|store\s?room|storeroom|storage)\b/, 'shed'], [/\b(?:pool|spa)\b/, 'pool'], [/\b(?:rear|back\s?yard|backyard)\b/, 'rear_exterior'],
   [/\b(?:front|garden|gardens)\b/, 'front_gardens'], [/\b(?:lounge|living|sitting)\b/, 'lounge'],
   [/\b(?:family|rumpus|activity|games)\b/, 'family'], [/\b(?:theatre|theater|media)\b/, 'theatre'], [/\b(?:dining|meals)\b/, 'dining']
 ];
@@ -2402,6 +2404,7 @@ function templateRowsForName(name) {
   const n = String(name || '').toLowerCase().replace(/[\/&+,_-]+/g, ' ');
   const hit = ROOM_NAME_RULES.find(([re]) => re.test(n));
   if (!hit) return ROWS_GEN.split('|');
+  if (hit[1] === 'bathroom2' && /\blaundry\b/.test(n)) return rowsOf('bathroom_laundry');
   const rows = rowsOf(hit[1]);
   if (/\blaundry\b/.test(n) && hit[1] !== 'laundry') {
     const have = new Set(rows.map(r => r.toLowerCase()));
@@ -2779,7 +2782,7 @@ function buildDocXml(j) {
     { cells: [lab('Typed by'), val(typist), lab('State'), val(f.State)] }
   ]));
   const sm = info['smoke alarms'], rcd = info['rcd box'] || info['rcd/safety switch'];
-  const safety = [['Smoke Alarms', sm], ['RCD/Safety Switch', rcd], ['Water Meter', info['water meter']], ['NBN Box', info['nbn box']]].filter(([, v]) => v);
+  const safety = [['Smoke Alarms', sm], ['RCD/Safety Switch', rcd], ['Water Meter', info['water meter']], ['Gas Meter', info['gas meter']], ['NBN Box', info['nbn box']]].filter(([, v]) => v);
   const cell = (t, o) => jP(jR(t, o), { after: 0 });
   if (safety.length) {
     out.push(jH2('Security/Safety'));
@@ -4914,7 +4917,7 @@ const MN_CHUNK = 6000;                   // a room longer than this is sorted in
 const MN_TEMPLATES = [['front_gardens', 'Front Gardens'], ['entry', 'Entry'], ['lounge', 'Lounge'], ['dining', 'Dining'], ['family', 'Family/Rumpus'],
   ['theatre', 'Theatre'], ['kitchen', 'Kitchen'], ['passage', 'Passage/Hallway'], ['staircase', 'Staircase'], ['bedroom1', 'Bedroom'], ['study', 'Study'],
   ['ensuite', 'Ensuite'], ['ensuite_toilet', 'Ensuite Toilet'], ['bathroom2', 'Bathroom'], ['toilet', 'Toilet'], ['powder_room', 'Powder Room'],
-  ['laundry', 'Laundry'], ['garage', 'Garage'], ['balcony', 'Balcony/Alfresco'], ['shed', 'Shed/Store'], ['rear_exterior', 'Rear Exterior']];
+  ['laundry', 'Laundry'], ['garage', 'Garage'], ['balcony', 'Balcony/Alfresco'], ['shed', 'Shed/Store'], ['bathroom_laundry', 'Bathroom/Laundry'], ['pool', 'Pool/Spa'], ['rear_exterior', 'Rear Exterior']];
 const MN_TPL = new Map(MN_TEMPLATES);
 const withPaKey = u => { const x = new URL(u); x.searchParams.set('k', PA_KEY); return x.toString(); };
 

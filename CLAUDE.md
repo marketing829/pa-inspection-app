@@ -1,6 +1,6 @@
 # PA Inspect (PA Fieldnotes): project guide for Claude Code
 
-Read this before every change. It holds the rules and decisions that are not obvious from the code. Last updated 13 October 2026, after the round 19 build.
+Read this before every change. It holds the rules and decisions that are not obvious from the code. Last updated 13 October 2026, after the round 20 build.
 
 ## Working with Daphne
 
@@ -33,7 +33,7 @@ Every val checks `PA_KEY`. A GET on a val URL shows its config, `key_required`, 
 
 ## Current state
 
-- Inspector app: **round 18 live 12 Oct** (cache v22, "app version 18"). **Round 19 is on the `round-19` branch, not merged yet** (cache v23, "app version 19"): review fixes for damage notes, added phrases, Word file notes and audio safety. Cleanup val 19 and dropbox-archive val 19 are in `vals/`, to paste. Notes: `notes/round-17.md`, `notes/round-18.md`, `notes/round-19.md`.
+- Inspector app: **round 18 live 12 Oct** (cache v22, "app version 18"). **Round 19 is on the `round-19` branch, not merged yet** (cache v23, "app version 19"): review fixes for damage notes, added phrases, Word file notes and audio safety. Cleanup val 19 and dropbox-archive val 19 are in `vals/`, to paste. **Round 20 is on the `round-20` branch, built on round 19** (cache v24, "app version 20"): rooms follow the PCR palm cards, Gas Meter replaces Smoke Alarms, a required photo per mandatory item. No val changes. Notes: `notes/round-17.md` … `notes/round-20.md`.
 - Cleanup val: `PA_MODEL` is set to `claude-sonnet-5-5` (12 Oct). **Cleanup val 17.2 is live** (`"version": "17.2"`; also asks again when a long room comes back with nothing to check). It answers without thinking first (short thinking was tested and left out a sentence), asks again when an answer gets stuck, and always answers within 50 s (Val Town stops requests at 60 s). See `notes/round-17.md`. `?test=stirling&k=<PA_KEY>` runs four Stirling Street rooms through Claude and lists 19 PASS/FAIL checks.
 - Round 14 vals: **confirmed live** 12 Oct (`"version": 14`). The assemblyai val has a version 17 in `vals/` (ten more expected words).
 - Typist editor: **v3.4.2 is in this repo and live on GitHub Pages** (New job from audio). It needs the v3.4 proofread val pasted too; until then New job from audio may not work.
@@ -67,7 +67,7 @@ These came from real field failures. Treat them as hard requirements.
 - Sorting and polishing (Daphne, 13 Oct): keep the inspector's words and their order; only punctuation, capitals, clear mishears and Australian spelling change ("wood"/"timber" as said); never drop a mark, count, "no" or side; flag an unclear area, don't guess; one entry per subarea even when the inspector comes back to it. The Word file keeps template row order (spoken order shows in row times and the room index); walk-through phrases and cancelled words are left out; counts are written as words. No damage or dirt said: "in clean condition" (surfaces) / "in good condition"; working fixtures: "secured and functional" only.
 - Hosting and native app (Daphne, 13 Oct): stay on Val Town for now. If big rooms on weak signal get stuck (60 s per request), send big audio to Dropbox in parts rather than move hosts.
 - Room checklist is a guide only. Ticks are never saved to the report, json or Word file.
-- Mandatory items sit on the Start screen (kept in `pa_setup_mandatory` until Start), editable on Review.
+- Mandatory items sit on the Start screen (kept in `pa_setup_mandatory` until Start), editable on Review. Since round 20: Water Meter Reading and Location, RCD Box, Gas Meter Reading (replaced Smoke Alarms), NBN Box, and a required photo of the water meter, RCD box, gas meter and NBN box (camera or photo library). Missing ones are named on Review and in the Finish question, but don't block Finish (no gas meter at some properties). Dropbox: `Photos/00 Mandatory - <item> <n> - <hhmm>.jpg`. Start-screen photos (`pa_setup_mand_photos`) only send once they belong to a job.
 - Finish returns to the Start screen and doesn't wait for Dropbox.
 - The approved correction list is applied automatically. The team phrase list is suggestions only.
 - Native app (Expo) decision comes after the typist editor is finished.
@@ -76,7 +76,7 @@ These came from real field failures. Treat them as hard requirements.
 
 ## Domain notes
 
-- Room library (`ALL_ROOMS`) matches the WA PCR master template: 24 rooms, 343 line items. Don't rename rooms or subareas without checking the template.
+- Room library (`ALL_ROOMS`): 26 rooms, 393 line items. Built from the WA PCR master template, then (round 20, Daphne) aligned to the PCR palm cards: Aircon Motor, Garbage Bins, bedroom Screen Door, Drains, Kickboards, and new Pool/Spa and Bathroom/Laundry rooms. Multi-line palm card cupboards, pantry, verandah and pergola stay one row each (tidy). The typist editor's `T_ROWS` must match (a test checks it). Don't rename rooms or subareas without checking the palm cards and template.
 - A second room of the same kind (e.g. a second store room) is added on the phone with Add room ("Store Room 2"). Custom names take the template rows of the preset they match.
 - Dropbox output per inspection, foldered by date and address: one Word file for the VA (`<address> - Inspection.docx`), `Audio/`, `App data/` (.txt and .json per room), `Photos/`.
 - Word file per room: template rows in order, "Not mentioned" rows, row start time, highlighted words, grey italic AI-added phrases, a model/serial(/type) table, and notes at the top of the room (no transcript, two parts describing the same rows, empty first rows).
@@ -91,7 +91,7 @@ These came from real field failures. Treat them as hard requirements.
 - **Branch per round** (`round-18`, etc.). Commit small. The commit message says what changed for the inspector in plain words. Merge to `main` (which publishes on GitHub Pages) only when Daphne says so.
 - **Bump the service worker cache version** in `sw.js` on every app change, and `APP_ROUND` plus the "app version N" text in Admin settings. Phones only pick up a new build after force-quit and reopen.
 - **Test before every commit.**
-  - App: `tests/test-round19.js` (449 checks, headless Playwright, 375×667). Serve the repo root with `python3 -m http.server 8767 --bind 127.0.0.1`, then `node tests/test-round19.js` from the repo root. Copy it to `test-round20.js` for the next round, update version checks, add checks for every fix. Node lives in `~/.local/node/bin` (add it to PATH). The tests use the computer's clock; a heavily loaded machine can make sending checks fail, so rerun before chasing a failure.
+  - App: `tests/test-round20.js` (485 checks, headless Playwright, 375×667). Serve the repo root with `python3 -m http.server 8767 --bind 127.0.0.1`, then `node tests/test-round20.js` from the repo root. Copy it to `test-round21.js` for the next round, update version checks, add checks for every fix. Node lives in `~/.local/node/bin` (add it to PATH). The tests use the computer's clock; a heavily loaded machine can make sending checks fail, so rerun before chasing a failure.
   - Cleanup val: `node tests/test-val-round19.mjs` (52 mocked checks; needs `esbuild` installed globally).
   - A real-data copy of the app test lives in `tests/private/` (not committed). Make every app-test change in both copies.
   - Mock the vals and Dropbox in tests. Never call live services from tests.
@@ -109,6 +109,7 @@ Compare the app's Word file for a real job against the VA's final report, room b
 
 ## Open items (from the start-here doc, 12 Oct)
 
+1. Round 20: iPhone checks in `notes/round-20.md` (photo tile offers camera and library, Start-screen photo survives leaving the app, Dropbox names). Decide whether a missing mandatory photo should block Finish.
 1. Round 19: merge the `round-19` branch, paste cleanup val 19 and dropbox-archive val 19 (both GETs should show `"version": "19"`). Check each phone shows "app version 19" after force-quit and reopen. iPhone checks are listed in `notes/round-19.md`.
 2. After the next real job, check whether the "Said but not in the sorted text" notes are real misses or false alarms.
 3. Re-run the Stirling walk-through (Kitchen part 1 included, second store room as "Store Room 2") and score it against the VA.

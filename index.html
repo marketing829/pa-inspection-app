@@ -2210,6 +2210,13 @@
   .mand-fields .mandatory-field label { text-transform: none; letter-spacing: 0; font-size: 14px; font-weight: 600; color: var(--ink); }
   .mand-fields .mandatory-field input { width: 100%; box-sizing: border-box; min-height: 48px; padding: 12px 14px; }
   .review-mandatory .rr-body.mand-fields { padding: 4px 16px 16px; }
+  /* ROUND 20: a photo tile under each mandatory item. */
+  .mand-photo { display: flex; align-items: center; gap: 12px; margin: -2px 0 6px; }
+  .mand-photo .mand-cam { flex: 0 0 76px; width: 76px; min-height: 76px; }
+  .mand-ph-note { display: grid; gap: 2px; font-size: 13px; color: var(--ink-2); line-height: 1.35; }
+  .mand-ph-note b { font-weight: 600; color: var(--ink); }
+  .mand-ph-note.need { color: var(--ink); }
+  .mand-ph-note.need::after { content: ''; display: block; width: 28px; height: 3px; border-radius: 2px; background: #FFDE00; margin-top: 3px; }
 
   /* Inventory and serial numbers: one row per item */
   .inv-details > summary .inv-sum { display: grid; gap: 2px; min-width: 0; }
@@ -2332,7 +2339,7 @@
     <!-- ROUND 16: mandatory items on the Start screen (were on the first room). -->
     <div class="field-group setup-mandatory" id="setupMandatory">
       <label>Mandatory items</label>
-      <span class="mand-hint">Fill in now, or later on the Review page.</span>
+      <span class="mand-hint">Fill in now or on the Review page. Each item needs a photo.</span>
       <div class="mand-fields" id="setupMandFields"></div>
     </div>
 
@@ -2460,7 +2467,7 @@
     <!-- Service settings. Inspectors never need these, and a stray tap here
          used to be able to break uploads, so they're tucked away. -->
     <details class="admin-settings" id="adminSettings">
-      <summary>Admin settings <span class="app-ver">· app version 19</span></summary>
+      <summary>Admin settings <span class="app-ver">· app version 20</span></summary>
       <p class="admin-warn">For Daphne / admin only. Changing these can stop recordings reaching Dropbox.</p>
     <div class="field-group">
       <label>Transcription engine</label>
@@ -2508,6 +2515,10 @@ const FORBIDDEN_WORDS = [
 // TEMPLATE - WA. Order matches the form, so the report, the CSV and the Dropbox
 // headings all come out in the order the typist fills the PCR. Only whitespace
 // around slashes has been tidied — the wording is the form's.
+// ROUND 20 (Daphne, 13 Oct): rows follow the PCR palm cards. Added: Aircon Motor
+// (front and rear), Garbage Bins (garage and rear), bedroom Screen Door, Drains,
+// Kickboards, garage Hooks; new Bathroom/Laundry and Pool/Spa rooms. The palm
+// card's multi-line cupboards, pantry, verandah and pergola stay one row each.
 const ALL_ROOMS = [
   {
     id: 'front_gardens', name: 'Front Gardens',
@@ -2529,6 +2540,7 @@ const ALL_ROOMS = [
       'Electrical Meter Box',
       'Gas Meter Box',
       'Verandah/Portico',
+      'Aircon Motor',
       'Additional'
     ]
   },
@@ -2538,11 +2550,12 @@ const ALL_ROOMS = [
       'Door/Door Frames/Handles',
       'Ceiling',
       'Light Fittings',
-      'Walls/Shelves',
+      'Walls/Shelves/Hooks',
       'Power Points/Light Switches',
       'Flooring',
       'Automatic Door/Roller Door',
       'Automatic Door Motor',
+      'Garbage Bins',
       'Additional'
     ]
   },
@@ -2617,6 +2630,7 @@ const ALL_ROOMS = [
     id: 'bedroom1', name: 'Bedroom 1',
     subsections: [
       'Door/Doorway Frames/Handles',
+      'Screen Door/Handles',
       'Ceiling/cornice',
       'Light Fittings',
       'Walls/Hooks/door stoppers',
@@ -2642,7 +2656,7 @@ const ALL_ROOMS = [
       'Blinds/Curtains',
       'Power Points/Light Switches',
       'Skirting',
-      'Flooring',
+      'Flooring/Drains',
       'Wash Basin',
       'Tapware',
       'Benchtop',
@@ -2673,7 +2687,7 @@ const ALL_ROOMS = [
       'Blinds/Curtains',
       'Power Points/Light Switches',
       'Skirting',
-      'Flooring',
+      'Flooring/Drains',
       'Toilet/Cistern/Seat',
       'Toilet Roll Holder',
       'Additional'
@@ -2683,6 +2697,7 @@ const ALL_ROOMS = [
     id: 'bedroom2', name: 'Bedroom 2',
     subsections: [
       'Door/Doorway Frames/Handles',
+      'Screen Door/Handles',
       'Ceiling/cornice',
       'Light Fittings',
       'Walls/Hooks/door stoppers',
@@ -2700,6 +2715,7 @@ const ALL_ROOMS = [
     id: 'bedroom3', name: 'Bedroom 3',
     subsections: [
       'Door/Doorway Frames/Handles',
+      'Screen Door/Handles',
       'Ceiling/cornice',
       'Light Fittings',
       'Walls/Hooks/door stoppers',
@@ -2717,6 +2733,7 @@ const ALL_ROOMS = [
     id: 'bedroom4', name: 'Bedroom 4',
     subsections: [
       'Door/Doorway Frames/Handles',
+      'Screen Door/Handles',
       'Ceiling/cornice',
       'Light Fittings',
       'Walls/Hooks/door stoppers',
@@ -2734,6 +2751,7 @@ const ALL_ROOMS = [
     id: 'study', name: 'Study',
     subsections: [
       'Door/Doorway Frames/Handles',
+      'Screen Door/Handles',
       'Ceiling/cornice',
       'Light Fittings',
       'Walls/Hooks/door stoppers',
@@ -2759,7 +2777,7 @@ const ALL_ROOMS = [
       'Blinds/Curtains',
       'Power Points/Light Switches',
       'Skirting',
-      'Flooring',
+      'Flooring/Drains',
       'Wash Basin',
       'Tapware',
       'Benchtop',
@@ -2790,7 +2808,7 @@ const ALL_ROOMS = [
       'Blinds/Curtains',
       'Power Points/Light Switches',
       'Skirting',
-      'Flooring',
+      'Flooring/Drains',
       'Toilet/Cistern/Seat',
       'Toilet Roll Holder',
       'Additional'
@@ -2806,7 +2824,7 @@ const ALL_ROOMS = [
       'Windows/Window Safety Devices',
       'Blinds/Curtains',
       'Power Points/Light Switches',
-      'Skirting',
+      'Skirting/Kickboards',
       'Flooring',
       'Overhead Cupboards',
       'Drawers',
@@ -2884,7 +2902,7 @@ const ALL_ROOMS = [
       'Blinds/Curtains',
       'Power Points/Light Switches',
       'Skirting',
-      'Flooring',
+      'Flooring/Drains',
       'Basin',
       'Basin Tapware',
       'Splash Back',
@@ -2910,7 +2928,7 @@ const ALL_ROOMS = [
       'Blinds/Curtains',
       'Power Points/Light Switches',
       'Skirting',
-      'Flooring',
+      'Flooring/Drains',
       'Washing Machine Taps',
       'Trough/Washing Tub',
       'Trough Cabinet',
@@ -2918,6 +2936,47 @@ const ALL_ROOMS = [
       'Benchtops',
       'Splash Back',
       'Underbench Cupboards',
+      'Overhead Cupboards',
+      'Linen Cupboards',
+      'Additional'
+    ]
+  },
+  {
+    // ROUND 20: from the palm card. One room for a bathroom with the laundry in it.
+    id: 'bathroom_laundry', name: 'Bathroom/Laundry',
+    subsections: [
+      'Door/Doorway Frames/Handles',
+      'Ceiling',
+      'Heating/Exhaust Fan/Vents',
+      'Light Fittings',
+      'Walls/Hooks/Door Stoppers',
+      'Windows/Screens',
+      'Blinds/Curtains',
+      'Power Points/Light Switches',
+      'Skirting',
+      'Flooring/Drains',
+      'Wash Basin',
+      'Tapware',
+      'Benchtop',
+      'Splash Back',
+      'Mirror',
+      'Underbench Cupboards/Drawers',
+      'Shower/Screen/Curtain',
+      'Shower Tiles',
+      'Shower Tapware',
+      'Towel Rails',
+      'Toilet/Cistern/Seat',
+      'Toilet Roll Holder',
+      'Bath',
+      'Bath Tiles',
+      'Bath Tapware',
+      'Washing Machine Taps',
+      'Trough/Washing Tub',
+      'Trough Cabinet',
+      'Laundry Tapware',
+      'Laundry Benchtops',
+      'Laundry Splash Back',
+      'Laundry Underbench Cupboards',
       'Overhead Cupboards',
       'Linen Cupboards',
       'Additional'
@@ -2932,7 +2991,7 @@ const ALL_ROOMS = [
       'Eaves',
       'Power Points/Light Switches',
       'Skirting',
-      'Flooring',
+      'Flooring/Drains',
       'Balustrading/Railing',
       'Water Tap',
       'Additional'
@@ -2952,6 +3011,19 @@ const ALL_ROOMS = [
     ]
   },
   {
+    // ROUND 20: from the palm card (was one "Pool" row in Rear Exterior).
+    id: 'pool', name: 'Pool/Spa',
+    subsections: [
+      'Fences/Gate',
+      'Garden Beds',
+      'Reticulation',
+      'Pool/Spa/Water Condition',
+      'Pool/Spa Pumps',
+      'Taps & Hoses',
+      'Additional'
+    ]
+  },
+  {
     id: 'rear_exterior', name: 'Rear Exterior',
     subsections: [
       'Exterior Walls',
@@ -2966,9 +3038,10 @@ const ALL_ROOMS = [
       'Reticulation',
       'Patio/Pergola',
       'Clothesline',
-      'Exterior Flooring',
+      'Exterior Flooring/Drains',
       'Hot Water System',
-      'Pool',
+      'Aircon Motor',
+      'Garbage Bins',
       'Additional'
     ]
   }
@@ -3003,6 +3076,7 @@ const ROOM_NAME_RULES = [
   [/\b(?:garage|carport)\b/, 'garage'],
   [/\b(?:balcony|alfresco|deck|courtyard)\b/, 'balcony'],
   [/\b(?:shed|store\s?room|storeroom|storage)\b/, 'shed'],
+  [/\b(?:pool|spa)\b/, 'pool'],
   [/\b(?:rear|back\s?yard|backyard)\b/, 'rear_exterior'],
   [/\b(?:front|garden|gardens)\b/, 'front_gardens'],
   [/\b(?:lounge|living|sitting)\b/, 'lounge'],
@@ -3015,6 +3089,8 @@ function templateRowsForName(name) {
   const byId = id => (ALL_ROOMS.find(r => r.id === id) || {}).subsections;
   const hit = ROOM_NAME_RULES.find(([re]) => re.test(n));
   if (!hit) return [...GENERIC_SUBSECTIONS];
+  // ROUND 20: a bathroom with the laundry in it takes the palm card's Bathroom/Laundry rows.
+  if (hit[1] === 'bathroom2' && /\blaundry\b/.test(n)) return [...byId('bathroom_laundry')];
   const rows = [...byId(hit[1])];
   if (/\blaundry\b/.test(n) && hit[1] !== 'laundry') {
     const have = new Set(rows.map(r => r.toLowerCase()));
@@ -3045,8 +3121,9 @@ let state = {
   roomChecks: {},  // roomId -> [{ quote, why }] the cleanup pass wasn't sure about
   mandatory: {
     waterMeter: '', waterMeterLocation: '',
-    rcdBox: '', smokeAlarms: '', nbnBox: ''
+    rcdBox: '', gasMeter: '', nbnBox: ''
   },
+  mandPhotos: {},  // ROUND 20: mandatory item -> [{ id, n, ts, uploaded }] its photos
   startedAt: null
 };
 
@@ -3201,7 +3278,7 @@ let photoQueueRunning = false; // guard so the serial-photo upload queue runs on
 // every read of a stored recording now has a hard deadline (a send that never
 // answers, or ignores its abort, can no longer hold a queue), and every pass
 // has a watchdog. The numbers live here so the tests can shorten them.
-const APP_ROUND = 19;
+const APP_ROUND = 20;
 const TIMING = {
   grace: 5000,              // added to a request's own time limit before giving up on it outright
   readMs: 20000,            // reading one stored recording into memory
@@ -3245,7 +3322,7 @@ function saveStateNow() {
       roomMismatches: roomMismatches,
       roomSections: state.roomSections, roomSectionParts: state.roomSectionParts, roomChecks: state.roomChecks, skippedRooms: state.skippedRooms, typedOnly: state.typedOnly,
       mandatory: state.mandatory, startedAt: state.startedAt, propertyNotes: state.propertyNotes || '',
-      invItems: state.invItems || {}
+      invItems: state.invItems || {}, mandPhotos: state.mandPhotos || {}
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
     if (stateSaveFailed) { stateSaveFailed = false; storageRecovered(); }
@@ -3309,6 +3386,7 @@ function resumeSaved() {
   roomAudioFlags = saved.roomAudioFlags || {};
   roomMismatches = saved.roomMismatches || {};
   state.mandatory = saved.mandatory || state.mandatory;
+  state.mandPhotos = saved.mandPhotos || {};   // ROUND 20: photo markers for the mandatory items
   state.invItems = saved.invItems || {};   // ROUND 16 (older saves: built from the typed text when the room opens)
   mergeSetupMandatory();   // ROUND 16: a draft typed on the Start screen fills only empty fields, then goes
   state.propertyNotes = saved.propertyNotes || '';
@@ -3322,6 +3400,7 @@ function resumeSaved() {
       .filter(Boolean);
   }
   if (state.currentRoomIdx >= state.rooms.length) state.currentRoomIdx = 0;
+  attachSetupMandPhotos();   // ROUND 20: photos taken on the Start screen join this job (only once the job is fully loaded)
   document.getElementById('headerTitle').textContent = state.address || 'Inspection';
   showScreen('screenInspection');
   renderInspection();
@@ -3604,6 +3683,8 @@ function startInspection() {
   state.currentRoomIdx = 0;
   state.startedAt = Date.now();
   state.jobId = newJobId();
+  state.mandPhotos = {};
+  attachSetupMandPhotos();                  // ROUND 20: photos taken on the Start screen
   state.rooms.forEach(room => {
     if (!(room.id in state.roomNotes)) state.roomNotes[room.id] = '';
     if (!(room.id in state.serialModels)) state.serialModels[room.id] = '';
@@ -3756,40 +3837,6 @@ function renderRoomContent() {
   const isLast = state.currentRoomIdx === state.rooms.length - 1;
   document.getElementById('btnNextRoom').innerHTML = '<span>' + (isLast ? 'Review' : 'Next room') + '</span>' + ico('chevR');
   document.getElementById('btnPrevRoom').style.opacity = state.currentRoomIdx === 0 ? '0.3' : '1';
-}
-
-function renderMandatoryFields(content) {
-  const div = document.createElement('div');
-  div.className = 'mandatory-section';
-  div.innerHTML = `
-    <div class="mandatory-title">Mandatory items</div>
-    <div class="mandatory-field">
-      <label>Water Meter Reading</label>
-      <input type="text" placeholder="e.g. 1234.567 kL" value="${escapeAttr(state.mandatory.waterMeter)}"
-        oninput="state.mandatory.waterMeter=this.value; saveState();">
-    </div>
-    <div class="mandatory-field">
-      <label>Water Meter Location</label>
-      <input type="text" placeholder="e.g. Front verge, near driveway" value="${escapeAttr(state.mandatory.waterMeterLocation)}"
-        oninput="state.mandatory.waterMeterLocation=this.value; saveState();">
-    </div>
-    <div class="mandatory-field">
-      <label>RCD Box / Electrical Meter</label>
-      <input type="text" placeholder="e.g. All switches on, reading 4521 kWh" value="${escapeAttr(state.mandatory.rcdBox)}"
-        oninput="state.mandatory.rcdBox=this.value; saveState();">
-    </div>
-    <div class="mandatory-field">
-      <label>Smoke Alarms (location & light)</label>
-      <input type="text" placeholder="e.g. Hallway & master — green light showing" value="${escapeAttr(state.mandatory.smokeAlarms)}"
-        oninput="state.mandatory.smokeAlarms=this.value; saveState();">
-    </div>
-    <div class="mandatory-field">
-      <label>NBN Box (location, model, serial)</label>
-      <input type="text" placeholder="e.g. Laundry, NF18ACV, SN 12345678" value="${escapeAttr(state.mandatory.nbnBox)}"
-        oninput="state.mandatory.nbnBox=this.value; saveState();">
-    </div>
-  `;
-  content.appendChild(div);
 }
 
 function toggleCheck(roomId, i) {
@@ -6767,6 +6814,14 @@ function photoExt(type) {
   if (t.includes('webp')) return 'webp';
   return 'jpg';
 }
+// ROUND 20: "00 Mandatory - Water Meter 1 - 0912.jpg". 00 lists them first in
+// Photos/; the number counts that item's photos; the time keeps two jobs at one
+// address on one day from sharing a name.
+function mandPhotoFileName(rec) {
+  const d = new Date(rec.createdAt || Date.now());
+  const hhmm = d.toTimeString().slice(0, 5).replace(':', '');
+  return `00 Mandatory - ${safeSeg(rec.label || mandPhotoLabel(rec.field)) || 'Item'} ${rec.n || 1} - ${hhmm}.${photoExt(rec.type)}`;
+}
 function serialPhotoStatusText(roomId) {
   const arr = (state.serialPhotos && state.serialPhotos[roomId]) || [];
   if (!arr.length) return '';
@@ -6833,6 +6888,13 @@ async function processPhotoQueue() {
       photoQueueStartedAt = Date.now();   // ROUND 14: timed per photo
       if (rec.uploaded) continue;
       if (rec.nextTryAt > now) continue;   // ROUND 11: waiting after a failed try
+      // ROUND 20: a mandatory photo taken on the Start screen waits for its job.
+      if (rec.kind === 'mandatory' && rec.setup) {
+        const m = state.address ? mandMark(rec.id) : null;
+        if (!m) continue;
+        stampMandRec(rec, m);
+        delete m.pending;
+      }
       try {
         const folder = archiveFolderName(rec);
         const base = archiveBaseName(rec);
@@ -6840,13 +6902,16 @@ async function processPhotoQueue() {
           ? `${folder}/${DATA_DIR}/00 - Inspection details.txt`
           : rec.kind === 'pcr'
             ? `${folder}/${rec.fileName || 'PCR.docx'}`
-            : `${folder}/${PHOTO_DIR}/${base} - Serial plate${invItemNameForPhoto(rec) ? ' - ' + safeSeg(invItemNameForPhoto(rec)) : ''} ${rec.id}.${photoExt(rec.type)}`;
+            : rec.kind === 'mandatory'
+              ? `${folder}/${PHOTO_DIR}/${mandPhotoFileName(rec)}`
+              : `${folder}/${PHOTO_DIR}/${base} - Serial plate${invItemNameForPhoto(rec) ? ' - ' + safeSeg(invItemNameForPhoto(rec)) : ''} ${rec.id}.${photoExt(rec.type)}`;
         await archivePut(rel, rec.blob, rec.type || 'image/jpeg', 90000);
         rec.uploaded = true;
         rec.uploadedAt = Date.now();
         if (!sameJob(rec)) { await photoDelete(rec.id); }
         else if (await photoGet(rec.id).catch(() => null)) { await photoPut(rec); }   // ROUND 16: not if its item was removed meanwhile
-        markPhotoUploaded(rec.roomId, rec.id);
+        if (rec.kind === 'mandatory') { if (sameJob(rec)) markMandPhotoUploaded(rec.id); }
+        else markPhotoUploaded(rec.roomId, rec.id);
       } catch (e) {
         rec.fails = (rec.fails || 0) + 1;
         rec.nextTryAt = Date.now() + archiveDelay(rec.fails);
@@ -7288,7 +7353,7 @@ function showReview() {
   // Before you finish: only what the inspector can still fix here.
   const notes = [];
   const missing = checkMandatory();
-  if (missing.length) notes.push('Not filled in: ' + missing.join(', '));
+  if (missing.length) notes.push(mandMissingText(missing));
   state.rooms.forEach(room => {
     const hits = findForbidden(state.roomNotes[room.id] || '');
     if (hits.length) notes.push(`Words to avoid in ${room.name}: ${hits.join(', ')}`);
@@ -7371,11 +7436,13 @@ function showReview() {
   mand.className = 'review-extra fold review-mandatory';
   mand.id = 'reviewMandatory';
   if (missing.length) mand.open = true;
+  mand.addEventListener('toggle', () => { if (mand.open) loadMandThumbs('review'); });
   mand.innerHTML = `<summary><span class="rr-main"><span class="rr-name">Mandatory items</span><span class="rr-sub" id="reviewMandSub"></span></span>`
     + '<span class="rr-state" id="reviewMandState"></span></summary>'
     + '<div class="rr-body mand-fields">' + mandatoryFieldsHTML('review', state.mandatory) + '</div>';
   body.appendChild(mand);
   paintReviewMandatory();
+  loadMandThumbs('review');
   const notesCard = document.createElement('div');
   notesCard.className = 'property-notes';
   notesCard.innerHTML = '<label class="fix-label" for="propertyNotes">Notes about the property</label>'
@@ -7594,10 +7661,13 @@ function copyField(idx) {
 
 function checkMandatory() {
   const missing = [];
-  if (!state.mandatory.waterMeter) missing.push('Water Meter Reading');
-  if (!state.mandatory.rcdBox) missing.push('RCD Box');
-  if (!state.mandatory.smokeAlarms) missing.push('Smoke Alarms');
-  if (!state.mandatory.nbnBox) missing.push('NBN Box');
+  const md = state.mandatory || {};
+  if (!md.waterMeter) missing.push('Water Meter Reading');
+  if (!md.rcdBox) missing.push('RCD Box');
+  if (!md.gasMeter) missing.push('Gas Meter Reading');
+  if (!md.nbnBox) missing.push('NBN Box');
+  // ROUND 20: a photo of each is required.
+  MAND_PHOTOS.forEach(([k, label]) => { if (!((state.mandPhotos || {})[k] || []).length) missing.push(label + ' photo'); });
   return missing;
 }
 
@@ -7617,8 +7687,10 @@ function buildReportText() {
   report += `MANDATORY ITEMS\n${'-'.repeat(30)}\n`;
   report += `Water Meter: ${state.mandatory.waterMeter} — ${state.mandatory.waterMeterLocation}\n`;
   report += `RCD Box: ${state.mandatory.rcdBox}\n`;
-  report += `Smoke Alarms: ${state.mandatory.smokeAlarms}\n`;
+  report += `Gas Meter: ${state.mandatory.gasMeter || ''}\n`;
   report += `NBN Box: ${state.mandatory.nbnBox}\n`;
+  if ((state.mandatory.smokeAlarms || '').trim()) report += `Smoke Alarms: ${state.mandatory.smokeAlarms}\n`;   // a job from before round 20
+  report += `Photos (in Photos, named "00 Mandatory"): ${mandPhotoCounts(state.mandPhotos)}\n`;
   if ((state.propertyNotes || '').trim()) report += `\nNOTES ABOUT THE PROPERTY\n${'-'.repeat(30)}\n${state.propertyNotes.trim()}\n`;
 
   state.rooms.forEach(room => {
@@ -7789,6 +7861,7 @@ function jobSnapshot() {
   return {
     address: state.address, jobId: state.jobId || '', meta: inspectionMeta(),
     mandatory: Object.assign({}, state.mandatory || {}),
+    mandPhotos: JSON.parse(JSON.stringify(state.mandPhotos || {})),
     notes: (state.propertyNotes || '').trim(),
     rooms: (state.rooms || []).map(r => ({ id: r.id, name: r.name, subsections: (r.subsections || []).slice() })),
     skipped: Object.assign({}, state.skippedRooms || {}), typed,
@@ -8202,7 +8275,7 @@ function buildJobModel(recs, snap) {
     return { no: i + 1, id, name, rows: tableRows, total: tableRows.length, said, toCheck, notes, audio, raws, plates, hasRec: rs.length > 0 };
   });
   const finished = snap.finishedAt || null;
-  return { address: snap.address || (live[0] && live[0].address) || '', meta, mandatory: snap.mandatory || null, notes: snap.notes || '', rooms, finished,
+  return { address: snap.address || (live[0] && live[0].address) || '', meta, mandatory: snap.mandatory || null, mandPhotos: snap.mandPhotos || null, notes: snap.notes || '', rooms, finished,
     built: Date.now() };
 }
 
@@ -8300,7 +8373,9 @@ function buildJobDocXml(j) {
   ]));
   const also = [];
   if (md.waterMeter || md.waterMeterLocation) also.push('Water meter ' + [md.waterMeter, md.waterMeterLocation].filter(Boolean).join(' — '));
+  if (md.gasMeter) also.push('Gas meter ' + md.gasMeter);
   if (md.nbnBox) also.push('NBN box ' + md.nbnBox);
+  if (j.mandPhotos) also.push('Photos ' + mandPhotoCounts(j.mandPhotos) + ' (Photos folder, "00 Mandatory")');
   if (also.length) out.push(jP(jR('Also recorded (no template row): ', { sz: 18, color: JD_MUTED }) + jR(also.join('   ·   '), { sz: 18 }), { before: 80 }));
   // Words to check per room.
   const total = j.rooms.reduce((n, r) => n + r.toCheck, 0);
@@ -8456,10 +8531,11 @@ function buildCSVRows() {
   const mand = [
     ['Water Meter', (state.mandatory.waterMeter + (state.mandatory.waterMeterLocation ? ' — ' + state.mandatory.waterMeterLocation : '')).trim()],
     ['RCD Box', state.mandatory.rcdBox],
-    ['Smoke Alarms', state.mandatory.smokeAlarms],
-    ['NBN Box', state.mandatory.nbnBox]
+    ['Gas Meter', state.mandatory.gasMeter],
+    ['NBN Box', state.mandatory.nbnBox],
+    ['Smoke Alarms', state.mandatory.smokeAlarms]
   ];
-  mand.forEach(([item, val]) => { if (val && val.trim()) rows.push([...meta, 'Mandatory Items', item, val]); });
+  mand.forEach(([item, val]) => { if (val && String(val).trim()) rows.push([...meta, 'Mandatory Items', item, val]); });
 
   state.rooms.forEach(room => {
     const val = state.roomNotes[room.id];
@@ -8554,12 +8630,16 @@ async function finishAndClear() {
     if (notSafe.length || unsentPhotos) {
       const parts = [];
       if (notSafe.length) parts.push(`${notSafe.length} recording${notSafe.length === 1 ? '' : 's'}`);
-      if (unsentPhotos) parts.push(`${unsentPhotos} serial photo${unsentPhotos === 1 ? '' : 's'}`);
+      if (unsentPhotos) parts.push(`${unsentPhotos} photo${unsentPhotos === 1 ? '' : 's'}`);
       msg = `${parts.join(' and ')} still sending to Dropbox. `
         + 'They stay on this phone and keep sending by themselves while the app is open with signal. You can check them under Recordings.\n\nFinish this inspection?';
     } else {
       msg = 'Every room is recorded and in Dropbox. Finish this inspection?';
     }
+    // ROUND 20: mandatory items, photos included, are asked about here (not a block:
+    // a property may have no gas meter).
+    const mandMissing = checkMandatory();
+    if (mandMissing.length) msg = 'Mandatory items still needed: ' + mandMissing.join(', ') + '.\n\n' + msg;
     if (!confirm(msg)) return;
   }
   // ROUND 11: the details file (typed-only rooms, mandatory items, serial
@@ -8571,6 +8651,8 @@ async function finishAndClear() {
     return;
   }
   stopListening();
+  // ROUND 20: Start-screen photos get the job's details before the job closes.
+  try { await stampMandPhotos(); } catch (e) {}
   // Everything of this job stays on the phone. Records still on their way keep
   // trying; records already in Dropbox are cleared 14 days after they got there
   // (sweepOldJobs). Nothing can bleed into the next inspection: applyTranscript()
@@ -8602,7 +8684,10 @@ async function finishAndClear() {
   roughDrafts = {}; roomAudioFlags = {}; roomRecMap = {}; roomMismatches = {};
   state.currentRoomIdx = 0; state.startedAt = null; state.address = '';
   state.client = ''; state.inspector = ''; state.inspType = '';
-  state.mandatory = { waterMeter:'', waterMeterLocation:'', rcdBox:'', smokeAlarms:'', nbnBox:'' };
+  state.mandatory = emptyMandatory();
+  state.mandPhotos = {};
+  Object.keys(mandThumbs).forEach(k => { try { URL.revokeObjectURL(mandThumbs[k]); } catch (e) {} });
+  mandThumbs = {};
   state.propertyNotes = '';
   state.invItems = {};
   r16ClearInvThumbs();
@@ -8899,8 +8984,10 @@ const SPOKEN_ROOMS = {
   theatre: ['theatre', 'theatre room', 'theater', 'media room', 'cinema room'],
   powder_room: ['powder room'],   // bare "powder" was matching "powder coated"
   laundry: ['laundry', 'laundry room'],
+  bathroom_laundry: ['bathroom laundry', 'bathroom and laundry', 'bathroom slash laundry'],
   balcony: ['balcony', 'deck', 'verandah'],
   shed: ['shed', 'store room', 'storeroom', 'storage room', 'workshop'],
+  pool: ['pool', 'pool area', 'spa', 'swimming pool'],
   rear_exterior: ['rear exterior', 'rear', 'back yard', 'backyard', 'rear garden', 'rear of the property', 'alfresco', 'patio', 'pergola', 'outside at the back']
 };
 
@@ -8938,6 +9025,8 @@ function checkSpokenRoom(rec, text) {
   const room = (state.rooms || []).find(r => r.id === rec.roomId);
   // The ids only line up when the recording was made against a template room.
   if (!room || spoken.roomId === rec.roomId) return null;
+  // ROUND 20: "bathroom" or "laundry" said in the Bathroom/Laundry is the right room.
+  if (rec.roomId === 'bathroom_laundry' && /^(?:bathroom2|laundry|ensuite)$/.test(spoken.roomId)) return null;
   const named = (state.rooms || []).find(r => r.id === spoken.roomId);
   const mismatch = { said: spoken.phrase, saidRoom: named ? named.name : spoken.roomId, filedUnder: room.name };
   roomMismatches[rec.roomId] = mismatch;
@@ -9937,21 +10026,186 @@ function dayChipsHTML(recs) {
 }
 
 // ─── 2. MANDATORY ITEMS ON THE START SCREEN ───────────────────────────────────
+// ROUND 20 (Daphne, 13 Oct): Gas Meter Reading replaces Smoke Alarms, and each
+// item needs a photo (camera or photo library). A job from before round 20 keeps
+// any smoke alarm text it has; the files still show it.
 var MANDATORY_FIELDS = [
   ['waterMeter', 'Water Meter Reading', 'e.g. 1234.567 kL'],
   ['waterMeterLocation', 'Water Meter Location', 'e.g. Front verge, near driveway'],
   ['rcdBox', 'RCD Box / Electrical Meter', 'e.g. All switches on, reading 4521 kWh'],
-  ['smokeAlarms', 'Smoke Alarms (location & light)', 'e.g. Hallway & master, green light showing'],
+  ['gasMeter', 'Gas Meter Reading', 'e.g. 01234.56 m³'],
   ['nbnBox', 'NBN Box (location, model, serial)', 'e.g. Laundry, NF18ACV, SN 12345678']
 ];
+// [photo key, its name in Dropbox and on screen, the field it sits under]
+var MAND_PHOTOS = [
+  ['waterMeter', 'Water Meter', 'waterMeterLocation'],
+  ['rcdBox', 'RCD Box', 'rcdBox'],
+  ['gasMeter', 'Gas Meter', 'gasMeter'],
+  ['nbnBox', 'NBN Box', 'nbnBox']
+];
 var SETUP_MAND_KEY = 'pa_setup_mandatory';
+var SETUP_MAND_PHOTOS_KEY = 'pa_setup_mand_photos';
 var setupMandatory = {};
-function emptyMandatory() { return { waterMeter: '', waterMeterLocation: '', rcdBox: '', smokeAlarms: '', nbnBox: '' }; }
+var setupMandPhotos = {};      // photo key -> [{ id, n, ts }] taken on the Start screen, not in a job yet
+var mandThumbs = {};           // photo id -> object URL for its thumbnail
+var mandPhotoTarget = null;    // { where, key } waiting for the camera
+function emptyMandatory() { return { waterMeter: '', waterMeterLocation: '', rcdBox: '', gasMeter: '', nbnBox: '' }; }
+// The "Before you finish" line: names when a few are left, a count when many are.
+function mandMissingText(missing) {
+  return 'Mandatory items still needed: ' + (missing.length <= 3 ? missing.join(', ') : missing.length + ' (see Mandatory items)');
+}
+function mandPhotoLabel(key) { const m = MAND_PHOTOS.find(x => x[0] === key); return m ? m[1] : key; }
+function mandPhotoList(where) {
+  if (where === 'setup') return setupMandPhotos;
+  if (!state.mandPhotos) state.mandPhotos = {};
+  return state.mandPhotos;
+}
+function mandPhotoNote(where, arr) {
+  const n = arr.length;
+  if (!n) return 'Photo needed';
+  const label = n === 1 ? '1 photo' : n + ' photos';
+  if (where === 'setup') return label + ' · sends after Start';
+  if (!cloudArchiveEnabled()) return label + ' · saved on phone';
+  return label + (arr.every(p => p.uploaded) ? ' · in Dropbox' : ' · sending');
+}
+function mandPhotoHTML(where, key) {
+  const arr = mandPhotoList(where)[key] || [];
+  const n = arr.length, label = mandPhotoLabel(key);
+  return `<div class="mand-photo" id="mandph-${where}-${key}">`
+    + `<button type="button" class="inv-cam mand-cam${n ? ' has' : ''}" onclick="takeMandPhoto('${where}','${key}')" aria-label="${n ? 'Add another photo of the ' : 'Photo of the '}${escapeAttr(label)}">`
+    + (n ? `<img alt="${escapeAttr(label)} photo" data-mphoto="${escapeAttr(String(arr[n - 1].id))}">` + (n > 1 ? `<span class="inv-n">${n}</span>` : '')
+         : ico('camera') + '<span>Photo</span>')
+    + `</button>`
+    + `<span class="mand-ph-note${n ? '' : ' need'}">${escapeHtml(mandPhotoNote(where, arr))}</span>`
+    + `</div>`;
+}
 function mandatoryFieldsHTML(where, vals) {
   return MANDATORY_FIELDS.map(([k, label, ph]) => `<div class="mandatory-field">`
     + `<label for="mand-${where}-${k}">${escapeHtml(label)}</label>`
     + `<input type="text" id="mand-${where}-${k}" data-mand="${k}" placeholder="${escapeAttr(ph)}" value="${escapeAttr((vals || {})[k] || '')}" autocomplete="off">`
-    + `</div>`).join('');
+    + `</div>` + MAND_PHOTOS.filter(m => m[2] === k).map(m => mandPhotoHTML(where, m[0])).join('')).join('');
+}
+function repaintMandPhoto(where, key) {
+  const el = document.getElementById('mandph-' + where + '-' + key);
+  if (el) el.outerHTML = mandPhotoHTML(where, key);
+  loadMandThumbs(where);
+}
+// Thumbnails: from memory if just taken, else from the phone.
+async function loadMandThumbs(where) {
+  for (const img of document.querySelectorAll(`[id^="mandph-${where}-"] img[data-mphoto]`)) {
+    if (img.getAttribute('src')) continue;
+    const id = Number(img.dataset.mphoto);
+    if (!mandThumbs[id]) {
+      try { const p = await photoGet(id); if (p && p.blob) mandThumbs[id] = URL.createObjectURL(p.blob); } catch (e) {}
+    }
+    if (mandThumbs[id]) img.src = mandThumbs[id];
+    else { const b = img.closest('.inv-cam'); if (b) { img.remove(); b.insertAdjacentHTML('afterbegin', ico('camera') + '<span>Sent</span>'); } }
+  }
+}
+// No "capture" on purpose: the iPhone offers Take Photo or Photo Library.
+function mandPhotoInput() {
+  let el = document.getElementById('mandPhotoInput');
+  if (!el) {
+    el = document.createElement('input');
+    el.type = 'file'; el.accept = 'image/*';
+    el.id = 'mandPhotoInput'; el.hidden = true; el.tabIndex = -1;
+    el.addEventListener('change', () => onMandPhotoChosen(el));
+    document.body.appendChild(el);
+  }
+  return el;
+}
+function takeMandPhoto(where, key) {
+  mandPhotoTarget = { where, key };
+  mandPhotoInput().click();
+}
+function nextMandNo(arr) { return (arr || []).reduce((m, p) => Math.max(m, p.n || 0), 0) + 1; }
+async function onMandPhotoChosen(inputEl) {
+  const file = inputEl.files && inputEl.files[0];
+  inputEl.value = '';   // the same photo can be picked again later
+  const t = mandPhotoTarget;
+  mandPhotoTarget = null;
+  if (!file || !t) return;
+  const setup = t.where === 'setup' || !state.address;
+  const list = mandPhotoList(setup ? 'setup' : 'review');
+  const arr = list[t.key] || (list[t.key] = []);
+  const n = nextMandNo(arr);
+  const rec = {
+    kind: 'mandatory', field: t.key, label: mandPhotoLabel(t.key), n, roomId: '_mandatory', roomName: 'Mandatory items',
+    createdAt: Date.now(), blob: file, type: file.type || 'image/jpeg', uploaded: false
+  };
+  // A photo taken before Start has no job yet; it joins the job at Start.
+  if (setup) rec.setup = true;
+  else Object.assign(rec, { address: state.address, jobId: state.jobId || '', client: state.client || '', meta: inspectionMeta() });
+  let id = null;
+  try { id = await photoAdd(rec); storageRecovered(); }
+  catch (e) { reportStorageFailure('Photo NOT saved. Take it again'); return; }
+  arr.push({ id, n, ts: rec.createdAt, uploaded: false });
+  try { mandThumbs[id] = URL.createObjectURL(file); } catch (e) {}
+  if (setup) saveSetupMandPhotos(); else { flushSaveState(); paintReviewMandatory(); }
+  repaintMandPhoto(t.where, t.key);
+  showToast(setup ? 'Photo saved. It sends after Start.' : cloudArchiveEnabled() ? 'Photo saved. Sending to Dropbox.' : 'Photo saved on this phone.');
+  if (!setup && cloudArchiveEnabled() && navigator.onLine) processPhotoQueue();
+}
+function saveSetupMandPhotos() {
+  try { localStorage.setItem(SETUP_MAND_PHOTOS_KEY, JSON.stringify(setupMandPhotos)); } catch (e) {}
+}
+// Start-screen photos join the open job (at Start, or when a job is resumed).
+// Each keeps "pending" until its record on the phone carries the job's details;
+// the Dropbox pass and Finish both finish that step if it hasn't happened yet.
+function attachSetupMandPhotos() {
+  const sp = setupMandPhotos || {};
+  const keys = Object.keys(sp).filter(k => (sp[k] || []).length);
+  if (!keys.length || !state.address) return Promise.resolve();
+  const list = mandPhotoList('review');
+  keys.forEach(k => {
+    const arr = list[k] || (list[k] = []);
+    sp[k].forEach(p => { if (!arr.some(x => x.id === p.id)) arr.push({ id: p.id, n: nextMandNo(arr), ts: p.ts, uploaded: false, pending: true }); });
+  });
+  // The job is written first: if the app closes right here, the photo is still
+  // listed on the Start screen or in the job, never in neither.
+  flushSaveState();
+  setupMandPhotos = {};
+  saveSetupMandPhotos();
+  const box = document.getElementById('setupMandFields');
+  if (box) box.innerHTML = mandatoryFieldsHTML('setup', setupMandatory);
+  return stampMandPhotos();
+}
+function mandMark(id) {
+  for (const k of Object.keys(state.mandPhotos || {})) {
+    const m = (state.mandPhotos[k] || []).find(p => p.id === id);
+    if (m) return m;
+  }
+  return null;
+}
+function stampMandRec(rec, m) {
+  Object.assign(rec, { address: state.address, jobId: state.jobId || '', client: state.client || '', meta: inspectionMeta(), n: m.n });
+  delete rec.setup;
+}
+async function stampMandPhotos() {
+  for (const k of Object.keys(state.mandPhotos || {})) {
+    for (const m of state.mandPhotos[k]) {
+      if (!m.pending) continue;
+      try {
+        const p = await photoGet(m.id);
+        if (p && p.setup) { stampMandRec(p, m); await photoPut(p); }
+        delete m.pending;
+      } catch (e) {}
+    }
+  }
+  saveState();
+}
+function markMandPhotoUploaded(id) {
+  const m = mandMark(id);
+  if (!m) return;
+  m.uploaded = true;
+  delete m.pending;
+  saveState();
+  const k = Object.keys(state.mandPhotos).find(x => (state.mandPhotos[x] || []).includes(m));
+  if (k && document.getElementById('mandph-review-' + k)) repaintMandPhoto('review', k);
+}
+// The photos' line in the files: "Water Meter 2, RCD Box 1, Gas Meter none, NBN Box 1".
+function mandPhotoCounts(mp) {
+  return MAND_PHOTOS.map(([k, label]) => { const n = ((mp || {})[k] || []).length; return label + ' ' + (n || 'none'); }).join(', ');
 }
 // What's typed on the Start screen is kept on the phone until Start, so an iPhone
 // reload (Camera, a call) doesn't lose it.
@@ -9959,7 +10213,9 @@ function renderSetupMandatory() {
   const box = document.getElementById('setupMandFields');
   if (!box) return;
   try { setupMandatory = JSON.parse(localStorage.getItem(SETUP_MAND_KEY) || '{}') || {}; } catch (e) { setupMandatory = {}; }
+  try { setupMandPhotos = JSON.parse(localStorage.getItem(SETUP_MAND_PHOTOS_KEY) || '{}') || {}; } catch (e) { setupMandPhotos = {}; }
   box.innerHTML = mandatoryFieldsHTML('setup', setupMandatory);
+  loadMandThumbs('setup');
 }
 // Resuming a job: anything typed on the Start screen fills only the job's empty fields.
 function mergeSetupMandatory() {
@@ -9983,7 +10239,7 @@ function paintReviewMandatory() {
   const missing = checkMandatory();
   const sub = document.getElementById('reviewMandSub');
   const st = document.getElementById('reviewMandState');
-  if (sub) sub.textContent = missing.length ? missing.length + ' not filled in' : 'All filled in';
+  if (sub) sub.textContent = missing.length ? missing.length + ' still needed' : 'All done';
   if (st) st.innerHTML = missing.length ? '<span class="rr-ic bad">' + ico('alert') + '</span>' : '<span class="rr-ic ok">' + ico('check') + '</span>';
   let row = document.getElementById('attnMandatory');
   if (!row && missing.length) {
@@ -10006,7 +10262,7 @@ function paintReviewMandatory() {
   }
   if (row) {
     const span = row.querySelector('span');
-    if (span) span.textContent = 'Not filled in: ' + missing.join(', ');
+    if (span) span.textContent = mandMissingText(missing);
     row.hidden = !missing.length;
     const card = row.closest('.attn-card');
     if (card) card.hidden = ![...card.querySelectorAll('.attn-row')].some(r => !r.hidden);

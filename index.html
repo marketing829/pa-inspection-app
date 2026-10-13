@@ -6307,7 +6307,18 @@ function timestampChecks(rec) {
 const CLEANUP_MAX_TRIES = 9;
 const CLEANUP_DELAYS_MIN = [1, 2, 5, 10, 20, 30, 60, 60];
 function cleanupDelay(n) { return CLEANUP_DELAYS_MIN[Math.min(CLEANUP_DELAYS_MIN.length, Math.max(1, n || 1)) - 1] * 60000; }
-function cleanupWillRetry(r) { return !!(r && r.cleanupError && (r.cleanupTries || 0) < CLEANUP_MAX_TRIES); }
+// Only rooms that failed under round 22 or later (they carry a next try), from
+// the last 24 hours, not discarded. Older rooms on the phone are left alone, so
+// an update never rewrites Word files the VA may have finished. A refusal that
+// won't change (the val kept too few words, too large, not allowed) stops
+// after two tries.
+const CLEANUP_RETRY_HOURS = 24;
+function cleanupFinalError(e) { e = String(e || ''); return !/credit balance/i.test(e) && /kept only|refused|too large|not allowed|no subsections|\bhttp 4\d\d\b|anthropic 4\d\d\b/i.test(e); }
+function cleanupWillRetry(r) {
+  if (!r || !r.cleanupError || r.discarded || !r.cleanupNextAt) return false;
+  if (r.createdAt && Date.now() - r.createdAt > CLEANUP_RETRY_HOURS * 3600000) return false;
+  return (r.cleanupTries || 0) < (cleanupFinalError(r.cleanupError) ? 2 : CLEANUP_MAX_TRIES);
+}
 // In plain words, for the Word file and the problem log.
 function cleanupReason(err) {
   const e = String(err || '');
@@ -6317,7 +6328,7 @@ function cleanupReason(err) {
   if (/overloaded|529|http 5\d\d|anthropic 5\d\d/i.test(e)) return 'the AI service was busy';
   return e.slice(0, 80) || 'unknown error';
 }
-let cleanupRetryRunning = false, cleanupRetryStartedAt = 0;
+let cleanupRetryRunning = false, cleanupRetryStartedAt = 0, cleanupDiagCount = 0;
 let cleanupReadyCheckedAt = 0;
 async function cleanupRetryPass() {
   if (!CLEANUP_URL || !navigator.onLine || !('indexedDB' in window)) return;
@@ -6335,7 +6346,8 @@ async function cleanupRetryPass() {
     if (!due.length) return;
     // Not known to be ready (no signal when the app opened): ask again, at most every 2 minutes.
     if (!cleanupReady && Date.now() - cleanupReadyCheckedAt > 120000) { cleanupReadyCheckedAt = Date.now(); await checkCleanupReady(); }
-    for (const r of due.slice(0, 3)) {
+    // One room per pass (every 30 s), so the lock is timed for one sort.
+    for (const r of due.slice(0, 1)) {
       if (cleanupRetryStartedAt !== run || !navigator.onLine) return;
       if (!cleanupEnabled()) {
         // Still not reachable: this counts as a try, so it ends after about three hours.
@@ -6370,6 +6382,9 @@ async function cleanupRetryPass() {
         });
       } catch (e) { continue; }
       if (took && fresh) {
+        // The Word file is built again even where the archive pass won't run
+        // for this room (audio too large, or unreadable with its audio up).
+        markJobDoc(archiveFolderName(fresh), sameJob(fresh) ? jobSnapshot() : null);
         resortedRoomNote(fresh);
         if (cloudArchiveEnabled() && navigator.onLine) processArchiveQueue();
         updatePendingUI();
@@ -6387,11 +6402,15 @@ function resortedRoomNote(rec) {
   const id = rec.roomId;
   const split = punctuateBySubarea({ subsections: rec.subsections || [] }, applyCorrections(applyScratch((rec.transcript || '').trim())));
   const cur = state.roomNotes[id] || '';
-  if (split && cur.includes(split)) {
-    state.roomNotes[id] = cur.replace(split, sectionsToNote(rec.sections));
-    const ta = document.getElementById(`roomta-${id}`);
-    if (ta) ta.value = state.roomNotes[id];
-  }
+  // Only when the note still holds the split, once per recording: the
+  // sections and word flags are added once, so Review never doubles them.
+  if (!split || !cur.includes(split)) return;
+  state.lateSorted = state.lateSorted || {};
+  if (state.lateSorted[rec.id]) return;
+  state.lateSorted[rec.id] = true;
+  state.roomNotes[id] = cur.replace(split, sectionsToNote(rec.sections));
+  const ta = document.getElementById(`roomta-${id}`);
+  if (ta) ta.value = state.roomNotes[id];
   state.roomSections[id] = mergeSections(state.roomSections[id], rec.sections);
   state.roomSectionParts = state.roomSectionParts || {};
   (state.roomSectionParts[id] = state.roomSectionParts[id] || []).push(rec.sections.map(x => ({ name: x.name, text: x.text })));
@@ -6471,7 +6490,12 @@ async function runCleanup(rec) {
     // replay, 13 Oct). Now the phone tries again by itself (cleanupRetryPass).
     rec.cleanupTries = (rec.cleanupTries || 0) + 1;
     rec.cleanupNextAt = Date.now() + cleanupDelay(rec.cleanupTries);
-    sendDiag('cleanup', rec, e, { reason: cleanupReason(rec.cleanupError), tries: rec.cleanupTries });
+    // Logged on the first failure and when the phone gives up, at most 10 a
+    // session, so these can't use up the log's room for audio problems.
+    if ((rec.cleanupTries === 1 || !cleanupWillRetry(rec)) && cleanupDiagCount < 10) {
+      cleanupDiagCount++;
+      sendDiag('cleanup', rec, e, { reason: cleanupReason(rec.cleanupError), tries: rec.cleanupTries, final: !cleanupWillRetry(rec) });
+    }
   } finally {
     clearTimeout(timer);
   }
@@ -8188,9 +8212,11 @@ const SUSPECT_PHRASES = [
   /\bperson\b/gi, /\bsecurity function(?:al)?\b/gi, /\b(?:one|two|three|four|\d+) clothes\b(?!\s*(?:lines?|hooks?|rails?|rods?|airers?|dryers?))/gi, /\bdiscretion\b/gi,
   /\b(?:grey|white|black) tall\b(?!\s*(?:boy|cupboard|unit|cabinet|pantry))/gi, /\bserum number\b/gi, /\bmotor numbers? (?:is|:)/gi,
   // ROUND 22 (third Stirling replay): "in poor condition" was "plug combination"
-  // on a wash basin; "silver metal light switch" was "single"; "triple" was
-  // "single"; "small" was "silver metal"; "American handles" was "no handles".
-  /\bin poor condition\b/gi, /\bsilver metal (?:light switch(?:es)?|power points?)\b/gi, /\btriple light switch(?:es)?\b/gi,
+  // on a wash basin (only next to a plug or drain: elsewhere it can be real);
+  // "silver metal light switch" was "single"; "small" was "silver metal";
+  // "American handles" was "no handles". ("Triple" light switches are common,
+  // so that one is left to the AI's own check.)
+  /\b(?:plug|drain|basin|combination)\b[^.]{0,40}?\bin poor condition\b/gi, /\bsilver metal (?:light switch(?:es)?|power points?)\b/gi,
   /\b(?:one|two) small (?:lockable handle|handle|doorstop|door stopper|drain|mixer|towel rail)s?\b/gi, /\bone simple\b/gi,
   /\bamerican handles?\b/gi, /\b(?:\d+|one|two|three|four) glows\b/gi, /\bcolli rack\b/gi,
   // "no …" then a condition in the same breath: says it's not there, then
@@ -8951,7 +8977,7 @@ async function finishAndClear(discard) {
   clearSaved();
   releaseSessionMic();   // let go of the microphone now the inspection is finished
   state.roomNotes = {}; state.serialModels = {}; state.serialPhotos = {}; state.checked = {}; state.rooms = [];
-  state.inventory = {}; state.roomSections = {}; state.roomSectionParts = {}; state.roomChecks = {}; state.skippedRooms = {}; state.typedOnly = {};
+  state.inventory = {}; state.roomSections = {}; state.roomSectionParts = {}; state.roomChecks = {}; state.skippedRooms = {}; state.typedOnly = {}; state.lateSorted = {};
   state.jobId = '';
   roughDrafts = {}; roomAudioFlags = {}; roomRecMap = {}; roomMismatches = {};
   state.currentRoomIdx = 0; state.startedAt = null; state.address = '';
@@ -10829,11 +10855,14 @@ async function resumeSendingAfterAway() {
   audioInFlight.clear();
   try {
     for (const r of await dbAll()) {
-      let changed = false;
-      if (r.status === 'uploading') { r.status = 'pending'; changed = true; }
-      if (r.status === 'pending' && r.nextTryAt) { delete r.nextTryAt; changed = true; }
-      if (r.archived !== true && r.archNextAt) { delete r.archNextAt; changed = true; }
-      if (changed) await dbPut(r);
+      const due = x => x.status === 'uploading' || (x.status === 'pending' && x.nextTryAt) || (x.archived !== true && x.archNextAt);
+      // ROUND 22: written onto a fresh read, so a late AI sort that landed
+      // meanwhile isn't wiped by this older copy.
+      if (due(r)) await dbUpdate(r.id, x => {
+        if (x.status === 'uploading') x.status = 'pending';
+        if (x.status === 'pending' && x.nextTryAt) delete x.nextTryAt;
+        if (x.archived !== true && x.archNextAt) delete x.archNextAt;
+      });
     }
     for (const p of await photoAll()) {
       if (!p.uploaded && p.nextTryAt) { delete p.nextTryAt; await photoPut(p); }

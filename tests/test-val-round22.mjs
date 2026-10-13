@@ -156,7 +156,7 @@ check('R21: a normal answer has no cut_reason', j.ok && j.cut_reason === undefin
 check('R21 rules: this round\'s mishears are fixed or flagged', ['skidder', 'window down skidder', 'Walmart Classic', 'decanter', 'once a big', 'grabber', 'Drawer is a glass pane', '12-volt and data point', 'island tops', 'person', 'security function', 'clothes', 'discretion', 'serum number', 'motor number', '"red" sliding doors', '"walnut" laminate', '"vinyl" framing', '"sensor"', 'along a section'].every(w => sys().includes(w)));
 check('R21 rules: a dash before a different item keeps both items', /keep both items and flag the garbled words/.test(sys()));
 check('R22 rules: "simple" before a switch or power point is "single", not "silver metal"', /"simple" before a light switch, power point, data point or Foxtel point is "single"/.test(sys()) && /"simple" \(before a metal fitting, not a switch or power point\) for "silver metal"/.test(sys()));
-check('R22 rules: American handles, glows, colli rack fixed; poor condition, triple, small flagged', ['"American handles are present"', '"glows"', '"colli rack"', '"in poor condition"', '"triple light switch"', '"small" before a handle'].every(w => sys().includes(w)));
+check('R22 rules: American handles, glows, colli rack fixed; poor condition (next to a drain) and small flagged; triple no longer', ['"American handles are present"', '"glows"', '"colli rack"', '"in poor condition" right after a basin, plug or drain', '"small" before a handle'].every(w => sys().includes(w)));
 
 // 17.2: a long room with nothing to check is asked again (live Stirling Bedroom 1).
 const longT = 'walls painted white with scuff marks near the door and spiderwebs present on the ceiling '.repeat(9);

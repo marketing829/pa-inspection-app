@@ -3354,10 +3354,14 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     check('R22: a failed AI sort is reported to the problem log, with the reason', logs.some(l => l.stage === 'cleanup' && l.reason === 'Claude credits used up' && l.tries === 1), logs.map(l => l.stage + ':' + l.reason));
     const c2 = await page.evaluate(() => ({
       net: cleanupReason('Failed to fetch'), slow: cleanupReason('anthropic took too long'), busy: cleanupReason('anthropic 529: Overloaded'), other: cleanupReason('kept only 60% of the words — refused'),
-      delays: [1, 2, 3, 4, 5, 6, 7, 8, 9, 12].map(n => cleanupDelay(n) / 60000), last: cleanupWillRetry({ cleanupError: 'x', cleanupTries: 9 }), before: cleanupWillRetry({ cleanupError: 'x', cleanupTries: 8 })
+      delays: [1, 2, 3, 4, 5, 6, 7, 8, 9, 12].map(n => cleanupDelay(n) / 60000), last: cleanupWillRetry({ cleanupError: 'x', cleanupTries: 9, cleanupNextAt: 1 }), before: cleanupWillRetry({ cleanupError: 'x', cleanupTries: 8, cleanupNextAt: 1 }),
+      oldRoom: cleanupWillRetry({ cleanupError: 'Failed to fetch' }), dayOld: cleanupWillRetry({ cleanupError: 'x', cleanupNextAt: 1, createdAt: Date.now() - 25 * 3600000 }),
+      discarded: cleanupWillRetry({ cleanupError: 'x', cleanupNextAt: 1, discarded: true }), refusedOnce: cleanupWillRetry({ cleanupError: 'kept only 60% of the words — refused', cleanupTries: 1, cleanupNextAt: 1 }),
+      refusedTwice: cleanupWillRetry({ cleanupError: 'kept only 60% of the words — refused', cleanupTries: 2, cleanupNextAt: 1 }), creditsTwice: cleanupWillRetry({ cleanupError: 'anthropic 400: Your credit balance is too low', cleanupTries: 2, cleanupNextAt: 1 })
     }));
     check('R22: reasons in plain words (no connection, took too long, busy); tries end after about three hours', c2.net === 'no connection to the AI' && c2.slow === 'the AI took too long' && c2.busy === 'the AI service was busy' && /kept only 60%/.test(c2.other)
       && c2.delays.join(',') === '1,2,5,10,20,30,60,60,60,60' && !c2.last && c2.before, c2);
+    check('R22 review: rooms that failed before this update, over 24 hours old or discarded are not sorted again; a refusal stops after two tries (credits don\'t)', !c2.oldRoom && !c2.dayOld && !c2.discarded && c2.refusedOnce && !c2.refusedTwice && c2.creditsTwice, c2);
 
     // 2. The retry pass sorts it once the AI answers; only the text goes to Dropbox again (not the audio); the Word file follows.
     const r1 = await page.evaluate(async () => {
@@ -3382,6 +3386,13 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     check('R22: the retry pass sorts a room whose AI sort failed, once its time comes (not before)', r2.sections === 3 && r2.err === null && r2.late && r2.bNot && cleanCalls === 1, { r2, cleanCalls });
     check('R22: after a late sort only the room\'s text files go to Dropbox again, never the audio', puts.some(p => /App data\/02 Lounge.*\.txt$/.test(p.path)) && puts.some(p => /\.json$/.test(p.path)) && !puts.some(p => /\.(webm|m4a|mp4)$/.test(p.path)) && r2.archived === true && r2.rev === 1, { puts: puts.map(p => p.path), r2 });
     check('R22: the room on the phone shows the sorted text in place of the keyword split', /brown wood-look vinyl/.test(r2.note) && r2.rs === 3, r2);
+    const d1 = await page.evaluate(async () => {
+      const a = await dbGet(window.__r22.id);
+      const before = { parts: (state.roomSectionParts.lounge || []).length, checks: (state.roomChecks.lounge || []).length, note: state.roomNotes.lounge };
+      resortedRoomNote(a); resortedRoomNote(a);
+      return { same: (state.roomSectionParts.lounge || []).length === before.parts && (state.roomChecks.lounge || []).length === before.checks && state.roomNotes.lounge === before.note };
+    });
+    check('R22 review: the same late sort applied twice doesn\'t double the room\'s text or word flags on the phone', d1.same, d1);
     check('R22: the Word file is built again after the late sort', puts.some(p => /22 Retry St - Inspection\.docx$/.test(p.path)), puts.map(p => p.path));
 
     // 3. A note the inspector typed into isn't overwritten; the Word file still gets the sorted text.
@@ -3402,6 +3413,7 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
       const a = await dbGet(id);
       return { tries: a.cleanupTries, wait: Math.round((a.cleanupNextAt - Date.now()) / 60000), err: a.cleanupError, archived: a.archived };
     });
+    check('R22 review: a later failure isn\'t logged again (first and last only), so audio problems keep their room in the log', logs.filter(l => l.stage === 'cleanup').length === 1, logs.map(l => l.stage + ':' + l.tries));
     check('R22: a retry that fails again waits longer (10 minutes after the fourth) and leaves the room\'s files alone', f1.tries === 4 && f1.wait >= 9 && f1.wait <= 10 && f1.err === 'anthropic took too long' && f1.archived === true, f1);
 
     // 5. Opened with no signal: the AI sort wasn't known; the room is marked and sorted later.
@@ -3432,15 +3444,16 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
     // 6. New always-highlighted words from the third replay; correct wording isn't highlighted.
     const h1 = await page.evaluate(() => {
-      const bad = ['Wash basin is a white ceramic, in poor condition with scratching.', 'One silver metal light switch, one power point.', 'One double power point, one triple light switch.',
+      const bad = ['Wash basin is a white ceramic, once with a drain, in poor condition with scratching.', 'One silver metal light switch, one power point.',
         'One small lockable handle both sides.', 'One small doorstop secured to the flooring.', 'One simple sink with scratching.', 'Two white laminate cupboard doors, American handles are present.',
         'There are 2 glows present, both functional.', 'One grey plastic colli rack.'];
       const good = ['One single light switch and one double power point.', 'One small chip to the wall.', 'Two small scuff marks to the door.', 'Two globes present, both functional.',
-        'Two white laminate cupboard doors, no handles present.', 'One silver metal handle secured to both sides.', 'In good condition.'];
+        'Two white laminate cupboard doors, no handles present.', 'One silver metal handle secured to both sides.', 'In good condition.',
+        'One white plastic triple light switch secured and functional.', 'Carpet in poor condition with stains throughout.'];
       return { missed: bad.filter(t => !suspectSpans(t).length), wrong: good.filter(t => suspectSpans(t).length) };
     });
-    check('R22: "in poor condition", "silver metal light switch", "triple light switch", "small" handle/doorstop, "American handles", "glows" are always highlighted', !h1.missed.length, h1.missed);
-    check('R22: the right wording is not highlighted (single light switch, small chip, globes, no handles)', !h1.wrong.length, h1.wrong);
+    check('R22: "in poor condition" next to a drain, "silver metal light switch", "small" handle/doorstop, "American handles", "glows" are always highlighted', !h1.missed.length, h1.missed);
+    check('R22: the right wording is not highlighted (single light switch, small chip, globes, no handles, a triple light switch, carpet in poor condition)', !h1.wrong.length, h1.wrong);
     check('R22: no script errors', page.__errors.length === 0, page.__errors);
     await page.close();
   }

@@ -51,7 +51,7 @@ WHAT CHANGED IN THE MANDATORY ITEMS
   4. Required: each missing photo is listed under "Before you finish" on
      Review, and Finish asks "Mandatory items still needed: … Finish this
      inspection?". It doesn't block Finish, because some properties have no
-     gas meter. Tell me if you'd rather it blocked.
+     gas meter. Daphne decided (13 Oct): keep it as a reminder.
   5. In Dropbox, in the job's Photos folder, named so they list first:
        00 Mandatory - Water Meter 1 - 0912 - 57.jpg
        00 Mandatory - Water Meter 2 - 0913 - 58.jpg

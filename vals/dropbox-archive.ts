@@ -58,6 +58,19 @@
 //   Every upload is logged ("upload ok" / "upload FAILED", path, bytes, time).
 //   Dropbox calls have time limits; an expired Dropbox token is renewed and the
 //   upload tried once more; a busy Dropbox (429 / 5xx) gets one more go.
+//
+// Round 19 — a recording is never written over, and the 60 s limit counts from
+// the moment the phone's request arrives:
+//   Audio/ files are added, never overwritten (even with mode=overwrite). If a
+//   recording of that name is already there with the same size, it's the same
+//   recording sent twice: the answer points at it. A different size keeps both
+//   (Dropbox adds "(1)") and the log says "different-size copy kept".
+//   Word, .txt and .json files still replace the old copy with mode=overwrite.
+//   If the file took so long to arrive that Dropbox can't be finished safely
+//   inside Val Town's 60 s, the answer is 503 "Try again", and the phone sends it
+//   again, instead of the request being cut off with no answer.
+//   Every upload answer has ok, path and a numeric size (the phone checks size
+//   on audio from round 19).
 
 const ALLOWED_ORIGIN = "https://marketing829.github.io";
 const BASE_FOLDER = "/Property Assist Inspections";
@@ -68,6 +81,10 @@ const MAX_READ_BYTES = 5 * 1024 * 1024; // text and json only; audio is streamed
 const MAX_LOG_BYTES = 16 * 1024; // one problem report from a phone
 const UPLOAD_TIMEOUT_MS = 50000; // Val Town ends a request at 60 s on the free plan
 const TOKEN_TIMEOUT_MS = 15000;
+// Round 19: all of one request, counted from when it arrives, stays inside 55 s.
+const REQUEST_BUDGET_MS = 55000;
+const MIN_DROPBOX_MS = 8000; // less than this left for Dropbox: answer 503 so the phone retries
+const AUDIO_EXT = new Set(["m4a", "mp4", "aac", "webm", "ogg", "mp3", "wav", "audio"]);
 
 // Path rules. The app only ever sends "<date> - <address>/<file name>", with
 // the address already stripped of characters Dropbox can't hold. Anything else
@@ -90,6 +107,11 @@ let cachedToken = "";
 let cachedExpiry = 0;
 
 export default async function (req: Request): Promise<Response> {
+  // Round 19: the clock starts the moment the request arrives. It used to start
+  // after the whole file had been read, so a slow upload could push the Dropbox
+  // leg past Val Town's 60 s and the phone got no answer at all.
+  const started = Date.now();
+  const left = () => REQUEST_BUDGET_MS - (Date.now() - started);
   const cors = {
     "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -104,7 +126,8 @@ export default async function (req: Request): Promise<Response> {
     return json(
       {
         ok: true, service: "dropbox-archive", key_required: !!PA_KEY, max_mb: 60,
-        version: 14, editor_reading: !!EDITOR_KEY, problem_log: true, size_check: true,
+        round: 19, version: "19", editor_reading: !!EDITOR_KEY, problem_log: true, size_check: true,
+        audio_never_overwritten: true,
       },
       200,
       cors,
@@ -142,13 +165,24 @@ export default async function (req: Request): Promise<Response> {
   const checked = cleanPath(url.searchParams.get("path") || "");
   if (!checked.path) return json({ error: checked.error }, 400, cors);
   const dropboxPath = checked.path;
-  const overwrite = url.searchParams.get("mode") === "overwrite";
+  // Round 19: a recording (a file in an Audio/ folder) is never overwritten.
+  const isAudio = /\/Audio\/[^/]+$/.test(dropboxPath) &&
+    AUDIO_EXT.has(dropboxPath.slice(dropboxPath.lastIndexOf(".") + 1).toLowerCase());
+  const overwrite = !isAudio && url.searchParams.get("mode") === "overwrite";
 
   // Turn an oversized file away before reading it, when its size is declared.
   if (Number(req.headers.get("content-length") || 0) > MAX_BYTES) {
     return json({ error: "File too large — 60 MB max." }, 413, cors);
   }
-  const body = await req.arrayBuffer();
+  // Round 19: reading the file has a time limit too, so there is always time
+  // left to answer the phone.
+  let body: ArrayBuffer | null = null;
+  try {
+    body = await withTimeout(req.arrayBuffer(), Math.max(0, left() - MIN_DROPBOX_MS));
+  } catch (e) {
+    if (String(e) !== "Error: timeout") throw e;
+  }
+  if (body === null) return tooLate(dropboxPath, "the file took too long to arrive", started, cors);
   if (!body || body.byteLength === 0) {
     return json({ error: "No file received." }, 400, cors);
   }
@@ -166,29 +200,98 @@ export default async function (req: Request): Promise<Response> {
     );
   }
 
-  const started = Date.now();
-  const arg = headerJson({
-    path: dropboxPath,
-    mode: overwrite ? "overwrite" : "add",
-    autorename: !overwrite,
-    mute: true,
+  if (left() < MIN_DROPBOX_MS) return tooLate(dropboxPath, "the file took too long to arrive", started, cors);
+
+  // Audio: add, and stop at a name that's already there (checked below).
+  // Word / .txt / .json: overwrite when the app asks, as before.
+  let up = await sendToDropbox(body, dropboxPath, overwrite ? "overwrite" : "add", !overwrite && !isAudio, left);
+  if ("authError" in up) {
+    console.log("upload FAILED (token)", dropboxPath, up.authError);
+    return json({ error: "Could not authenticate with Dropbox.", detail: up.authError }, 502, cors);
+  }
+  let note = "";
+  // Round 19: a recording of this name is already in Dropbox.
+  if (isAudio && up.db && up.db.status === 409 && /path\/conflict/.test(up.problem)) {
+    if (left() < MIN_DROPBOX_MS) return tooLate(dropboxPath, "no time left to check the copy already there", started, cors);
+    const there = await existingSize(dropboxPath, left);
+    if (there && there.size === body.byteLength) {
+      // The same recording, sent again (an answer lost on the way back).
+      console.log("upload ok (already there, same size)", there.path, there.size, "bytes", Date.now() - started, "ms");
+      return json({ ok: true, path: there.path, mode: "add", size: there.size, existing: true }, 200, cors);
+    }
+    if (!there) {
+      console.log("upload FAILED (name taken, size unknown)", dropboxPath, body.byteLength, "bytes", Date.now() - started, "ms");
+      return json({ error: "Dropbox upload failed", status: 409, detail: "A file of this name is there; its size could not be read." }, 502, cors);
+    }
+    // A different recording under the same name: keep both.
+    if (left() < MIN_DROPBOX_MS) return tooLate(dropboxPath, "no time left to keep a second copy", started, cors);
+    up = await sendToDropbox(body, dropboxPath, "add", true, left);
+    if ("authError" in up) {
+      console.log("upload FAILED (token)", dropboxPath, up.authError);
+      return json({ error: "Could not authenticate with Dropbox.", detail: up.authError }, 502, cors);
+    }
+    note = "different-size copy kept (" + there.size + " bytes already there, " + body.byteLength + " sent)";
+  }
+  const db = up.db;
+  if (!db || !db.ok) {
+    console.log("upload FAILED", dropboxPath, body.byteLength, "bytes", Date.now() - started, "ms", up.problem);
+    return json(
+      { error: "Dropbox upload failed", status: db ? db.status : 0, detail: up.problem },
+      502,
+      cors,
+    );
+  }
+  let data: { size?: unknown; path_display?: unknown } = {};
+  try { data = await db.json(); } catch (_) { /* Dropbox said OK; use what was sent */ }
+  const stored = typeof data.size === "number" ? data.size : body.byteLength;
+  const landed = typeof data.path_display === "string" && data.path_display ? data.path_display : dropboxPath;
+  if (note) console.log("upload ok, " + note, landed, stored, "bytes", Date.now() - started, "ms");
+  else console.log("upload ok", landed, stored, "bytes", Date.now() - started, "ms");
+  return json(
+    { ok: true, path: landed, mode: overwrite ? "overwrite" : "add", size: stored, ...(note ? { kept_both: true } : {}) },
+    200,
+    cors,
+  );
+}
+
+// Round 19: not enough of Val Town's 60 s left to finish safely. A 503 is a
+// real answer: the phone keeps its copy and sends the file again.
+function tooLate(path: string, why: string, started: number, cors: Record<string, string>): Response {
+  console.log("upload REFUSED (no time left)", path, why, Date.now() - started, "ms");
+  return json({ error: "Try again: " + why + ".", retry: true }, 503, cors);
+}
+
+// A promise with a time limit: rejects with "timeout" after ms.
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error("timeout")), ms);
+    p.then((v) => { clearTimeout(t); resolve(v); }, (e) => { clearTimeout(t); reject(e); });
   });
+}
+
+// Round 14: up to two goes at one upload. An expired token is renewed first; a
+// busy Dropbox (429 / 5xx) gets a short wait. Every go stays inside the
+// request's time left. (Round 19: moved out of the handler so a second copy
+// can be sent the same way.)
+async function sendToDropbox(
+  body: ArrayBuffer,
+  dropboxPath: string,
+  mode: "add" | "overwrite",
+  autorename: boolean,
+  left: () => number,
+): Promise<{ db: Response | null; problem: string } | { authError: string }> {
+  const arg = headerJson({ path: dropboxPath, mode, autorename, mute: true });
   let db: Response | null = null;
-  let lastProblem = "";
-  // Round 14: up to two goes. An expired token is renewed first; a busy
-  // Dropbox (429 / 5xx) gets a short wait.
+  let problem = "";
   for (let go = 1; go <= 2; go++) {
     let token: string;
     try {
-      token = await getAccessToken(go > 1 && db?.status === 401);
+      // Round 19: a new token may only use the time this request has left.
+      token = await getAccessToken(go > 1 && db?.status === 401, left() - 3000);
     } catch (e) {
-      console.log("upload FAILED (token)", dropboxPath, String(e).slice(0, 200));
-      return json(
-        { error: "Could not authenticate with Dropbox.", detail: String(e).slice(0, 200) },
-        502,
-        cors,
-      );
+      return { authError: String(e).slice(0, 200) };
     }
+    if (left() < 3000) { problem = problem || "no time left for Dropbox"; break; }
     try {
       db = await fetch("https://content.dropboxapi.com/2/files/upload", {
         method: "POST",
@@ -198,40 +301,52 @@ export default async function (req: Request): Promise<Response> {
           "Content-Type": "application/octet-stream",
         },
         body,
-        // Never past Val Town's 60 s, counting the first go.
-        signal: AbortSignal.timeout(Math.max(5000, Math.min(UPLOAD_TIMEOUT_MS, 55000 - (Date.now() - started)))),
+        // Never past Val Town's 60 s, counted from when the request arrived.
+        signal: AbortSignal.timeout(Math.max(1000, Math.min(UPLOAD_TIMEOUT_MS, left()))),
       });
     } catch (e) {
       db = null;
-      lastProblem = "could not reach Dropbox: " + String((e as Error)?.message || e).slice(0, 120);
+      problem = "could not reach Dropbox: " + String((e as Error)?.message || e).slice(0, 120);
       break; // a timeout already used most of the request's 60 s
     }
     if (db.ok) break;
     const retryable = db.status === 401 || db.status === 429 || db.status >= 500;
-    lastProblem = "Dropbox " + db.status + ": " + (await db.text().catch(() => "")).slice(0, 300);
+    problem = "Dropbox " + db.status + ": " + (await db.text().catch(() => "")).slice(0, 300);
     // A second go only if there's time for it inside Val Town's 60 s.
-    if (!retryable || go === 2 || Date.now() - started > 20000) break;
+    if (!retryable || go === 2 || left() < 30000) break;
     if (db.status !== 401) {
       const ra = Number(db.headers.get("Retry-After") || 0);
       await new Promise((r) => setTimeout(r, Math.min(5000, Math.max(1000, ra * 1000))));
     }
   }
-  if (!db || !db.ok) {
-    console.log("upload FAILED", dropboxPath, body.byteLength, "bytes", Date.now() - started, "ms", lastProblem);
-    return json(
-      { error: "Dropbox upload failed", status: db ? db.status : 0, detail: lastProblem },
-      502,
-      cors,
-    );
+  return { db, problem };
+}
+
+// Round 19: the size of the file already at this path, or null if it can't be
+// read in time.
+async function existingSize(
+  dropboxPath: string,
+  left: () => number,
+): Promise<{ path: string; size: number } | null> {
+  try {
+    const token = await getAccessToken(false, left() - 5000);
+    const res = await fetch("https://api.dropboxapi.com/2/files/get_metadata", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+      body: JSON.stringify({ path: dropboxPath }),
+      signal: AbortSignal.timeout(Math.max(1000, Math.min(10000, left() - 5000))),
+    });
+    if (!res.ok) {
+      console.log("metadata FAILED", dropboxPath, res.status, (await res.text().catch(() => "")).slice(0, 200));
+      return null;
+    }
+    const d = await res.json();
+    if (typeof d.size !== "number") return null;
+    return { path: d.path_display || dropboxPath, size: d.size };
+  } catch (e) {
+    console.log("metadata FAILED", dropboxPath, String((e as Error)?.message || e).slice(0, 120));
+    return null;
   }
-  const data = await db.json();
-  const stored = typeof data.size === "number" ? data.size : body.byteLength;
-  console.log("upload ok", data.path_display || dropboxPath, stored, "bytes", Date.now() - started, "ms");
-  return json(
-    { ok: true, path: data.path_display || dropboxPath, mode: overwrite ? "overwrite" : "add", size: stored },
-    200,
-    cors,
-  );
 }
 
 // Round 11: read-only actions for the typist editor. Fails closed: with no
@@ -361,7 +476,7 @@ function cleanFolder(raw: string): { path: string; error?: string } {
 }
 
 // Mint a short-lived access token from the long-lived refresh token.
-async function getAccessToken(forceNew = false): Promise<string> {
+async function getAccessToken(forceNew = false, timeoutMs = TOKEN_TIMEOUT_MS): Promise<string> {
   const now = Date.now();
   if (!forceNew && cachedToken && now < cachedExpiry - 60000) return cachedToken;
 
@@ -384,7 +499,7 @@ async function getAccessToken(forceNew = false): Promise<string> {
       grant_type: "refresh_token",
       refresh_token: refresh,
     }),
-    signal: AbortSignal.timeout(TOKEN_TIMEOUT_MS),
+    signal: AbortSignal.timeout(Math.max(1000, Math.min(TOKEN_TIMEOUT_MS, timeoutMs))),
   });
   if (!res.ok) {
     throw new Error(

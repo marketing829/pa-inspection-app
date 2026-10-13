@@ -2460,7 +2460,7 @@
     <!-- Service settings. Inspectors never need these, and a stray tap here
          used to be able to break uploads, so they're tucked away. -->
     <details class="admin-settings" id="adminSettings">
-      <summary>Admin settings <span class="app-ver">· app version 18</span></summary>
+      <summary>Admin settings <span class="app-ver">· app version 19</span></summary>
       <p class="admin-warn">For Daphne / admin only. Changing these can stop recordings reaching Dropbox.</p>
     <div class="field-group">
       <label>Transcription engine</label>
@@ -3201,7 +3201,7 @@ let photoQueueRunning = false; // guard so the serial-photo upload queue runs on
 // every read of a stored recording now has a hard deadline (a send that never
 // answers, or ignores its abort, can no longer hold a queue), and every pass
 // has a watchdog. The numbers live here so the tests can shorten them.
-const APP_ROUND = 18;
+const APP_ROUND = 19;
 const TIMING = {
   grace: 5000,              // added to a request's own time limit before giving up on it outright
   readMs: 20000,            // reading one stored recording into memory
@@ -4246,7 +4246,9 @@ const PHRASE_CORRECTIONS = [
   // A towel rail dictated at speed loses its last word. Only a bare "towel"
   // is finished off: towel ring, towel hooks, towel bar and the rest are
   // fittings in their own right and were coming out as "towel rail ring".
-  [/\btowel\b(?![\s-]+(?:rails?|ladders?|racks?|holders?|rings?|hooks?|bars?|rods?|warmers?|shelf|shelves|hangers?|rail))/gi, 'towel rail'],
+  // ROUND 19: a real towel stays a towel ("hand towel", "paper towel dispenser").
+  [/\btowel\b(?![\s-]+(?:rails?|ladders?|racks?|holders?|rings?|hooks?|bars?|rods?|warmers?|shelf|shelves|hangers?|rail|dispensers?))/gi,
+    (m, at, all) => /\b(?:hand|paper|bath|tea|beach)\s+$/i.test(all.slice(0, at)) ? m : 'towel rail'],
   // "Grey tile, grey grout" is said in every wet area and comes back mangled.
   [/\bgrey tall grey grout\b/gi, 'grey tile, grey grout'],
   // Phrases run before the spelling pass, so both spellings have to match.
@@ -4295,21 +4297,21 @@ function recapitalise(text) {
 // either side of it is left exactly as spoken, so nothing real is ever lost and
 // the typist still sees the correction the inspector made.
 const FILLER_WORDS = /\b(?:sorry|um+|uh+|erm+|ahh+|hmm+)\b/gi;
-function stripFillers(text) {
+function stripFillers(text, keepSorry) {
   if (!text) return text;
   // "er" is too often part of a real word to strip everywhere, but ", er," is
   // only ever a filler. AssemblyAI writes it that way.
   let out = String(text).replace(/,\s*er\s*,/gi, ',').replace(/(^|[.!?]\s+)er,\s*/gi, '$1');
-  out = out.replace(FILLER_WORDS, '');
+  out = out.replace(FILLER_WORDS, w => (keepSorry && /^sorry$/i.test(w)) ? w : '');
   out = out.replace(/\s*\s*/g, ' ');
   out = out.replace(/\s+([.,!?;:])/g, '$1');          // "light ." → "light."
   out = out.replace(/([,;:])\s*([.,!?;:])/g, '$2');   // "light, ," → "light,"
   out = out.replace(/^[\s,;:.]+/, '');                // "Sorry, walls…" → "walls…"
   return out.replace(/\s{2,}/g, ' ').trim();
 }
-function applyCorrections(text) {
+function applyCorrections(text, keepSorry) {
   if (!text) return text;
-  text = stripFillers(text);
+  text = stripFillers(text, keepSorry);
   PHRASE_CORRECTIONS.forEach(([re, to]) => { text = text.replace(re, to); });
   text = applyNumerals(text);
   text = text.replace(/[A-Za-z]+/g, w => {
@@ -4317,6 +4319,12 @@ function applyCorrections(text) {
     return hit ? matchCase(hit, w) : w;
   });
   return recapitalise(text);
+}
+// ROUND 19: the text the AI sorts. "Sorry" stays in, so the AI can see where
+// the inspector corrected themselves ("sand, sorry, dust build-up" is dust, not
+// "sand dust build-up"); it is taken out of what the AI sends back.
+function cleanupInput(raw) {
+  return applyCorrections(applyScratch(String(raw || '').trim()), true);
 }
 
 // ─── "SCRATCH THAT" VOICE COMMAND ─────────────────────────────────────────────
@@ -4329,14 +4337,33 @@ function applyCorrections(text) {
 // wipe the whole note. Instead we delete the command plus up to SCRATCH_MAX_WORDS
 // words before it, stopping at any sentence end — bounded, so it can never clear
 // everything. Tune SCRATCH_MAX_WORDS if inspectors want a longer/shorter cut.
-const SCRATCH_CMD = /\b(?:scratch|scrap|strike|cancel|delete)\s+(?:that|all\s+that|all\s+of\s+that)\b[.,!?]*/i;
+const SCRATCH_CMD = /\b(?:scratch|scrap|strike|cancel|delete)\s+(?:that|all\s+that|all\s+of\s+that)\b(?!['’])[.,!?]*/gi;
 const SCRATCH_MAX_WORDS = 8;
+// ROUND 19: "scratch" is also damage. "There is one deep scratch that runs along
+// the door" is a condition note, not the command, and used to be deleted before
+// the AI or the missing-phrase check could see it. It is the command when it
+// starts a sentence, or when it isn't describing a scratch: no "a / one / small /
+// deep …" before it and no "is / runs / goes …" after it.
+const SCRATCH_DESCRIBED_BEFORE = /\b(?:a|an|one|the|this|that|another|any|some|no|single|small|large|big|little|long|short|deep|minor|light|fine|faint|slight|visible|noticeable|major|thin|wide|obvious|with|has|have|is|of|and|two|three|four|five|\d+)\s*$/i;
+const SCRATCH_DESCRIBED_AFTER = /^\s*(?:is|was|runs|run|goes|go|going|extends|extending|measures|measuring|appears|looks|sits|starts|covers|can|could|may|might|needs|requires|approximately|about|across|along|on|to|near|at|in|which)\b/i;
+function scratchIsCommand(out, m) {
+  if (!/^scratch/i.test(m[0])) return true;
+  const before = out.slice(0, m.index), after = out.slice(m.index + m[0].length);
+  const marked = /[.,!?]/.test(m[0]);
+  // "… induction. Scratch that." / not "… timber. Scratch that runs along the edge."
+  if (/(?:^|[.!?])\s*$/.test(before)) return marked || !SCRATCH_DESCRIBED_AFTER.test(after);
+  if (SCRATCH_DESCRIBED_BEFORE.test(before)) return false;         // "a deep scratch that …"
+  if (marked || /[,;]\s*$/.test(before)) return true;              // "… loose, scratch that, is secured"
+  return !SCRATCH_DESCRIBED_AFTER.test(after);
+}
 function applyScratch(text) {
   if (!text) return text;
-  let out = String(text), guard = 0;
+  let out = String(text), guard = 0, from = 0;
   while (guard++ < 50) {
+    SCRATCH_CMD.lastIndex = from;
     const m = SCRATCH_CMD.exec(out);
     if (!m) break;
+    if (!scratchIsCommand(out, m)) { from = m.index + m[0].length; continue; }
     const cmdStart = m.index, cmdEnd = m.index + m[0].length;
     const before = out.slice(0, cmdStart);
     let i = before.length;
@@ -4362,6 +4389,7 @@ function applyScratch(text) {
       }
     }
     out = out.slice(0, i) + ' ' + out.slice(cmdEnd);
+    from = i;
   }
   return out.replace(/\s{2,}/g, ' ').replace(/\s+([.,!?])/g, '$1').trim();
 }
@@ -4477,7 +4505,12 @@ function pauseListening() {
   commitDictation(listeningRoom);
   dictFinal = '';
   if (currentRecSession && currentRecSession.mr && currentRecSession.mr.state === 'recording') {
+    // ROUND 19: hand over the last seconds and save them now. A pause is often
+    // followed by the camera, and iPhone can close the page while it's open.
+    try { currentRecSession.mr.requestData(); } catch (e) {}
     try { currentRecSession.mr.pause(); } catch (e) {}
+    const sess = currentRecSession;
+    setTimeout(() => { try { sess.lastPersist = 0; persistPartialRecording(sess); } catch (e) {} }, 300);
   }
   releaseWakeLock();
   setFabPaused(true);
@@ -4515,8 +4548,15 @@ function finishSegment(e) {
   // The toast comes from the save itself now — it used to say "saved" before
   // anything had been written, and kept saying it when the phone was full.
   const hadAudio = !!currentRecSession;
+  const room = listeningRoom;
   stopListening({ announce: true });
-  if (!hadAudio) showToast('✓ Saved');
+  // ROUND 19: no recorder and nothing dictated: nothing was saved, so don't say it was.
+  if (!hadAudio) {
+    const ta = document.getElementById(`roomta-${room}`);
+    const text = ((ta && ta.value) || roughDrafts[room] || '').trim();
+    const noMic = cloudEnabled() && roomAudioFlags[room] === 'noaudio';
+    showToast(noMic ? (text ? 'Saved as text only. No audio was recorded' : 'Nothing was recorded. Record this room again') : (text ? '✓ Saved' : 'Nothing was recorded. Record this room again'));
+  }
 }
 
 // Show/hide the Done button and keep the record-status pill in sync.
@@ -4742,7 +4782,13 @@ function dbTx(storeName, mode, body) {
     if (!dbRetryable(e)) throw e;
     // ROUND 14: a write that timed out may still go through; trying it again
     // could save a recording twice. Only reads are tried again after a timeout.
-    if (e && e.name === 'TimeoutError' && mode !== 'readonly') throw e;
+    if (e && e.name === 'TimeoutError' && mode !== 'readonly') {
+      // ROUND 19: but the connection is hung; the next write opens a fresh one
+      // instead of waiting on it too.
+      try { if (audioDB) audioDB.close(); } catch (e2) {}
+      audioDB = null;
+      throw e;
+    }
     try { if (audioDB) audioDB.close(); } catch (e2) {}
     audioDB = null;
     return once();
@@ -4770,7 +4816,22 @@ function dbGet(id) {
   return dbTx(AUDIO_STORE, 'readonly', (s, set) => { const r = s.get(id); r.onsuccess = () => set(r.result || null); }).then(v => v || null);
 }
 function dbPut(rec) {
-  return dbTx(AUDIO_STORE, 'readwrite', (s, set) => { const r = s.put(storedForm(rec)); r.onsuccess = () => set(r.result); });
+  if (!rec || rec.id == null) return dbTx(AUDIO_STORE, 'readwrite', (s, set) => { const r = s.put(storedForm(rec)); r.onsuccess = () => set(r.result); });
+  // ROUND 19: a pass holding an older copy of the record must not wipe the
+  // "kept as bytes" mark another step set meanwhile (the read-back after Done
+  // can finish while a send pass is running). Without the mark the good copy
+  // can't be found and the room would be called unreadable.
+  return dbTx(AUDIO_STORE, 'readwrite', (s, set) => {
+    const g = s.get(rec.id);
+    g.onsuccess = () => {
+      const was = g.result;
+      // Only an older copy of the same audio: a record carrying more audio than
+      // the bytes kept (Done after a partial save) keeps its own file.
+      if (was && was.bytesStored && !rec.bytesStored && (!rec.blob || rec.blob.size <= (was.bytesSize || 0))) { rec.bytesStored = true; rec.bytesSize = was.bytesSize; }
+      const r = s.put(storedForm(rec));
+      r.onsuccess = () => set(r.result);
+    };
+  });
 }
 function bytesPut(id, ab) { return dbTx(BYTES_STORE, 'readwrite', s => { s.put({ id, bytes: ab }); }); }
 function bytesGet(id) { return dbTx(BYTES_STORE, 'readonly', (s, set) => { const r = s.get(id); r.onsuccess = () => set(r.result ? r.result.bytes : null); }); }
@@ -4862,9 +4923,20 @@ async function getSessionMic() {
   }
   micNeedsRefresh = false;
   releaseSessionMic();
-  sessionMicStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  // ROUND 19: back from the background, iPhone can leave the microphone request
+  // hanging. Give up in time (long enough to answer the first permission
+  // question) so the room says the mic didn't open instead of showing a clock
+  // that records nothing. A late answer is switched straight off.
+  const ask = navigator.mediaDevices.getUserMedia({ audio: true });
+  try {
+    sessionMicStream = await withDeadline(ask, MIC_OPEN_MS, 'opening the microphone');
+  } catch (e) {
+    if (e && e.name === 'TimeoutError') ask.then(st => { try { st.getTracks().forEach(t => t.stop()); } catch (e2) {} }).catch(() => {});
+    throw e;
+  }
   return sessionMicStream;
 }
+const MIC_OPEN_MS = 15000;
 function releaseSessionMic() {
   if (sessionMicStream) {
     try { sessionMicStream.getTracks().forEach(t => t.stop()); } catch (e) {}
@@ -5145,6 +5217,11 @@ async function readAudioBytes(rec) {
       if (fresh && fresh.bytesStored) return await readStoredBytes(fresh.id, fresh.bytesSize);
       if (fresh && fresh.blob) return await readBlobOnce(fresh.blob);
     } catch (e) { if (!(first && first.unreadable) && e && e.unreadable) first = e; }
+    // ROUND 19: good bytes saved after a failed read-back, whose mark was lost.
+    try {
+      const kept = await bytesGet(rec.id);
+      if (kept && kept.byteLength && (!rec.blob || kept.byteLength >= rec.blob.size)) { rec.bytesStored = true; rec.bytesSize = kept.byteLength; return kept; }
+    } catch (e) {}
   }
   if (first && first.unreadable) throw first;
   throw unreadableError(first && first.name === 'TimeoutError' ? 'reading timed out' : errDetail(first));
@@ -5779,7 +5856,10 @@ async function sweepOldJobs() {
     for (const rec of await dbAll()) {
       if (sameJob(rec) || savedJob(rec) || rec.archived !== true) continue;
       if (!pastKeepPeriod(rec)) continue;   // kept 14 days after it reached Dropbox
-      if (hasAudio(rec) && !rec.audioArchived) continue;   // ROUND 11: only once the audio itself is confirmed
+      // ROUND 11: only once the audio itself is confirmed. ROUND 19: a recording
+      // called unreadable is kept too while its audio never reached Dropbox: the
+      // stored copy may still play, and it is the only one.
+      if ((rec.blob || rec.bytesStored) && !rec.audioArchived) continue;
       const finished = rec.status === 'done'
         || (rec.status === 'failed' && (rec.noAudio || (rec.autoRetries || 0) >= AUTO_RETRY_MAX));
       if (finished) { await dbDelete(rec.id); n++; }
@@ -5993,7 +6073,58 @@ function findPhraseFrom(words, phrase, from) {
 // The cleanup val wraps a phrase it added in {+ … +}. Shown as [added: …] in
 // the note and the .txt, red italic in the Word file.
 function markAdded(t) {
-  return String(t || '').replace(/\{\+\s*([^{}]*?)\s*\+\}/g, (m, x) => x ? '[added: ' + x + ']' : '').replace(/\{\+|\+\}/g, '');
+  return String(t || '')
+    // ROUND 19: a brace the model got wrong ("{+in clean condition}", "{in good
+    // condition+}") is still an added phrase, never the inspector's own words.
+    .replace(/\{\+\s*([^{}]*?)\s*\+?\}|\{\s*([^{}+]*?)\s*\+\}/g, (m, a, b) => { const x = (a != null ? a : b) || ''; return x ? '[added: ' + x + ']' : ''; })
+    .replace(/\{\+|\+\}/g, '');
+}
+// ROUND 19: the house-style phrases. One the inspector never said, written
+// without braces, is marked added too, so it can't read as their words.
+// Each one is checked where it stands: it counts as said when the inspector
+// said it straight after the same word (two words between at most) ("light switch, secure
+// and functional"), so one said in the room doesn't cover the AI adding it
+// elsewhere.
+const ADDED_PHRASES = [/\bin clean condition\b/gi, /\bin good condition\b/gi, /\bsecured? and functional\b/gi];
+// As said, mishears included ("screw and functional").
+const SAID_PHRASES = [/\bclean condition\b/g, /\bgood condition\b/g, /\b(?:secured?|screw(?:ed)?|skin|good on|skid(?:ded)? on)\s+and\s+functional\b/g];
+function markUnbracedAdded(text, said) {
+  const heard = ' ' + String(said || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ') + ' ';
+  let out = String(text || '');
+  const plain = out.replace(/\[added: [^\]]*\]/g, ' ');
+  ADDED_PHRASES.forEach((re, k) => {
+    // Said at least as often as written: all the inspector's own.
+    const saidN = (heard.match(SAID_PHRASES[k]) || []).length;
+    if (saidN && saidN >= (plain.match(re) || []).length) return;
+    re.lastIndex = 0;
+    if (!saidN) {   // never said in this recording: every one is added
+      out = out.replace(/\[added: [^\]]*\]|[^\[]+|\[/g, part => part.startsWith('[added: ') ? part : part.replace(re, m => '[added: ' + m + ']'));
+      return;
+    }
+    out = out.replace(/\[added: [^\]]*\]|[^\[]+|\[/g, part => part.startsWith('[added: ') ? part : part.replace(re, (m, at, all) => {
+      const prev = (all.slice(0, at).toLowerCase().match(/([a-z0-9]+)[^a-z0-9]*$/) || [])[1];
+      if (!prev) return m;
+      const words = m.toLowerCase().replace(/^secured?/, 'secured?').split(/\s+/).join(' ');
+      return new RegExp(' ' + prev + '(?: [a-z0-9]+){0,2} ' + words + ' ').test(heard) ? m : '[added: ' + m + ']';
+    }));
+  });
+  return out;
+}
+// ROUND 19: a condition the inspector named. An added "in clean condition" in the
+// same sentence goes against the house style and goes on the check list.
+const DAMAGE_ALT = '(?:marks?|marked|scuff(?:s|ed)?|smudges?|residue|chip(?:s|ped|ping)?|scratch(?:es|ed|ing)?|dents?|dented|cracks?|cracked|cracking|holes?|discolou?r(?:ation|ed)?|stain(?:s|ed|ing)?|tarnish(?:ed|ing)?|rust(?:y|ed|ing)?|dust|dusty|grease|greasy|calcium|mould|mouldy|mold|debris|wear|worn|peeling|lifting|damaged?|broken|missing|loose|torn|ripped|faded|burn(?:s|t)?|leak(?:s|ing)?|not working|not functional|not tested|untested|faulty|dirty|dirt|cobwebs?|spider ?webs?)';
+const DAMAGE_WORDS = new RegExp('\\b' + DAMAGE_ALT + '\\b', 'i');
+// "no marks", "no stains or damage", "globes not missing": a condition that isn't there.
+const NO_DAMAGE = new RegExp('\\b(?:no|not|without|nil|free of)\\s+(?:any\\s+|visible\\s+|obvious\\s+|major\\s+)?' + DAMAGE_ALT + '(?:\\s*(?:,|or|and|nor)\\s*(?:no\\s+)?' + DAMAGE_ALT + ')*\\b', 'gi');
+function addedNextToDamage(sections) {
+  const out = [];
+  (sections || []).forEach(s => {
+    (String(s.text || '').match(/[^.!?]*\[added: [^\]]*\][^.!?]*[.!?]?/g) || []).forEach(sent => {
+      const body = sent.replace(/\[added: [^\]]*\]/g, ' ').replace(NO_DAMAGE, m => /not (?:working|functional|tested)/i.test(m) ? m : ' ');
+      if (DAMAGE_WORDS.test(body)) out.push({ quote: sent.replace(/\s*\[added: [^\]]*\]/g, '').replace(/\s+/g, ' ').trim(), words: '', heard: '', why: 'added phrase next to a condition note' });
+    });
+  });
+  return out.filter(c => c.quote);
 }
 // Every sentence of a block of text with when it was said (at = seconds or null).
 function timedSentences(text, words, cursor) {
@@ -6107,7 +6238,7 @@ async function runCleanup(rec) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        transcript: applyCorrections(applyScratch(rec.transcript)),
+        transcript: cleanupInput(rec.transcript),
         room: rec.roomName || '',
         subsections: rec.subsections || [],
         address: rec.address || ''
@@ -6120,9 +6251,13 @@ async function runCleanup(rec) {
     // ROUND 12: a stray brace the model left (Freshwater bathroom "…functional]}")
     // is dropped, and so is a row that only repeats its own name or an added
     // phrase (Freshwater kitchen part 2: "Ceiling [added: in clean condition]").
+    const said = cleanupInput(rec.transcript);
     const sections = (out.sections || [])
-      .map(s => ({ name: String((s && s.name) || '').trim(), text: markAdded(String((s && s.text) || '').trim()).replace(/[{}]/g, '').replace(/\s+([.,])/g, '$1').trim() }))
-      .filter(s => s.name && s.text && !fillerOnly(s.name, s.text));
+      .map(s => ({ name: String((s && s.name) || '').trim(), text: markUnbracedAdded(markAdded(String((s && s.text) || '').trim()).replace(/[{}]/g, ''), said)
+        .replace(/(^|[\s,.;:—–-])sorry\b,?/gi, '$1').replace(/\s{2,}/g, ' ').replace(/\s+([.,])/g, '$1').trim() }))
+      .map(s => keepNamedOnly(s, said))
+      .filter(s => s.name && s.text && !fillerOnly(s.name, s.text, s.named))
+      .map(s => ({ name: s.name, text: s.text }));
     if (!sections.length) throw new Error('no sections');
     rec.sections = sections;
     rec.check = (out.check || [])
@@ -6133,6 +6268,7 @@ async function runCleanup(rec) {
         why: String((c && c.why) || '').trim()
       }))
       .filter(c => c.quote);
+    addedNextToDamage(sections).forEach(c => { if (!rec.check.some(x => checkNorm(x.quote) === checkNorm(c.quote))) rec.check.push(c); });
     timestampChecks(rec);
     // ROUND 17: the cleanup val says when Claude got stuck and the check list
     // is incomplete; the Word file then tells the VA at the top of the room.
@@ -6149,9 +6285,20 @@ async function runCleanup(rec) {
   }
 }
 
+// ROUND 19: a row that only names its item ("Ceiling fan." under Ceiling
+// Fan/Air Conditioner) is kept when the inspector said it on its own: it says
+// the item is there. Only an added phrase on it is dropped.
+function keepNamedOnly(s, said) {
+  if (!fillerOnly(s.name, s.text)) return s;
+  const bare = s.text.replace(/\s*\[added: [^\]]*\]/g, '').replace(/[.\s]+$/, '').trim();
+  if (bare.split(/\s+/).length < 2) return s;
+  const esc = bare.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+  return new RegExp('(?:^|[.!?,]\\s*)' + esc + '\\s*(?:[.!?,]|$)', 'i').test(said) ? { name: s.name, text: bare + '.', named: true } : s;
+}
 // True when a row says nothing the inspector said: only its own name and/or
 // phrases the AI added.
-function fillerOnly(name, text) {
+function fillerOnly(name, text, named) {
+  if (named) return false;
   const nameWords = new Set(String(name).toLowerCase().match(/[a-z]+/g) || []);
   const said = String(text).replace(/\[added: [^\]]*\]/g, ' ').toLowerCase().match(/[a-z0-9]+/g) || [];
   return said.every(w => nameWords.has(w) || nameWords.has(w.replace(/s$/, '')) || nameWords.has(w + 's'));
@@ -6273,10 +6420,13 @@ async function archivePut(relPath, body, contentType, timeoutMs) {
     if (res.status === 413) throw new Error('too large');
     if (!res.ok) throw new Error('archive http ' + res.status);
     // The round 14 val says how many bytes Dropbox stored. Short = not safe.
+    // ROUND 19: and an answer that doesn't say (not the val, or cut off) isn't
+    // taken as safe either; the file is simply sent again later.
     if (binary) {
       let out = null;
       try { out = await withDeadline(res.clone().json(), 15000, 'reading the Dropbox answer'); } catch (e) {}
-      if (out && typeof out.size === 'number' && out.size !== size) throw new Error('Dropbox got an incomplete file (' + out.size + ' of ' + size + ' bytes)');
+      if (!out || out.ok === false || typeof out.size !== 'number') throw new Error('Dropbox did not confirm the file');
+      if (out.size !== size) throw new Error('Dropbox got an incomplete file (' + out.size + ' of ' + size + ' bytes)');
     }
     return res;
   } finally { clearTimeout(timer); }
@@ -6430,6 +6580,13 @@ function buildRoomJson(rec, clean) {
       resolved: c.resolved || null, fixedTo: c.fixedTo || null
     })),
     fixes: (rec.fixes || []).slice(),
+    // ROUND 19: the Word file's room notes, for the typist editor too.
+    missing: layout.cleaned ? missingPhrases(cleanupInput(rec.transcript), rec.sections).map(p => {
+      const at = findPhraseTime(rec.words, p);
+      return { phrase: p, at: at != null ? at : null, clock: at != null ? formatClock(at) : null };
+    }) : [],
+    cutShort: !!(layout.cleaned && rec.checkCutShort),
+    sortError: (!layout.cleaned && rec.cleanupError) ? String(rec.cleanupError) : null,
     syncErrors: (rec.errLog || []).map(x => ({ at: new Date(x.t).toISOString(), stage: x.stage, error: x.msg })),
     serial: thisJob ? (state.serialModels[rec.roomId] || '').trim() : (rec.serialTyped || ''),
     inventory: thisJob ? (state.inventory[rec.roomId] || '').trim() : (rec.inventoryTyped || ''),
@@ -7527,11 +7684,17 @@ function buildInspectionSummary(statusRows) {
 // audio. Built from scratch with JSZip, so no template is needed.
 async function loadJSZip() {
   if (window.JSZip) return window.JSZip;
-  await new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = 'jszip.min.js'; s.onload = resolve; s.onerror = () => reject(new Error('jszip not available'));
-    document.head.appendChild(s);
-  });
+  // ROUND 19: with a time limit (a load that never answers held the Dropbox
+  // pass), and a failed load is tried afresh next time.
+  let s;
+  try {
+    await withDeadline(new Promise((resolve, reject) => {
+      s = document.createElement('script');
+      s.src = 'jszip.min.js'; s.onload = resolve; s.onerror = () => reject(new Error('jszip not available'));
+      document.head.appendChild(s);
+    }), 20000, 'loading the Word file builder');
+  } catch (e) { try { s && s.remove(); } catch (e2) {} throw e; }
+  if (!window.JSZip) { try { s && s.remove(); } catch (e) {} throw new Error('jszip not available'); }
   return window.JSZip;
 }
 const DOCX_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -7747,17 +7910,45 @@ const SUSPECT_PHRASES = [
   /\bset of wooden seat\b/gi, /\bwind ledge\b/gi, /\bsmart architrave\b/gi,
   /\bwhich means the\b/gi, /\bnote the little frame\b/gi, /\bno digital frame\b/gi,
   /\bsinks? white plastic\b/gi, /\bwhite middle\b/gi, /\bmiddle base\b/gi,
-  /\bcolou?r rack\b/gi, /\b\d+ blows\b/gi, /\bgloves\b/gi,
+  /\bcolou?r rack\b/gi, /\b(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten) blows\b/gi, /\bgloves\b/gi,
   /\blincolns?\b/gi, /\bpanama\b/gi, /\bsteering materials\b/gi, /\bfish glass\b/gi, /\btriplets\b/gi, /\bunderhangers\b/gi,
   // "no …" then a condition in the same breath: says it's not there, then
   // describes it ("once of no detachable showerhead in good condition"). A comma
   // in between ("no handles, in good condition") is ordinary wording.
   /\bno\s(?!marks|damage|visible)[^.;:,]{1,30}?\s(?:in good condition|in clean condition|secured and functional)\b/gi
 ];
+// ROUND 19: "corner skirting" after "the" is the real skirting board ("chip to
+// the corner skirting housing into bedroom 1"); so is "Skirting …" starting a
+// sentence, and "skirting on both sides" right after a mark ("scuff marks to
+// the skirting on both sides"). Those aren't highlighted; "one black metal
+// corner skirting both sides" still is.
+const SKIRTING_REAL_BEFORE = /(?:^|[.!?:]\s*|\bthe\s+|\bto\s+|\bof\s+)$/i;
 function suspectSpans(sentence) {
   const t = String(sentence || '').replace(/\[added: [^\]]*\]/g, m => ' '.repeat(m.length));
   const spans = [];
-  SUSPECT_PHRASES.forEach(re => { re.lastIndex = 0; let m; while ((m = re.exec(t))) { spans.push([m.index, m.index + m[0].length]); if (!m[0].length) re.lastIndex++; } });
+  SUSPECT_PHRASES.forEach((re, k) => { re.lastIndex = 0; let m; while ((m = re.exec(t))) {
+    const pre = t.slice(0, m.index);
+    // "the corner skirting" is the board; "lock on the skirting on both sides"
+    // is still the mishear unless a mark is described just before it.
+    const real = k === 0 ? SKIRTING_REAL_BEFORE.test(pre)
+      : k === 1 ? (/(?:^|[.!?:]\s*)$/.test(pre) || DAMAGE_WORDS.test(pre.slice(-40))) : false;
+    if (real) { if (!m[0].length) re.lastIndex++; continue; }
+    spans.push([m.index, m.index + m[0].length]); if (!m[0].length) re.lastIndex++;
+  } });
+  return spans.concat(plateSpans(t));
+}
+// ROUND 19: a model, serial or type number is always highlighted ("check against
+// the photo"), also in a room the AI didn't sort ("model number is MSZ-GE60VAD").
+const PLATE_VALUE = /\b(?:(?:model|serial)\s*(?:numbers?|no\.?|#)|type)\s*(?:is\s*|:\s*)+([A-Za-z0-9][A-Za-z0-9\-\/.]*)/gi;
+function plateSpans(t) {
+  const spans = [];
+  PLATE_VALUE.lastIndex = 0;
+  let m;
+  while ((m = PLATE_VALUE.exec(t))) {
+    const v = m[1].replace(/[.\/-]+$/, '');
+    // A type is a code ("71ADC01AD"), not "type is 3 pin".
+    if (/\d/.test(v) && (!/^type/i.test(m[0]) || (v.length >= 4 && /[a-z]/i.test(v)))) { const at = m.index + m[0].length - m[1].length; spans.push([at, at + v.length]); }
+  }
   return spans;
 }
 function mergeSpans(a, b) {
@@ -7797,7 +7988,8 @@ function missNumber(w) {
   if (/^[2-9][0-9]$/.test(w)) return MISS_TENS[w[0]] + (w[1] !== '0' ? ' ' + MISS_NUM[w[1]] : '');
   return w;
 }
-function missWords(t) {
+function missWords(t) { return missWordsRaw(t); }
+function missWordsRaw(t) {
   return String(t || '').toLowerCase().replace(/\[added: [^\]]*\]/g, ' ').replace(/\{\+[^}]*\+\}/g, ' ').replace(/['’]/g, '')
     .split(/[^a-z0-9]+/).filter(Boolean)
     .map(missNumber).join(' ').split(' ')
@@ -7808,26 +8000,51 @@ function missWords(t) {
 // Only a phrase that is nothing but the walk-through ("coming into the master
 // bedroom"); "going to note the oven door is cracked" is still checked.
 const MISS_WALK = /^(?:(?:uh|um|so|okay|ok|and|now)\s+)*(?:coming|moving|heading|walking|stepping|going)\s+(?:into|through|back\s+(?:in)?to|out\s+to|over\s+to|in\s+to)\s+(?:the\s+|this\s+|our\s+)?[a-z0-9]+(?:\s+[a-z0-9]+){0,3}\s*[.!?]?$/i;
+// ROUND 19: the words that carry the meaning of a phrase: a condition, a count,
+// "no / not", and which side. A sorted sentence only counts as keeping the
+// phrase when it has all of them, and (when the phrase has other words too) at
+// least one of those. "Scuff marks to the door frame" is not kept by "Door frame
+// is white painted metal", nor by "Walls have scuff marks"; "3 double power
+// points" is not kept by "two double power points".
+const MISS_KEY = new Set(missWordsRaw('mark marks scuff scuffs smudge smudges residue chip chips chipping chipped scratch scratches scratching scratched ' +
+  'dent dents dented crack cracks cracking cracked hole holes discolouration discoloration discoloured stain stains staining stained ' +
+  'tarnish tarnishing tarnished rust rusting rusted rusty dust dusty grease greasy calcium mould mouldy mold mildew debris wear worn ' +
+  'peeling lifting damage damaged broken missing loose torn ripped faded burn burnt burns leak leaking faulty dirty dirt cobweb cobwebs ' +
+  'no not none without nil left right upper lower top bottom ' +
+  'one two three four five six seven eight nine ten eleven twelve'));
 function missingPhrases(transcript, sections) {
   const outSents = (sections || []).map(s => String(s.text || '')).join('\n')
     .replace(/([.!?])\s+/g, '$1\n').split(/\n+/).map(missWords).filter(w => w.length)
     // Joined pairs too, so "down lights" and "downlights" match either way round.
     .map(w => new Set(w.concat(w.slice(1).map((x, i) => w[i] + x))));
   if (!outSents.length) return [];
+  // ROUND 19: for a long run-on phrase (7+ key words) the AI split at a full
+  // stop, two sorted sentences side by side count as one.
+  const pairs = outSents.concat(outSents.slice(1).map((o, i) => new Set([...outSents[i], ...o])));
   const missing = [];
   // No look-behind in these patterns: older iPhone Safari can't parse it.
   String(transcript || '').replace(/([.!?])\s+/g, '$1\n').split('\n').forEach(sentence => {
-    sentence.split(/[,;]\s*|\s+[—–-]\s+|—\s*/).forEach(raw => {
+    const pieces = sentence.split(/[,;]\s*|\s+[—–-]\s+|—\s*/);
+    pieces.forEach((raw, pi) => {
+      // ROUND 19: "in front of the left— sorry, … right": the AI keeps only the
+      // correction and flags it, so the cancelled side isn't a missing word.
+      const corrected = /^\s*(?:oh,?\s+)?sorry\b/i.test(pieces[pi + 1] || '') || /\bsorry\s*$/i.test(raw);
       missChunks(raw.replace(/^[\s,.;—–-]+|[\s,.;—–-]+$/g, '')).forEach(phrase => {
       const w = missWords(phrase);
-      if (w.length < 3 || MISS_WALK.test(phrase.replace(/^(?:uh|um),?\s*/i, ''))) return;
-      let best = 0;
-      for (const o of outSents) {
-        const hit = w.filter((x, i) => o.has(x) || (i + 1 < w.length && o.has(x + w[i + 1])) || (i > 0 && o.has(w[i - 1] + x))).length / w.length;
-        if (hit > best) best = hit;
-        if (best >= 0.5) break;
-      }
-      if (best < 0.5) missing.push(phrase);
+      if (w.length < 3) return;
+      if (MISS_WALK.test(phrase.replace(/^(?:uh|um),?\s*/i, '')) && !w.some(x => MISS_KEY.has(x) && !/^(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)$/.test(x))) return;
+      const has = (o, x, i) => o.has(x) || (i + 1 < w.length && o.has(x + w[i + 1])) || (i > 0 && o.has(w[i - 1] + x));
+      // Words inside a known mishear ("7-way", "box top") are the AI's to fix.
+      const misheard = new Set(missWords(suspectSpans(phrase).map(([a, b]) => phrase.slice(a, b)).join(' ')));
+      const keys = corrected ? [] : w.map((x, i) => i).filter(i => MISS_KEY.has(w[i]) && !misheard.has(w[i]));
+      const rest = w.map((x, i) => i).filter(i => !MISS_KEY.has(w[i]));
+      const kept = (w.length >= 7 ? pairs : outSents).some(o => {
+        const hit = w.filter((x, i) => has(o, x, i)).length / w.length;
+        if (hit < 0.5) return false;
+        if (!keys.every(i => has(o, w[i], i))) return false;
+        return !rest.length || rest.some(i => has(o, w[i], i));
+      });
+      if (!kept) missing.push(phrase);
       });
     });
   });
@@ -7885,7 +8102,7 @@ function buildJobModel(recs, snap) {
     const notes = [];
     const audio = [];
     const raws = [];
-    let missCount = 0;
+    let missCount = 0, notSorted = 0, unmatched = 0;
     let pending = false;
     rs.forEach(r => {
       const pt = multi ? 'pt ' + (r.part || (rs.indexOf(r) + 1)) + ' · ' : '';
@@ -7898,13 +8115,17 @@ function buildJobModel(recs, snap) {
         else pending = true;
         return;
       }
+      if (r.cleanupError && !(r.sections && r.sections.length)) {
+        notSorted++;
+        notes.push('Not sorted by the AI' + (multi ? ' for part ' + (r.part || (rs.indexOf(r) + 1)) : '') + '. The rows were split by keyword, so a sentence can sit in the wrong row and nothing was flagged. Check the whole ' + (multi ? 'part' : 'room') + ' against the audio.');
+      }
       if (r.checkCutShort && r.sections) notes.push('Check list cut short' + (multi ? ' for part ' + (r.part || (rs.indexOf(r) + 1)) : '') + '. The AI stopped before listing everything to check. Check the whole ' + (multi ? 'part' : 'room') + ' against the audio.');
       const clean = punctuateBySubarea({ subsections: r.subsections || [] }, applyCorrections(applyScratch(raw)));
       const layout = roomLayout(r, clean);
       // ROUND 18: what was said but isn't in the AI's sorted text, with its time.
       if (layout.cleaned) {
         // The text the AI was given ("scratch that" already applied), not the raw.
-        const miss = missingPhrases(applyCorrections(applyScratch(raw)), r.sections);
+        const miss = missingPhrases(cleanupInput(raw), r.sections);
         if (miss.length) {
           missCount += Math.min(miss.length, 8);
           const shown = miss.slice(0, 8).map(p => { const at = findPhraseTime(r.words, p); return '“' + p + '”' + (at != null ? ' (' + formatClock(at) + ')' : ''); });
@@ -7929,6 +8150,17 @@ function buildJobModel(recs, snap) {
           bk.sents.push({ text: x.sentence, at: x.at, spans: mergeSpans(highlightSpans(x.sentence, checks), suspectSpans(x.sentence)) });
         });
       });
+      // ROUND 19: a check whose sentence can't be found (the AI quoted the words
+      // as heard, or reworded them) is listed at the top of the room instead of
+      // being lost.
+      if (layout.cleaned) {
+        const allSents = layout.buckets.reduce((a, b) => a.concat(b.sents.map(x => x.sentence)), []);
+        const lost = checks.filter(c => c.resolved !== 'fixed' && c.quote && !allSents.some(x => highlightSpans(x, [c]).length));
+        if (lost.length) {
+          unmatched += lost.length;
+          notes.push('Also to check' + (multi ? ' in part ' + (r.part || (rs.indexOf(r) + 1)) : '') + ', the AI flagged words it could not place: ' + lost.map(c => '“' + c.quote + '”' + (c.why ? ' (' + c.why + (c.clock ? ', ' + c.clock : '') + ')' : (c.clock ? ' (' + c.clock + ')' : ''))).join('; ') + '.');
+        }
+      }
       const serial = (r.serialTyped || (snap.serials || {})[id] || '').trim();
       if (serial && !notes.some(n => n.indexOf(serial) >= 0)) notes.push('Serial / model (typed on the phone): ' + serial);
       const inv = (r.inventoryTyped || (snap.inventory || {})[id] || '').trim();
@@ -7960,7 +8192,7 @@ function buildJobModel(recs, snap) {
     const lead = (rs.length && !pending && !rs.some(r => r.noAudio || !(r.transcript || '').trim() || r.cleanupError)) ? leadingEmptyRows(tableRows.map(r => r.name), n => !(tableRows.find(r => r.name === n) || {}).empty) : 0;
     if (lead) notes.push('Nothing for the first ' + lead + ' rows (' + tableRows[0].name + ' to ' + tableRows[lead - 1].name + '). The start of this room may not have been recorded. Check the photos.');
     const toCheck = tableRows.reduce((k, r) => k + (r.sents || []).reduce((a, x) => a + x.spans.length, 0), 0)
-      + (twoRooms ? repeated.length : 0) + missCount;
+      + (twoRooms ? repeated.length : 0) + missCount + notSorted + unmatched;
     // Model, serial and type numbers the AI wrote out, pulled into their own table.
     const plates = [];
     tableRows.forEach(r => (r.sents || []).forEach(x => {
@@ -8274,6 +8506,18 @@ async function finishAndClear() {
   // Push anything waiting before judging, so a room that's one upload away
   // doesn't show as still sending.
   if (navigator.onLine) { try { await queueWatchdog(); processQueue(); processArchiveQueue(); } catch (e) {} }
+  // ROUND 19: audio held only in the app's memory (the phone was full when the
+  // room was saved) is lost when the app closes, and the Save audio button is
+  // not on the Start screen. Try saving it once more; if it still can't be
+  // saved, offer it to Files before finishing.
+  if (unsavedRecs.length) { try { await retryUnsaved(); } catch (e) {} }
+  const inMemory = unsavedRecs.filter(r => r.blob && sameJob(r));
+  if (inMemory.length) {
+    const n = inMemory.length;
+    if (!confirm(`The audio for ${n} recording${n === 1 ? ' is' : 's are'} not saved on this phone yet (the phone is full). Save ${n === 1 ? 'it' : 'them'} to Files now?\n\nCancel keeps the inspection open.`)) { showToast('Not finished. The inspection is still here.'); return; }
+    await saveUnsavedAudio();
+    if (!confirm('Is the audio saved in Files? Finish this inspection?')) { showToast('Not finished. The inspection is still here.'); return; }
+  }
   const statusRows = await computeAreaStatus();
   renderFinishGate(statusRows);
   // Round 10: only rooms with nothing recorded stop Finish. Audio still on its

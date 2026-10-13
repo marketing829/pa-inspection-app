@@ -1,6 +1,6 @@
 # PA Inspect (PA Fieldnotes): project guide for Claude Code
 
-Read this before every change. It holds the rules and decisions that are not obvious from the code. Last updated 12 October 2026, after the round 17 build.
+Read this before every change. It holds the rules and decisions that are not obvious from the code. Last updated 13 October 2026, after the round 19 build.
 
 ## Working with Daphne
 
@@ -25,16 +25,16 @@ Back end is Val Town (account `propertyassist`). Paste-ready copies of the val c
 |---|---|---|
 | `inspectionapp-assemblyai` | Default speech-to-text engine. Supports `{url}` (Dropbox link) and resume by `{id}` after a 504 | `vals/inspectionapp-assemblyai.ts` (version 17: Stirling words added) |
 | `inspectionapp` | Deepgram engine (`main.ts`), kept as the alternative | not yet |
-| `inspectionapp-cleanup` | Claude sorts a room's transcript into its subareas, fixes mishears and lists words to check (`file_room` tool) | `vals/inspectionapp-cleanup.ts` (round 17, version 17.1) |
+| `inspectionapp-cleanup` | Claude sorts a room's transcript into its subareas, fixes mishears and lists words to check (`file_room` tool) | `vals/inspectionapp-cleanup.ts` (round 19, version 19) |
 | `inspectionapp-proofread` | Claude check for the editor; `mode: "rooms"` finds where each room starts in one long recording | not yet |
-| `dropbox-archive` | Writes everything to Dropbox; also the phone problem log (`?action=log`) and editor reads | `vals/dropbox-archive.ts` (round 14) |
+| `dropbox-archive` | Writes everything to Dropbox; also the phone problem log (`?action=log`) and editor reads | `vals/dropbox-archive.ts` (round 19: audio never overwritten) |
 
-Every val checks `PA_KEY`. A GET on a val URL shows its config, `key_required`, and its round/version (12 Oct: cleanup `"version": "17.1"` (17.2 to paste), assemblyai `17`, dropbox-archive `14`).
+Every val checks `PA_KEY`. A GET on a val URL shows its config, `key_required`, and its round/version (12 Oct: cleanup `"version": "17.2"`, assemblyai `17`, dropbox-archive `14`).
 
 ## Current state
 
-- Inspector app: **round 17 live 12 Oct** (cache v21, "app version 17"). **Round 18 built, not uploaded** (cache v22, "app version 18"): the Word file lists what was said but isn't in the AI's sorted text. Notes: `notes/round-17.md`, `notes/round-18.md`.
-- Cleanup val: `PA_MODEL` is set to `claude-sonnet-5-5` (12 Oct). **Round 17 cleanup val 17.1 is live** (`"version": "17.1"`; 17.2 in `vals/`, asks again when a long room comes back with nothing to check). It answers without thinking first (short thinking was tested and left out a sentence), asks again when an answer gets stuck, and always answers within 50 s (Val Town stops requests at 60 s). See `notes/round-17.md`. `?test=stirling&k=<PA_KEY>` runs four Stirling Street rooms through Claude and lists 19 PASS/FAIL checks.
+- Inspector app: **round 18 live 12 Oct** (cache v22, "app version 18"). **Round 19 is on the `round-19` branch, not merged yet** (cache v23, "app version 19"): review fixes for damage notes, added phrases, Word file notes and audio safety. Cleanup val 19 and dropbox-archive val 19 are in `vals/`, to paste. Notes: `notes/round-17.md`, `notes/round-18.md`, `notes/round-19.md`.
+- Cleanup val: `PA_MODEL` is set to `claude-sonnet-5-5` (12 Oct). **Cleanup val 17.2 is live** (`"version": "17.2"`; also asks again when a long room comes back with nothing to check). It answers without thinking first (short thinking was tested and left out a sentence), asks again when an answer gets stuck, and always answers within 50 s (Val Town stops requests at 60 s). See `notes/round-17.md`. `?test=stirling&k=<PA_KEY>` runs four Stirling Street rooms through Claude and lists 19 PASS/FAIL checks.
 - Round 14 vals: **confirmed live** 12 Oct (`"version": 14`). The assemblyai val has a version 17 in `vals/` (ten more expected words).
 - Typist editor: **v3.4.2 is in this repo and live on GitHub Pages** (New job from audio). It needs the v3.4 proofread val pasted too; until then New job from audio may not work.
 - The project "INSPECTION APP" on claude.ai holds every round doc and the VA comparisons. `claude/pa-start-here-handoff.md` is the source of truth for status and open items. If this file and that doc disagree, the doc wins; update this file.
@@ -64,6 +64,8 @@ These came from real field failures. Treat them as hard requirements.
 - Flags are yellow in the apps; red only in the Word file.
 - No live transcript while recording. Show "Transcribing", then the sorted text after Done.
 - Fix a word is on the Review page only. Inspectors don't have to check words; the VA does.
+- Sorting and polishing (Daphne, 13 Oct): keep the inspector's words and their order; only punctuation, capitals, clear mishears and Australian spelling change ("wood"/"timber" as said); never drop a mark, count, "no" or side; flag an unclear area, don't guess; one entry per subarea even when the inspector comes back to it. The Word file keeps template row order (spoken order shows in row times and the room index); walk-through phrases and cancelled words are left out; counts are written as words. No damage or dirt said: "in clean condition" (surfaces) / "in good condition"; working fixtures: "secured and functional" only.
+- Hosting and native app (Daphne, 13 Oct): stay on Val Town for now. If big rooms on weak signal get stuck (60 s per request), send big audio to Dropbox in parts rather than move hosts.
 - Room checklist is a guide only. Ticks are never saved to the report, json or Word file.
 - Mandatory items sit on the Start screen (kept in `pa_setup_mandatory` until Start), editable on Review.
 - Finish returns to the Start screen and doesn't wait for Dropbox.
@@ -89,8 +91,8 @@ These came from real field failures. Treat them as hard requirements.
 - **Branch per round** (`round-18`, etc.). Commit small. The commit message says what changed for the inspector in plain words. Merge to `main` (which publishes on GitHub Pages) only when Daphne says so.
 - **Bump the service worker cache version** in `sw.js` on every app change, and `APP_ROUND` plus the "app version N" text in Admin settings. Phones only pick up a new build after force-quit and reopen.
 - **Test before every commit.**
-  - App: `tests/test-round18.js` (412 checks, headless Playwright, 375×667). Serve the repo root with `python3 -m http.server 8767 --bind 127.0.0.1`, then `node tests/test-round18.js` from the repo root. Copy it to `test-round19.js` for the next round, update version checks, add checks for every fix.
-  - Cleanup val: `node tests/test-val-round17.mjs` (38 mocked checks; needs `esbuild` installed globally).
+  - App: `tests/test-round19.js` (449 checks, headless Playwright, 375×667). Serve the repo root with `python3 -m http.server 8767 --bind 127.0.0.1`, then `node tests/test-round19.js` from the repo root. Copy it to `test-round20.js` for the next round, update version checks, add checks for every fix. Node lives in `~/.local/node/bin` (add it to PATH). The tests use the computer's clock; a heavily loaded machine can make sending checks fail, so rerun before chasing a failure.
+  - Cleanup val: `node tests/test-val-round19.mjs` (52 mocked checks; needs `esbuild` installed globally).
   - A real-data copy of the app test lives in `tests/private/` (not committed). Make every app-test change in both copies.
   - Mock the vals and Dropbox in tests. Never call live services from tests.
 - **iPhone Safari is the real target.** Things that pass in Chromium can still fail there (IndexedDB dropped after backgrounding, no Background Sync, keyboard and swipe behaviour). List what needs a real iPhone check in the round notes.
@@ -107,8 +109,8 @@ Compare the app's Word file for a real job against the VA's final report, room b
 
 ## Open items (from the start-here doc, 12 Oct)
 
-1. Cleanup val 17.1 pasted 12 Oct. Paste the latest copy (30 s cut-off), run `?test=stirling&k=<PA_KEY>` once more. Paste the assemblyai val version 17.
-2. Round 17 app is live. Check each phone shows "app version 17" after force-quit and reopen. Paste cleanup val 17.2.
+1. Round 19: merge the `round-19` branch, paste cleanup val 19 and dropbox-archive val 19 (both GETs should show `"version": "19"`). Check each phone shows "app version 19" after force-quit and reopen. iPhone checks are listed in `notes/round-19.md`.
+2. After the next real job, check whether the "Said but not in the sorted text" notes are real misses or false alarms.
 3. Re-run the Stirling walk-through (Kitchen part 1 included, second store room as "Store Room 2") and score it against the VA.
 4. iPhone check of round 16: mandatory card → Review edit, inventory camera tile, Recordings day folds, Camera mid-job while a room is sending.
 5. Watch dropbox-archive logs for `PHONE PROBLEM` after real jobs.

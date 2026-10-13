@@ -3145,7 +3145,8 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
       const good = ['Two white metal downlights, secured and functional.', 'One single light switch and one double power point.', 'Door is a glass pane.',
         'One white plastic smoke sensor secured to the ceiling.', 'Small scuff marks to the lower section of the wall.', 'One single Foxtel and data point combination.',
         'Two mirrored sliding doors secured in black metal framing.', 'Grey tile, grey grout with discolouration to the grout.', 'One silver metal double towel rail secured to the wall.',
-        'Two globes present with a frosted plastic cover.', 'One grey metal Mitsubishi air conditioner motor secured to the wall.', 'Three white laminate drawers, no handles present.'];
+        'Two globes present with a frosted plastic cover.', 'One grey metal Mitsubishi air conditioner motor secured to the wall.', 'Three white laminate drawers, no handles present.',
+        'Scuff marks along the lower section of the wall.', 'One clothes line secured to the wall.', 'Two clothes hooks present.', 'One white tall boy cupboard.'];
       return { missed: bad.filter(t => !suspectSpans(t).length), wrong: good.filter(t => suspectSpans(t).some(sp => !/\d/.test(t.slice(sp[0], sp[1])))) };
     });
     check('R21: the Stirling replay\'s wrong-but-normal words are always highlighted (drawer/door, sensor, 12-volt, red, walnut, vinyl, island tops, along a section …)', !h1.missed.length, h1.missed);
@@ -3189,16 +3190,18 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
       const raw = words.map(x => x.w).join(' ');
       const runs = repeatRuns(words, raw);
       const none = repeatRuns([], 'One section is wooden painted white with scuff marks. Other section is a brown wood look. One one double power point. No hooks, no hooks present.');
-      const noTimes = repeatRuns([], 'Ceiling is grey painted. Ceiling is grey painted. Walls are grey.');
+      const noTimes = repeatRuns([], 'Ceiling is grey painted. Ceiling is grey painted. Ceiling is grey painted. Walls are grey.');
+      const twice = ['Grey painted metal door. Grey painted metal door frame with chips.', 'The walls are white painted— the walls are white painted plaster.',
+        'One white plastic double power point. One white plastic double power point.'].filter(t => repeatRuns([], t).length);
       const rec = __rec({ roomName: 'Store Room 2', roomId: 's21', subsections: ['Doors/Handles', 'Light Fittings'], transcript: raw, words,
         sections: [{ name: 'Doors/Handles', text: 'Doorframe is a grey painted metal with chipping.' }, { name: 'Light Fittings', text: 'We have light-fitting, one grey plastic fluorescent light fitting.' }] });
       const notes = buildJobModel([rec], {}).rooms[0].notes.filter(n => /same words repeat/.test(n));
       const txt = buildArchiveText(rec, raw);
       const json = buildRoomJson(rec, raw);
-      return { runs, none, noTimes, notes, txt: /LISTEN HERE: THE RECORDING MAY HAVE BEEN SKIPPED\n  The same words repeat: “Doorframe is a grey painted metal with chipping” \(0:06–0:16\)/.test(txt), json: json.repeats };
+      return { runs, none, noTimes, twice, notes, txt: /LISTEN HERE: THE RECORDING MAY HAVE BEEN SKIPPED\n  The same words repeat: “Doorframe is a grey painted metal with chipping” \(0:06–0:16\)/.test(txt), json: json.repeats };
     });
     check('R21: words the engine wrote over and over are found, with where to listen (0:06–0:16)', r1.runs.length === 1 && r1.runs[0].phrase === 'Doorframe is a grey painted metal with chipping' && r1.runs[0].from === 6 && r1.runs[0].to === 16, r1.runs);
-    check('R21: ordinary speech and short restarts ("one one double", "no hooks, no hooks") are not called repeats; without timings the words are still named', r1.none.length === 0 && r1.noTimes.length === 1 && r1.noTimes[0].from === null, r1);
+    check('R21: ordinary speech and restarts said twice ("one one double", "the walls are white painted— the walls are…") are not called repeats; three times without timings is still named', r1.none.length === 0 && !r1.twice.length && r1.noTimes.length === 1 && r1.noTimes[0].from === null && r1.noTimes[0].phrase === 'Ceiling is grey painted', r1);
     check('R21: the Word file, the room\'s text file and its data file all point the typist to the repeat', r1.notes.length === 1 && /The speech engine may have got stuck and skipped what was said there\. Listen to this part of the audio\./.test(r1.notes[0]) && /\(0:06–0:16\)/.test(r1.notes[0]) && r1.txt && r1.json.length === 1 && r1.json[0].clock === '0:06', r1);
 
     // 9. The val's reason for a cut-short check list is kept in the room's data file.
@@ -3223,10 +3226,10 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     // 10. The details file puts model and serial numbers on their own lines.
     const d1 = await page.evaluate(() => {
       const id = state.rooms[0].id; const was = state.roomNotes[id];
-      state.roomNotes[id] = 'Two grey metal cooking trays.\nModel Numbers: Not present\nType: 71ADC01AD\nSerial Numbers: 82897294 We have pantry, two doors.\nModel Numbers: FSE73700P\nSerial Numbers: 83840019 We have fridge cabinetry.\nModel Numbers: MSZ GE60VAD\nSerial Numbers: Unable to locate.';
+      state.roomNotes[id] = 'Two grey metal cooking trays.\nModel Numbers: Not present\nType: 71ADC01AD\nSerial Numbers: 82897294 We have pantry, two doors.\nModel Numbers: FSE73700P\nSerial Numbers: 83840019 We have fridge cabinetry.\nModel Numbers: MSZ GE60VAD\nSerial Numbers: Unable to locate.\nSerial Numbers: 1234 5678\nType: A1 B2';
       const t = buildReportText(); state.roomNotes[id] = was; return t;
     });
-    check('R21: in the details file a serial number ends its line ("Serial Numbers: 82897294" / "We have pantry")', /Serial Numbers: 82897294\nWe have pantry, two doors\./.test(d1) && /Serial Numbers: 83840019\nWe have fridge cabinetry\./.test(d1) && /Type: 71ADC01AD\nSerial/.test(d1) && /Model Numbers: MSZ GE60VAD\n/.test(d1) && /Serial Numbers: Unable to locate\./.test(d1), d1.slice(d1.indexOf('Two grey'), d1.indexOf('Two grey') + 400));
+    check('R21: in the details file a serial number ends its line ("Serial Numbers: 82897294" / "We have pantry")', /Serial Numbers: 82897294\nWe have pantry, two doors\./.test(d1) && /Serial Numbers: 83840019\nWe have fridge cabinetry\./.test(d1) && /Type: 71ADC01AD\nSerial/.test(d1) && /Model Numbers: MSZ GE60VAD\n/.test(d1) && /Serial Numbers: Unable to locate\./.test(d1) && /Serial Numbers: 1234 5678\nType: A1 B2/.test(d1), d1.slice(d1.indexOf('Two grey'), d1.indexOf('Two grey') + 400));
 
     // 11. Discard: no "every room recorded" check, nothing deleted, marked in Dropbox.
     const n0 = await page.evaluate(async () => {
@@ -3257,16 +3260,6 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
     check('R21: Discard needs no "every room recorded" answer (only the one question)', asked21b.join(',') === 'confirm', asked21b);
     check('R21: after Discard the recording is still on the phone and still sending, marked discarded', n2.kept && n2.discarded === true && n2.closed === true && n2.status === 'pending' && n2.blob, n2);
     check('R21: the details file says the inspection was discarded; the Start screen is back', /DISCARDED ON THE PHONE/.test(n2.text) && /Discarded on phone: /.test(n2.text) && n2.address === '' && /Discarded\. Ready to start again\./.test(n2.toasts.join(' ')), { text: n2.text.slice(0, 400), toasts: n2.toasts, address: n2.address });
-    const n3 = await page.evaluate(() => {
-      const folder = '2026-10-13 - 1 A St';
-      const old = { address: '1 A St', discarded: true, roomName: 'Kitchen' }, fresh = { address: '1 A St', roomName: 'Kitchen' };
-      const a = jobDocRecs([old, fresh], null, folder), b = jobDocRecs([old], null, folder);
-      const live = { address: '1 A St', meta: { startedAt: new Date(2026, 9, 13, 9).getTime() } };
-      const c = jobDocRecs([old], live, archiveFolderName({ address: '1 A St', meta: live.meta }));
-      const model = buildJobModel([__rec({ roomName: 'Kitchen', roomId: 'k', subsections: ['Ceiling'], transcript: 'x', words: [] })], {}); model.discarded = true;
-      const xml = buildJobDocXml(model);
-      return { a: a.recs.length === 1 && a.recs[0] === fresh && !a.discarded, b: b.recs.length === 1 && b.discarded, c: c.recs.length === 0 && !c.discarded, banner: /Discarded on the phone\./.test(xml) };
-    });
     const n4 = await page.evaluate(async () => {
       const id = await dbAdd({ roomId: 'r21_stale', roomName: 'Laundry', address: '1 Stale St', jobId: 'J21', blob: new Blob([new Uint8Array(30)], { type: 'audio/webm' }), type: 'audio/webm', status: 'pending', createdAt: Date.now() });
       const stale = await dbGet(id);
@@ -3277,7 +3270,39 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
       return { closed: after.closed, discarded: after.discarded, serial: after.serialTyped, inv: after.inventoryTyped, status: after.status };
     });
     check('R21: a send pass writing back an older copy keeps the Finish/Discard marks and the typed serial', n4.closed === true && n4.discarded === true && n4.serial === 'SN-21' && n4.inv === '2 keys' && n4.status === 'uploading', n4);
-    check('R21: a restarted job\'s Word file leaves out the discarded rooms; a folder with only discarded rooms says so', n3.a && n3.b && n3.c && n3.banner, n3);
+    const n3 = await page.evaluate(() => {
+      const A = { address: '1 A St', jobId: 'JA', meta: { startedAt: 1 }, finishedAt: 111, discarded: true, rooms: [{ id: 'kitchen', name: 'Kitchen', subsections: [] }] };
+      const Blive = { address: '1 A St', jobId: 'JB', meta: { startedAt: 2 }, discarded: false, rooms: [{ id: 'lounge', name: 'Lounge', subsections: [] }] };
+      const oldRec = { jobId: 'JA', discarded: true, roomName: 'Kitchen' }, late = { jobId: 'JA', roomName: 'Kitchen' }, fresh = { jobId: 'JB', roomName: 'Lounge' };
+      // Only A in the folder: A's rooms, marked discarded (also with nothing recorded).
+      const onlyA = jobDocRecs([oldRec], A), emptyA = jobDocRecs([], A);
+      // B started (offline or not): its snapshot replaces A's, no finish time or discard carried over.
+      const merged = mergeJobSnap(A, Blive);
+      const withB = jobDocRecs([oldRec, late, fresh], merged);
+      // B finished with typed rooms only: still B's, not A's.
+      const bDone = mergeJobSnap(merged, Object.assign({}, Blive, { finishedAt: 222 }));
+      const typedOnlyB = jobDocRecs([oldRec, late], bDone);
+      // Same job updates still merge.
+      const same = mergeJobSnap(Blive, { jobId: 'JB', notes: 'x' });
+      const model = buildJobModel([__rec({ roomName: 'Kitchen', roomId: 'k', subsections: ['Ceiling'], transcript: 'x', words: [] })], {}); model.discarded = true;
+      const xml = buildJobDocXml(model);
+      return {
+        onlyA: onlyA.recs.length === 1 && onlyA.discarded, emptyA: emptyA.recs.length === 0 && emptyA.discarded,
+        withB: withB.recs.length === 1 && withB.recs[0] === fresh && !withB.discarded && merged.finishedAt === undefined && merged.discarded === false && merged.rooms[0].id === 'lounge',
+        typedOnlyB: typedOnlyB.recs.length === 0 && !typedOnlyB.discarded && bDone.finishedAt === 222,
+        same: same.rooms && same.notes === 'x', banner: /Discarded on the phone\./.test(xml) };
+    });
+    check('R21: a discarded job\'s Word file says so, even with nothing recorded', n3.onlyA && n3.emptyA && n3.banner, n3);
+    check('R21 review: a restarted job\'s Word file is the new job only (a late discarded recording, the old finish time and typed-only rooms don\'t bring the old job back)', n3.withB && n3.typedOnlyB && n3.same, n3);
+    const n5 = await page.evaluate(async () => {
+      const sum = (await photoAll()).filter(p => p.kind === 'summary' && p.address === '21 Stirling Replay St');
+      const s = sum[sum.length - 1];
+      return { at: !!(s && s.discardedAt), src: /00 - Inspection details\$\{rec\.discardedAt \? ' - DISCARDED '/.test(document.documentElement.innerHTML) };
+    });
+    check('R21 review: a discarded job\'s details file gets its own name ("00 - Inspection details - DISCARDED 1432.txt"), so it can\'t replace the restarted job\'s', n5.at, n5);
+    const n6 = require('fs').readFileSync(__dirname + '/../index.html', 'utf8');
+    check('R21 review: no regex lookbehind in the phone app (older iPhones before iOS 16.4 would not load it at all)', !/\(\?<[=!]/.test(n6));
+
     // 12. Review shows "Mandatory items still needed" once (round 20 left a second copy when a field was typed).
     await startJob(page, '21 Review Once St');
     const m1 = await page.evaluate(async () => {

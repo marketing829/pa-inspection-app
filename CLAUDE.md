@@ -1,6 +1,6 @@
 # PA Inspect (PA Fieldnotes): project guide for Claude Code
 
-Read this before every change. It holds the rules and decisions that are not obvious from the code. Last updated 13 October 2026, after the round 20 build.
+Read this before every change. It holds the rules and decisions that are not obvious from the code. Last updated 13 October 2026, after the round 21 build.
 
 ## Working with Daphne
 
@@ -25,7 +25,7 @@ Back end is Val Town (account `propertyassist`). Paste-ready copies of the val c
 |---|---|---|
 | `inspectionapp-assemblyai` | Default speech-to-text engine. Supports `{url}` (Dropbox link) and resume by `{id}` after a 504 | `vals/inspectionapp-assemblyai.ts` (version 17: Stirling words added) |
 | `inspectionapp` | Deepgram engine (`main.ts`), kept as the alternative | not yet |
-| `inspectionapp-cleanup` | Claude sorts a room's transcript into its subareas, fixes mishears and lists words to check (`file_room` tool) | `vals/inspectionapp-cleanup.ts` (round 19, version 19) |
+| `inspectionapp-cleanup` | Claude sorts a room's transcript into its subareas, fixes mishears and lists words to check (`file_room` tool) | `vals/inspectionapp-cleanup.ts` (round 21, version 21: more mishears, `cut_reason`) |
 | `inspectionapp-proofread` | Claude check for the editor; `mode: "rooms"` finds where each room starts in one long recording | not yet |
 | `dropbox-archive` | Writes everything to Dropbox; also the phone problem log (`?action=log`) and editor reads | `vals/dropbox-archive.ts` (round 19: audio never overwritten) |
 
@@ -33,7 +33,7 @@ Every val checks `PA_KEY`. A GET on a val URL shows its config, `key_required`, 
 
 ## Current state
 
-- Inspector app: **round 18 live 12 Oct** (cache v22, "app version 18"). **Round 19 is merged** (cache v23, "app version 19"): review fixes for damage notes, added phrases, Word file notes and audio safety. Cleanup val 19 and dropbox-archive val 19 are in `vals/`, to paste. **Round 20 is merged to `main`** (cache v24, "app version 20"): rooms follow the PCR palm cards, Gas Meter replaces Smoke Alarms, a required photo per mandatory item. No val changes. Notes: `notes/round-17.md` … `notes/round-20.md`.
+- Inspector app: **round 18 live 12 Oct** (cache v22, "app version 18"). **Round 19 is merged** (cache v23, "app version 19"): review fixes for damage notes, added phrases, Word file notes and audio safety. Cleanup val 19 and dropbox-archive val 19 are in `vals/`, to paste. **Round 20 is merged to `main`** (cache v24, "app version 20"): rooms follow the PCR palm cards, Gas Meter replaces Smoke Alarms, a required photo per mandatory item. No val changes. **Round 21 is on branch `round-21`** (cache v25, "app version 21"): Stirling replay vs the VA (more always-highlighted mishears, a "same words repeat, listen here" note), Discard inspection, checklist rows wrap, the send-all-audio button removed, Android playback length, lone bathroom named "Bathroom". Cleanup val 21 in `vals/`, to paste. Notes: `notes/round-17.md` … `notes/round-21.md`.
 - Cleanup val: `PA_MODEL` is set to `claude-sonnet-5-5` (12 Oct). **Cleanup val 17.2 is live** (`"version": "17.2"`; also asks again when a long room comes back with nothing to check). It answers without thinking first (short thinking was tested and left out a sentence), asks again when an answer gets stuck, and always answers within 50 s (Val Town stops requests at 60 s). See `notes/round-17.md`. `?test=stirling&k=<PA_KEY>` runs four Stirling Street rooms through Claude and lists 19 PASS/FAIL checks.
 - Round 14 vals: **confirmed live** 12 Oct (`"version": 14`). The assemblyai val has a version 17 in `vals/` (ten more expected words).
 - Typist editor: **v3.4.2 is in this repo and live on GitHub Pages** (New job from audio). It needs the v3.4 proofread val pasted too; until then New job from audio may not work.
@@ -69,6 +69,7 @@ These came from real field failures. Treat them as hard requirements.
 - Room checklist is a guide only. Ticks are never saved to the report, json or Word file.
 - Mandatory items sit on the Start screen (kept in `pa_setup_mandatory` until Start), editable on Review. Since round 20: Water Meter Reading and Location, RCD Box, Gas Meter Reading (replaced Smoke Alarms), NBN Box, and a required photo of the water meter, RCD box, gas meter and NBN box (camera or photo library). Missing ones are named on Review and in the Finish question, but don't block Finish (Daphne, 13 Oct: keep it as a reminder; some properties have no gas meter). Dropbox: `Photos/00 Mandatory - <item> <n> - <hhmm> - <photo id>.jpg`. Start-screen photos (`pa_setup_mand_photos`) only send once they belong to a job; Resume, or photos over 12 h old, ask first. Ones still unstamped at Finish are kept in `pa_mand_photos_left` with their job's details.
 - Finish returns to the Start screen and doesn't wait for Dropbox.
+- Discard inspection (Daphne, 13 Oct, round 21): a link under Finish on Review. Nothing is deleted: recordings stay under Recordings and still go to Dropbox, marked discarded; the details file is `00 - Inspection details - DISCARDED <hhmm>.txt`; a restarted job at the same address and day gets a Word file of its own rooms only (chosen by `jobId`).
 - The approved correction list is applied automatically. The team phrase list is suggestions only.
 - Native app (Expo) decision comes after the typist editor is finished.
 - Cleanup model stays Claude Sonnet 5.5 for budget (Daphne, 12 Oct). If it still isn't good enough after round 18, look at other options, including the OpenAI API.
@@ -91,11 +92,11 @@ These came from real field failures. Treat them as hard requirements.
 - **Branch per round** (`round-18`, etc.). Commit small. The commit message says what changed for the inspector in plain words. Merge to `main` (which publishes on GitHub Pages) only when Daphne says so.
 - **Bump the service worker cache version** in `sw.js` on every app change, and `APP_ROUND` plus the "app version N" text in Admin settings. Phones only pick up a new build after force-quit and reopen.
 - **Test before every commit.**
-  - App: `tests/test-round20.js` (491 checks, headless Playwright, 375×667). Serve the repo root with `python3 -m http.server 8767 --bind 127.0.0.1`, then `node tests/test-round20.js` from the repo root. Copy it to `test-round21.js` for the next round, update version checks, add checks for every fix. Node lives in `~/.local/node/bin` (add it to PATH). The tests use the computer's clock; a heavily loaded machine can make sending checks fail, so rerun before chasing a failure.
-  - Cleanup val: `node tests/test-val-round19.mjs` (52 mocked checks; needs `esbuild` installed globally).
+  - App: `tests/test-round21.js` (521 checks, headless Playwright, 375×667). Serve the repo root with `python3 -m http.server 8767 --bind 127.0.0.1`, then `node tests/test-round21.js` from the repo root. Copy it to `test-round22.js` for the next round, update version checks, add checks for every fix. Node lives in `~/.local/node/bin` (add it to PATH). The tests use the computer's clock; a heavily loaded machine can make sending checks fail, so rerun before chasing a failure.
+  - Cleanup val: `node tests/test-val-round21.mjs` (58 mocked checks; needs `esbuild` installed globally).
   - A real-data copy of the app test lives in `tests/private/` (not committed). Make every app-test change in both copies.
   - Mock the vals and Dropbox in tests. Never call live services from tests.
-- **iPhone Safari is the real target.** Things that pass in Chromium can still fail there (IndexedDB dropped after backgrounding, no Background Sync, keyboard and swipe behaviour). List what needs a real iPhone check in the round notes.
+- **iPhone Safari is the real target.** Things that pass in Chromium can still fail there (IndexedDB dropped after backgrounding, no Background Sync, keyboard and swipe behaviour). No regex lookbehind (`(?<=`, `(?<!`) in `index.html`: iOS before 16.4 can't parse it and the whole app stops loading (a test checks this). List what needs a real iPhone check in the round notes.
 - **Val changes**: edit the file in `vals/`, bump its round/version, and tell Daphne to paste the whole file into Val Town. No new environment variable without saying so in the round notes.
 - **After each round**: an independent review pass (fresh agent) looking for audio-loss and data-loss risks and false highlights, then fix what it finds.
 - **Round notes**: write `notes/round-N.md` in plain language (what changed, what to upload or paste, what to test on a phone). Daphne copies it into the claude.ai project as `claude/pa-round-N-...md` and updates the start-here doc.

@@ -6934,7 +6934,7 @@ async function processPhotoQueue() {
         const folder = archiveFolderName(rec);
         const base = archiveBaseName(rec);
         const rel = rec.kind === 'summary'
-          ? `${folder}/${DATA_DIR}/00 - Inspection details.txt`
+          ? `${folder}/${DATA_DIR}/00 - Inspection details${rec.discardedAt ? ' - DISCARDED ' + new Date(rec.discardedAt).toTimeString().slice(0, 5).replace(':', '') : ''}.txt`
           : rec.kind === 'pcr'
             ? `${folder}/${rec.fileName || 'PCR.docx'}`
             : rec.kind === 'mandatory'
@@ -7736,7 +7736,7 @@ function buildReportText() {
       report += `\n\n${room.name.toUpperCase()}\n${'-'.repeat(30)}\n`;
       // ROUND 21: a model, serial or type number ends its line ("Serial Numbers:
       // 82897294 We have pantry" ran on in the details file).
-      if (val && val.trim()) report += `${val.trim().replace(/^((?:Model Numbers?|Serial Numbers?|Type):[ \t]*[A-Za-z0-9][A-Za-z0-9\-\/.]*\d[A-Za-z0-9\-\/.]*)[ \t]+(?=\S)/gm, '$1\n')}\n`;
+      if (val && val.trim()) report += `${val.trim().replace(/^((?:Model Numbers?|Serial Numbers?|Type):[ \t]*[A-Za-z0-9][A-Za-z0-9\-\/.]*\d[A-Za-z0-9\-\/.]*)[ \t]+(?=[A-Z][a-z])/gm, '$1\n')}\n`;
       if (inv) report += `Inventory: ${inv}\n`;
       if (serial) report += `Serial / model: ${serial}\n`;
     }
@@ -7897,7 +7897,7 @@ function jobSnapshot() {
   const typed = {};
   Object.keys(state.typedOnly || {}).forEach(id => { if (state.typedOnly[id]) typed[id] = (state.roomNotes[id] || '').trim(); });
   return {
-    address: state.address, jobId: state.jobId || '', meta: inspectionMeta(),
+    address: state.address, jobId: state.jobId || '', meta: inspectionMeta(), discarded: false,
     mandatory: Object.assign({}, state.mandatory || {}),
     mandPhotos: JSON.parse(JSON.stringify(state.mandPhotos || {})),
     notes: (state.propertyNotes || '').trim(),
@@ -7913,14 +7913,22 @@ function markJobDoc(folder, snap) {
   e.rev = (e.rev || 0) + 1;
   e.touched = Date.now();
   delete e.nextAt; e.fails = 0;
-  if (snap) e.snap = Object.assign({}, e.snap || {}, snap);
+  if (snap) e.snap = mergeJobSnap(e.snap, snap);
   m[folder] = e;
   saveJobDocs(m);
 }
-function jobDocRecs(recs, live, folder) {
+// ROUND 21: a job discarded and started again at the same address the same day
+// shares the folder. The Word file is the folder's newest job (its snapshot),
+// built from that job's recordings only; the discarded job's audio and files
+// stay in the folder. A discarded job's own Word file says so.
+function mergeJobSnap(was, snap) {
+  if (was && was.jobId && snap.jobId && was.jobId !== snap.jobId) return Object.assign({}, snap);
+  return Object.assign({}, was || {}, snap);
+}
+function jobDocRecs(recs, snap) {
+  if (snap && snap.jobId) return { recs: recs.filter(r => !r.jobId || r.jobId === snap.jobId), discarded: !!snap.discarded };
   const kept = recs.filter(r => !r.discarded);
-  const liveHere = !!(live && archiveFolderName({ address: live.address, meta: live.meta }) === folder);
-  return { recs: kept.length || liveHere ? kept : recs, discarded: !kept.length && !liveHere && recs.length > 0 };
+  return { recs: kept.length ? kept : recs, discarded: !kept.length && recs.length > 0 };
 }
 let jobDocRunning = false;
 async function jobDocPass() {
@@ -7945,14 +7953,15 @@ async function jobDocPass() {
         try { recs = (await dbAll()).filter(r => r.kind !== 'summary' && archiveFolderName(r) === folder); } catch (er) {}
         // The open job's live details beat the copy taken when the room landed.
         const live = jobSnapshot();
-        const snap = (live && recs.some(r => sameJob(r))) ? Object.assign({}, e.snap || {}, live) : (e.snap || null);
+        const liveHere = !!(live && archiveFolderName({ address: live.address, meta: live.meta }) === folder);
+        const snap = liveHere ? mergeJobSnap(e.snap, live) : (e.snap || null);
         if (!recs.length && !snap) { delete m[folder]; changed = true; continue; }
         const address = (snap && snap.address) || (recs[0] && recs[0].address) || '';
         // ROUND 21: an inspection discarded and started again at the same address
         // the same day shares this folder. The Word file is the new one's; the
         // discarded rooms' audio and files stay in the folder, out of the Word
         // file. If only discarded rooms are here, the Word file says so.
-        const pick = jobDocRecs(recs, live, folder);
+        const pick = jobDocRecs(recs, snap);
         const model = buildJobModel(pick.recs, snap);
         model.discarded = pick.discarded;
         const blob = await buildJobDocx(model);
@@ -7996,7 +8005,8 @@ function highlightSpans(sentence, checks) {
   // holders secured to the wall."). Each of them is matched on its own; only the
   // one holding the doubtful words is highlighted.
   const isPart = c => {
-    const qs = String(c.quote || '').split(/(?<=[.!?])\s+/).map(checkNorm).filter(x => x.split(' ').length >= 2);
+    // No lookbehind here: older iPhones (before iOS 16.4) can't read it, and the whole app would stop loading.
+    const qs = String(c.quote || '').replace(/([.!?])\s+/g, '$1\n').split('\n').map(checkNorm).filter(x => x.split(' ').length >= 2);
     return qs.length > 1 && qs.includes(ns);
   };
   (checks || []).forEach(c => {
@@ -8052,10 +8062,10 @@ const SUSPECT_PHRASES = [
   // discolouration, tile, model number, serial number.
   /\bdrawers? (?:is|are) (?:a )?glass\b/gi, /\bplastic sensor\b/gi, /\b(?:12|twelve)[- ]?volts?(?: and)? data\b/gi,
   /\bred sliding\b/gi, /\bwalnut\b/gi, /\bvinyl (?:framing|frame|here)\b/gi, /\bisland tops?\b/gi,
-  /\balong (?:a |the )?(?:lower )?sections? of (?:the )?walls?\b/gi, /\bgot to be a\b/gi, /\bskidder\b/gi, /\bwindow down\b/gi,
+  /\balong (?:a |the )?sections? of (?:the )?walls?\b/gi, /\bgot to be a\b/gi, /\bskidder\b/gi, /\bwindow down\b/gi,
   /\bzip closures?\b/gi, /\bblenders?\b/gi, /\bdecanters?\b/gi, /\bwalmart\b/gi, /\bgrabber\b/gi, /\bonce a\b/gi,
-  /\bperson\b/gi, /\bsecurity function(?:al)?\b/gi, /\b(?:one|two|three|four|\d+) clothes\b/gi, /\bdiscretion\b/gi,
-  /\b(?:grey|white|black) tall\b/gi, /\bserum number\b/gi, /\bmotor numbers? (?:is|:)/gi,
+  /\bperson\b/gi, /\bsecurity function(?:al)?\b/gi, /\b(?:one|two|three|four|\d+) clothes\b(?!\s*(?:lines?|hooks?|rails?|rods?|airers?|dryers?))/gi, /\bdiscretion\b/gi,
+  /\b(?:grey|white|black) tall\b(?!\s*(?:boy|cupboard|unit|cabinet|pantry))/gi, /\bserum number\b/gi, /\bmotor numbers? (?:is|:)/gi,
   // "no …" then a condition in the same breath: says it's not there, then
   // describes it ("once of no detachable showerhead in good condition"). A comma
   // in between ("no handles, in good condition") is ordinary wording.
@@ -8118,7 +8128,7 @@ function plateFrom(text) {
 // room: "Doorframe is a grey painted metal with chipping" three and a half
 // times, then the door's chips and scuff marks were missing). Nothing later can
 // highlight words that never reached the transcript, so the typist is sent to
-// listen there. Finds 4+ words said again straight away. Returns
+// listen there. Finds 4+ words said three times or more in a row. Returns
 // [{ phrase, from, to }] (seconds, or null without word timings).
 const REPEAT_FILLERS = new Set(['uh', 'um', 'er', 'erm', 'ah']);
 function repeatRuns(words, transcript) {
@@ -8137,7 +8147,11 @@ function repeatRuns(words, transcript) {
     if (!found) continue;
     let j = i + 2 * found;
     while (j < n && arr[j].w === arr[i + ((j - i) % found)].w) j++;
-    const phrase = arr.slice(i, i + found).map(x => x.raw).join(' ').replace(/[.,;:!?]+$/, '');
+    // Said twice is often just the inspector starting again ("the walls are
+    // white painted— the walls are white painted plaster"). The engine loops
+    // on and on (three and a half times at Stirling): three times or more.
+    if (j - i < 3 * found) continue;
+    const phrase = arr.slice(i, i + found).map(x => x.raw).join(' ').replace(/[.,;:!?—–-]+$/, '');
     out.push({ phrase, from: arr[i].t, to: j < n ? arr[j].t : arr[n - 1].t });
     i = j - 1;
   }
@@ -8590,7 +8604,8 @@ async function queueInspectionSummary(statusRows) {
   if (!cloudArchiveEnabled() || !state.address) return;
   // ROUND 14: finishing with rooms not in Dropbox goes straight to the val's log.
   const notSafe = (statusRows || []).filter(r => !r.ready && !r.skipped && !r.typedOnly);
-  if (notSafe.length) sendDiag('finish-unsent', null, notSafe.length + ' room(s) not in Dropbox at Finish', {
+  const discarded = !!(statusRows && statusRows.discarded);
+  if (notSafe.length && !discarded) sendDiag('finish-unsent', null, notSafe.length + ' room(s) not in Dropbox at Finish', {
     rooms: notSafe.map(r => ({ room: r.name, status: r.text, why: r.why, last: r.lastErr ? r.lastErr.stage + ': ' + r.lastErr.msg : '' }))
   });
   const text = buildInspectionSummary(statusRows);
@@ -8601,6 +8616,9 @@ async function queueInspectionSummary(statusRows) {
     blob: new Blob([text], { type: 'text/plain;charset=utf-8' }),
     type: 'text/plain; charset=utf-8', uploaded: false
   };
+  // ROUND 21: a discarded job's details get their own name, so they can never
+  // replace a restarted job's at the same address.
+  if (discarded) rec.discardedAt = Date.now();
   await photoAdd(rec);   // ROUND 11: a failure goes back to Finish, which stops
 }
 
@@ -8799,7 +8817,7 @@ async function finishAndClear(discard) {
   // the phone, and again by itself as any room still sending lands.
   try {
     const snap = jobSnapshot();
-    if (snap) { snap.finishedAt = Date.now(); markJobDoc(archiveFolderName({ address: state.address, meta: inspectionMeta(), createdAt: state.startedAt }), snap); }
+    if (snap) { snap.finishedAt = Date.now(); snap.discarded = discard; markJobDoc(archiveFolderName({ address: state.address, meta: inspectionMeta(), createdAt: state.startedAt }), snap); }
     if (cloudArchiveEnabled() && navigator.onLine) processArchiveQueue();
   } catch (e) {}
   clearSaved();
